@@ -24,7 +24,7 @@
         {
             "label": "Build win x64",
             "type": "shell",
-            "command": "${env:GCBASIC_INSTALL_PATH}\\FBASIC\\x86\\fbc.exe ${file} -ex -x ${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "command": "${env:GCBASIC_INSTALL_PATH}\\FBASIC\\x64\\fbc.exe ${file} -ex -x ${fileDirname}\\${fileBasenameNoExtension}.exe",
               
                     "options": {
                         //"cwd": "C:\\GCB@Syn\\GreatCowBasic\\",
