@@ -1,0 +1,20 @@
+﻿    #Header
+    #ToolVersion
+    #XMLVersion
+    // Generated for #PPSToolPart
+    //
+    // Template comment at the start of the config file
+    //
+    #startup InitPPS, 85
+    #define PPSToolPart #PPSToolPart
+
+    Sub InitPPS
+      #UNLOCKPPS
+        [PPS]
+            #ModuleName
+            #PPSSetting    #Comment
+        [PPSEnd]
+      #LOCKPPS
+
+    End Sub
+    // Template comment at the end of the config file

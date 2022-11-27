@@ -1,0 +1,278 @@
+<?xml version="1.0"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+<xs:schema version="1.0"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+
+    <xs:element name="device">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="manager" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="pins" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="manager" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="AlternatePinFunction" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="modules" minOccurs="1" maxOccurs="1"/>
+                <xs:element ref="manager" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="dosid" use="optional"/>
+            <xs:attribute ref="id" use="optional"/>
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="rev" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="pinAlias">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="constraint" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="ppsSupport" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="alias" use="required"/>
+            <xs:attribute ref="module"/>
+            <xs:attribute ref="value"  use="optional"/>
+            <xs:attribute ref="direction"  use="optional"/>
+            <xs:attribute ref="remapTo"  use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="ppsSupport">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="pps" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="constraint">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="constraintVariable" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="type"  use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="constraintVariable">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="value"  use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="interrupt">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="flag" use="required"/>
+            <xs:attribute ref="enable"  use="required"/>
+            <xs:attribute ref="vector"  use="optional"/>
+            <xs:attribute ref="irq"  use="optional"/>
+            <xs:attribute ref="handler_name"  use="optional"/>
+            <xs:attribute ref="priority"  use="optional"/>
+            <xs:attribute ref="sub_priority"  use="optional"/>
+            <xs:attribute ref="priority_range"  use="optional"/>
+            <xs:attribute ref="description"  use="optional"/>
+            <xs:attribute ref="sub_priority_range"  use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="pinNumber">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="package" use="required"/>
+            <xs:attribute ref="value" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+<!--    <xs:element name="pps">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="value" use="required"/>
+        </xs:complexType>
+    </xs:element>-->
+    
+    <xs:element id="pin" name="pin">
+        <xs:complexType mixed="true">
+            <xs:choice maxOccurs="unbounded">
+                <xs:element ref="pinNumber" minOccurs="1" maxOccurs="unbounded"/>
+                <xs:element ref="pinAlias" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:choice>
+            <!-- FIXME: lat, name, and tris should not be optional. How to handle Vdd? -->
+            <xs:attribute ref="ansel"/>
+            <xs:attribute ref="lat" use="optional"/>
+            <xs:attribute ref="name" use="optional"/>
+            <xs:attribute ref="od" />
+            <xs:attribute ref="tris" use="optional"/>
+            <xs:attribute ref="pps" use="optional"/>
+            <xs:attribute ref="ppsValue" use="optional"/>
+            <xs:attribute ref="wpu"/>
+            <xs:attribute ref="cn"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="pins">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="pin" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+        
+    <xs:element name="manager">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="register" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="additional_properties" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="register" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="interrupt"  minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="register" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="property"  minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="modules" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="name" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="additional_properties">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="pinAlias" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="name" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="property">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="type"/>
+            <xs:attribute ref="value" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="option">
+        <xs:complexType mixed="true">
+            <xs:attribute ref="description"/>
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="alias" use="optional"/>
+            <xs:attribute ref="value" use="optional"/>
+            <xs:attribute ref="mode" use="optional"/>
+            <xs:attribute ref="isdefault" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="setting">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="option" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute type="xs:string" name="alias"/>
+            <!-- FIXME: should default be "required"? -->
+            <xs:attribute ref="default" use="optional"/>
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="mask" use="optional"/>
+            <xs:attribute ref="type" use="optional"/>
+            <xs:attribute ref="porDefault" use="optional"/>
+            <xs:attribute type="xs:string" name="description"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="register">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="constraint" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="setting" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="alias" />
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="default" use="optional"/>
+            <xs:attribute ref="type" use="required"/>
+            <xs:attribute ref="width" use="optional"/>
+            <xs:attribute name="desc" type="xs:normalizedString" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+    
+    <xs:element name="module">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="interrupt"  minOccurs="0" maxOccurs="unbounded"/>
+                <!-- FIXME: Can this be tightened up?
+                            Elements added after the 'register' element
+                            still must be defined in the Schema, but there
+                            is no restriction as to what type of element
+                            can be used. -->
+                <xs:element ref="property"  minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="register" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="property"  minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute ref="dosid" use="optional"/>
+            <xs:attribute ref="group" use="optional"/>
+            <xs:attribute ref="name" use="required"/>
+            <xs:attribute ref="subgroup" use="optional"/>
+            <xs:attribute ref="type" use="required"/>
+            <xs:attribute ref="version" use="optional"/>
+            <xs:attribute ref="sub_version" use="optional"/>
+            <xs:attribute ref="instance" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="modules">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <xs:element ref="module" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="AlternatePinFunction">
+        <xs:complexType mixed="true">
+            <xs:sequence>
+                <!-- FIXME: should minOccurs be "1"? -->
+                <xs:element ref="register" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:attribute name="id" type="xs:normalizedString"/>
+    <xs:attribute name="lat" type="xs:normalizedString"/>
+    <xs:attribute name="name" type="xs:normalizedString"/>
+    <xs:attribute name="group" type="xs:normalizedString"/>
+    <xs:attribute name="subgroup" type="xs:normalizedString"/>
+    <xs:attribute name="od" type="xs:normalizedString"/>
+    <xs:attribute name="tris" type="xs:normalizedString"/>
+    <xs:attribute name="alias" type="xs:normalizedString"/>
+    <xs:attribute name="module" type="xs:normalizedString"/>
+    <xs:attribute name="package" type="xs:normalizedString"/>
+    <xs:attribute name="value" type="xs:normalizedString"/>
+    <xs:attribute name="default" type="xs:normalizedString"/>
+    <xs:attribute name="display_type" type="xs:normalizedString"/>
+    <xs:attribute name="type" type="xs:normalizedString"/>
+    <xs:attribute name="pps" type="xs:normalizedString"/>
+    <xs:attribute name="ppsValue" type="xs:normalizedString"/>
+    <xs:attribute name="mask" type="xs:normalizedString"/>
+    <xs:attribute name="version" type="xs:normalizedString"/>
+    <xs:attribute name="description" type="xs:normalizedString"/>
+    <xs:attribute name="direction" type="xs:normalizedString"/>
+    <xs:attribute name="ansel" type="xs:normalizedString"/>
+    <xs:attribute name="wpu" type="xs:normalizedString"/>
+    <xs:attribute name="rev" type="xs:normalizedString"/>
+    <xs:attribute name="dosid" type="xs:normalizedString"/>
+    <xs:attribute name="sub_version" type="xs:normalizedString"/>
+    <xs:attribute name="cn" type="xs:normalizedString"/>
+    <xs:attribute name="flag" type="xs:normalizedString"/>
+    <xs:attribute name="enable" type="xs:normalizedString"/>
+    <xs:attribute name="priority" type="xs:normalizedString"/>
+    <xs:attribute name="vector" type="xs:normalizedString"/>
+    <xs:attribute name="irq" type="xs:normalizedString"/>
+    <xs:attribute name="sub_priority" type="xs:normalizedString"/>
+    <xs:attribute name="priority_range" type="xs:normalizedString"/>
+    <xs:attribute name="sub_priority_range" type="xs:normalizedString"/>
+    <xs:attribute name="handler_name" type="xs:normalizedString"/>
+    <xs:attribute name="remapTo" type="xs:normalizedString"/>
+    <xs:attribute name="mode" type="xs:normalizedString"/>
+    <xs:attribute name="porDefault" type="xs:normalizedString"/>
+    <xs:attribute name="isdefault" type="xs:normalizedString"/>
+    <xs:attribute name="instance" type="xs:normalizedString"/>
+    <xs:attribute name="width" type="xs:normalizedString"/>
+</xs:schema>

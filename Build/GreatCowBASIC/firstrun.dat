@@ -1,0 +1,112 @@
+'Preferences file for Great Cow Graphical BASIC
+'Location: GCGB install dir
+
+[gcgb]
+warnrecursion = 0
+settingspanelwidth = 204
+indentsize = 20
+
+[gcbasic]
+verbose = n
+preserve = a
+programmer = ic-prog, nsprog
+pauseaftercompile = n
+
+[tool=ic-prog]
+desc = IC-Prog
+type = programmer
+command = %instdir%\..\icprog\icprog.exe
+params = -l"%FileName%"
+
+[tool=elabusb]
+desc = eLabtronics USB programmer
+type = programmer
+command = %instdir%\..\eLabtronics\usb.exe
+params = -TPIC%ChipModel% -L%ShortName%
+
+[tool=pickit2]
+desc = Microchip PICKit 2
+type = programmer
+command = %instdir%\..\pickit2\pk2cmd.exe
+params = -PPIC%ChipModel% -F"%FileName%" -B"%instdir%\..\pickit2" -M
+
+[tool = pk3cmd_ipe]
+type = programmer
+progconfig = LVP = On, MCLR = On
+desc = Microchip PICKit 3 - IPE Mode
+command = %instdir%\..\mplab_ipe\PK3CMD.exe
+params = /P%chipmodel% /F"%filename%" /M /V4.5
+workingdir = 
+
+[tool = avrdude]
+desc = avrdude (USBtinyISP)
+type = programmer
+command = %instdir%\..\avrdude\avrdude.exe
+workingdir = %pathpart%(%filename%)
+params = -c usbtiny -p AT%chipmodel% -U flash:w:%namepart%(%shortname%)
+
+[tool = pickit2avr]
+desc = avrdude (PICkit 2)
+type = programmer
+command = %instdir%\..\avrdude\avrdude.exe
+workingdir = %pathpart%(%filename%)
+params = -c pickit2 -p AT%chipmodel% -U flash:w:%namepart%(%shortname%)
+
+[tool = arduino]
+desc = avrdude (Arduino Duemilanove)
+type = programmer
+command = %instdir%\..\avrdude\avrdude.exe
+workingdir = %pathpart%(%filename%)
+params = -cstk500v1 -b57600 -P %port% -p AT%chipmodel% -U flash:w:%namepart%(%shortname%)
+port = COM30
+
+[tool = arduino-uno]
+desc = avrdude (Arduino Uno)
+type = programmer
+command = %instdir%\..\avrdude\avrdude.exe
+workingdir = %pathpart%(%filename%)
+params = -C"%instdir%\..\avrdude\avrdude.conf" -carduino -b115200 -P %port% -p AT%chipmodel% -U flash:w:%namepart%(%shortname%)
+port = COM2
+
+[tool = arduino-robot]
+desc = Arduino Leonardo/Robot
+type = programmer
+command = %instdir%\..\avrdude\ArduinoRobotLoader.exe
+workingdir = %instdir%\..\avrdude\
+params = %shortname%
+
+[tool = stk600]
+desc = Atmel STK600
+type = programmer
+command = %instdir%\..\stk600\atprogram.exe
+params = -t stk600 -i isp -d AT%chipmodel% program --verify -c -f %shortname%
+
+[tool = gcsim]
+desc = Great Cow Simulator
+type = programmer
+command = %instdir%\..\GCGBSim\Release\Great Cow Simulator.exe
+workingdir = %instdir%\..\GCGBSim\
+params = "%Filename%"
+
+[tool = pk2gui]
+desc = PICkit 2 GUI
+type = external
+command = %instdir%\..\pickit2gui\PICkit2V2.exe
+workingdir = %instdir%\..\pickit2gui\
+params = 
+
+[tool = xpress]
+desc = Microchip Xpress
+type = programmer
+command = %instdir%\..\XpressLoader\XpressLoader.exe
+params = "%filename%"
+workingdir = 
+
+[tool = nsprog]
+desc = NS
+type = programmer
+progconfig = LVP = On, MCLRE = EXTMCLR
+command = %instdir%\..\NS\nsprog.exe
+params = p -d "PIC%chipmodel%" -i "%filename%" -v
+workingdir = %instdir%\..\NS
+

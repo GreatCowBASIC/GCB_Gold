@@ -1,0 +1,31 @@
+'Preferences file for Great Cow Graphical BASIC
+'Location: GCGB install dir
+
+[gcgb]
+warnrecursion = 1
+useappdata = false
+restricted = false
+
+[gcbasic]
+verbose = 0
+preserve = n
+programmer = pickit2
+
+[tool=ic-prog]
+desc = IC-Prog
+type = programmer
+command = %instdir%\programmers\icprog.exe
+params = -l"%FileName%"
+
+[tool=pickit2]
+desc = Microchip PICKit 2
+type = programmer
+command = %instdir%\programmers\pk2cmd.exe
+params = -PPIC%ChipModel% -F"%FileName%" -B"%instdir%\programmers" -M
+
+[tool = avrdude]
+desc = avrdude (USBtinyISP)
+type = programmer
+command = %instdir%\programmers\avrdude.exe
+workingdir = %pathpart%(%filename%)
+params = -c usbtiny -p AT%chipmodel% -U flash:w:%namepart%(%shortname%)

@@ -1,0 +1,5 @@
+name=GCB Template
+id=GCB_Template
+lex=
+text=
+'''A program  for GCGB and GCB.'''--------------------------------------------------------------------------------------------------------------------------------'''This program [todo]''''''@author 		[todo]'''@licence		GPL'''@version		[todo]'''@date   		[todo]'''********************************************************************************; ----- Configuration #chip [todo] #config [todo] #include [todo]; ----- Constants  ' No Constants specified in this example.  ' [todo]; ----- Define Hardware settings  ' [todo]; ----- Variables  ' No Variables specified in this example. All byte variables are defined upon use.  ' [todo]; ----- Quick Command Reference:  [todo]; ----- Main body of program commences here.end; ----- Support methods.  Subroutines and Functions

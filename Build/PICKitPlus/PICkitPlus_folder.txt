@@ -1,0 +1,3 @@
+This is a file installed during the process of installing Great Cow BASIC.
+
+It is intentionaly empty of information.

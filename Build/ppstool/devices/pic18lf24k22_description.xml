@@ -1,0 +1,2622 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dosid="01270" id="" name="PIC18LF24K22" rev="" xsi:noNamespaceSchemaLocation="PCG.xsd">
+    <manager name="System Module">
+        <register alias="CONFIG1H" name="CONFIG1H" width="0x8">
+            <setting alias="FOSC" default="ECHPIO6" name="FOSC" description="Oscillator Selection bits">
+                <option description="111X External RC oscillator, CLKOUT function on RA6" name="RC" alias="RC" value="0xe"/>
+                <option description="EC oscillator (low power, &lt;500 kHz)" name="ECLPIO6" alias="ECLPIO6" value="0xd"/>
+                <option description="EC oscillator, CLKOUT function on OSC2 (low power, &lt;500 kHz)" name="ECLP" alias="ECLP" value="0xc"/>
+                <option description="EC oscillator (medium power, 500 kHz-16 MHz)" name="ECMPIO6" alias="ECMPIO6" value="0xb"/>
+                <option description="EC oscillator, CLKOUT function on OSC2 (medium power, 500 kHz-16 MHz)" name="ECMP" alias="ECMP" value="0xa"/>
+                <option description="Internal oscillator block, CLKOUT function on OSC2" name="INTIO7" alias="INTIO7" value="0x9"/>
+                <option description="Internal oscillator block" name="INTIO67" alias="INTIO67" value="0x8"/>
+                <option description="External RC oscillator" name="RCIO6" alias="RCIO6" value="0x7"/>
+                <option description="External RC oscillator, CLKOUT function on OSC2" name="RC" alias="RC" value="0x6"/>
+                <option description="EC oscillator (high power, &gt;16 MHz)" name="ECHPIO6" alias="ECHPIO6" value="0x5"/>
+                <option description="EC oscillator, CLKOUT function on OSC2 (high power, &gt;16 MHz)" name="ECHP" alias="ECHP" value="0x4"/>
+                <option description="HS oscillator (medium power 4-16 MHz)" name="HSMP" alias="HSMP" value="0x3"/>
+                <option description="HS oscillator (high power &gt; 16 MHz)" name="HSHP" alias="HSHP" value="0x2"/>
+                <option description="XT oscillator" name="XT" alias="XT" value="0x1"/>
+                <option description="LP oscillator" name="LP" alias="LP" value="0x0"/>
+            </setting>
+            <setting alias="PLLCFG" default="OFF" name="PLLCFG" description="4X PLL Enable">
+                <option description="Oscillator used directly" name="OFF" alias="OFF" value="0x0"/>
+                <option description="Oscillator multiplied by 4" name="ON" alias="ON" value="0x10"/>
+            </setting>
+            <setting alias="PRICLKEN" default="ON" name="PRICLKEN" description="Primary clock enable bit">
+                <option description="Primary clock can be disabled by software" name="OFF" alias="OFF" value="0x0"/>
+                <option description="Primary clock enabled" name="ON" alias="ON" value="0x20"/>
+            </setting>
+            <setting alias="FCMEN" default="OFF" name="FCMEN" description="Fail-Safe Clock Monitor Enable bit">
+                <option description="Fail-Safe Clock Monitor disabled" name="OFF" alias="OFF" value="0x0"/>
+                <option description="Fail-Safe Clock Monitor enabled" name="ON" alias="ON" value="0x40"/>
+            </setting>
+            <setting alias="IESO" default="OFF" name="IESO" description="Internal/External Oscillator Switchover bit">
+                <option description="Oscillator Switchover mode disabled" name="OFF" alias="OFF" value="0x0"/>
+                <option description="Oscillator Switchover mode enabled" name="ON" alias="ON" value="0x80"/>
+            </setting>
+        </register>
+        <register alias="CONFIG2L" name="CONFIG2L" width="0x8">
+            <setting alias="PWRTEN" default="OFF" name="PWRTEN" description="Power-up Timer Enable bit">
+                <option description="Power up timer disabled" name="OFF" alias="OFF" value="0x1"/>
+                <option description="Power up timer enabled" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="BOREN" default="SBORDIS" name="BOREN" description="Brown-out Reset Enable bits">
+                <option description="Brown-out Reset enabled in hardware only (SBOREN is disabled)" name="SBORDIS" alias="SBORDIS" value="0x6"/>
+                <option description="Brown-out Reset enabled in hardware only and disabled in Sleep mode (SBOREN is disabled)" name="NOSLP" alias="NOSLP" value="0x4"/>
+                <option description="Brown-out Reset enabled and controlled by software (SBOREN is enabled)" name="ON" alias="ON" value="0x2"/>
+                <option description="Brown-out Reset disabled in hardware and software" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="BORV" default="190" name="BORV" description="Brown Out Reset Voltage bits">
+                <option description="VBOR set to 1.90 V nominal" name="190" alias="190" value="0x18"/>
+                <option description="VBOR set to 2.20 V nominal" name="220" alias="220" value="0x10"/>
+                <option description="VBOR set to 2.50 V nominal" name="250" alias="250" value="0x8"/>
+                <option description="VBOR set to 2.85 V nominal" name="285" alias="285" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG2H" name="CONFIG2H" width="0x8">
+            <setting alias="WDTEN" default="ON" name="WDTEN" description="Watchdog Timer Enable bits">
+                <option description="WDT is always enabled. SWDTEN bit has no effect" name="ON" alias="ON" value="0x3"/>
+                <option description="WDT is controlled by SWDTEN bit of the WDTCON register" name="SWON" alias="SWON" value="0x2"/>
+                <option description="WDT is disabled in sleep, otherwise enabled. SWDTEN bit has no effect" name="NOSLP" alias="NOSLP" value="0x1"/>
+                <option description="Watch dog timer is always disabled. SWDTEN has no effect." name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="WDTPS" default="32768" name="WDTPS" description="Watchdog Timer Postscale Select bits">
+                <option description="1:32768" name="32768" alias="32768" value="0x3c"/>
+                <option description="1:16384" name="16384" alias="16384" value="0x38"/>
+                <option description="1:8192" name="8192" alias="8192" value="0x34"/>
+                <option description="1:4096" name="4096" alias="4096" value="0x30"/>
+                <option description="1:2048" name="2048" alias="2048" value="0x2c"/>
+                <option description="1:1024" name="1024" alias="1024" value="0x28"/>
+                <option description="1:512" name="512" alias="512" value="0x24"/>
+                <option description="1:256" name="256" alias="256" value="0x20"/>
+                <option description="1:128" name="128" alias="128" value="0x1c"/>
+                <option description="1:64" name="64" alias="64" value="0x18"/>
+                <option description="1:32" name="32" alias="32" value="0x14"/>
+                <option description="1:16" name="16" alias="16" value="0x10"/>
+                <option description="1:8" name="8" alias="8" value="0xc"/>
+                <option description="1:4" name="4" alias="4" value="0x8"/>
+                <option description="1:2" name="2" alias="2" value="0x4"/>
+                <option description="1:1" name="1" alias="1" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG3H" name="CONFIG3H" width="0x8">
+            <setting alias="CCP2MX" default="PORTC1" name="CCP2MX" description="CCP2 MUX bit">
+                <option description="CCP2 input/output is multiplexed with RC1" name="PORTC1" alias="PORTC1" value="0x1"/>
+                <option description="CCP2 input/output is multiplexed with RB3" name="PORTB3" alias="PORTB3" value="0x0"/>
+            </setting>
+            <setting alias="PBADEN" default="ON" name="PBADEN" description="PORTB A/D Enable bit">
+                <option description="PORTB&lt;5:0&gt; pins are configured as analog input channels on Reset" name="ON" alias="ON" value="0x2"/>
+                <option description="PORTB&lt;5:0&gt; pins are configured as digital I/O on Reset" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="CCP3MX" default="PORTB5" name="CCP3MX" description="P3A/CCP3 Mux bit">
+                <option description="P3A/CCP3 input/output is multiplexed with RB5" name="PORTB5" alias="PORTB5" value="0x4"/>
+                <option description="P3A/CCP3 input/output is mulitplexed with RC6" name="PORTC6" alias="PORTC6" value="0x0"/>
+            </setting>
+            <setting alias="HFOFST" default="ON" name="HFOFST" description="HFINTOSC Fast Start-up">
+                <option description="HFINTOSC output and ready status are not delayed by the oscillator stable status" name="ON" alias="ON" value="0x8"/>
+                <option description="HFINTOSC output and ready status are delayed by the oscillator stable status" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="T3CMX" default="PORTC0" name="T3CMX" description="Timer3 Clock input mux bit">
+                <option description="T3CKI is on RC0" name="PORTC0" alias="PORTC0" value="0x10"/>
+                <option description="T3CKI is on RB5" name="PORTB5" alias="PORTB5" value="0x0"/>
+            </setting>
+            <setting alias="P2BMX" default="PORTB5" name="P2BMX" description="ECCP2 B output mux bit">
+                <option description="P2B is on RB5" name="PORTB5" alias="PORTB5" value="0x20"/>
+                <option description="P2B is on RC0" name="PORTC0" alias="PORTC0" value="0x0"/>
+            </setting>
+            <setting alias="MCLRE" default="EXTMCLR" name="MCLRE" description="MCLR Pin Enable bit">
+                <option description="MCLR pin enabled, RE3 input pin disabled" name="EXTMCLR" alias="EXTMCLR" value="0x80"/>
+                <option description="RE3 input pin enabled; MCLR disabled" name="INTMCLR" alias="INTMCLR" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG4L" name="CONFIG4L" width="0x8">
+            <setting alias="STVREN" default="ON" name="STVREN" description="Stack Full/Underflow Reset Enable bit">
+                <option description="Stack full/underflow will cause Reset" name="ON" alias="ON" value="0x1"/>
+                <option description="Stack full/underflow will not cause Reset" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="LVP" default="ON" name="LVP" description="Single-Supply ICSP Enable bit">
+                <option description="Single-Supply ICSP enabled if MCLRE is also 1" name="ON" alias="ON" value="0x4"/>
+                <option description="Single-Supply ICSP disabled" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="XINST" default="OFF" name="XINST" description="Extended Instruction Set Enable bit">
+                <option description="Instruction set extension and Indexed Addressing mode enabled" name="ON" alias="ON" value="0x40"/>
+                <option description="Instruction set extension and Indexed Addressing mode disabled (Legacy mode)" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="DEBUG" default="OFF" name="DEBUG" description="Background Debug">
+                <option description="Disabled" name="OFF" alias="OFF" value="0x80"/>
+                <option description="Enabled" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG5L" name="CONFIG5L" width="0x8">
+            <setting alias="CP0" default="OFF" name="CP0" description="Code Protection Block 0">
+                <option description="Block 0 (000800-001FFFh) not code-protected" name="OFF" alias="OFF" value="0x1"/>
+                <option description="Block 0 (000800-001FFFh) code-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="CP1" default="OFF" name="CP1" description="Code Protection Block 1">
+                <option description="Block 1 (002000-003FFFh) not code-protected" name="OFF" alias="OFF" value="0x2"/>
+                <option description="Block 1 (002000-003FFFh) code-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG5H" name="CONFIG5H" width="0x8">
+            <setting alias="CPB" default="OFF" name="CPB" description="Boot Block Code Protection bit">
+                <option description="Boot block (000000-0007FFh) not code-protected" name="OFF" alias="OFF" value="0x40"/>
+                <option description="Boot block (000000-0007FFh) code-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="CPD" default="OFF" name="CPD" description="Data EEPROM Code Protection bit">
+                <option description="Data EEPROM not code-protected" name="OFF" alias="OFF" value="0x80"/>
+                <option description="Data EEPROM code-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG6L" name="CONFIG6L" width="0x8">
+            <setting alias="WRT0" default="OFF" name="WRT0" description="Write Protection Block 0">
+                <option description="Block 0 (000800-001FFFh) not write-protected" name="OFF" alias="OFF" value="0x1"/>
+                <option description="Block 0 (000800-001FFFh) write-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="WRT1" default="OFF" name="WRT1" description="Write Protection Block 1">
+                <option description="Block 1 (002000-003FFFh) not write-protected" name="OFF" alias="OFF" value="0x2"/>
+                <option description="Block 1 (002000-003FFFh) write-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG6H" name="CONFIG6H" width="0x8">
+            <setting alias="WRTC" default="OFF" name="WRTC" description="Configuration Register Write Protection bit">
+                <option description="Configuration registers (300000-3000FFh) not write-protected" name="OFF" alias="OFF" value="0x20"/>
+                <option description="Configuration registers (300000-3000FFh) write-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="WRTB" default="OFF" name="WRTB" description="Boot Block Write Protection bit">
+                <option description="Boot Block (000000-0007FFh) not write-protected" name="OFF" alias="OFF" value="0x40"/>
+                <option description="Boot Block (000000-0007FFh) write-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="WRTD" default="OFF" name="WRTD" description="Data EEPROM Write Protection bit">
+                <option description="Data EEPROM not write-protected" name="OFF" alias="OFF" value="0x80"/>
+                <option description="Data EEPROM write-protected" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG7L" name="CONFIG7L" width="0x8">
+            <setting alias="EBTR0" default="OFF" name="EBTR0" description="Table Read Protection Block 0">
+                <option description="Block 0 (000800-001FFFh) not protected from table reads executed in other blocks" name="OFF" alias="OFF" value="0x1"/>
+                <option description="Block 0 (000800-001FFFh) protected from table reads executed in other blocks" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="EBTR1" default="OFF" name="EBTR1" description="Table Read Protection Block 1">
+                <option description="Block 1 (002000-003FFFh) not protected from table reads executed in other blocks" name="OFF" alias="OFF" value="0x2"/>
+                <option description="Block 1 (002000-003FFFh) protected from table reads executed in other blocks" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="CONFIG7H" name="CONFIG7H" width="0x8">
+            <setting alias="EBTRB" default="OFF" name="EBTRB" description="Boot Block Table Read Protection bit">
+                <option description="Boot Block (000000-0007FFh) not protected from table reads executed in other blocks" name="OFF" alias="OFF" value="0x40"/>
+                <option description="Boot Block (000000-0007FFh) protected from table reads executed in other blocks" name="ON" alias="ON" value="0x0"/>
+            </setting>
+        </register>
+        <modules>
+            <module group="Internal Oscillator" name="INTERNAL OSCILLATOR" type="osc" version="v1" sub_version="a0" instance="">
+                <property name="PLLType" value="4XPLL"/>
+                <property name="freqMaxEC" value="64000000"/>
+                <property name="freqMaxHS" value="20000000"/>
+                <property name="freqMinPLLEC" value="4000000"/>
+                <property name="freqMaxPLLEC" value="16000000"/>
+                <property name="freqMinPLLINTOSC" value="4000000"/>
+                <property name="freqMaxPLLINTOSC" value="16000000"/>
+                <register alias="OSCCON" name="OSCCON" type="R,W" width="8">
+                    <setting alias="SCS" default="FOSC" name="SCS" mask="0x3" type="R,W" porDefault="0x0">
+                        <option name="FOSC" alias="FOSC" value="0x0"/>
+                        <option name="SOSC" alias="SOSC" value="0x1"/>
+                        <option name="INTOSC" alias="INTOSC" value="0x2"/>
+                    </setting>
+                    <setting alias="HFIOFS" default="not stable" name="IOFS" mask="0x4" type="R" porDefault="0x0">
+                        <option name="not stable" alias="not stable" value="0x0"/>
+                        <option name="stable" alias="stable" value="0x1"/>
+                    </setting>
+                    <setting alias="OSTS" default="intosc" name="OSTS" mask="0x8" type="R" porDefault="0x0">
+                        <option name="intosc" alias="intosc" value="0x0"/>
+                        <option name="clock" alias="clock" value="0x1"/>
+                    </setting>
+                    <setting alias="IRCF" default="1MHz_HFINTOSC/16" name="IRCF" mask="0x70" type="R,W" porDefault="0x6">
+                        <option name="16MHz_HFINTOSC" alias="16MHz_HFINTOSC" value="0x7"/>
+                        <option name="8MHz_HFINTOSC/2" alias="8MHz_HFINTOSC/2" value="0x6"/>
+                        <option name="4MHz_HFINTOSC/4" alias="4MHz_HFINTOSC/4" value="0x5"/>
+                        <option name="2MHz_HFINTOSC/8" alias="2MHz_HFINTOSC/8" value="0x4"/>
+                        <option name="1MHz_HFINTOSC/16" alias="1MHz_HFINTOSC/16" value="0x3"/>
+                        <option name="500KHz_HFINTOSC/32" alias="500KHz_HFINTOSC/32" value="0x2"/>
+                        <option name="250KHz_HFINTOSC/64" alias="250KHz_HFINTOSC/64" value="0x1"/>
+                        <option name="31KHz_HFINTOSC/512" alias="31KHz_HFINTOSC/512" value="0x0"/>
+                        <option name="500KHz_MFINTOSC" alias="500KHz_MFINTOSC" value="0x2"/>
+                        <option name="250KHz_MFINTOSC/2" alias="250KHz_MFINTOSC/2" value="0x1"/>
+                        <option name="31KHz_MFINTOSC/16" alias="31KHz_MFINTOSC/16" value="0x0"/>
+                        <option name="31KHz_LFINTOSC" alias="31KHz_LFINTOSC" value="0x0"/>
+                    </setting>
+                    <setting alias="IDLEN" default="disabled" name="IDLEN" mask="0x80" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="OSCCON2" name="OSCCON2" type="R,W" width="8">
+                    <setting alias="LFIOFS" default="not stable" name="LFIOFS" mask="0x1" type="R" porDefault="0x0">
+                        <option name="not stable" alias="not stable" value="0x0"/>
+                        <option name="stable" alias="stable" value="0x1"/>
+                    </setting>
+                    <setting alias="MFIOFS" default="not stable" name="MFIOFS" mask="0x2" type="R" porDefault="0x0">
+                        <option name="not stable" alias="not stable" value="0x0"/>
+                        <option name="stable" alias="stable" value="0x1"/>
+                    </setting>
+                    <setting alias="PRISD" default="enabled" name="PRISD" mask="0x4" type="R,W" porDefault="0x1">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="SOSCGO" default="disabled" name="SOSCGO" mask="0x8" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="MFIOSEL" default="disabled" name="MFIOSEL" mask="0x10" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="SOSCRUN" default="disabled" name="SOSCRUN" mask="0x40" type="R" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="PLLRDY" default="NOPLL" name="PLLRDY" mask="0x80" type="R" porDefault="0x0">
+                        <option name="NOPLL" alias="NOPLL" value="0x0"/>
+                        <option name="PLL" alias="PLL" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="OSCTUNE" name="OSCTUNE" type="R,W" width="8">
+                    <setting alias="TUN" default="0x00" name="TUN" mask="0x3f" type="R,W" porDefault="0x0"/>
+                    <setting alias="PLLEN" default="disabled" name="PLLEN" mask="0x40" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="INTSRC" default="disabled" name="INTSRC" mask="0x80" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+            </module>
+            <module group="RESET" name="RESET" type="rst" version="v6" sub_version="b0" instance="">
+                <register alias="RCON" name="RCON" type="R,W" width="8">
+                    <setting alias="BOR" default="occurred" name="BOR" mask="0x1" type="R,W" porDefault="0x0" description="Brown-out Reset Flag">
+                        <option name="occurred" alias="occurred" value="0x0"/>
+                        <option name="did not occur" alias="did not occur" value="0x1"/>
+                    </setting>
+                    <setting alias="POR" default="occurred" name="POR" mask="0x2" type="R,W" porDefault="0x0" description="Power-on Reset Flag">
+                        <option name="occurred" alias="occurred" value="0x0"/>
+                        <option name="did not occur" alias="did not occur" value="0x1"/>
+                    </setting>
+                    <setting alias="PD" default="POR or CLRWDT" name="PD" mask="0x4" type="R" porDefault="0x1" description="Power-down Detection Flag">
+                        <option name="sleep" alias="sleep" value="0x0"/>
+                        <option name="POR or CLRWDT" alias="POR or CLRWDT" value="0x1"/>
+                    </setting>
+                    <setting alias="TO" default="POR or CLRWDT" name="TO" mask="0x8" type="R" porDefault="0x1" description="Watchdog Time-out Flag">
+                        <option name="sleep" alias="sleep" value="0x0"/>
+                        <option name="POR or CLRWDT" alias="POR or CLRWDT" value="0x1"/>
+                    </setting>
+                    <setting alias="RI" default="did not occur" name="RI" mask="0x10" type="R,W" porDefault="0x1" description="Reset Instruction Flag">
+                        <option name="occurred" alias="occurred" value="0x0"/>
+                        <option name="did not occur" alias="did not occur" value="0x1"/>
+                    </setting>
+                    <setting alias="SBOREN" default="enabled" name="SBOREN" mask="0x40" type="R,W" porDefault="0x1" description="BOR Software Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="IPEN" default="disabled" name="IPEN" mask="0x80" type="R,W" porDefault="0x0" description="Interrupt Priority Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+            </module>
+            <module group="ICD" name="ICD" type="icd" version="v8" sub_version="b0" instance=""/>
+            <module group="CPU" name="CPU" type="cpu_p18f_core" version="v3" sub_version="c0" instance=""/>
+            <module group="WDT" name="WDT" type="wdt_wdtpwrt" version="v3" sub_version="c0" instance=""/>
+            <module group="POR" name="POR" type="por" version="v6" sub_version="c1" instance=""/>
+        </modules>
+    </manager>
+    <pins>
+        <pin name="RE3">
+            <pinNumber package="QFN28" value="26"/>
+            <pinNumber package="UQFN28" value="26"/>
+            <pinNumber package="PDIP28" value="1"/>
+            <pinNumber package="SOIC28" value="1"/>
+            <pinNumber package="SSOP28" value="1"/>
+            <pinAlias alias="RE3" module="GPIO"/>
+            <pinAlias alias="MCLR" module="RESET">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="MCLRE" value="EXTMCLR"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="VPP" module="RESET"/>
+        </pin>
+        <pin ansel="ANSA0" lat="LATA0" name="RA0" tris="TRISA0">
+            <pinNumber package="QFN28" value="27"/>
+            <pinNumber package="UQFN28" value="27"/>
+            <pinNumber package="PDIP28" value="2"/>
+            <pinNumber package="SOIC28" value="2"/>
+            <pinNumber package="SSOP28" value="2"/>
+            <pinAlias alias="RA0" module="GPIO"/>
+            <pinAlias alias="AN0" module="ADC"/>
+            <pinAlias alias="C1IN0-" module="CMP1"/>
+            <pinAlias alias="C2IN0-" module="CMP2"/>
+        </pin>
+        <pin ansel="ANSA1" lat="LATA1" name="RA1" tris="TRISA1">
+            <pinNumber package="QFN28" value="28"/>
+            <pinNumber package="UQFN28" value="28"/>
+            <pinNumber package="PDIP28" value="3"/>
+            <pinNumber package="SOIC28" value="3"/>
+            <pinNumber package="SSOP28" value="3"/>
+            <pinAlias alias="RA1" module="GPIO"/>
+            <pinAlias alias="AN1" module="ADC"/>
+            <pinAlias alias="C1IN1-" module="CMP1"/>
+            <pinAlias alias="C2IN1-" module="CMP2"/>
+        </pin>
+        <pin ansel="ANSA2" lat="LATA2" name="RA2" tris="TRISA2">
+            <pinNumber package="QFN28" value="1"/>
+            <pinNumber package="UQFN28" value="1"/>
+            <pinNumber package="PDIP28" value="4"/>
+            <pinNumber package="SOIC28" value="4"/>
+            <pinNumber package="SSOP28" value="4"/>
+            <pinAlias alias="RA2" module="GPIO"/>
+            <pinAlias alias="AN2" module="ADC"/>
+            <pinAlias alias="C2IN+" module="CMP2"/>
+            <pinAlias alias="VREF-" module="ADC"/>
+            <pinAlias alias="VREF-" module="DAC"/>
+            <pinAlias alias="DACOUT" module="DAC"/>
+        </pin>
+        <pin ansel="ANSA3" lat="LATA3" name="RA3" tris="TRISA3">
+            <pinNumber package="QFN28" value="2"/>
+            <pinNumber package="UQFN28" value="2"/>
+            <pinNumber package="PDIP28" value="5"/>
+            <pinNumber package="SOIC28" value="5"/>
+            <pinNumber package="SSOP28" value="5"/>
+            <pinAlias alias="RA3" module="GPIO"/>
+            <pinAlias alias="AN3" module="ADC"/>
+            <pinAlias alias="C1IN+" module="CMP1"/>
+            <pinAlias alias="VREF+" module="ADC"/>
+            <pinAlias alias="VREF+" module="DAC"/>
+        </pin>
+        <pin lat="LATA4" name="RA4" tris="TRISA4">
+            <pinNumber package="QFN28" value="3"/>
+            <pinNumber package="UQFN28" value="3"/>
+            <pinNumber package="PDIP28" value="6"/>
+            <pinNumber package="SOIC28" value="6"/>
+            <pinNumber package="SSOP28" value="6"/>
+            <pinAlias alias="RA4" module="GPIO"/>
+            <pinAlias alias="C1OUT" module="CMP1"/>
+            <pinAlias alias="SRQ" module="SRLATCH"/>
+            <pinAlias alias="CCP5" module="CCP5"/>
+            <pinAlias alias="T0CKI" module="TMR0"/>
+        </pin>
+        <pin ansel="ANSA5" lat="LATA5" name="RA5" tris="TRISA5">
+            <pinNumber package="QFN28" value="4"/>
+            <pinNumber package="UQFN28" value="4"/>
+            <pinNumber package="PDIP28" value="7"/>
+            <pinNumber package="SOIC28" value="7"/>
+            <pinNumber package="SSOP28" value="7"/>
+            <pinAlias alias="RA5" module="GPIO"/>
+            <pinAlias alias="AN4" module="ADC"/>
+            <pinAlias alias="C2OUT" module="CMP2"/>
+            <pinAlias alias="SRNQ" module="SRLATCH"/>
+            <pinAlias alias="HLVDIN" module="HLVD"/>
+            <pinAlias alias="SS1" module="MSSP1"/>
+        </pin>
+        <pin name="VSS">
+            <pinNumber package="QFN28" value="5"/>
+            <pinNumber package="UQFN28" value="5"/>
+            <pinNumber package="PDIP28" value="8"/>
+            <pinNumber package="SOIC28" value="8"/>
+            <pinNumber package="SSOP28" value="8"/>
+            <pinAlias alias="VSS" module="POWER"/>
+        </pin>
+        <pin lat="LATA7" name="RA7" tris="TRISA7">
+            <pinNumber package="QFN28" value="6"/>
+            <pinNumber package="UQFN28" value="6"/>
+            <pinNumber package="PDIP28" value="9"/>
+            <pinNumber package="SOIC28" value="9"/>
+            <pinNumber package="SSOP28" value="9"/>
+            <pinAlias alias="RA7" module="GPIO"/>
+            <pinAlias alias="OSC1" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="HSMP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="RC"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECLPIO6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECLP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECMPIO6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECMP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="RCIO6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECHPIO6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKI" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="ECHP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="OSC1" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="HSHP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="OSC1" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="XT"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="OSC1" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="LP"/>
+                </constraint>
+            </pinAlias>
+        </pin>
+        <pin lat="LATA6" name="RA6" tris="TRISA6">
+            <pinNumber package="QFN28" value="7"/>
+            <pinNumber package="UQFN28" value="7"/>
+            <pinNumber package="PDIP28" value="10"/>
+            <pinNumber package="SOIC28" value="10"/>
+            <pinNumber package="SSOP28" value="10"/>
+            <pinAlias alias="RA6" module="GPIO"/>
+            <pinAlias alias="OSC2" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="HSMP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="CLKO" module="INTERNAL OSCILLATOR"/>
+            <pinAlias alias="OSC2" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="HSHP"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="OSC2" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="XT"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="OSC2" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="LP"/>
+                </constraint>
+            </pinAlias>
+        </pin>
+        <pin lat="LATC0" name="RC0" tris="TRISC0">
+            <pinNumber package="QFN28" value="8"/>
+            <pinNumber package="UQFN28" value="8"/>
+            <pinNumber package="PDIP28" value="11"/>
+            <pinNumber package="SOIC28" value="11"/>
+            <pinNumber package="SSOP28" value="11"/>
+            <pinAlias alias="RC0" module="GPIO"/>
+            <pinAlias alias="P2B" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="P2BMX" value="PORTC0"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="SOSCO" module="INTERNAL OSCILLATOR"/>
+            <pinAlias alias="T1CKI" module="TMR1"/>
+            <pinAlias alias="T3CKI" module="TMR3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="T3CMX" value="PORTC0"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="T3G" module="TMR3"/>
+        </pin>
+        <pin lat="LATC1" name="RC1" tris="TRISC1">
+            <pinNumber package="QFN28" value="9"/>
+            <pinNumber package="UQFN28" value="9"/>
+            <pinNumber package="PDIP28" value="12"/>
+            <pinNumber package="SOIC28" value="12"/>
+            <pinNumber package="SSOP28" value="12"/>
+            <pinAlias alias="RC1" module="GPIO"/>
+            <pinAlias alias="CCP2" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP2MX" value="PORTC1"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="P2A" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP2MX" value="PORTC1"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="SOSCI" module="INTERNAL OSCILLATOR"/>
+        </pin>
+        <pin ansel="ANSC2" lat="LATC2" name="RC2" tris="TRISC2">
+            <pinNumber package="QFN28" value="10"/>
+            <pinNumber package="UQFN28" value="10"/>
+            <pinNumber package="PDIP28" value="13"/>
+            <pinNumber package="SOIC28" value="13"/>
+            <pinNumber package="SSOP28" value="13"/>
+            <pinAlias alias="RC2" module="GPIO"/>
+            <pinAlias alias="AN14" module="ADC"/>
+            <pinAlias alias="CTPLS" module="CTMU"/>
+            <pinAlias alias="CCP1" module="ECCP1"/>
+            <pinAlias alias="P1A" module="ECCP1"/>
+            <pinAlias alias="T5CKI" module="TMR5"/>
+        </pin>
+        <pin ansel="ANSC3" lat="LATC3" name="RC3" tris="TRISC3">
+            <pinNumber package="QFN28" value="11"/>
+            <pinNumber package="UQFN28" value="11"/>
+            <pinNumber package="PDIP28" value="14"/>
+            <pinNumber package="SOIC28" value="14"/>
+            <pinNumber package="SSOP28" value="14"/>
+            <pinAlias alias="RC3" module="GPIO"/>
+            <pinAlias alias="AN15" module="ADC"/>
+            <pinAlias alias="SCK1" module="MSSP1"/>
+            <pinAlias alias="SCL1" module="MSSP1"/>
+        </pin>
+        <pin ansel="ANSC4" lat="LATC4" name="RC4" tris="TRISC4">
+            <pinNumber package="QFN28" value="12"/>
+            <pinNumber package="UQFN28" value="12"/>
+            <pinNumber package="PDIP28" value="15"/>
+            <pinNumber package="SOIC28" value="15"/>
+            <pinNumber package="SSOP28" value="15"/>
+            <pinAlias alias="RC4" module="GPIO"/>
+            <pinAlias alias="AN16" module="ADC"/>
+            <pinAlias alias="SDI1" module="MSSP1"/>
+            <pinAlias alias="SDA1" module="MSSP1"/>
+        </pin>
+        <pin ansel="ANSC5" lat="LATC5" name="RC5" tris="TRISC5">
+            <pinNumber package="QFN28" value="13"/>
+            <pinNumber package="UQFN28" value="13"/>
+            <pinNumber package="PDIP28" value="16"/>
+            <pinNumber package="SOIC28" value="16"/>
+            <pinNumber package="SSOP28" value="16"/>
+            <pinAlias alias="RC5" module="GPIO"/>
+            <pinAlias alias="AN17" module="ADC"/>
+            <pinAlias alias="SDO1" module="MSSP1"/>
+        </pin>
+        <pin ansel="ANSC6" lat="LATC6" name="RC6" tris="TRISC6">
+            <pinNumber package="QFN28" value="14"/>
+            <pinNumber package="UQFN28" value="14"/>
+            <pinNumber package="PDIP28" value="17"/>
+            <pinNumber package="SOIC28" value="17"/>
+            <pinNumber package="SSOP28" value="17"/>
+            <pinAlias alias="RC6" module="GPIO"/>
+            <pinAlias alias="AN18" module="ADC"/>
+            <pinAlias alias="CCP3" module="ECCP3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP3MX" value="PORTC6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="P3A" module="ECCP3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP3MX" value="PORTC6"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="TX1" module="EUSART1"/>
+            <pinAlias alias="CK1" module="EUSART1"/>
+        </pin>
+        <pin ansel="ANSC7" lat="LATC7" name="RC7" tris="TRISC7">
+            <pinNumber package="QFN28" value="15"/>
+            <pinNumber package="UQFN28" value="15"/>
+            <pinNumber package="PDIP28" value="18"/>
+            <pinNumber package="SOIC28" value="18"/>
+            <pinNumber package="SSOP28" value="18"/>
+            <pinAlias alias="RC7" module="GPIO"/>
+            <pinAlias alias="AN19" module="ADC"/>
+            <pinAlias alias="P3B" module="ECCP3"/>
+            <pinAlias alias="RX1" module="EUSART1"/>
+            <pinAlias alias="DT1" module="EUSART1"/>
+        </pin>
+        <pin name="VSS">
+            <pinNumber package="QFN28" value="16"/>
+            <pinNumber package="UQFN28" value="16"/>
+            <pinNumber package="PDIP28" value="19"/>
+            <pinNumber package="SOIC28" value="19"/>
+            <pinNumber package="SSOP28" value="19"/>
+            <pinAlias alias="VSS" module="POWER"/>
+        </pin>
+        <pin name="VDD">
+            <pinNumber package="QFN28" value="17"/>
+            <pinNumber package="UQFN28" value="17"/>
+            <pinNumber package="PDIP28" value="20"/>
+            <pinNumber package="SOIC28" value="20"/>
+            <pinNumber package="SSOP28" value="20"/>
+            <pinAlias alias="VDD" module="POWER"/>
+        </pin>
+        <pin ansel="ANSB0" lat="LATB0" name="RB0" tris="TRISB0" wpu="WPUB0">
+            <pinNumber package="QFN28" value="18"/>
+            <pinNumber package="UQFN28" value="18"/>
+            <pinNumber package="PDIP28" value="21"/>
+            <pinNumber package="SOIC28" value="21"/>
+            <pinNumber package="SSOP28" value="21"/>
+            <pinAlias alias="RB0" module="GPIO"/>
+            <pinAlias alias="AN12" module="ADC"/>
+            <pinAlias alias="SRI" module="SRLATCH"/>
+            <pinAlias alias="CCP4" module="CCP4"/>
+            <pinAlias alias="FLT0" module="ECCP1/ECCP2/ECCP3"/>
+            <pinAlias alias="SS2" module="MSSP2"/>
+            <pinAlias alias="INT0" module="EXT_INT"/>
+        </pin>
+        <pin ansel="ANSB1" lat="LATB1" name="RB1" tris="TRISB1" wpu="WPUB1">
+            <pinNumber package="QFN28" value="19"/>
+            <pinNumber package="UQFN28" value="19"/>
+            <pinNumber package="PDIP28" value="22"/>
+            <pinNumber package="SOIC28" value="22"/>
+            <pinNumber package="SSOP28" value="22"/>
+            <pinAlias alias="RB1" module="GPIO"/>
+            <pinAlias alias="AN10" module="ADC"/>
+            <pinAlias alias="C1IN3-" module="CMP1"/>
+            <pinAlias alias="C2IN3-" module="CMP2"/>
+            <pinAlias alias="P1C" module="ECCP1"/>
+            <pinAlias alias="SCK2" module="MSSP2"/>
+            <pinAlias alias="SCL2" module="MSSP2"/>
+            <pinAlias alias="INT1" module="EXT_INT"/>
+        </pin>
+        <pin ansel="ANSB2" lat="LATB2" name="RB2" tris="TRISB2" wpu="WPUB2">
+            <pinNumber package="QFN28" value="20"/>
+            <pinNumber package="UQFN28" value="20"/>
+            <pinNumber package="PDIP28" value="23"/>
+            <pinNumber package="SOIC28" value="23"/>
+            <pinNumber package="SSOP28" value="23"/>
+            <pinAlias alias="RB2" module="GPIO"/>
+            <pinAlias alias="AN8" module="ADC"/>
+            <pinAlias alias="CTED1" module="CTMU"/>
+            <pinAlias alias="P1B" module="ECCP1"/>
+            <pinAlias alias="SDI2" module="MSSP2"/>
+            <pinAlias alias="SDA2" module="MSSP2"/>
+            <pinAlias alias="INT2" module="EXT_INT"/>
+        </pin>
+        <pin ansel="ANSB3" lat="LATB3" name="RB3" tris="TRISB3" wpu="WPUB3">
+            <pinNumber package="QFN28" value="21"/>
+            <pinNumber package="UQFN28" value="21"/>
+            <pinNumber package="PDIP28" value="24"/>
+            <pinNumber package="SOIC28" value="24"/>
+            <pinNumber package="SSOP28" value="24"/>
+            <pinAlias alias="RB3" module="GPIO"/>
+            <pinAlias alias="AN9" module="ADC"/>
+            <pinAlias alias="C1IN2-" module="CMP1"/>
+            <pinAlias alias="C2IN2-" module="CMP2"/>
+            <pinAlias alias="CTED2" module="CTMU"/>
+            <pinAlias alias="CCP2" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP2MX" value="PORTB3"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="P2A" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP2MX" value="PORTB3"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="SDO2" module="MSSP2"/>
+        </pin>
+        <pin ansel="ANSB4" lat="LATB4" name="RB4" tris="TRISB4" wpu="WPUB4" cn="RB4">
+            <pinNumber package="QFN28" value="22"/>
+            <pinNumber package="UQFN28" value="22"/>
+            <pinNumber package="PDIP28" value="25"/>
+            <pinNumber package="SOIC28" value="25"/>
+            <pinNumber package="SSOP28" value="25"/>
+            <pinAlias alias="RB4" module="GPIO"/>
+            <pinAlias alias="AN11" module="ADC"/>
+            <pinAlias alias="P1D" module="ECCP1"/>
+            <pinAlias alias="T5G" module="TMR5"/>
+        </pin>
+        <pin ansel="ANSB5" lat="LATB5" name="RB5" tris="TRISB5" wpu="WPUB5" cn="RB5">
+            <pinNumber package="QFN28" value="23"/>
+            <pinNumber package="UQFN28" value="23"/>
+            <pinNumber package="PDIP28" value="26"/>
+            <pinNumber package="SOIC28" value="26"/>
+            <pinNumber package="SSOP28" value="26"/>
+            <pinAlias alias="RB5" module="GPIO"/>
+            <pinAlias alias="AN13" module="ADC"/>
+            <pinAlias alias="CCP3" module="ECCP3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP3MX" value="PORTB5"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="P3A" module="ECCP3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="CCP3MX" value="PORTB5"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="P2B" module="ECCP2">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="P2BMX" value="PORTB5"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="T1G" module="TMR1"/>
+            <pinAlias alias="T3CKI" module="TMR3">
+                <constraint name="configBit" type="alt">
+                    <constraintVariable name="T3CMX" value="PORTB5"/>
+                </constraint>
+            </pinAlias>
+        </pin>
+        <pin lat="LATB6" name="RB6" tris="TRISB6" wpu="WPUB6" cn="RB6">
+            <pinNumber package="QFN28" value="24"/>
+            <pinNumber package="UQFN28" value="24"/>
+            <pinNumber package="PDIP28" value="27"/>
+            <pinNumber package="SOIC28" value="27"/>
+            <pinNumber package="SSOP28" value="27"/>
+            <pinAlias alias="RB6" module="GPIO"/>
+            <pinAlias alias="TX2" module="EUSART2"/>
+            <pinAlias alias="CK2" module="EUSART2"/>
+        </pin>
+        <pin lat="LATB7" name="RB7" tris="TRISB7" wpu="WPUB7" cn="RB7">
+            <pinNumber package="QFN28" value="25"/>
+            <pinNumber package="UQFN28" value="25"/>
+            <pinNumber package="PDIP28" value="28"/>
+            <pinNumber package="SOIC28" value="28"/>
+            <pinNumber package="SSOP28" value="28"/>
+            <pinAlias alias="RB7" module="GPIO"/>
+            <pinAlias alias="RX2" module="EUSART2"/>
+            <pinAlias alias="DT2" module="EUSART2"/>
+        </pin>
+    </pins>
+    <manager name="Pin Manager">
+        <register alias="ANSELA" name="ANSELA" width="8">
+            <setting alias="ANSA0" default="analog" name="ANSA0" mask="0x1">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA1" default="analog" name="ANSA1" mask="0x2">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA2" default="analog" name="ANSA2" mask="0x4">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA3" default="analog" name="ANSA3" mask="0x8">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA5" default="analog" name="ANSA5" mask="0x20">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="ANSELB" name="ANSELB" width="8">
+            <setting alias="ANSB0" default="analog" name="ANSB0" mask="0x1">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSB1" default="analog" name="ANSB1" mask="0x2">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSB2" default="analog" name="ANSB2" mask="0x4">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSB3" default="analog" name="ANSB3" mask="0x8">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSB4" default="analog" name="ANSB4" mask="0x10">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSB5" default="analog" name="ANSB5" mask="0x20">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="ANSELC" name="ANSELC" width="8">
+            <setting alias="ANSC2" default="analog" name="ANSC2" mask="0x4">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSC3" default="analog" name="ANSC3" mask="0x8">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSC4" default="analog" name="ANSC4" mask="0x10">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSC5" default="analog" name="ANSC5" mask="0x20">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSC6" default="analog" name="ANSC6" mask="0x40">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSC7" default="analog" name="ANSC7" mask="0x80">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="IOCB" name="IOCB" width="8">
+            <setting alias="IOCB4" default="enabled" name="IOCB4" mask="0x10">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCB5" default="enabled" name="IOCB5" mask="0x20">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCB6" default="enabled" name="IOCB6" mask="0x40">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCB7" default="enabled" name="IOCB7" mask="0x80">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+        </register>
+        <interrupt name="RBI" flag="INTCONbits.RBIF" enable="INTCONbits.RBIE" priority="INTCON2bits.RBIP"/>
+        <register alias="INTCON2" name="INTCON2" type="R,W" width="8">
+            <setting alias="nWPUEN" default="disabled" name="nRBPU" mask="0x80" type="R,W" porDefault="0x1" description="Port B Pull-up Enable">
+                <option name="enabled" alias="enabled" value="0x0"/>
+                <option name="disabled" alias="disabled" value="0x1"/>
+            </setting>
+        </register>
+    </manager>
+    <modules>
+        <module group="ADC" name="ADC" type="adc_sarcore_10bit" version="v4" sub_version="f3" instance="">
+            <interrupt name="ADI" flag="PIR1bits.ADIF" enable="PIE1bits.ADIE" priority="IPR1bits.ADIP"/>
+            <property name="minimumTad" value="1E-6"/>
+            <property name="maximumTad" value="4E-6"/>
+            <register alias="ADCON0" name="ADCON0" type="R,W" width="8">
+                <setting alias="ADON" default="disabled" name="ADON" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GO_nDONE" default="stop" name="GO_nDONE" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="stop" alias="stop" value="0x0"/>
+                    <option name="start" alias="start" value="0x1"/>
+                </setting>
+                <setting alias="CHS" default="AN0" name="CHS" mask="0x7c" type="R,W" porDefault="0x0">
+                    <option name="AN0" alias="AN0" value="0x0"/>
+                    <option name="AN1" alias="AN1" value="0x1"/>
+                    <option name="AN2" alias="AN2" value="0x2"/>
+                    <option name="AN3" alias="AN3" value="0x3"/>
+                    <option name="AN4" alias="AN4" value="0x4"/>
+                    <option name="AN8" alias="AN8" value="0x8"/>
+                    <option name="AN9" alias="AN9" value="0x9"/>
+                    <option name="AN10" alias="AN10" value="0xa"/>
+                    <option name="AN11" alias="AN11" value="0xb"/>
+                    <option name="AN12" alias="AN12" value="0xc"/>
+                    <option name="AN13" alias="AN13" value="0xd"/>
+                    <option name="AN14" alias="AN14" value="0xe"/>
+                    <option name="AN15" alias="AN15" value="0xf"/>
+                    <option name="AN16" alias="AN16" value="0x10"/>
+                    <option name="AN17" alias="AN17" value="0x11"/>
+                    <option name="AN18" alias="AN18" value="0x12"/>
+                    <option name="AN19" alias="AN19" value="0x13"/>
+                    <option name="CTMU" alias="CTMU" value="0x1d"/>
+                    <option name="DAC" alias="DAC" value="0x1e"/>
+                    <option name="FVRBuf2" alias="FVRBuf2" value="0x1f"/>
+                </setting>
+            </register>
+            <register alias="ADCON1" name="ADCON1" type="R,W" width="8">
+                <setting alias="ADNREF" default="VSS" name="NVCFG" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="VSS" alias="VSS" value="0x0"/>
+                    <option name="external" alias="external" value="0x1"/>
+                </setting>
+                <setting alias="ADPREF" default="VDD" name="PVCFG" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="VDD" alias="VDD" value="0x0"/>
+                    <option name="external" alias="external" value="0x1"/>
+                    <option name="FVRbuf2" alias="FVRbuf2" value="0x2"/>
+                </setting>
+                <setting alias="TRIGSEL" default="CCP5" name="TRIGSEL" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="CCP5" alias="CCP5" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="ADCON2" name="ADCON2" type="R,W" width="8">
+                <setting alias="ADCS" default="FOSC/2" name="ADCS" mask="0x7" type="R,W" porDefault="0x0">
+                    <option name="FOSC/2" alias="FOSC/2" value="0x0"/>
+                    <option name="FOSC/8" alias="FOSC/8" value="0x1"/>
+                    <option name="FOSC/32" alias="FOSC/32" value="0x2"/>
+                    <option name="FOSC/4" alias="FOSC/4" value="0x4"/>
+                    <option name="FOSC/16" alias="FOSC/16" value="0x5"/>
+                    <option name="FOSC/64" alias="FOSC/64" value="0x6"/>
+                    <option name="Frc" alias="Frc" value="0x7"/>
+                </setting>
+                <setting alias="ACQT" default="0" name="ACQT" mask="0x38" type="R,W" porDefault="0x0">
+                    <option name="0" alias="0" value="0x0"/>
+                    <option name="2" alias="2" value="0x1"/>
+                    <option name="4" alias="4" value="0x2"/>
+                    <option name="6" alias="6" value="0x3"/>
+                    <option name="8" alias="8" value="0x4"/>
+                    <option name="12" alias="12" value="0x5"/>
+                    <option name="16" alias="16" value="0x6"/>
+                    <option name="20" alias="20" value="0x7"/>
+                </setting>
+                <setting alias="ADFM" default="left" name="ADFM" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="left" alias="left" value="0x0"/>
+                    <option name="right" alias="right" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="ADRESL" name="ADRESL" type="R,W" width="8">
+                <setting alias="ADRESL" default="0x0" name="ADRESL" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="ADRESH" name="ADRESH" type="R,W" width="8">
+                <setting alias="ADRESH" default="0x0" name="ADRESH" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="CCP" name="CCP4" type="ccp" version="v2" sub_version="f0" instance="4">
+            <interrupt name="CCPI" flag="PIR4bits.CCP4IF" enable="PIE4bits.CCP4IE" priority="IPR4bits.CCP4IP"/>
+            <property name="instanceType" value="ccp"/>
+            <register alias="CCPTMRS" name="CCPTMRS1" type="R,W" width="8">
+                <setting alias="CTSEL" default="PWM4timer2" name="C4TSEL" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="PWM4timer2" alias="PWM4timer2" value="0x0"/>
+                    <option name="PWM4timer4" alias="PWM4timer4" value="0x1"/>
+                    <option name="PWM4timer6" alias="PWM4timer6" value="0x2"/>
+                    <option name="CCP4timer1" alias="CCP4timer1" value="0x0"/>
+                    <option name="CCP4timer3" alias="CCP4timer3" value="0x1"/>
+                    <option name="CCP4timer5" alias="CCP4timer5" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPCON" name="CCP4CON" type="R,W" width="8">
+                <setting alias="CCPM" default="off/reset" name="CCP4M" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="off/reset" alias="off/reset" value="0x0" mode="Default"/>
+                    <option name="Toggle" alias="Toggle" value="0x2" mode="Compare"/>
+                    <option name="Falling edge" alias="Falling edge" value="0x4" mode="Capture"/>
+                    <option name="Rising edge" alias="Rising edge" value="0x5" mode="Capture"/>
+                    <option name="4th rising edge" alias="4th rising edge" value="0x6" mode="Capture"/>
+                    <option name="16th rising edge" alias="16th rising edge" value="0x7" mode="Capture"/>
+                    <option name="Setoutput" alias="Setoutput" value="0x8" mode="Compare"/>
+                    <option name="Clearoutput" alias="Clearoutput" value="0x9" mode="Compare"/>
+                    <option name="Softinterrupt" alias="Softinterrupt" value="0xa" mode="Compare"/>
+                    <option name="PWM" alias="PWM" value="0xc" mode="PWM"/>
+                </setting>
+                <setting alias="DCB" default="0x0" name="DC4B" mask="0x30" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRL" name="CCPR4L" type="R,W" width="8">
+                <setting alias="CCPRL" default="0x0" name="CCPR4L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRH" name="CCPR4H" type="R,W" width="8">
+                <setting alias="CCPRH" default="0x0" name="CCPR4H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="CCP" name="CCP5" type="ccp" version="v2" sub_version="f0" instance="5">
+            <interrupt name="CCPI" flag="PIR4bits.CCP5IF" enable="PIE4bits.CCP5IE" priority="IPR4bits.CCP5IP"/>
+            <property name="instanceType" value="ccp_spclevent"/>
+            <register alias="CCPTMRS" name="CCPTMRS1" type="R,W" width="8">
+                <setting alias="CTSEL" default="PWM5timer2" name="C5TSEL" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="PWM5timer2" alias="PWM5timer2" value="0x0"/>
+                    <option name="PWM5timer4" alias="PWM5timer4" value="0x1"/>
+                    <option name="PWM5timer6" alias="PWM5timer6" value="0x2"/>
+                    <option name="CCP5timer1" alias="CCP5timer1" value="0x0"/>
+                    <option name="CCP5timer3" alias="CCP5timer3" value="0x1"/>
+                    <option name="CCP5timer5" alias="CCP5timer5" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPCON" name="CCP5CON" type="R,W" width="8">
+                <setting alias="CCPM" default="off/reset" name="CCP5M" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="off/reset" alias="off/reset" value="0x0" mode="Default"/>
+                    <option name="Toggle" alias="Toggle" value="0x2" mode="Compare"/>
+                    <option name="Falling edge" alias="Falling edge" value="0x4" mode="Capture"/>
+                    <option name="Rising edge" alias="Rising edge" value="0x5" mode="Capture"/>
+                    <option name="4th rising edge" alias="4th rising edge" value="0x6" mode="Capture"/>
+                    <option name="16th rising edge" alias="16th rising edge" value="0x7" mode="Capture"/>
+                    <option name="Setoutput" alias="Setoutput" value="0x8" mode="Compare"/>
+                    <option name="Clearoutput" alias="Clearoutput" value="0x9" mode="Compare"/>
+                    <option name="Softinterrupt" alias="Softinterrupt" value="0xa" mode="Compare"/>
+                    <option name="Autoconversion" alias="Autoconversion" value="0xb" mode="Compare"/>
+                    <option name="PWM" alias="PWM" value="0xc" mode="PWM"/>
+                </setting>
+                <setting alias="DCB" default="0x0" name="DC5B" mask="0x30" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRL" name="CCPR5L" type="R,W" width="8">
+                <setting alias="CCPRL" default="0x0" name="CCPR5L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRH" name="CCPR5H" type="R,W" width="8">
+                <setting alias="CCPRH" default="0x0" name="CCPR5H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Comparator" name="CMP1" type="cmp_rr_dual" version="v4" sub_version="c1" instance="1">
+            <interrupt name="CI" flag="PIR2bits.C1IF" enable="PIE2bits.C1IE" priority="IPR2bits.C1IP"/>
+            <register alias="CMCON0" name="CM1CON0" type="R,W" width="8">
+                <setting alias="CNCH" default="CIN0-" name="C1CH" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="CIN0-" alias="CIN0-" value="0x0"/>
+                    <option name="CIN1-" alias="CIN1-" value="0x1"/>
+                    <option name="CIN2-" alias="CIN2-" value="0x2"/>
+                    <option name="CIN3-" alias="CIN3-" value="0x3"/>
+                </setting>
+                <setting alias="CPCH" default="CIN+" name="C1R" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="CVref" alias="CVref" value="0x1"/>
+                    <option name="CIN+" alias="CIN+" value="0x0"/>
+                </setting>
+                <setting alias="CSP" default="hi_speed" name="C1SP" mask="0x8" type="R,W" porDefault="0x1">
+                    <option name="hi_speed" alias="hi_speed" value="0x1"/>
+                    <option name="lo_speed" alias="lo_speed" value="0x0"/>
+                </setting>
+                <setting alias="CPOL" default="not inverted" name="C1POL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="not inverted" alias="not inverted" value="0x0"/>
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                </setting>
+                <setting alias="COE" default="COUT_internal" name="C1OE" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="COUT_internal" alias="COUT_internal" value="0x0"/>
+                    <option name="COUT_pin" alias="COUT_pin" value="0x1"/>
+                </setting>
+                <setting alias="COUT" default="CPOL_VPVN" name="C1OUT" mask="0x40" type="R" porDefault="0x0">
+                    <option name="CPOL_VPVN" alias="CPOL_VPVN" value="0x0"/>
+                    <option name="CPOL_VNVP" alias="CPOL_VNVP" value="0x1"/>
+                </setting>
+                <setting alias="CON" default="disabled" name="C1ON" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CM2CON1" name="CM2CON1" type="R,W" width="8">
+                <setting alias="CSYNC" default="asynchronous" name="C1SYNC" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="asynchronous" value="0x0"/>
+                    <option name="enabled" alias="synchronous" value="0x1"/>
+                </setting>
+                <setting alias="CHYS" default="disabled" name="C1HYS" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="CRSEL" default="DAC" name="C1RSEL" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="DAC" alias="DAC" value="0x0"/>
+                    <option name="FVR_buf1" alias="FVR_buf1" value="0x1"/>
+                </setting>
+                <setting alias="MCOUT" default="0x0" name="MC1OUT" mask="0x80" type="R" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Comparator" name="CMP2" type="cmp_rr_dual" version="v4" sub_version="c1" instance="2">
+            <interrupt name="CI" flag="PIR2bits.C2IF" enable="PIE2bits.C2IE" priority="IPR2bits.C2IP"/>
+            <register alias="CMCON0" name="CM2CON0" type="R,W" width="8">
+                <setting alias="CNCH" default="CIN0-" name="C2CH" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="CIN0-" alias="CIN0-" value="0x0"/>
+                    <option name="CIN1-" alias="CIN1-" value="0x1"/>
+                    <option name="CIN2-" alias="CIN2-" value="0x2"/>
+                    <option name="CIN3-" alias="CIN3-" value="0x3"/>
+                </setting>
+                <setting alias="CPCH" default="CIN+" name="C2R" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="CVref" alias="CVref" value="0x1"/>
+                    <option name="CIN+" alias="CIN+" value="0x0"/>
+                </setting>
+                <setting alias="CSP" default="hi_speed" name="C2SP" mask="0x8" type="R,W" porDefault="0x1">
+                    <option name="hi_speed" alias="hi_speed" value="0x1"/>
+                    <option name="lo_speed" alias="lo_speed" value="0x0"/>
+                </setting>
+                <setting alias="CPOL" default="not inverted" name="C2POL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="not inverted" alias="not inverted" value="0x0"/>
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                </setting>
+                <setting alias="COE" default="COUT_internal" name="C2OE" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="COUT_internal" alias="COUT_internal" value="0x0"/>
+                    <option name="COUT_pin" alias="COUT_pin" value="0x1"/>
+                </setting>
+                <setting alias="COUT" default="CPOL_VPVN" name="C2OUT" mask="0x40" type="R" porDefault="0x0">
+                    <option name="CPOL_VPVN" alias="CPOL_VPVN" value="0x0"/>
+                    <option name="CPOL_VNVP" alias="CPOL_VNVP" value="0x1"/>
+                </setting>
+                <setting alias="CON" default="disabled" name="C2ON" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CM2CON1" name="CM2CON1" type="R,W" width="8">
+                <setting alias="CSYNC" default="asynchronous" name="C2SYNC" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="asynchronous" value="0x0"/>
+                    <option name="enabled" alias="synchronous" value="0x1"/>
+                </setting>
+                <setting alias="CHYS" default="disabled" name="C2HYS" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="CRSEL" default="DAC" name="C2RSEL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="DAC" alias="DAC" value="0x0"/>
+                    <option name="FVR_buf1" alias="FVR_buf1" value="0x1"/>
+                </setting>
+                <setting alias="MCOUT" default="0x0" name="MC2OUT" mask="0x40" type="R" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="DAC" name="DAC" type="dac_5bit" version="v2" sub_version="a1" instance="">
+            <register alias="DACCON0" name="VREFCON1" type="R,W" width="8">
+                <setting alias="DACNSS" default="VSS" name="DACNSS" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="VSS" alias="VSS" value="0x0"/>
+                    <option name="VREF-" alias="VREF-" value="0x1"/>
+                </setting>
+                <setting alias="DACPSS" default="VDD" name="DACPSS" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="VDD" alias="VDD" value="0x0"/>
+                    <option name="VREF+" alias="VREF+" value="0x1"/>
+                    <option name="FVR_buf1" alias="FVR_buf1" value="0x2"/>
+                </setting>
+                <setting alias="DACOE" default="disabled" name="DACOE" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="DACLPS" default="neg_ref" name="DACLPS" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="pos_ref" alias="pos_ref" value="0x1"/>
+                    <option name="neg_ref" alias="neg_ref" value="0x0"/>
+                </setting>
+                <setting alias="DACEN" default="disabled" name="DACEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="DACCON1" name="DACCON1" type="R,W" width="8">
+                <setting alias="DACR" default="0x0" name="DACR" mask="0x1f" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="ECCP" name="ECCP1" type="eccp" version="v2" sub_version="f0" instance="1">
+            <interrupt name="CCPI" flag="PIR1bits.CCP1IF" enable="PIE1bits.CCP1IE" priority="IPR1bits.CCP1IP"/>
+            <property name="instanceType" value="eccp_full_bridge"/>
+            <register alias="CCPCON" name="CCP1CON" type="R,W" width="8">
+                <setting alias="CCPM" default="off/reset" name="CCP1M" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="off/reset" alias="off/reset" value="0x0" mode="Default"/>
+                    <option name="Toggle output" alias="Toggle output" value="0x2" mode="Compare"/>
+                    <option name="Every falling edge" alias="Every falling edge" value="0x4" mode="Capture"/>
+                    <option name="Every rising edge" alias="Every rising edge" value="0x5" mode="Capture"/>
+                    <option name="Every 4th rising edge" alias="Every 4th rising edge" value="0x6" mode="Capture"/>
+                    <option name="Every 16th rising edge" alias="Every 16th rising edge" value="0x7" mode="Capture"/>
+                    <option name="Output Polarity Non-Inverted" alias="Output Polarity Non-Inverted" value="0x8" mode="Compare"/>
+                    <option name="Output Polarity Inverted" alias="Output Polarity Inverted" value="0x9" mode="Compare"/>
+                    <option name="Software Interrupt" alias="Software Interrupt" value="0xa" mode="Compare"/>
+                    <option name="Special Event Trigger" alias="Special Event Trigger" value="0xb" mode="Compare"/>
+                    <option name="P1A,P1C: active high; P1B,P1D: active high" alias="P1A,P1C: active high; P1B,P1D: active high" value="0xc" mode="enhanced pwm"/>
+                    <option name="P1A,P1C: active high; P1B,P1D: active low" alias="P1A,P1C: active high; P1B,P1D: active low" value="0xd" mode="enhanced pwm"/>
+                    <option name="P1A,P1C: active low; P1B,P1D: active high" alias="P1A,P1C: active low; P1B,P1D: active high" value="0xe" mode="enhanced pwm"/>
+                    <option name="P1A,P1C: active low; P1B,P1D: active low" alias="P1A,P1C: active low; P1B,P1D: active low" value="0xf" mode="enhanced pwm"/>
+                </setting>
+                <setting alias="DCB" default="0x0" name="DC1B" mask="0x30" type="R,W" porDefault="0x0"/>
+                <setting alias="PM" default="single" name="P1M" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="single" alias="single" value="0x0"/>
+                    <option name="fullbridge_Fwd" alias="fullbridge_Fwd" value="0x1"/>
+                    <option name="halfbridge" alias="halfbridge" value="0x2"/>
+                    <option name="fullbridge_rev" alias="fullbridge_rev" value="0x3"/>
+                </setting>
+            </register>
+            <register alias="CCPTMRS" name="CCPTMRS0" type="R,W" width="8">
+                <setting alias="CTSEL" default="CCP1timer1" name="C1TSEL" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="CCP1timer1" alias="CCP1timer1" value="0x0"/>
+                    <option name="CCP1timer3" alias="CCP1timer3" value="0x1"/>
+                    <option name="CCP1timer5" alias="CCP1timer5" value="0x2"/>
+                    <option name="PWM1timer2" alias="PWM1timer2" value="0x0"/>
+                    <option name="PWM1timer4" alias="PWM1timer4" value="0x1"/>
+                    <option name="PWM1timer6" alias="PWM1timer6" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPAS" name="ECCP1AS" type="R,W" width="8">
+                <setting alias="PSSBD" default="low" name="PSS1BD" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="PSSAC" default="low" name="PSS1AC" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="CCPAS" default="disabled" name="CCP1AS" mask="0x70" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="C1Hi" alias="C1Hi" value="0x1"/>
+                    <option name="C2Hi" alias="C2Hi" value="0x2"/>
+                    <option name="C1Hi_C2Hi" alias="C1Hi_C2Hi" value="0x3"/>
+                    <option name="FLT0_pin Lo" alias="FLT0_pin Lo" value="0x4"/>
+                    <option name="FLT0_pin or C1 Lo" alias="FLT0_pin or C1 Lo" value="0x5"/>
+                    <option name="FLT0_pin or C2 Lo" alias="FLT0_pin or C2 Lo" value="0x6"/>
+                    <option name="FLT0_pin or C1 or C2 Lo" alias="FLT0_pin or C1 or C2 Lo" value="0x7"/>
+                </setting>
+                <setting alias="CCPASE" default="operating" name="CCP1ASE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="operating" alias="operating" value="0x0"/>
+                    <option name="shutdown" alias="shutdown" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PWMCON" name="PWM1CON" type="R,W" width="8">
+                <setting alias="PDC" default="0x0" name="P1DC" mask="0x7f" type="R,W" porDefault="0x0"/>
+                <setting alias="PRSEN" default="manual_restart" name="P1RSEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="manual_restart" alias="manual_restart" value="0x0"/>
+                    <option name="automatic_restart" alias="automatic_restart" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PSTRCON" name="PSTR1CON" type="R,W" width="8">
+                <setting alias="STRA" default="P1A_to_port" name="STR1A" mask="0x1" type="R,W" porDefault="0x1">
+                    <option name="P1A_to_port" alias="P1A_to_port" value="0x0"/>
+                    <option name="P1A_to_CCP1M" alias="P1A_to_CCP1M" value="0x1"/>
+                </setting>
+                <setting alias="STRB" default="P1B_to_port" name="STR1B" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="P1B_to_port" alias="P1B_to_port" value="0x0"/>
+                    <option name="P1B_to_CCP1M" alias="P1B_to_CCP1M" value="0x1"/>
+                </setting>
+                <setting alias="STRC" default="P1C_to_port" name="STR1C" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="P1C_to_port" alias="P1C_to_port" value="0x0"/>
+                    <option name="P1C_to_CCP1M" alias="P1C_to_CCP1M" value="0x1"/>
+                </setting>
+                <setting alias="STRD" default="P1D_to_port" name="STR1D" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="P1D_to_port" alias="P1D_to_port" value="0x0"/>
+                    <option name="P1D_to_CCP1M" alias="P1D_to_CCP1M" value="0x1"/>
+                </setting>
+                <setting alias="STRSYNC" default="start_at_begin" name="STR1SYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="start_at_begin" alias="start_at_begin" value="0x0"/>
+                    <option name="start_at_next" alias="start_at_next" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CCPRL" name="CCPR1L" type="R,W" width="8">
+                <setting alias="CCPRL" default="0x0" name="CCPR1L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRH" name="CCPR1H" type="R,W" width="8">
+                <setting alias="CCPRH" default="0x0" name="CCPR1H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="ECCP" name="ECCP2" type="eccp" version="v2" sub_version="f0" instance="2">
+            <interrupt name="CCPI" flag="PIR2bits.CCP2IF" enable="PIE2bits.CCP2IE" priority="IPR2bits.CCP2IP"/>
+            <property name="instanceType" value="eccp_half_bridge"/>
+            <register alias="CCPCON" name="CCP2CON" type="R,W" width="8">
+                <setting alias="CCPM" default="off/reset" name="CCP2M" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="off/reset" alias="off/reset" value="0x0" mode="Default"/>
+                    <option name="Toggle output" alias="Toggle output" value="0x2" mode="Compare"/>
+                    <option name="Every falling edge" alias="Every falling edge" value="0x4" mode="Capture"/>
+                    <option name="Every rising edge" alias="Every rising edge" value="0x5" mode="Capture"/>
+                    <option name="Every 4th rising edge" alias="Every 4th rising edge" value="0x6" mode="Capture"/>
+                    <option name="Every 16th rising edge" alias="Every 16th rising edge" value="0x7" mode="Capture"/>
+                    <option name="Output Polarity Non-Inverted" alias="Output Polarity Non-Inverted" value="0x8" mode="Compare"/>
+                    <option name="Output Polarity Inverted" alias="Output Polarity Inverted" value="0x9" mode="Compare"/>
+                    <option name="Software Interrupt" alias="Software Interrupt" value="0xa" mode="Compare"/>
+                    <option name="Special Event Trigger" alias="Special Event Trigger" value="0xb" mode="Compare"/>
+                    <option name="P2A,P2C: active high; P2B,P2D: active high" alias="P2A,P2C: active high; P2B,P2D: active high" value="0xc" mode="enhanced pwm"/>
+                    <option name="P2A,P2C: active high; P2B,P2D: active low" alias="P2A,P2C: active high; P2B,P2D: active low" value="0xd" mode="enhanced pwm"/>
+                    <option name="P2A,P2C: active low; P2B,P2D: active high" alias="P2A,P2C: active low; P2B,P2D: active high" value="0xe" mode="enhanced pwm"/>
+                    <option name="P2A,P2C: active low; P2B,P2D: active low" alias="P2A,P2C: active low; P2B,P2D: active low" value="0xf" mode="enhanced pwm"/>
+                </setting>
+                <setting alias="DCB" default="0x0" name="DC2B" mask="0x30" type="R,W" porDefault="0x0"/>
+                <setting alias="PM" default="single" name="P2M0" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="single" alias="single" value="0x0"/>
+                    <option name="halfbridge" alias="halfbridge" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPTMRS" name="CCPTMRS0" type="R,W" width="8">
+                <setting alias="CTSEL" default="CCP2timer1" name="C2TSEL" mask="0x18" type="R,W" porDefault="0x0">
+                    <option name="CCP2timer1" alias="CCP2timer1" value="0x0"/>
+                    <option name="CCP2timer3" alias="CCP2timer3" value="0x1"/>
+                    <option name="CCP2timer5" alias="CCP2timer5" value="0x2"/>
+                    <option name="PWM2timer2" alias="PWM2timer2" value="0x0"/>
+                    <option name="PWM2timer4" alias="PWM2timer4" value="0x1"/>
+                    <option name="PWM2timer6" alias="PWM2timer6" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPAS" name="ECCP2AS" type="R,W" width="8">
+                <setting alias="PSSBD" default="low" name="PSS2BD" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="PSSAC" default="low" name="PSS2AC" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="CCPAS" default="disabled" name="CCP2AS" mask="0x70" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="C1Hi" alias="C1Hi" value="0x1"/>
+                    <option name="C2Hi" alias="C2Hi" value="0x2"/>
+                    <option name="C1Hi_C2Hi" alias="C1Hi_C2Hi" value="0x3"/>
+                    <option name="FLT0_pin Lo" alias="FLT0_pin Lo" value="0x4"/>
+                    <option name="FLT0_pin or C1 Lo" alias="FLT0_pin or C1 Lo" value="0x5"/>
+                    <option name="FLT0_pin or C2 Lo" alias="FLT0_pin or C2 Lo" value="0x6"/>
+                    <option name="FLT0_pin or C1 or C2 Lo" alias="FLT0_pin or C1 or C2 Lo" value="0x7"/>
+                </setting>
+                <setting alias="CCPASE" default="operating" name="CCP2ASE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="operating" alias="operating" value="0x0"/>
+                    <option name="shutdown" alias="shutdown" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PWMCON" name="PWM2CON" type="R,W" width="8">
+                <setting alias="PDC" default="0x0" name="P2DC" mask="0x7f" type="R,W" porDefault="0x0"/>
+                <setting alias="PRSEN" default="manual_restart" name="P2RSEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="manual_restart" alias="manual_restart" value="0x0"/>
+                    <option name="automatic_restart" alias="automatic_restart" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PSTRCON" name="PSTR2CON" type="R,W" width="8">
+                <setting alias="STRA" default="P2A_to_port" name="STR2A" mask="0x1" type="R,W" porDefault="0x1">
+                    <option name="P2A_to_port" alias="P2A_to_port" value="0x0"/>
+                    <option name="P2A_to_CCP2M" alias="P2A_to_CCP2M" value="0x1"/>
+                </setting>
+                <setting alias="STRB" default="P2B_to_port" name="STR2B" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="P2B_to_port" alias="P2B_to_port" value="0x0"/>
+                    <option name="P2B_to_CCP2M" alias="P2B_to_CCP2M" value="0x1"/>
+                </setting>
+                <setting alias="STRC" default="P2C_to_port" name="STR2C" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="P2C_to_port" alias="P2C_to_port" value="0x0"/>
+                    <option name="P2C_to_CCP2M" alias="P2C_to_CCP2M" value="0x1"/>
+                </setting>
+                <setting alias="STRD" default="P2D_to_port" name="STR2D" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="P2D_to_port" alias="P2D_to_port" value="0x0"/>
+                    <option name="P2D_to_CCP2M" alias="P2D_to_CCP2M" value="0x1"/>
+                </setting>
+                <setting alias="STRSYNC" default="start_at_begin" name="STR2SYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="start_at_begin" alias="start_at_begin" value="0x0"/>
+                    <option name="start_at_next" alias="start_at_next" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CCPRL" name="CCPR2L" type="R,W" width="8">
+                <setting alias="CCPRL" default="0x0" name="CCPR2L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRH" name="CCPR2H" type="R,W" width="8">
+                <setting alias="CCPRH" default="0x0" name="CCPR2H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="ECCP" name="ECCP3" type="eccp" version="v2" sub_version="f0" instance="3">
+            <interrupt name="CCPI" flag="PIR4bits.CCP3IF" enable="PIE4bits.CCP3IE" priority="IPR4bits.CCP3IP"/>
+            <property name="instanceType" value="eccp_half_bridge"/>
+            <register alias="CCPCON" name="CCP3CON" type="R,W" width="8">
+                <setting alias="CCPM" default="off/reset" name="CCP3M" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="off/reset" alias="off/reset" value="0x0" mode="Default"/>
+                    <option name="Toggle output" alias="Toggle output" value="0x2" mode="Compare"/>
+                    <option name="Every falling edge" alias="Every falling edge" value="0x4" mode="Capture"/>
+                    <option name="Every rising edge" alias="Every rising edge" value="0x5" mode="Capture"/>
+                    <option name="Every 4th rising edge" alias="Every 4th rising edge" value="0x6" mode="Capture"/>
+                    <option name="Every 16th rising edge" alias="Every 16th rising edge" value="0x7" mode="Capture"/>
+                    <option name="Output Polarity Non-Inverted" alias="Output Polarity Non-Inverted" value="0x8" mode="Compare"/>
+                    <option name="Output Polarity Inverted" alias="Output Polarity Inverted" value="0x9" mode="Compare"/>
+                    <option name="Software Interrupt" alias="Software Interrupt" value="0xa" mode="Compare"/>
+                    <option name="Special Event Trigger" alias="Special Event Trigger" value="0xb" mode="Compare"/>
+                    <option name="P3A,P3C: active high; P3B,P3D: active high" alias="P3A,P3C: active high; P3B,P3D: active high" value="0xc" mode="enhanced pwm"/>
+                    <option name="P3A,P3C: active high; P3B,P3D: active low" alias="P3A,P3C: active high; P3B,P3D: active low" value="0xd" mode="enhanced pwm"/>
+                    <option name="P3A,P3C: active low; P3B,P3D: active high" alias="P3A,P3C: active low; P3B,P3D: active high" value="0xe" mode="enhanced pwm"/>
+                    <option name="P3A,P3C: active low; P3B,P3D: active low" alias="P3A,P3C: active low; P3B,P3D: active low" value="0xf" mode="enhanced pwm"/>
+                </setting>
+                <setting alias="DCB" default="0x0" name="DC3B" mask="0x30" type="R,W" porDefault="0x0"/>
+                <setting alias="PM" default="single" name="P3M" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="single" alias="single" value="0x0"/>
+                    <option name="halfbridge" alias="halfbridge" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPTMRS" name="CCPTMRS0" type="R,W" width="8">
+                <setting alias="CTSEL" default="CCP3timer1" name="C3TSEL" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="CCP3timer1" alias="CCP3timer1" value="0x0"/>
+                    <option name="CCP3timer3" alias="CCP3timer3" value="0x1"/>
+                    <option name="CCP3timer5" alias="CCP3timer5" value="0x2"/>
+                    <option name="PWM3timer2" alias="PWM3timer2" value="0x0"/>
+                    <option name="PWM3timer4" alias="PWM3timer4" value="0x1"/>
+                    <option name="PWM3timer6" alias="PWM3timer6" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="CCPAS" name="ECCP3AS" type="R,W" width="8">
+                <setting alias="PSSBD" default="low" name="PSS3BD" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="PSSAC" default="low" name="PSS3AC" mask="0xc" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                    <option name="tristate" alias="tristate" value="0x2"/>
+                </setting>
+                <setting alias="CCPAS" default="disabled" name="CCP3AS" mask="0x70" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="C1Hi" alias="C1Hi" value="0x1"/>
+                    <option name="C2Hi" alias="C2Hi" value="0x2"/>
+                    <option name="C1Hi_C2Hi" alias="C1Hi_C2Hi" value="0x3"/>
+                    <option name="FLT0_pin Lo" alias="FLT0_pin Lo" value="0x4"/>
+                    <option name="FLT0_pin or C1 Lo" alias="FLT0_pin or C1 Lo" value="0x5"/>
+                    <option name="FLT0_pin or C2 Lo" alias="FLT0_pin or C2 Lo" value="0x6"/>
+                    <option name="FLT0_pin or C1 or C2 Lo" alias="FLT0_pin or C1 or C2 Lo" value="0x7"/>
+                </setting>
+                <setting alias="CCPASE" default="operating" name="CCP3ASE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="operating" alias="operating" value="0x0"/>
+                    <option name="shutdown" alias="shutdown" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PWMCON" name="PWM3CON" type="R,W" width="8">
+                <setting alias="PDC" default="0x0" name="P3DC" mask="0x7f" type="R,W" porDefault="0x0"/>
+                <setting alias="PRSEN" default="manual_restart" name="P3RSEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="manual_restart" alias="manual_restart" value="0x0"/>
+                    <option name="automatic_restart" alias="automatic_restart" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PSTRCON" name="PSTR3CON" type="R,W" width="8">
+                <setting alias="STRA" default="P3A_to_port" name="STR3A" mask="0x1" type="R,W" porDefault="0x1">
+                    <option name="P3A_to_port" alias="P3A_to_port" value="0x0"/>
+                    <option name="P3A_to_CCP3M" alias="P3A_to_CCP3M" value="0x1"/>
+                </setting>
+                <setting alias="STRB" default="P3B_to_port" name="STR3B" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="P3B_to_port" alias="P3B_to_port" value="0x0"/>
+                    <option name="P3B_to_CCP3M" alias="P3B_to_CCP3M" value="0x1"/>
+                </setting>
+                <setting alias="STRC" default="P3C_to_port" name="STR3C" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="P3C_to_port" alias="P3C_to_port" value="0x0"/>
+                    <option name="P3C_to_CCP3M" alias="P3C_to_CCP3M" value="0x1"/>
+                </setting>
+                <setting alias="STRD" default="P3D_to_port" name="STR3D" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="P3D_to_port" alias="P3D_to_port" value="0x0"/>
+                    <option name="P3D_to_CCP3M" alias="P3D_to_CCP3M" value="0x1"/>
+                </setting>
+                <setting alias="STRSYNC" default="start_at_begin" name="STR3SYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="start_at_begin" alias="start_at_begin" value="0x0"/>
+                    <option name="start_at_next" alias="start_at_next" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CCPRL" name="CCPR3L" type="R,W" width="8">
+                <setting alias="CCPRL" default="0x0" name="CCPR3L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="CCPRH" name="CCPR3H" type="R,W" width="8">
+                <setting alias="CCPRH" default="0x0" name="CCPR3H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Ext_Interrupt" name="EXT_INT" type="int_intp18f" version="v1" sub_version="c0" instance="">
+            <interrupt name="INT0I" flag="INTCONbits.INT0IF" enable="INTCONbits.INT0IE"/>
+            <interrupt name="INT1I" flag="INTCON3bits.INT1IF" enable="INTCON3bits.INT1IE" priority="INTCON3bits.INT1IP"/>
+            <interrupt name="INT2I" flag="INTCON3bits.INT2IF" enable="INTCON3bits.INT2IE" priority="INTCON3bits.INT2IP"/>
+            <register alias="INTCON2" name="INTCON2" type="R,W" width="8">
+                <setting alias="INTEDG2" default="rising edge" name="INTEDG2" mask="0x10" type="R,W" porDefault="0x1" description="INT2 Edge Select">
+                    <option name="falling edge" alias="falling edge" value="0x0"/>
+                    <option name="rising edge" alias="rising edge" value="0x1"/>
+                </setting>
+                <setting alias="INTEDG1" default="rising edge" name="INTEDG1" mask="0x20" type="R,W" porDefault="0x1" description="INT1 Edge Select">
+                    <option name="falling edge" alias="falling edge" value="0x0"/>
+                    <option name="rising edge" alias="rising edge" value="0x1"/>
+                </setting>
+                <setting alias="INTEDG0" default="rising edge" name="INTEDG0" mask="0x40" type="R,W" porDefault="0x1" description="INT0 Edge Select">
+                    <option name="falling edge" alias="falling edge" value="0x0"/>
+                    <option name="rising edge" alias="rising edge" value="0x1"/>
+                </setting>
+            </register>
+        </module>
+        <module group="HLVD" name="HLVD" type="lvd_ctrl" version="v3" sub_version="b0" instance="">
+            <interrupt name="HLVDI" flag="PIR2bits.LVDIF" enable="PIE2bits.LVDIE" priority="IPR2bits.LVDIP"/>
+            <register alias="HLVDCON" name="HLVDCON" type="R,W" width="8">
+                <setting alias="HLVDL" default="Min:1.69 Max:1.99" name="HLVDL" mask="0xf" type="R,W" porDefault="0x0">
+                    <option name="external" alias="external" value="0xf"/>
+                    <option name="Min:4.39 Max:5.09" alias="Min:4.39 Max:5.09" value="0xe"/>
+                    <option name="Min:4.11 Max:4.71" alias="Min:4.11 Max:4.71" value="0xd"/>
+                    <option name="Min:3.90 Max:4.40" alias="Min:3.90 Max:4.40" value="0xc"/>
+                    <option name="Min:3.66 Max:4.16" alias="Min:3.66 Max:4.16" value="0xb"/>
+                    <option name="Min:3.44 Max:3.94" alias="Min:3.44 Max:3.94" value="0xa"/>
+                    <option name="Min:3.18 Max:3.78" alias="Min:3.18 Max:3.78" value="0x9"/>
+                    <option name="Min:3.00 Max:3.60" alias="Min:3.00 Max:3.60" value="0x8"/>
+                    <option name="Min:2.76 Max:3.26" alias="Min:2.76 Max:3.26" value="0x7"/>
+                    <option name="Min:2.62 Max:3.12" alias="Min:2.62 Max:3.12" value="0x6"/>
+                    <option name="Min:2.54 Max:2.94" alias="Min:2.54 Max:2.94" value="0x5"/>
+                    <option name="Min:2.34 Max:2.74" alias="Min:2.34 Max:2.74" value="0x4"/>
+                    <option name="Min:2.24 Max:2.64" alias="Min:2.24 Max:2.64" value="0x3"/>
+                    <option name="Min:2.08 Max:2.48" alias="Min:2.08 Max:2.48" value="0x2"/>
+                    <option name="Min:1.92 Max:2.22" alias="Min:1.92 Max:2.22" value="0x1"/>
+                    <option name="Min:1.69 Max:1.99" alias="Min:1.69 Max:1.99" value="0x0"/>
+                </setting>
+                <setting alias="HLVDEN" default="disabled" name="HLVDEN" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="IRVST" default="disabled" name="IRVST" mask="0x20" type="R" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="BGVST" default="disabled" name="BGVST" mask="0x40" type="R" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="VDIR" default="Falls Below Trip Point" name="VDIRMAG" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="Exceeds Trip Point" alias="Exceeds Trip Point" value="0x1"/>
+                    <option name="Falls Below Trip Point" alias="Falls Below Trip Point" value="0x0"/>
+                </setting>
+            </register>
+        </module>
+        <module group="MSSP" name="MSSP1" type="mssp" version="v5" sub_version="c0" instance="1">
+            <interrupt name="SSPI" flag="PIR1bits.SSP1IF" enable="PIE1bits.SSP1IE" priority="IPR1bits.SSP1IP"/>
+            <interrupt name="BCLI" flag="PIR2bits.BCL1IF" enable="PIE2bits.BCL1IE" priority="IPR2bits.BCL1IP"/>
+            <register alias="SSPSTAT" name="SSP1STAT" type="R,W" width="8">
+                <setting alias="BF" default="RCinprocess_TXcomplete" name="BF" mask="0x1" type="R" porDefault="0x0" description="Buffer Full Status bit">
+                    <option name="RCinprocess_TXcomplete" alias="RCinprocess_TXcomplete" value="0x0"/>
+                    <option name="RCcomplete_TXinprocess" alias="RCcomplete_TXinprocess" value="0x1"/>
+                </setting>
+                <setting alias="UA" default="dontupdate" name="UA" mask="0x2" type="R" porDefault="0x0" description="Update Address bit">
+                    <option name="dontupdate" alias="dontupdate" value="0x0"/>
+                    <option name="update" alias="update" value="0x1"/>
+                </setting>
+                <setting alias="R_nW" default="write_noTX" name="R_nW" mask="0x4" type="R" porDefault="0x0" description="Read/Write Information bit">
+                    <option name="write_noTX" alias="write_noTX" value="0x0"/>
+                    <option name="read_TX" alias="read_TX" value="0x1"/>
+                </setting>
+                <setting alias="S" default="startbit_notdetected" name="S" mask="0x8" type="R" porDefault="0x0" description="Start bit">
+                    <option name="startbit_notdetected" alias="startbit_notdetected" value="0x0"/>
+                    <option name="startbit_detected" alias="startbit_detected" value="0x1"/>
+                </setting>
+                <setting alias="P" default="stopbit_notdetected" name="P" mask="0x10" type="R" porDefault="0x0" description="Stop bit">
+                    <option name="stopbit_notdetected" alias="stopbit_notdetected" value="0x0"/>
+                    <option name="stopbit_detected" alias="stopbit_detected" value="0x1"/>
+                </setting>
+                <setting alias="D_nA" default="lastbyte_address" name="D_nA" mask="0x20" type="R" porDefault="0x0" description="Data/Address bit">
+                    <option name="lastbyte_address" alias="lastbyte_address" value="0x0"/>
+                    <option name="lastbyte_data" alias="lastbyte_data" value="0x1"/>
+                </setting>
+                <setting alias="CKE" default="disabled" name="CKE" mask="0x40" type="R,W" porDefault="0x0" description="SPI Clock Edge Select bit">
+                    <option name="disabled" alias="disabled" value="0x0" mode="I2C"/>
+                    <option name="Idle to Active" alias="Idle to Active" value="0x0" mode="SPI"/>
+                    <option name="Active to Idle" alias="Active to Idle" value="0x1" mode="SPI"/>
+                    <option name="enabled" alias="enabled" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="SMP" default="High Speed" name="SMP" mask="0x80" type="R,W" porDefault="0x0" description="SPI Data Input Sample Phase bit">
+                    <option name="Middle" alias="Middle" value="0x0" mode="SPI"/>
+                    <option name="High Speed" alias="High Speed" value="0x0" mode="I2C"/>
+                    <option name="End" alias="End" value="0x1" mode="SPI"/>
+                    <option name="Standard Speed" alias="Standard Speed" value="0x1" mode="I2C"/>
+                </setting>
+            </register>
+            <register alias="SSPCON1" name="SSP1CON1" type="R,W" width="8">
+                <setting alias="SSPM" default="FOSC/4" name="SSPM" mask="0xf" type="R,W" porDefault="0x0" description="Synchronous Serial Port Mode Select bits">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0" mode="SPI Master"/>
+                    <option name="FOSC/16" alias="FOSC/16" value="0x1" mode="SPI Master"/>
+                    <option name="FOSC/64" alias="FOSC/64" value="0x2" mode="SPI Master"/>
+                    <option name="TMR2" alias="TMR2" value="0x3" mode="SPI Master"/>
+                    <option name="SCKx_nSSxenabled" alias="SCKx_nSSxenabled" value="0x4" mode="SPI Slave"/>
+                    <option name="SCKx_nSSxdisabled" alias="SCKx_nSSxdisabled" value="0x5" mode="SPI Slave"/>
+                    <option name="7 Bit Polling" alias="7 Bit Polling" value="0x6" mode="I2C Slave Polling"/>
+                    <option name="10 Bit Polling" alias="10 Bit Polling" value="0x7" mode="I2C Slave Polling"/>
+                    <option name="FOSC/4_SSPxADD_I2C" alias="FOSC/4_SSPxADD_I2C" value="0x8" mode="I2C Master"/>
+                    <option name="FOSC/4_SSPxADD" alias="FOSC/4_SSPxADD" value="0xa" mode="SPI Master"/>
+                    <option name="Firmware Controlled" alias="Firmware Controlled" value="0xb" mode="I2C Master"/>
+                    <option name="7 Bit" alias="7 Bit" value="0xe" mode="I2C Slave"/>
+                    <option name="10 Bit" alias="10 Bit" value="0xf" mode="I2C Slave"/>
+                </setting>
+                <setting alias="CKP" default="Idle:Low, Active:High" name="CKP" mask="0x10" type="R,W" porDefault="0x0" description="SPI Clock Polarity Select bit/I2C Clock stretch">
+                    <option name="Idle:Low, Active:High" alias="Idle:Low, Active:High" value="0x0" mode="SPI"/>
+                    <option name="disabled" alias="disabled" value="0x0" mode="I2C"/>
+                    <option name="Idle:High, Active:Low" alias="Idle:High, Active:Low" value="0x1" mode="SPI"/>
+                    <option name="enabled" alias="enabled" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="SSPEN" default="disabled" name="SSPEN" mask="0x20" type="R,W" porDefault="0x0" description="Synchronous Serial Port Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SSPOV" default="no_overflow" name="SSPOV" mask="0x40" type="R,W" porDefault="0x0" description="Receive Overflow Indicator bit">
+                    <option name="no_overflow" alias="no_overflow" value="0x0"/>
+                    <option name="overflow" alias="overflow" value="0x1"/>
+                </setting>
+                <setting alias="WCOL" default="no_collision" name="WCOL" mask="0x80" type="R,W" porDefault="0x0" description="Write Collision Detect bit">
+                    <option name="no_collision" alias="no_collision" value="0x0"/>
+                    <option name="collision" alias="collision" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPCON2" name="SSP1CON2" type="R,W" width="8">
+                <setting alias="SEN" default="disabled" name="SEN" mask="0x1" type="R,W" porDefault="0x0" description="Start Condition Enable/Stretch Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RSEN" default="disabled" name="RSEN" mask="0x2" type="R,W" porDefault="0x0" description=": Repeated Start Condition Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PEN" default="disabled" name="PEN" mask="0x4" type="R,W" porDefault="0x0" description="Stop Condition Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RCEN" default="disabled" name="RCEN" mask="0x8" type="R,W" porDefault="0x0" description="Receive Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKEN" default="disabled" name="ACKEN" mask="0x10" type="R,W" porDefault="0x0" description="Acknowledge Sequence Enable bit (Master Receive mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKDT" default="acknowledge" name="ACKDT" mask="0x20" type="R,W" porDefault="0x0" description="Acknowledge Data bit (Receive mode only)">
+                    <option name="acknowledge" alias="acknowledge" value="0x0"/>
+                    <option name="not_acknowledge" alias="not_acknowledge" value="0x1"/>
+                </setting>
+                <setting alias="ACKSTAT" default="received" name="ACKSTAT" mask="0x40" type="R" porDefault="0x0" description="Acknowledge Status bit (Transmission only)">
+                    <option name="received" alias="received" value="0x0"/>
+                    <option name="not_received" alias="not_received" value="0x1"/>
+                </setting>
+                <setting alias="GCEN" default="disabled" name="GCEN" mask="0x80" type="R,W" porDefault="0x0" description="General Call Enable bit (Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPCON3" name="SSP1CON3" type="R,W" width="8">
+                <setting alias="DHEN" default="disabled" name="DHEN" mask="0x1" type="R,W" porDefault="0x0" description="Data Hold Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="AHEN" default="disabled" name="AHEN" mask="0x2" type="R,W" porDefault="0x0" description="Address Hold Enable bit (I2C Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SBCDE" default="disabled" name="SBCDE" mask="0x4" type="R,W" porDefault="0x0" description="Slave mode Bus Collision Detect Enable bit (I2C Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SDAHT" default="100ns" name="SDAHT" mask="0x8" type="R,W" porDefault="0x0" description="SDA Hold Time selection bit (I2C mode only)">
+                    <option name="100ns" alias="100ns" value="0x0" mode="I2C"/>
+                    <option name="300ns" alias="300ns" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="BOEN" default="disabled" name="BOEN" mask="0x10" type="R,W" porDefault="0x0" description="Buffer Overwrite Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SCIE" default="disabled" name="SCIE" mask="0x20" type="R,W" porDefault="0x0" description="Start Condition Interrupt Enable">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PCIE" default="disabled" name="PCIE" mask="0x40" type="R,W" porDefault="0x0" description="Stop Condition Interrupt Enable">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKTIM" default="ackseq" name="ACKTIM" mask="0x80" type="R" porDefault="0x0" description="Acknowledge Time Status bit (I2C Slave mode only)">
+                    <option name="ackseq" alias="ackseq" value="0x0"/>
+                    <option name="no_ackseq" alias="no_ackseq" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPMSK" name="SSP1MSK" type="R,W" width="8">
+                <setting alias="SSPMSK" default="0xff" name="MSK0" mask="0x1" type="R,W" porDefault="0x1"/>
+            </register>
+            <register alias="SSPBUF" name="SSP1BUF" type="R,W" width="8">
+                <setting alias="SSPBUF" default="0x0" name="SSPBUF" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="SSPADD" name="SSP1ADD" type="R,W" width="8">
+                <setting alias="SSPADD" default="0x1" name="SSP1ADD" mask="0xff" type="R,W" porDefault="0x0" description="Address or Divider bits"/>
+            </register>
+        </module>
+        <module group="MSSP" name="MSSP2" type="mssp" version="v5" sub_version="c0" instance="2">
+            <interrupt name="SSPI" flag="PIR3bits.SSP2IF" enable="PIE3bits.SSP2IE" priority="IPR3bits.SSP2IP"/>
+            <interrupt name="BCLI" flag="PIR3bits.BCL2IF" enable="PIE3bits.BCL2IE" priority="IPR3bits.BCL2IP"/>
+            <register alias="SSPSTAT" name="SSP2STAT" type="R,W" width="8">
+                <setting alias="BF" default="RCinprocess_TXcomplete" name="BF" mask="0x1" type="R,W" porDefault="0x0" description="Buffer Full Status bit">
+                    <option name="RCinprocess_TXcomplete" alias="RCinprocess_TXcomplete" value="0x0"/>
+                    <option name="RCcomplete_TXinprocess" alias="RCcomplete_TXinprocess" value="0x1"/>
+                </setting>
+                <setting alias="UA" default="dontupdate" name="UA" mask="0x2" type="R,W" porDefault="0x0" description="Update Address bit">
+                    <option name="dontupdate" alias="dontupdate" value="0x0"/>
+                    <option name="update" alias="update" value="0x1"/>
+                </setting>
+                <setting alias="R_nW" default="write_noTX" name="R_nW" mask="0x4" type="R,W" porDefault="0x0" description="Read/Write Information bit">
+                    <option name="write_noTX" alias="write_noTX" value="0x0"/>
+                    <option name="read_TX" alias="read_TX" value="0x1"/>
+                </setting>
+                <setting alias="S" default="startbit_notdetected" name="S" mask="0x8" type="R,W" porDefault="0x0" description="Start bit">
+                    <option name="startbit_notdetected" alias="startbit_notdetected" value="0x0"/>
+                    <option name="startbit_detected" alias="startbit_detected" value="0x1"/>
+                </setting>
+                <setting alias="P" default="stopbit_notdetected" name="P" mask="0x10" type="R,W" porDefault="0x0" description="Stop bit">
+                    <option name="stopbit_notdetected" alias="stopbit_notdetected" value="0x0"/>
+                    <option name="stopbit_detected" alias="stopbit_detected" value="0x1"/>
+                </setting>
+                <setting alias="D_nA" default="lastbyte_address" name="D_nA" mask="0x20" type="R,W" porDefault="0x0" description="Data/Address bit">
+                    <option name="lastbyte_address" alias="lastbyte_address" value="0x0"/>
+                    <option name="lastbyte_data" alias="lastbyte_data" value="0x1"/>
+                </setting>
+                <setting alias="CKE" default="disabled" name="CKE" mask="0x40" type="R,W" porDefault="0x0" description="SPI Clock Edge Select bit">
+                    <option name="disabled" alias="disabled" value="0x0" mode="I2C"/>
+                    <option name="Idle to Active" alias="Idle to Active" value="0x0" mode="SPI"/>
+                    <option name="Active to Idle" alias="Active to Idle" value="0x1" mode="SPI"/>
+                    <option name="enabled" alias="enabled" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="SMP" default="High Speed" name="SMP" mask="0x80" type="R,W" porDefault="0x0" description="SPI Data Input Sample Phase bit">
+                    <option name="Middle" alias="Middle" value="0x0" mode="SPI"/>
+                    <option name="High Speed" alias="High Speed" value="0x0" mode="I2C"/>
+                    <option name="End" alias="End" value="0x1" mode="SPI"/>
+                    <option name="Standard Speed" alias="Standard Speed" value="0x1" mode="I2C"/>
+                </setting>
+            </register>
+            <register alias="SSPCON1" name="SSP2CON1" type="R,W" width="8">
+                <setting alias="SSPM" default="FOSC/4" name="SSPM" mask="0xf" type="R,W" porDefault="0x0" description="Synchronous Serial Port Mode Select bits">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0" mode="SPI Master"/>
+                    <option name="FOSC/16" alias="FOSC/16" value="0x1" mode="SPI Master"/>
+                    <option name="FOSC/64" alias="FOSC/64" value="0x2" mode="SPI Master"/>
+                    <option name="TMR2" alias="TMR2" value="0x3" mode="SPI Master"/>
+                    <option name="SCKx_nSSxenabled" alias="SCKx_nSSxenabled" value="0x4" mode="SPI Slave"/>
+                    <option name="SCKx_nSSxdisabled" alias="SCKx_nSSxdisabled" value="0x5" mode="SPI Slave"/>
+                    <option name="7 Bit Polling" alias="7 Bit Polling" value="0x6" mode="I2C Slave Polling"/>
+                    <option name="10 Bit Polling" alias="10 Bit Polling" value="0x7" mode="I2C Slave Polling"/>
+                    <option name="FOSC/4_SSPxADD_I2C" alias="FOSC/4_SSPxADD_I2C" value="0x8" mode="I2C Master"/>
+                    <option name="FOSC/4_SSPxADD" alias="FOSC/4_SSPxADD" value="0xa" mode="SPI Master"/>
+                    <option name="Firmware Controlled" alias="Firmware Controlled" value="0xb" mode="I2C Master"/>
+                    <option name="7 Bit" alias="7 Bit" value="0xe" mode="I2C Slave"/>
+                    <option name="10 Bit" alias="10 Bit" value="0xf" mode="I2C Slave"/>
+                </setting>
+                <setting alias="CKP" default="Idle:Low, Active:High" name="CKP" mask="0x10" type="R,W" porDefault="0x0" description="SPI Clock Polarity Select bit/I2C Clock stretch">
+                    <option name="Idle:Low, Active:High" alias="Idle:Low, Active:High" value="0x0" mode="SPI"/>
+                    <option name="disabled" alias="disabled" value="0x0" mode="I2C"/>
+                    <option name="Idle:High, Active:Low" alias="Idle:High, Active:Low" value="0x1" mode="SPI"/>
+                    <option name="enabled" alias="enabled" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="SSPEN" default="disabled" name="SSPEN" mask="0x20" type="R,W" porDefault="0x0" description="Synchronous Serial Port Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SSPOV" default="no_overflow" name="SSPOV" mask="0x40" type="R,W" porDefault="0x0" description="Receive Overflow Indicator bit">
+                    <option name="no_overflow" alias="no_overflow" value="0x0"/>
+                    <option name="overflow" alias="overflow" value="0x1"/>
+                </setting>
+                <setting alias="WCOL" default="no_collision" name="WCOL" mask="0x80" type="R,W" porDefault="0x0" description="Write Collision Detect bit">
+                    <option name="no_collision" alias="no_collision" value="0x0"/>
+                    <option name="collision" alias="collision" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPCON2" name="SSP2CON2" type="R,W" width="8">
+                <setting alias="SEN" default="disabled" name="SEN" mask="0x1" type="R,W" porDefault="0x0" description="Start Condition Enable/Stretch Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RSEN" default="disabled" name="RSEN" mask="0x2" type="R,W" porDefault="0x0" description=": Repeated Start Condition Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PEN" default="disabled" name="PEN" mask="0x4" type="R,W" porDefault="0x0" description="Stop Condition Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RCEN" default="disabled" name="RCEN" mask="0x8" type="R,W" porDefault="0x0" description="Receive Enable bit (Master mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKEN" default="disabled" name="ACKEN" mask="0x10" type="R,W" porDefault="0x0" description="Acknowledge Sequence Enable bit (Master Receive mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKDT" default="acknowledge" name="ACKDT" mask="0x20" type="R,W" porDefault="0x0" description="Acknowledge Data bit (Receive mode only)">
+                    <option name="acknowledge" alias="acknowledge" value="0x0"/>
+                    <option name="not_acknowledge" alias="not_acknowledge" value="0x1"/>
+                </setting>
+                <setting alias="ACKSTAT" default="received" name="ACKSTAT" mask="0x40" type="R,W" porDefault="0x0" description="Acknowledge Status bit (Transmission only)">
+                    <option name="received" alias="received" value="0x0"/>
+                    <option name="not_received" alias="not_received" value="0x1"/>
+                </setting>
+                <setting alias="GCEN" default="disabled" name="GCEN" mask="0x80" type="R,W" porDefault="0x0" description="General Call Enable bit (Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPCON3" name="SSP2CON3" type="R,W" width="8">
+                <setting alias="DHEN" default="disabled" name="DHEN" mask="0x1" type="R,W" porDefault="0x0" description="Data Hold Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="AHEN" default="disabled" name="AHEN" mask="0x2" type="R,W" porDefault="0x0" description="Address Hold Enable bit (I2C Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SBCDE" default="disabled" name="SBCDE" mask="0x4" type="R,W" porDefault="0x0" description="Slave mode Bus Collision Detect Enable bit (I2C Slave mode only)">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SDAHT" default="100ns" name="SDAHT" mask="0x8" type="R,W" porDefault="0x0" description="SDA Hold Time selection bit (I2C mode only)">
+                    <option name="100ns" alias="100ns" value="0x0" mode="I2C"/>
+                    <option name="300ns" alias="300ns" value="0x1" mode="I2C"/>
+                </setting>
+                <setting alias="BOEN" default="disabled" name="BOEN" mask="0x10" type="R,W" porDefault="0x0" description="Buffer Overwrite Enable bit">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SCIE" default="disabled" name="SCIE" mask="0x20" type="R,W" porDefault="0x0" description="Start Condition Interrupt Enable">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PCIE" default="disabled" name="PCIE" mask="0x40" type="R,W" porDefault="0x0" description="Stop Condition Interrupt Enable">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="ACKTIM" default="ackseq" name="ACKTIM" mask="0x80" type="R" porDefault="0x0" description="Acknowledge Time Status bit (I2C Slave mode only)">
+                    <option name="ackseq" alias="ackseq" value="0x0"/>
+                    <option name="no_ackseq" alias="no_ackseq" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SSPMSK" name="SSP2MSK" type="R,W" width="8">
+                <setting alias="SSPMSK" default="0xff" name="MSK0" mask="0x1" type="R,W" porDefault="0x1"/>
+            </register>
+            <register alias="SSPBUF" name="SSP2BUF" type="R,W" width="8">
+                <setting alias="SSPBUF" default="0x0" name="SSPBUF" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="SSPADD" name="SSP2ADD" type="R,W" width="8">
+                <setting alias="SSPADD" default="0x1" name="SSPADD" mask="0xff" type="R,W" porDefault="0x0" description="Address or Divider bits"/>
+            </register>
+        </module>
+        <module group="SRLatch" name="SRLATCH" type="srlatch" version="v0" sub_version="" instance="">
+            <register alias="SRCON0" name="SRCON0" type="R,W" width="8">
+                <setting alias="SRPR" default="disabled" name="SRPR" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRPS" default="disabled" name="SRPS" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRNQEN" default="disabled" name="SRNQEN" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRQEN" default="disabled" name="SRQEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRCLK" default="1:4" name="SRCLK" mask="0x70" type="R,W" porDefault="0x0">
+                    <option name="1:4" alias="1:4" value="0x0"/>
+                    <option name="1:8" alias="1:8" value="0x1"/>
+                    <option name="1:16" alias="1:16" value="0x2"/>
+                    <option name="1:32" alias="1:32" value="0x3"/>
+                    <option name="1:64" alias="1:64" value="0x4"/>
+                    <option name="1:128" alias="1:128" value="0x5"/>
+                    <option name="1:256" alias="1:256" value="0x6"/>
+                    <option name="1:512" alias="1:512" value="0x7"/>
+                </setting>
+                <setting alias="SRLEN" default="disabled" name="SRLEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SRCON1" name="SRCON1" type="R,W" width="8">
+                <setting alias="SRRC1E" default="disabled" name="SRRC1E" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRRC2E" default="disabled" name="SRRC2E" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRRCKE" default="disabled" name="SRRCKE" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRRPE" default="disabled" name="SRRPE" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRSC1E" default="disabled" name="SRSC1E" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRSC2E" default="disabled" name="SRSC2E" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRSCKE" default="disabled" name="SRSCKE" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SRSPE" default="disabled" name="SRSPE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+        </module>
+        <module group="Timer" name="TMR0" type="tmr_timer0" version="v1" sub_version="d0" instance="0">
+            <interrupt name="TMRI" flag="INTCONbits.TMR0IF" enable="INTCONbits.TMR0IE" priority="INTCON2bits.TMR0IP"/>
+            <register alias="T0CON" name="T0CON" type="R,W" width="8">
+                <setting alias="PS" default="1:256" name="T0PS" mask="0x7" type="R,W" porDefault="0x7">
+                    <option name="1:2" alias="1:2" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:8" alias="1:8" value="0x2"/>
+                    <option name="1:16" alias="1:16" value="0x3"/>
+                    <option name="1:32" alias="1:32" value="0x4"/>
+                    <option name="1:64" alias="1:64" value="0x5"/>
+                    <option name="1:128" alias="1:128" value="0x6"/>
+                    <option name="1:256" alias="1:256" value="0x7"/>
+                </setting>
+                <setting alias="PSA" default="not_assigned" name="PSA" mask="0x8" type="R,W" porDefault="0x1">
+                    <option name="assigned" alias="assigned" value="0x0"/>
+                    <option name="not_assigned" alias="not_assigned" value="0x1"/>
+                </setting>
+                <setting alias="TMRSE" default="Increment_hi_lo" name="T0SE" mask="0x10" type="R,W" porDefault="0x1">
+                    <option name="Increment_lo_hi" alias="Increment_lo_hi" value="0x0"/>
+                    <option name="Increment_hi_lo" alias="Increment_hi_lo" value="0x1"/>
+                </setting>
+                <setting alias="TMRCS" default="T0CKI" name="T0CS" mask="0x20" type="R,W" porDefault="0x1">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0"/>
+                    <option name="T0CKI" alias="T0CKI" value="0x1"/>
+                </setting>
+                <setting alias="T08BIT" default="8-bit" name="T08BIT" mask="0x40" type="R,W" porDefault="0x1">
+                    <option name="16-bit" alias="16-bit" value="0x0"/>
+                    <option name="8-bit" alias="8-bit" value="0x1"/>
+                </setting>
+                <setting alias="TMR0ON" default="enabled" name="TMR0ON" mask="0x80" type="R,W" porDefault="0x1">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TMR0H" name="TMR0H" type="R,W" width="8">
+                <setting alias="TMR0H" default="0x0" name="TMR0H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TMR0L" name="TMR0L" type="R,W" width="8">
+                <setting alias="TMR0L" default="0x0" name="TMR0L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR1" type="tmr_timer1" version="v4" sub_version="b0" instance="1">
+            <interrupt name="TMRI" flag="PIR1bits.TMR1IF" enable="PIE1bits.TMR1IE" priority="IPR1bits.TMR1IP"/>
+            <interrupt name="TMRGI" flag="PIR3bits.TMR1GIF" enable="PIE3bits.TMR1GIE" priority="IPR3bits.TMR1GIP"/>
+            <register alias="TCON" name="T1CON" type="R,W" width="8">
+                <setting alias="TMRON" default="disabled" name="TMR1ON" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TRD16" default="disabled" name="T1RD16" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="nTSYNC" default="synchronize" name="T1SYNC" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="synchronize" alias="synchronize" value="0x0"/>
+                    <option name="do_not_synchronize" alias="do_not_synchronize" value="0x1"/>
+                </setting>
+                <setting alias="TOSCEN" default="disabled" name="T1OSCEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TCKPS" default="1:1" name="T1CKPS" mask="0x30" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:4" alias="1:4" value="0x2"/>
+                    <option name="1:8" alias="1:8" value="0x3"/>
+                </setting>
+                <setting alias="TMRCS" default="FOSC/4" name="TMR1CS" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0"/>
+                    <option name="FOSC" alias="FOSC" value="0x1"/>
+                    <option name="External" alias="External" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="TGCON" name="T1GCON" type="R,W" width="8">
+                <setting alias="TGSS" default="T1G_pin" name="T1GSS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="T1G_pin" alias="T1G_pin" value="0x0"/>
+                    <option name="TMR2=PR2" alias="TMR2=PR2" value="0x1"/>
+                    <option name="SYNC_C1OUT" alias="SYNC_C1OUT" value="0x2"/>
+                    <option name="SYNC_C2OUT" alias="SYNC_C2OUT" value="0x3"/>
+                </setting>
+                <setting alias="TGVAL" default="disabled" name="T1GVAL" mask="0x4" type="R" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGGO" default="done" name="T1GGO" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="done" alias="done" value="0x0"/>
+                    <option name="ready" alias="ready" value="0x1"/>
+                </setting>
+                <setting alias="TGSPM" default="disabled" name="T1GSPM" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGTM" default="disabled" name="T1GTM" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGPOL" default="low" name="T1GPOL" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                </setting>
+                <setting alias="TMRGE" default="disabled" name="TMR1GE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TMRH" name="TMR1H" type="R,W" width="8">
+                <setting alias="TMRH" default="0x0" name="TMR1H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TMRL" name="TMR1L" type="R,W" width="8">
+                <setting alias="TMRL" default="0x0" name="TMR1L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR3" type="tmr_timer1" version="v4" sub_version="b0" instance="3">
+            <interrupt name="TMRI" flag="PIR2bits.TMR3IF" enable="PIE2bits.TMR3IE" priority="IPR2bits.TMR3IP"/>
+            <interrupt name="TMRGI" flag="PIR3bits.TMR3GIF" enable="PIE3bits.TMR3GIE" priority="IPR3bits.TMR3GIP"/>
+            <register alias="TCON" name="T3CON" type="R,W" width="8">
+                <setting alias="TMRON" default="disabled" name="TMR3ON" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TRD16" default="disabled" name="T3RD16" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="nTSYNC" default="synchronize" name="nT3SYNC" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="synchronize" alias="synchronize" value="0x0"/>
+                    <option name="do_not_synchronize" alias="do_not_synchronize" value="0x1"/>
+                </setting>
+                <setting alias="TOSCEN" default="disabled" name="T3OSCEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TCKPS" default="1:1" name="T3CKPS" mask="0x30" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:4" alias="1:4" value="0x2"/>
+                    <option name="1:8" alias="1:8" value="0x3"/>
+                </setting>
+                <setting alias="TMRCS" default="FOSC/4" name="TMR3CS" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0"/>
+                    <option name="FOSC" alias="FOSC" value="0x1"/>
+                    <option name="External" alias="External" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="TGCON" name="T3GCON" type="R,W" width="8">
+                <setting alias="TGSS" default="T3G_pin" name="T3GSS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="T3G_pin" alias="T3G_pin" value="0x0"/>
+                    <option name="TMR4=PR4" alias="TMR4=PR4" value="0x1"/>
+                    <option name="SYNC_C1OUT" alias="SYNC_C1OUT" value="0x2"/>
+                    <option name="SYNC_C2OUT" alias="SYNC_C2OUT" value="0x3"/>
+                </setting>
+                <setting alias="TGVAL" default="disabled" name="T3GVAL" mask="0x4" type="R" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGGO" default="done" name="T3GGO" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="done" alias="done" value="0x0"/>
+                    <option name="ready" alias="ready" value="0x1"/>
+                </setting>
+                <setting alias="TGSPM" default="disabled" name="T3GSPM" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGTM" default="disabled" name="T3GTM" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGPOL" default="low" name="T3GPOL" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                </setting>
+                <setting alias="TMRGE" default="disabled" name="TMR3GE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TMRH" name="TMR3H" type="R,W" width="8">
+                <setting alias="TMRH" default="0x0" name="TMR3H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TMRL" name="TMR3L" type="R,W" width="8">
+                <setting alias="TMRL" default="0x0" name="TMR3L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR5" type="tmr_timer1" version="v4" sub_version="b0" instance="5">
+            <interrupt name="TMRI" flag="PIR5bits.TMR5IF" enable="PIE5bits.TMR5IE" priority="IPR5bits.TMR5IP"/>
+            <interrupt name="TMRGI" flag="PIR3bits.TMR5GIF" enable="PIE3bits.TMR5GIE" priority="IPR3bits.TMR5GIP"/>
+            <register alias="TCON" name="T5CON" type="R,W" width="8">
+                <setting alias="TMRON" default="disabled" name="TMR5ON" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TRD16" default="disabled" name="T5RD16" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="nTSYNC" default="synchronize" name="T5SYNC" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="synchronize" alias="synchronize" value="0x0"/>
+                    <option name="do_not_synchronize" alias="do_not_synchronize" value="0x1"/>
+                </setting>
+                <setting alias="TOSCEN" default="disabled" name="T5SOSCEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TCKPS" default="1:1" name="T5CKPS" mask="0x30" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:4" alias="1:4" value="0x2"/>
+                    <option name="1:8" alias="1:8" value="0x3"/>
+                </setting>
+                <setting alias="TMRCS" default="FOSC/4" name="TMR5CS" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0"/>
+                    <option name="FOSC" alias="FOSC" value="0x1"/>
+                    <option name="External" alias="External" value="0x2"/>
+                </setting>
+            </register>
+            <register alias="TGCON" name="T5GCON" type="R,W" width="8">
+                <setting alias="TGSS" default="T5G_pin" name="T5GSS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="T5G_pin" alias="T5G_pin" value="0x0"/>
+                    <option name="TMR6=PR6" alias="TMR6=PR6" value="0x1"/>
+                    <option name="SYNC_C1OUT" alias="SYNC_C1OUT" value="0x2"/>
+                    <option name="SYNC_C2OUT" alias="SYNC_C2OUT" value="0x3"/>
+                </setting>
+                <setting alias="TGVAL" default="disabled" name="T5GVAL" mask="0x4" type="R" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGGO" default="done" name="T5GGO" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="done" alias="done" value="0x0"/>
+                    <option name="ready" alias="ready" value="0x1"/>
+                </setting>
+                <setting alias="TGSPM" default="disabled" name="T5GSPM" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGTM" default="disabled" name="T5GTM" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TGPOL" default="low" name="T5GPOL" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="low" alias="low" value="0x0"/>
+                    <option name="high" alias="high" value="0x1"/>
+                </setting>
+                <setting alias="TMRGE" default="disabled" name="TMR5GE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TMRH" name="TMR5H" type="R,W" width="8">
+                <setting alias="TMRH" default="0x0" name="TMR5H" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TMRL" name="TMR5L" type="R,W" width="8">
+                <setting alias="TMRL" default="0x0" name="TMR5L" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR2" type="tmr_timer2" version="v2" sub_version="c0" instance="2">
+            <interrupt name="TMRI" flag="PIR1bits.TMR2IF" enable="PIE1bits.TMR2IE" priority="IPR1bits.TMR2IP"/>
+            <register alias="TCON" name="T2CON" type="R,W" width="8">
+                <setting alias="TCKPS" default="1:1" name="T2CKPS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:16" alias="1:16" value="0x2"/>
+                </setting>
+                <setting alias="TMRON" default="off" name="TMR2ON" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="on" alias="on" value="0x1"/>
+                </setting>
+                <setting alias="TOUTPS" default="1:1" name="T2OUTPS" mask="0x78" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:3" alias="1:3" value="0x2"/>
+                    <option name="1:4" alias="1:4" value="0x3"/>
+                    <option name="1:5" alias="1:5" value="0x4"/>
+                    <option name="1:6" alias="1:6" value="0x5"/>
+                    <option name="1:7" alias="1:7" value="0x6"/>
+                    <option name="1:8" alias="1:8" value="0x7"/>
+                    <option name="1:9" alias="1:9" value="0x8"/>
+                    <option name="1:10" alias="1:10" value="0x9"/>
+                    <option name="1:11" alias="1:11" value="0xa"/>
+                    <option name="1:12" alias="1:12" value="0xb"/>
+                    <option name="1:13" alias="1:13" value="0xc"/>
+                    <option name="1:14" alias="1:14" value="0xd"/>
+                    <option name="1:15" alias="1:15" value="0xe"/>
+                    <option name="1:16" alias="1:16" value="0xf"/>
+                </setting>
+            </register>
+            <register alias="PR" name="PR2" type="R,W" width="8">
+                <setting alias="PR" default="0xFF" name="PR2" mask="0xff" type="R,W" porDefault="0xff"/>
+            </register>
+            <register alias="TMR" name="TMR2" type="R,W" width="8">
+                <setting alias="TMR" default="0x0" name="TMR2" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR4" type="tmr_timer2" version="v2" sub_version="c0" instance="4">
+            <interrupt name="TMRI" flag="PIR5bits.TMR4IF" enable="PIE5bits.TMR4IE" priority="IPR5bits.TMR4IP"/>
+            <register alias="TCON" name="T4CON" type="R,W" width="8">
+                <setting alias="TCKPS" default="1:1" name="T4CKPS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:16" alias="1:16" value="0x2"/>
+                </setting>
+                <setting alias="TMRON" default="off" name="TMR4ON" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="on" alias="on" value="0x1"/>
+                </setting>
+                <setting alias="TOUTPS" default="1:1" name="T4OUTPS" mask="0x78" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:3" alias="1:3" value="0x2"/>
+                    <option name="1:4" alias="1:4" value="0x3"/>
+                    <option name="1:5" alias="1:5" value="0x4"/>
+                    <option name="1:6" alias="1:6" value="0x5"/>
+                    <option name="1:7" alias="1:7" value="0x6"/>
+                    <option name="1:8" alias="1:8" value="0x7"/>
+                    <option name="1:9" alias="1:9" value="0x8"/>
+                    <option name="1:10" alias="1:10" value="0x9"/>
+                    <option name="1:11" alias="1:11" value="0xa"/>
+                    <option name="1:12" alias="1:12" value="0xb"/>
+                    <option name="1:13" alias="1:13" value="0xc"/>
+                    <option name="1:14" alias="1:14" value="0xd"/>
+                    <option name="1:15" alias="1:15" value="0xe"/>
+                    <option name="1:16" alias="1:16" value="0xf"/>
+                </setting>
+            </register>
+            <register alias="PR" name="PR4" type="R,W" width="8">
+                <setting alias="PR" default="0xFF" name="PR4" mask="0xff" type="R,W" porDefault="0xff"/>
+            </register>
+            <register alias="TMR" name="TMR4" type="R,W" width="8">
+                <setting alias="TMR" default="0x0" name="TMR4" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR6" type="tmr_timer2" version="v2" sub_version="c0" instance="6">
+            <interrupt name="TMRI" flag="PIR5bits.TMR6IF" enable="PIE5bits.TMR6IE" priority="IPR5bits.TMR6IP"/>
+            <register alias="TCON" name="T6CON" type="R,W" width="8">
+                <setting alias="TCKPS" default="1:1" name="T6CKPS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:16" alias="1:16" value="0x2"/>
+                </setting>
+                <setting alias="TMRON" default="off" name="TMR6ON" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="on" alias="on" value="0x1"/>
+                </setting>
+                <setting alias="TOUTPS" default="1:1" name="T6OUTPS" mask="0x78" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:3" alias="1:3" value="0x2"/>
+                    <option name="1:4" alias="1:4" value="0x3"/>
+                    <option name="1:5" alias="1:5" value="0x4"/>
+                    <option name="1:6" alias="1:6" value="0x5"/>
+                    <option name="1:7" alias="1:7" value="0x6"/>
+                    <option name="1:8" alias="1:8" value="0x7"/>
+                    <option name="1:9" alias="1:9" value="0x8"/>
+                    <option name="1:10" alias="1:10" value="0x9"/>
+                    <option name="1:11" alias="1:11" value="0xa"/>
+                    <option name="1:12" alias="1:12" value="0xb"/>
+                    <option name="1:13" alias="1:13" value="0xc"/>
+                    <option name="1:14" alias="1:14" value="0xd"/>
+                    <option name="1:15" alias="1:15" value="0xe"/>
+                    <option name="1:16" alias="1:16" value="0xf"/>
+                </setting>
+            </register>
+            <register alias="PR" name="PR6" type="R,W" width="8">
+                <setting alias="PR" default="0xFF" name="PR6" mask="0xff" type="R,W" porDefault="0xff"/>
+            </register>
+            <register alias="TMR" name="TMR6" type="R,W" width="8">
+                <setting alias="TMR" default="0x0" name="TMR6" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="EUSART" name="EUSART1" type="uart_enh" version="v3" sub_version="f0" instance="1">
+            <interrupt name="TXI" flag="PIR1bits.TX1IF" enable="PIE1bits.TX1IE" priority="IPR1bits.TX1IP"/>
+            <interrupt name="RCI" flag="PIR1bits.RC1IF" enable="PIE1bits.RC1IE" priority="IPR1bits.RC1IP"/>
+            <register alias="BAUDCON" name="BAUDCON1" type="R,W" width="8">
+                <setting alias="ABDEN" default="disabled" name="ABDEN" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="WUE" default="disabled" name="WUE" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="BRG16" default="8bit_generator" name="BRG16" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="8bit_generator" alias="8bit_generator" value="0x0"/>
+                    <option name="16bit_generator" alias="16bit_generator" value="0x1"/>
+                </setting>
+                <setting alias="SCKP" default="async_noninverted_sync_fallingedge" name="CKTXP" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="async_noninverted_sync_fallingedge" alias="async_noninverted_sync_fallingedge" value="0x0"/>
+                    <option name="async_inverted_sync_risingedge" alias="async_inverted_sync_risingedge" value="0x1"/>
+                </setting>
+                <setting alias="DTRXP" default="not_inverted" name="DTRXP" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                </setting>
+                <setting alias="RCIDL" default="idle" name="RCIDL" mask="0x40" type="R" porDefault="0x1">
+                    <option name="bit_received" alias="bit_received" value="0x0"/>
+                    <option name="idle" alias="idle" value="0x1"/>
+                </setting>
+                <setting alias="ABDOVF" default="no_overflow" name="ABDOVF" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="no_overflow" alias="no_overflow" value="0x0"/>
+                    <option name="overflow" alias="overflow" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="RCSTA" name="RCSTA1" type="R,W" width="8">
+                <setting alias="RX9D" default="0x0" name="RX9D" mask="0x1" type="R" porDefault="0x0"/>
+                <setting alias="OERR" default="no_error" name="OERR" mask="0x2" type="R" porDefault="0x0">
+                    <option name="no_error" alias="no_error" value="0x0"/>
+                    <option name="error" alias="error" value="0x1"/>
+                </setting>
+                <setting alias="FERR" default="no_error" name="FERR" mask="0x4" type="R" porDefault="0x0">
+                    <option name="no_error" alias="no_error" value="0x0"/>
+                    <option name="error" alias="error" value="0x1"/>
+                </setting>
+                <setting alias="ADDEN" default="disabled" name="ADDEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="CREN" default="disabled" name="CREN" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SREN" default="disabled" name="SREN" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RX9" default="8-bit" name="RX9" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="8-bit" alias="8-bit" value="0x0"/>
+                    <option name="9-bit" alias="9-bit" value="0x1"/>
+                </setting>
+                <setting alias="SPEN" default="disabled" name="SPEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TXSTA" name="TXSTA1" type="R,W" width="8">
+                <setting alias="TX9D" default="0x0" name="TX9D" mask="0x1" type="R,W" porDefault="0x0"/>
+                <setting alias="TRMT" default="TSR_empty" name="TRMT" mask="0x2" type="R" porDefault="0x1">
+                    <option name="TSR_full" alias="TSR_full" value="0x0"/>
+                    <option name="TSR_empty" alias="TSR_empty" value="0x1"/>
+                </setting>
+                <setting alias="BRGH" default="lo_speed" name="BRGH" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="lo_speed" alias="lo_speed" value="0x0"/>
+                    <option name="hi_speed" alias="hi_speed" value="0x1"/>
+                </setting>
+                <setting alias="SENDB" default="sync_break_complete" name="SENDB" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="sync_break_complete" alias="sync_break_complete" value="0x0"/>
+                    <option name="send_sync_break_next" alias="send_sync_break_next" value="0x1"/>
+                </setting>
+                <setting alias="SYNC" default="asynchronous" name="SYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="asynchronous" alias="asynchronous" value="0x0"/>
+                    <option name="synchronous" alias="synchronous" value="0x1"/>
+                </setting>
+                <setting alias="TXEN" default="disabled" name="TXEN" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TX9" default="8-bit" name="TX9" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="8-bit" alias="8-bit" value="0x0"/>
+                    <option name="9-bit" alias="9-bit" value="0x1"/>
+                </setting>
+                <setting alias="CSRC" default="slave_mode" name="CSRC" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="slave_mode" alias="slave_mode" value="0x0"/>
+                    <option name="master_mode" alias="master_mode" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SPBRGL" name="SPBRG1" type="R,W" width="8"/>
+            <register alias="SPBRGH" name="SPBRGH1" type="R,W" width="8"/>
+            <register alias="TXREG" name="TXREG1" type="R,W" width="8"/>
+            <register alias="RCREG" name="RCREG1" type="R" width="8"/>
+        </module>
+        <module group="EUSART" name="EUSART2" type="uart_enh" version="v3" sub_version="f0" instance="2">
+            <interrupt name="TXI" flag="PIR3bits.TX2IF" enable="PIE3bits.TX2IE" priority="IPR3bits.TX2IP"/>
+            <interrupt name="RCI" flag="PIR3bits.RC2IF" enable="PIE3bits.RC2IE" priority="IPR3bits.RC2IP"/>
+            <register alias="BAUDCON" name="BAUDCON2" type="R,W" width="8">
+                <setting alias="ABDEN" default="disabled" name="ABDEN" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="WUE" default="disabled" name="WUE" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="BRG16" default="8bit_generator" name="BRG16" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="8bit_generator" alias="8bit_generator" value="0x0"/>
+                    <option name="16bit_generator" alias="16bit_generator" value="0x1"/>
+                </setting>
+                <setting alias="SCKP" default="async_noninverted_sync_fallingedge" name="CKTXP" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="async_noninverted_sync_fallingedge" alias="async_noninverted_sync_fallingedge" value="0x0"/>
+                    <option name="async_inverted_sync_risingedge" alias="async_inverted_sync_risingedge" value="0x1"/>
+                </setting>
+                <setting alias="DTRXP" default="not_inverted" name="DTRXP" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                </setting>
+                <setting alias="RCIDL" default="idle" name="RCIDL" mask="0x40" type="R" porDefault="0x1">
+                    <option name="bit_received" alias="bit_received" value="0x0"/>
+                    <option name="idle" alias="idle" value="0x1"/>
+                </setting>
+                <setting alias="ABDOVF" default="no_overflow" name="ABDOVF" mask="0x80" type="W" porDefault="0x0">
+                    <option name="no_overflow" alias="no_overflow" value="0x0"/>
+                    <option name="overflow" alias="overflow" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="RCSTA" name="RCSTA2" type="R,W" width="8">
+                <setting alias="RX9D" default="0x0" name="RX9D" mask="0x1" type="R" porDefault="0x0"/>
+                <setting alias="OERR" default="no_error" name="OERR" mask="0x2" type="R" porDefault="0x0">
+                    <option name="no_error" alias="no_error" value="0x0"/>
+                    <option name="error" alias="error" value="0x1"/>
+                </setting>
+                <setting alias="FERR" default="no_error" name="FERR" mask="0x4" type="R" porDefault="0x0">
+                    <option name="no_error" alias="no_error" value="0x0"/>
+                    <option name="error" alias="error" value="0x1"/>
+                </setting>
+                <setting alias="ADDEN" default="disabled" name="ADDEN" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="CREN" default="disabled" name="CREN" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SREN" default="disabled" name="SREN" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="RX9" default="8-bit" name="RX9" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="8-bit" alias="8-bit" value="0x0"/>
+                    <option name="9-bit" alias="9-bit" value="0x1"/>
+                </setting>
+                <setting alias="SPEN" default="disabled" name="SPEN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TXSTA" name="TXSTA2" type="R,W" width="8">
+                <setting alias="TX9D" default="0x0" name="TX9D" mask="0x1" type="R,W" porDefault="0x0"/>
+                <setting alias="TRMT" default="TSR_empty" name="TRMT" mask="0x2" type="R" porDefault="0x1">
+                    <option name="TSR_full" alias="TSR_full" value="0x0"/>
+                    <option name="TSR_empty" alias="TSR_empty" value="0x1"/>
+                </setting>
+                <setting alias="BRGH" default="lo_speed" name="BRGH" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="lo_speed" alias="lo_speed" value="0x0"/>
+                    <option name="hi_speed" alias="hi_speed" value="0x1"/>
+                </setting>
+                <setting alias="SENDB" default="sync_break_complete" name="SENDB" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="sync_break_complete" alias="sync_break_complete" value="0x0"/>
+                    <option name="send_sync_break_next" alias="send_sync_break_next" value="0x1"/>
+                </setting>
+                <setting alias="SYNC" default="asynchronous" name="SYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="asynchronous" alias="asynchronous" value="0x0"/>
+                    <option name="synchronous" alias="synchronous" value="0x1"/>
+                </setting>
+                <setting alias="TXEN" default="disabled" name="TXEN" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="TX9" default="8-bit" name="TX9" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="8-bit" alias="8-bit" value="0x0"/>
+                    <option name="9-bit" alias="9-bit" value="0x1"/>
+                </setting>
+                <setting alias="CSRC" default="slave_mode" name="CSRC" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="slave_mode" alias="slave_mode" value="0x0"/>
+                    <option name="master_mode" alias="master_mode" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="SPBRGL" name="SPBRG2" type="R,W" width="8"/>
+            <register alias="SPBRGH" name="SPBRGH2" type="R,W" width="8"/>
+            <register alias="TXREG" name="TXREG2" type="W" width="8"/>
+            <register alias="RCREG" name="RCREG2" type="R" width="8"/>
+        </module>
+        <module group="FVR" name="FVR" type="vref_bandgap_2buf" version="v14" sub_version="a10" instance="">
+            <register alias="FVRCON" name="VREFCON0" type="R,W" width="8">
+                <setting alias="CDAFVR" default="off" name="FVRS" mask="0x30" type="R,W" porDefault="0x1">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="1x" alias="1x" value="0x1"/>
+                    <option name="2x" alias="2x" value="0x2"/>
+                    <option name="4x" alias="4x" value="0x3"/>
+                </setting>
+                <setting alias="FVRRDY" default="disabled" name="FVRST" mask="0x40" type="R" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="FVREN" default="disabled" name="FVREN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+        </module>
+        <module group="Memory" name="MEMORY" type="pfm_control" version="v7" sub_version="" instance="">
+            <interrupt name="EEI" flag="PIR2bits.EEIF" enable="PIE2bits.EEIE" priority="IPR2bits.EEIP"/>
+            <register alias="EECON2" name="EECON2" type="W" width="8">
+                <setting alias="EECON2" default="0x0" name="EECON2" mask="0xff" type="W" porDefault="0x0"/>
+            </register>
+            <register alias="EECON1" name="EECON1" type="R,W" width="8">
+                <setting alias="RD" default="do_not_initiate_read" name="RD" mask="0x1" type="W" porDefault="0x0">
+                    <option name="do_not_initiate_read" alias="do_not_initiate_read" value="0x0"/>
+                    <option name="initiate_read" alias="initiate_read" value="0x1"/>
+                </setting>
+                <setting alias="WR" default="write_complete" name="WR" mask="0x2" type="W" porDefault="0x0">
+                    <option name="write_complete" alias="write_complete" value="0x0"/>
+                    <option name="initiate_write" alias="initiate_write" value="0x1"/>
+                </setting>
+                <setting alias="WREN" default="disabled" name="WREN" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="WRERR" default="normal_completion" name="WRERR" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="normal_completion" alias="normal_completion" value="0x0"/>
+                    <option name="program_error" alias="program_error" value="0x1"/>
+                </setting>
+                <setting alias="FREE" default="write" name="FREE" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="write" alias="write" value="0x0"/>
+                    <option name="erase" alias="erase" value="0x1"/>
+                </setting>
+                <setting alias="CFGS" default="flash_eeprom" name="CFGS" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="flash_eeprom" alias="flash_eeprom" value="0x0"/>
+                    <option name="configuration" alias="configuration" value="0x1"/>
+                </setting>
+                <setting alias="EEPGD" default="access_eeprom" name="EEPGD" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="access_eeprom" alias="access_eeprom" value="0x0"/>
+                    <option name="access_flash" alias="access_flash" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TBLPTRU" name="TBLPTRU" type="R,W" width="8">
+                <setting alias="TBLPTRU" default="0x0" name="TBLPTRU" mask="0x3f" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TBLPTRH" name="TBLPTRH" type="R,W" width="8">
+                <setting alias="TBLPTRH" default="0x0" name="TBLPTRH" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TBLPTRL" name="TBLPTRL" type="R,W" width="8">
+                <setting alias="TBLPTRL" default="0x0" name="TBLPTRL" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="TABLAT" name="TABLAT" type="R,W" width="8">
+                <setting alias="TABLAT" default="0x0" name="TABLAT" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="EEADR" name="EEADR" type="R,W" width="8">
+                <setting alias="EEADR" default="0x0" name="EEADR" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="EEDATA" name="EEDATA" type="R,W" width="8">
+                <setting alias="EEDATA" default="0x0" name="EEDATA" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <property name="WRITE_FLASH_BLOCKSIZE" value="64"/>
+            <property name="ERASE_FLASH_BLOCKSIZE" value="64"/>
+            <property name="END_FLASH" value="0x4000"/>
+            <property name="EEPROM_START_ADDRESS" value="0xf00000"/>
+            <property name="EEPROM_END_ADDRESS" value="0xf00100"/>
+            <property name="EEPROM_SIZE" value="256"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:0" value="GPR:0:0x60:0x100:gpr0"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:1" value="GPR:1:0x100:0x200:gpr1"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:2" value="GPR:2:0x200:0x300:gpr2"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:3" value="SFR:15:0xf38:0xf60:sfr15"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:4" value="SFR:15:0xf60:0x1000:accesssfr"/>
+        </module>
+    </modules>
+    <manager name="Interrupt Manager">
+        <modules>
+            <module group="INT" name="INT" type="int_intp18f" version="v1" sub_version="c0" instance="">
+                <register alias="INTCON" name="INTCON" type="R,W" width="8">
+                    <setting alias="RBIF" default="no_change" name="RBIF" mask="0x1" type="R,W" porDefault="0x0" description="Port B Interrupt-On-Change Interrupt Flag">
+                        <option name="no_change" alias="no_change" value="0x0"/>
+                        <option name="change_occurred" alias="change_occurred" value="0x1"/>
+                    </setting>
+                    <setting alias="INT0IF" default="no_interrupt" name="INT0IF" mask="0x2" type="R,W" porDefault="0x0" description="INT0 External Interrupt Flag">
+                        <option name="no_interrupt" alias="no_interrupt" value="0x0"/>
+                        <option name="interrupt_occurred" alias="interrupt_occurred" value="0x1"/>
+                    </setting>
+                    <setting alias="RBIE" default="disabled" name="RBIE" mask="0x8" type="R,W" porDefault="0x0" description="Port B Interrupt-On-Change Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="INT0IE" default="disabled" name="INT0IE" mask="0x10" type="R,W" porDefault="0x0" description="INT0 External Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="PEIE" default="disabled" name="PEIE" mask="0x40" type="R,W" porDefault="0x0" description="Peripheral Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="GIEL" default="disabled" name="GIEL" mask="0x40" type="R,W" porDefault="0x0" description="Low Priority Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="GIE" default="disabled" name="GIE" mask="0x80" type="R,W" porDefault="0x0" description="Global Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="GIEH" default="disabled" name="GIEH" mask="0x80" type="R,W" porDefault="0x0" description="High Priority Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="INTCON2" name="INTCON2" type="R,W" width="8">
+                    <setting alias="RBIP" default="high priority" name="RBIP" mask="0x1" type="R,W" porDefault="0x1" description="RB Port Change Interrupt Priority">
+                        <option name="low priority" alias="low priority" value="0x0"/>
+                        <option name="high priority" alias="high priority" value="0x1"/>
+                    </setting>
+                    <setting alias="INTEDG2" default="rising edge" name="INTEDG2" mask="0x10" type="R,W" porDefault="0x1" description="INT2 Edge Select">
+                        <option name="falling edge" alias="falling edge" value="0x0"/>
+                        <option name="rising edge" alias="rising edge" value="0x1"/>
+                    </setting>
+                    <setting alias="INTEDG1" default="rising edge" name="INTEDG1" mask="0x20" type="R,W" porDefault="0x1" description="INT1 Edge Select">
+                        <option name="falling edge" alias="falling edge" value="0x0"/>
+                        <option name="rising edge" alias="rising edge" value="0x1"/>
+                    </setting>
+                    <setting alias="INTEDG0" default="rising edge" name="INTEDG0" mask="0x40" type="R,W" porDefault="0x1" description="INT0 Edge Select">
+                        <option name="falling edge" alias="falling edge" value="0x0"/>
+                        <option name="rising edge" alias="rising edge" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="INTCON3" name="INTCON3" type="R,W" width="8">
+                    <setting alias="INT1IF" default="no_interrupt" name="INT1IF" mask="0x1" type="R,W" porDefault="0x0" description="INT1 External Interrupt Flag">
+                        <option name="no_interrupt" alias="no_interrupt" value="0x0"/>
+                        <option name="interrupt_occurred" alias="interrupt_occurred" value="0x1"/>
+                    </setting>
+                    <setting alias="INT2IF" default="no_interrupt" name="INT2IF" mask="0x2" type="R,W" porDefault="0x0" description="INT2 External Interrupt Flag">
+                        <option name="no_interrupt" alias="no_interrupt" value="0x0"/>
+                        <option name="interrupt_occurred" alias="interrupt_occurred" value="0x1"/>
+                    </setting>
+                    <setting alias="INT1IE" default="disabled" name="INT1IE" mask="0x8" type="R,W" porDefault="0x0" description="INT1 External Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="INT2IE" default="disabled" name="INT2IE" mask="0x10" type="R,W" porDefault="0x0" description="INT2 External Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="INT1IP" default="high priority" name="INT1IP" mask="0x40" type="R,W" porDefault="0x1" description="INT1 External Interrupt Priority">
+                        <option name="low priority" alias="low priority" value="0x0"/>
+                        <option name="high priority" alias="high priority" value="0x1"/>
+                    </setting>
+                    <setting alias="INT2IP" default="high priority" name="INT2IP" mask="0x80" type="R,W" porDefault="0x1" description="INT2 External Interrupt Priority">
+                        <option name="low priority" alias="low priority" value="0x0"/>
+                        <option name="high priority" alias="high priority" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="RCON" name="RCON" type="R,W" width="8">
+                    <setting alias="IPEN" default="disabled" name="IPEN" mask="0x80" type="R,W" porDefault="0x0" description="Interrupt Priority Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+            </module>
+        </modules>
+    </manager>
+</device>

@@ -1,0 +1,301 @@
+'GCBASIC/GCGB Chip Data File
+'Chip: MCV201B
+'Main Format last revised:   14/07/2017
+'Header Format last revised: 28/03/2019
+
+[ChipData]
+';All items in the ChipData section of this DAT file are available to user programs as constants.
+';The constants have the prefix of CHIP. See the examples below.
+
+'This constant is exposed as CHIPWORDS.
+Prog=65536
+
+'This constant is exposed as CHIPEEPROM.
+EEPROM=1024
+
+'This constant is exposed as CHIPRAM.
+RAM=3936
+
+'This constant is exposed as CHIPIO.
+I/O=70
+
+'This constant is exposed as CHIPADC.
+ADC=16
+
+'This constant is exposed as CHIPMHZ.
+MaxMHz=40
+
+'This constant is exposed with only the first parameter (if more than one parameter) exposed
+IntOsc=32
+
+'This constant is exposed as CHIPPINS.
+Pins=80
+
+'This constant is exposed as CHIPFAMILY.
+Family=14
+
+'This constant is exposed as CHIPCONFIGWORDS.
+ConfigWords=1
+
+'This constant is exposed as CHIPPSP
+PSP=0
+
+'This constant is exposed as CHIPMAXADDRESS
+MaxAddress=127
+
+';Microcontroller specific configuration. Constants used within specific libraries, the compiler or user programs. All sourced from chip data database.
+';This section of constants is specific to a microcontroller.  Therefore, the constants may not be present for a specific microcontroller.
+
+'CHIPSTACKS csn be used within  user programs.  This constant provides information with respect to the number of stacks avaiable
+Stacks=31
+
+'CHIPUSERIDADDRESS  is used within user programs.  This constant provides information with respect to the address of the UserID.
+UserIDAddress=2097152
+
+'CHIPUSERIDLENGTH is used within user programs.  This constant provides information with respect to the length of the UserID (in words).
+UserIDLength=8
+
+[Interrupts]
+'For specific details of the interrupts see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC identifier used within user code to expose the specific interrupt.
+ADCReady:ADIE,ADIF
+PORTAChange:RAIE,RAIF
+PortChange:RAIE,RAIF
+Timer0Overflow:T0IE,T0IF
+
+[Registers]
+'For specific details of the registers see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC register name that can be used within user code to expose the specific register.
+INDF,0
+TMR0,1
+PCL,2
+STATUS,3
+FSR,4
+OSCCAL,5
+PORTA,6
+PORTB,7
+PORTC,8
+ADCON0,9
+ADRES,10
+INTCON,11
+INTCON0,11
+EECON,33
+EEDATA,37
+EEADR,38
+CM1CON0,39
+CM2CON0,40
+VRCON,41
+ANSEL,42
+IW,97
+INTCON1,101
+INTIE_REG,101
+ISTATUS,102
+IFSR,103
+IBSR,104
+OPACON,105
+
+[Bits]
+'For specific details of the bits (all bits are relative to a register in terms of register.bits) see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC bit name that can be used within user code to expose the specific register.bit.
+NOT_C1WU,CM1CON0,0
+C1PREF,CM1CON0,1
+C1NREF,CM1CON0,2
+C1ON,CM1CON0,3
+NOT_C1T0CS,CM1CON0,4
+C1POL,CM1CON0,5
+NOT_C1OUTEN,CM1CON0,6
+C1OUT,CM1CON0,7
+C,STATUS,0
+DC,STATUS,1
+Z,STATUS,2
+NOT_PD,STATUS,3
+NOT_TO,STATUS,4
+PA0,STATUS,5
+PA1,STATUS,6
+CAL0,OSCCAL,1
+CAL1,OSCCAL,2
+CAL2,OSCCAL,3
+CAL3,OSCCAL,4
+CAL4,OSCCAL,5
+CAL5,OSCCAL,6
+CAL6,OSCCAL,7
+RA0,PORTA,0
+RA1,PORTA,1
+RA2,PORTA,2
+RA3,PORTA,3
+RA4,PORTA,4
+RA5,PORTA,5
+RB4,PORTB,4
+RB5,PORTB,5
+RB6,PORTB,6
+RB7,PORTB,7
+RC0,PORTC,0
+RC1,PORTC,1
+RC2,PORTC,2
+RC3,PORTC,3
+RC4,PORTC,4
+RC5,PORTC,5
+RC6,PORTC,6
+RC7,PORTC,7
+ADON,ADCON0,0
+GO_DONE,ADCON0,1
+GO_NOT_DONE,ADCON0,1
+GO,ADCON0,1
+CHS0,ADCON0,2
+CHS1,ADCON0,3
+CHS2,ADCON0,4
+CHS3,ADCON0,5
+ADCS0,ADCON0,6
+ADCS1,ADCON0,7
+NOT_DONE,ADCON0,1
+ADRES0,ADRES,0
+ADRES1,ADRES,1
+ADRES2,ADRES,2
+ADRES3,ADRES,3
+ADRES4,ADRES,4
+ADRES5,ADRES,5
+ADRES6,ADRES,6
+ADRES7,ADRES,7
+GIE,INTCON,0
+RAIF,INTCON,4
+T0IF,INTCON,5
+CWIF,INTCON,6
+ADIF,INTCON,7
+INTCON0_GIE,INTCON0,0
+INTCON0_RAIF,INTCON0,4
+INTCON0_T0IF,INTCON0,5
+INTCON0_CWIF,INTCON0,6
+INTCON0_ADIF,INTCON0,7
+RD,EECON,0
+WR,EECON,1
+WREN,EECON,2
+WRERR,EECON,3
+FREE,EECON,4
+NOT_C2WU,CM2CON0,0
+C2PREF1,CM2CON0,1
+C2NREF,CM2CON0,2
+C2ON,CM2CON0,3
+C2PREF2,CM2CON0,4
+C2POL,CM2CON0,5
+NOT_C2OUTEN,CM2CON0,6
+C2OUT,CM2CON0,7
+VRR,VRCON,5
+VROE,VRCON,6
+VREN,VRCON,7
+VR0,VRCON,0
+VR1,VRCON,1
+VR2,VRCON,2
+VR3,VRCON,3
+ANS0,ANSEL,0
+ANS1,ANSEL,1
+ANS2,ANSEL,2
+ANS3,ANSEL,3
+ANS4,ANSEL,4
+ANS5,ANSEL,5
+ANS6,ANSEL,6
+ANS7,ANSEL,7
+WUR,INTCON1,0
+RAIE,INTCON1,4
+T0IE,INTCON1,5
+CWIE,INTCON1,6
+ADIE,INTCON1,7
+INTIE_REG_WUR,INTIE_REG,0
+INTIE_REG_RAIE,INTIE_REG,4
+INTIE_REG_T0IE,INTIE_REG,5
+INTIE_REG_CWIE,INTIE_REG,6
+INTIE_REG_ADIE,INTIE_REG,7
+ISTATUS_C,ISTATUS,0
+ISTATUS_DC,ISTATUS,1
+ISTATUS_Z,ISTATUS,2
+ISTATUS_NOT_PD,ISTATUS,3
+ISTATUS_NOT_TO,ISTATUS,4
+ISTATUS_PA0,ISTATUS,5
+ISTATUS_PA1,ISTATUS,6
+OPA1ON,OPACON,0
+OPA2ON,OPACON,1
+PSA,OPTION_REG,3
+T0SE,OPTION_REG,4
+T0CS,OPTION_REG,5
+NOT_RAPU,OPTION_REG,6
+NOT_RAWU,OPTION_REG,7
+PS0,OPTION_REG,0
+PS1,OPTION_REG,1
+PS2,OPTION_REG,2
+TRISC0,TRISC,0
+TRISC1,TRISC,1
+TRISC2,TRISC,2
+TRISC3,TRISC,3
+TRISC4,TRISC,4
+TRISC5,TRISC,5
+TRISC6,TRISC,6
+TRISC7,TRISC,7
+TRISB4,TRISB,4
+TRISB5,TRISB,5
+TRISB6,TRISB,6
+TRISB7,TRISB,7
+TRISA0,TRISA,0
+TRISA1,TRISA,1
+TRISA2,TRISA,2
+TRISA4,TRISA,4
+TRISA5,TRISA,5
+
+[FreeRAM]
+
+[NoBankRAM]
+
+[Pins-TQFP]
+9,MCLR
+49,OSC1
+50,OSC2
+11,Vss
+12,Vdd
+25,AVdd
+26,AVss
+31,Vss
+32,Vdd
+48,Vdd
+51,Vss
+70,Vss
+71,Vdd
+
+[ConfigOps]
+'For specific details of the config options see the microcontrollers datasheet.
+'The first parameter is the configuration field that can be used to expose the specific configuration bits.
+'The others parameter are the options the configuration field that can be set.
+OSC=LP,XT,HS,EC,INTRC_IO,INTRC_CLKOUT,EXTRC_IO,EXTRC_CLKOUT,IOSCFS_4MHZ,IOSCFS_8MHZ
+WDTE=OFF,ON
+CP=ON,OFF
+MCLRE=OFF,ON
+CPSW=ON,OFF
+BOREN=OFF,ON
+DRTEN=OFF,ON
+
+[Config]
+'For specific details of the config addresses see the microcontrollers datasheet.
+FOSC_LP,1,4088
+FOSC_XT,1,4089
+FOSC_HS,1,4090
+FOSC_EC,1,4091
+FOSC_INTRC_IO,1,4092
+FOSC_INTRC_CLKOUT,1,4093
+FOSC_EXTRC_IO,1,4094
+FOSC_EXTRC_CLKOUT,1,4095
+WDTE_OFF,1,4087
+WDTE_ON,1,4095
+CP_ON,1,4079
+CP_OFF,1,4095
+MCLRE_OFF,1,4063
+MCLRE_ON,1,4095
+IOSCFS_4MHz,1,4031
+IOSCFS_8MHz,1,4095
+CPSW_ON,1,3967
+CPSW_OFF,1,4095
+BOREN_OFF,1,3839
+BOREN_ON,1,4095
+DRTEN_OFF,1,3583
+DRTEN_ON,1,4095
+IDLOC0,1,1088
+IDLOC1,1,1089
+IDLOC2,1,1090
+IDLOC3,1,1091
+

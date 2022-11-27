@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.atmel.com/schemas/pack-device-atmel-extension" targetNamespace="http://www.atmel.com/schemas/pack-device-atmel-extension" elementFormDefault="qualified">
+
+    <xs:element name="extension">
+        <xs:annotation>
+            <xs:documentation>Root element for Atmel-specific extensions to the CMSIS pack device element. The element is placed within an environment[name='atmel'] element within the family or device description.</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence maxOccurs="unbounded">
+                <xs:element name="atdf" maxOccurs="unbounded" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Reference to the ATDF file associated with the device.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Relative path of the ATDF file within the pack.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="pic" maxOccurs="unbounded" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Reference to the PIC file associated with the device, if any.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Relative path of the PIC file within the pack.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="variant">
+                    <xs:annotation>
+                        <xs:documentation>Declares a variant of the device in terms of order code. </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="ordercode" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Order code, typically as given in the datasheet.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="vccmin">
+                            <xs:annotation>
+                                <xs:documentation>Voltage range minimum value</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="vccmax">
+                            <xs:annotation>
+                                <xs:documentation>Voltage range maximum value</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="tempmin">
+                            <xs:annotation>
+                                <xs:documentation>Temperature range minimum value</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="tempmax">
+                            <xs:annotation>
+                                <xs:documentation>Temperature range maximum value</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="memory">
+                    <xs:annotation>
+                        <xs:documentation>Declares that the device has the given memory segment. Must be present if atdf element is present.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="address-space" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Enclosing address-space as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Name as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="start" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Size as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="size" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Size as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="type">
+                            <xs:annotation>
+                                <xs:documentation>Type as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="wordsize">
+                            <xs:annotation>
+                                <xs:documentation>Wordsize as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="pagesize">
+                            <xs:annotation>
+                                <xs:documentation>Pagesize as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="caption">
+                            <xs:annotation>
+                                <xs:documentation>Caption as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="exec">
+                            <xs:annotation>
+                                <xs:documentation>Exec flag as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="rw">
+                            <xs:annotation>
+                                <xs:documentation>RW flagas given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="external">
+                            <xs:annotation>
+                                <xs:documentation>External indicator as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="virtual">
+                            <xs:annotation>
+                                <xs:documentation>Virtual indicator as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="mirror-mask">
+                            <xs:annotation>
+                                <xs:documentation>Mirror-mask value as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="interface">
+                    <xs:annotation>
+                        <xs:documentation>Declares that the device has the given physical interface. Must be present if atdf element is present.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Name as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="type" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Type as given in the ATDF file.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="tool">
+                    <xs:annotation>
+                        <xs:documentation>Declares that the given tool supports this device.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="id" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Id of the tool, as known from the Tool XML file. Normally on reverse domain name form.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="property">
+                    <xs:annotation>
+                        <xs:documentation>Defines a property that can be consumed by Studio, the backend etc.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Name of the property, normally on reverse domain name form.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="value" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Property value. A reference to a file within the pack should normally be relative to the pack root.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="project">
+                    <xs:annotation>
+                        <xs:documentation>Describes a simple code 'project' in the form of a set of components. Experimental. By convention, a project with the name 'barebone' should be present.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element maxOccurs="unbounded" name="component">
+                                <xs:annotation>
+                                    <xs:documentation>Component that should be 'imported' into the project. The filters given by the device context (Dname, Dfamily etc), and the target compiler (Tcompiler) should be applied when looking for components and files within the component. </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element maxOccurs="unbounded" minOccurs="0"
+                                            name="template">
+                                            <xs:annotation>
+                                                <xs:documentation>Also instanciate a template specified in the component.</xs:documentation>
+                                            </xs:annotation>
+                                            <xs:complexType>
+                                                <xs:attribute name="select" use="required">
+                                                  <xs:annotation>
+                                                  <xs:documentation>Select statement as given in the declaration of the component.</xs:documentation>
+                                                  </xs:annotation>
+                                                </xs:attribute>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute name="Cvendor" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>Component vendor.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Cclass" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>Component class.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Cgroup" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>Component group.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Csub" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>Component sub group.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Cvariant" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>Component variant.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Cversion" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>Component version.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Capiversion" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>Component API version.</xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="name" use="required">
+                            <xs:annotation>
+                                <xs:documentation>Name of project. </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="prerequisite" maxOccurs="unbounded" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Describes a prerequisite for installing or using the device support in a given context. One of 'component', 'pack', 'msi' or 'vsix' must be specified.</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="context">
+                            <xs:annotation>
+                                <xs:documentation>Context in which the prerequisite applies (allowing an consuming application to choose when to advice the user to install the prerequisite). One of 'installation', 'compilation', 'debugging'. Left out if there is no special context. </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Tcompiler">
+                            <xs:annotation>
+                                <xs:documentation>Filter for a compile time prerequisite. The prerequisite applies only for the given compiler. Values as specified in the PDSC schema ('GCC', 'ARMCC', 'IAR' etc).</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="component">
+                            <xs:annotation>
+                                <xs:documentation>The prerequisite is to a named component. The value is the component name. Known component names are:
+                                    AVR8-GCC
+                                    AVR32-GCC
+                                    ARM-GCC
+                                    AVR8-IAR
+                                    AVR32-IAR
+                                    ARM-IAR
+                                    ARMCC
+                                    AVRASM
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="pack">
+                            <xs:annotation>
+                                <xs:documentation>The prerequisite is to a (CMSIS) pack. The value is the pack id on the form [vendor].[packname].</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="msi">
+                            <xs:annotation>
+                                <xs:documentation>The prerequisite is to a MSI installer. The value is the MSI GUID.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="vsix">
+                            <xs:annotation>
+                                <xs:documentation>The prerequisite is to  VSIX. The value is the VSIX GUID.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="version">
+                            <xs:annotation>
+                                <xs:documentation>The required minimal version of the prerequisite. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                        <xs:attribute name="Pname">
+                            <xs:annotation>
+                                <xs:documentation>The processor associated with this entry. Optional.</xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="schemaVersion" use="optional">
+                <xs:annotation>
+                    <xs:documentation>Schema version that the content conforms to. The current schema version is 1.0.</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

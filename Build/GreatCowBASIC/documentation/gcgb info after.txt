@@ -1,0 +1,27 @@
+Thank you for installing Great Cow Graphical BASIC. Hopefully using it will be a pleasant experience for you! If you have any problems, suggestions or compliments, please post on the GCBASIC forum - feedback is always welcome.
+
+You will need to have the Microsoft .NET Framework installed to run Great Cow Graphical BASIC. GCGB requires .NET version 2.0 or above. If you're using Windows Vista, 7 or newer, you don't need to worry - you will already have .NET 3.0 or higher installed. If you don't have .NET, version 2.0 is a 22.4 MB free download from Microsoft and runs on Windows 98 and later.
+
+Great Cow Graphical BASIC comes set up to work with three programming applications - the Microchip PK2CMD software and IC-Prog for PIC microcontrollers, and avrdude for AVR microcontrollers.
+
+For PICkit 2 support, pk2cmd is included. It can be freely distributed and the source code is available, but it is not completely open source. You should familiarise yourself with the license terms if you're going to be using a PICkit 2.
+
+For PICkit 3 support, a complete distribution of the MicroChip PicKit3 software is included. It can be freely distributed and the source code is available, but it is not completely open source. You should familiarise yourself with the license terms if you're going to be using a PICkit 3.
+
+Also, for PICkit 2 and PICkit 3 we have provided a series of chip/device files.  These can be used with either the PicKit2 or PicKit3 programmers.  Please use the forum to determine the best chip/device file for your specific requirement.
+
+For the MicroChip Xpress board a GCB specific utility is installed for your use.
+
+Refer to the flashPIC.bat in your \G_Stools folder for the details on how to use each specific programmer.
+
+For IC-Prog, please download IC-Prog and extract the contents of the zip file to the programmers folder. GCGB cannot include IC-Prog due to licensing issues.
+
+For AVR programming, avrdude is included and ready to go. It has been set to use the USBtinyISP programmer - to use another programmer, open the GCGB Preferences window, then click the Programmers tab. Click on the avrdude (USBtinyISP) programmer, then click Edit. In the Command Line Parameters box, replace "usbtiny" with the parameter for the programmer you're using - refer to the avrdude website to find out what to type for your programmer.
+
+For Arduino support, another copy of avrdude is supplied. You will need to select the appropriate serial port.
+
+Refer to the flashAVR.bat in your \G_Stools folder for the details on how to use each specific programmer.
+
+GCGB can be configured to work with other programmers. You can set this up by opening the Edit > Preferences dialog, and then choosing the Programmers tab. There is already some documentation on how to do this in the help file, and more will be provided later.
+
+Have fun, and let us know on the forum if you have any problems!

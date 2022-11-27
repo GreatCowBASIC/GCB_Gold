@@ -1,0 +1,12 @@
+For anyone trying to program an Arduino Leonardo, in this folder is a small command line tool.
+
+This was designed to support a Arduino Robot.
+
+It will wait for a new serial port to appear on the system, and then call avrdude with that port.
+
+The source is in SVN at http://sourceforge.net/p/gcbasic/code/HEAD/tree/utils/ArduinoRobotLoader/
+the, program is in this folder.
+
+The program is called 'ArduinoRobotLoader.exe', place in the same directory as avrdude.exe, and you should be able to call it from a batch file with
+just the filename as a parameter.  If the device is currently enumerated, you can also supply the port with /P:COM2 (for example) and it will open COM2 at 1200 baud,
+then close it and wait for a new port to appear, before programming on that one.

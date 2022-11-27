@@ -1,0 +1,56 @@
+'''
+'''******************************************************************
+'''
+''' Pulse-Width Modulation (PWM) is a scheme that provides power to a load by switching
+''' quickly between fully on and fully off states. The PWM signal resembles a square wave
+''' where the high portion of the signal is considered the on state and the low portion of
+''' the signal is considered the off state. The high portion, also known as the pulse width,
+''' can vary in time and is defined in steps. A longer, high on time will illuminate the LED
+''' brighter. The frequency or period of the PWM does not change. A larger number of
+''' steps applied, which lengthens the pulse width, also supplies more power to the load.
+''' Lowering the number of steps applied, which shortens the pulse width, supplies less
+''' power. The PWM period is defined as the duration of one complete cycle or the total
+''' amount of on and off time combined.
+'''
+''' This demonstation shows a how the changing PWM values via connnector RC2
+'''
+'''  PIC: 16F18855
+'''  Compiler: GCB
+'''  IDE: GCB@SYN
+'''
+'''  Board: Xpress Evaluation Board
+'''  Date: 13.3.2016
+'''
+
+
+
+    #chip 16f18855,32
+    #Config FEXTOSC_OFF, RSTOSC_HFINT32
+    #Config WRT_OFF, CPD_ON, MCLRE_ON
+
+    UNLOCKPPS
+    		'Set the PPS of the CCP.
+        RC2PPS = 0x0A		    'RC2->CCP2:CCP2;
+
+        'Set the PPS of the RS232 ports.
+    		RC0PPS = 0x0010		  'RC0->EUSART:TX;
+      	RXPPS  = 0x0011 		'RC1->EUSART:RX;
+    LOCKPPS
+
+    #define USE_HPWMCCP1 FALSE       ' This is not used so optimise
+    #define USE_HPWMCCP2 TRUE        ' This is used so include in the compiled code
+    #define USE_HPWMCCP3 FALSE       ' This is not used so optimise
+    #define USE_HPWMCCP4 FALSE       ' This is not used so optimise
+
+
+    'Setting the port an output is VERY important... LED will not work if you do not set as an output.
+    dir portC.2 out    ; CCP2
+
+    do forever
+            For Bright = 1 to 255
+                HPWM 2, 40, Bright
+                wait 10 ms
+            next
+
+    loop
+

@@ -1,0 +1,9 @@
+<Application name="PICPgm Development Programmer" version="1.9.2.5" />
+<LastHexFiles />
+<EEPROMDummyBytes>yes</EEPROMDummyBytes>
+<TimingDelayFactor>1</TimingDelayFactor>
+<HexAutoReloadOnChange>no</HexAutoReloadOnChange>
+<ShowConfigBitWarning>yes</ShowConfigBitWarning>
+<ToolbarMode>no</ToolbarMode>
+<Programmer name="Autodetect Programmer" autodetect="yes" port="Autodetect" ioaddress="0x0" />
+<PICName>No PIC detected!</PICName>

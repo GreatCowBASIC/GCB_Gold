@@ -1,0 +1,376 @@
+[Set]
+Size=120,70
+Texture=blue_normal.png
+Lines=3
+Line1=Set
+Line2=%P1%
+Line3=%P2%
+
+[Dir]
+Size=120,70
+texture=blue_normal.png
+Lines=3
+Line1=Direction
+Line2=%P1%
+Line3=%P2%
+
+[Pulseout]
+Size=120,70
+Lines=3
+Line1=Pulse Out
+Line2=%P1%
+Line3=%P2% %P3%
+Texture=blue_normal.png
+
+[Pot]
+Size=120,70
+Lines=3
+Line1=Pot
+Line2=%P1%
+Line3=%P2%
+Texture=pot.png
+
+[PWMOn]
+Size=120,70
+Texture=pwm.png
+Lines=1
+Line1=PWM On
+
+[PWMOff]
+Size=120,70
+Texture=pwm.png
+Lines=1
+Line1=PWM Off
+
+[HPWM]
+Size=120,70
+Texture=pwm.png
+Lines=2
+Line1=HPWM
+Line2=%P1%, %P2%
+
+[PWMOut]
+Size=120,70
+Texture=pwm.png
+Lines=3
+Line1=PWM Out
+Line2=%P1%
+Line3=%P2%, %P3%
+
+[Tone]
+Size=120,70
+Texture=tone.png
+Lines=2
+Line1=Tone
+Line2=%P1% for %P2%
+
+[CLS]
+Size=120,70
+Texture=lcd.png
+Lines=1
+Line1=Clear Screen
+
+[Locate]
+Size=120,70
+Texture=lcd.png
+Lines=2
+Line1=Locate
+Line2=%P1%, %P2%
+
+[Print]
+Size=120,70
+Texture=lcd.png
+Lines=2
+Line1=Print
+Line2=%P1%
+
+[LCDInt]
+Size=120,70
+Texture=lcd.png
+Lines=2
+Line1=LCDInt
+Line2=%P1%
+
+[LCDWriteChar]
+Size=120,70
+Texture = lcd.png
+Lines=2
+Line1=Write LCD Char
+Line2=%P1%
+
+[DisplayValue]
+Size=120,70
+Texture=7seg.png
+Lines=3
+Line1=Display Value
+Line2=%P2%
+Line3=on %P1%
+
+[DisplayChar]
+Size=120,70
+Texture=7seg.png
+Lines=3
+Line1=Display Char
+Line2=%P2%
+Line3=on %P1%
+
+[EPWrite]
+Size=120,70
+Texture=eeprom.png
+Lines=2
+Line1=Write EEPROM
+Line2=%P1% = %P2%
+
+[EPRead]
+Size=120,70
+Texture=eeprom.png
+Lines=2
+Line1=Read EEPROM
+Line2=%P2% = %P1%
+
+[ReadTable]
+Size = 120,70
+Texture = readtable.png
+Lines=3
+Line1=Read Table
+Line2=%P1%, %P2%
+Line3=%P3%
+
+[InitTimer0]
+Size=120,70
+Texture=timer.png
+Lines=2
+Line1=Setup Timer 0
+Line2=%P1%, %P2%
+
+[InitTimer1]
+Size=120,70
+Texture=timer.png
+Lines=2
+Line1=Setup Timer 1
+Line2=%P1%, %P2%
+
+[ClearTimer]
+Size=120,70
+Texture=timer.png
+Lines=2
+Line1=Clear Timer
+Line2=%P1%
+
+[StartTimer]
+Size=120,70
+Texture=timer.png
+Lines=2
+Line1=Start Timer
+Line2=%P1%
+
+[StopTimer]
+Size=120,70
+Texture=timer.png
+Lines=2
+Line1=Stop Timer
+Line2=%P1%
+
+[Rotate]
+Size=120,70
+Lines=3
+Line1=Rotate
+Line2=%P1%
+Line3=%P2%
+texture=orange_normal.png
+
+[Let]
+Size=120,70
+Lines=2
+Line1=%P1% =
+Line2=%P2%
+texture=orange_normal.png
+
+[If]
+Size=140,80
+'Lines=3
+Line1=If
+Line2=%P1%
+Line3=Then
+Texture=if.png
+
+[Else]
+Size=140,60
+Lines=1
+Line1=Else
+Texture=else.png
+
+[End If]
+Size=140,40
+Lines=1
+Line1=End If
+Texture=red_small.png
+
+[for]
+Size=140,70
+Lines=3
+Line1=For
+Line2=%P1%
+Line3=%P2% to %P3%
+Texture=loop_start.png
+
+[Next]
+Size=140,70
+Lines=1
+Line1=Next
+Texture=loop_end.png
+
+[Do]
+Size=140,70
+Lines=3
+Line1=Do
+Line2=%P1%
+Line3=%P2%
+Texture=loop_start.png
+
+[Loop]
+Size=140,70
+Lines=1
+Line1=Loop
+Texture=loop_end.png
+
+[Repeat]
+Size=140,70
+Lines=2
+Line1=Repeat
+Line2=%P1%
+Texture=loop_start.png
+
+[EndRepeat]
+Size=140,70
+Lines=1
+Line1=End Repeat
+Texture=loop_end.png
+
+[Wait]
+Size=85,80
+Lines=3
+Line1=Wait
+Line2=%P1%
+Line3=%P2%
+Texture=wait.png
+
+[WaitFor]
+Size=85,80
+Lines=2
+Line1=Wait %P1%
+Line2=%P2%
+Texture=wait.png
+
+[Goto]
+Size=120,70
+Lines=2
+Line1=Goto
+Line2=%P1%
+texture=goto.png
+Joiner=n
+
+[Subroutine]
+Size=120,80
+Lines=1
+Line1=%P1%
+texture=green_normal.png
+
+[ExitSub]
+Size=120,70
+Lines=1
+Line1=Exit Sub
+Texture=exit sub.png
+Joiner=n
+
+[InitSer]
+Size=120,70
+Texture=serinit.png
+Lines=3
+Line1=Serial Init
+Line2=%P1% %P2%
+Line3=%P3% %P4% %P5% %P6%
+
+[SerSend]
+Size=120,70
+Texture=sersend.png
+Lines=2
+Line1=Serial Send
+Line2=%P1%, %P2%
+
+[SerPrint]
+Size=120,70
+Texture=sersend.png
+Lines=3
+Line1=Serial Print
+Line2=%P1%
+Line3=%P2%
+
+[SerReceive]
+Size=120,70
+Texture=serreceive.png
+Lines=2
+Line1=Serial Receive
+Line2=%P1%, %P2%
+
+[SPIMode]
+Size=120,70
+Texture=serinit.png
+Lines=2
+Line1=SPI Mode
+Line2=%P1%
+
+[SPITransfer]
+Size=120,70
+Texture=sertransfer.png
+Lines=3
+Line1=SPI Transfer
+Line2=%P1%
+Line3=%P2%
+
+[I2CStart]
+Size=120,70
+Texture=serstart.png
+Line1=I2C Start
+
+[I2CStop]
+Size=120,70
+Texture=serstop.png
+Line1=I2C Stop
+
+[I2CSend]
+Size=120,70
+Texture=sersend.png
+Line1=I2C Send
+Line2=%P1%
+
+[I2CReceive]
+Size=120,70
+Texture=serreceive.png
+Line1=I2C Receive
+Line2=%P1%
+
+[Label]
+Size=120,40
+Lines=1
+Line1=%P1%
+Texture=label.png
+
+[Comment]
+Size=120,80
+Lines=1
+Line1=%P1%
+Texture=comment.png
+colour=black
+
+[Start]
+Size=140,90
+Lines=1
+Line1=%P1%
+texture=start.png
+
+[Default]
+Size=120,70
+Lines=1
+Line1=%P99%
+Texture=default.png

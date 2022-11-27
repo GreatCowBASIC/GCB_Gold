@@ -1,0 +1,144 @@
+'GCBASIC/GCGB Chip Data File
+'Chip: 12F520
+'Main Format last revised:   14/07/2017
+'Header Format last revised: 20/01/2020
+
+[ChipData]
+';All items in the ChipData section of this DAT file are available to user programs as constants.
+';The constants have the prefix of Chip. See the examples below.
+
+'This constant is exposed as ChipWORDS.
+Prog=-1024
+
+'This constant is exposed as ChipEEPROM.
+EEPROM=0
+
+'This constant is exposed as ChipRAM.
+RAM=0
+
+'This constant is exposed as ChipIO.
+I/O=0
+
+'This constant is exposed as ChipADC.
+ADC=0
+
+'This constant is exposed as ChipMhz.
+MaxMHz=0
+
+'This constant is exposed with only the first parameter (if more than one parameter) exposed
+IntOsc=0
+
+'This constant is exposed as ChipPins.
+Pins=0
+
+'This constant is exposed as ChipFamily.
+Family=12
+
+'This constant is exposed as ChipConfWords.
+ConfigWords=1
+
+'This constant is exposed as ChipPSP
+PSP=0
+
+'This constant is exposed as ChipMaxAddress
+MaxAddress=255
+
+';Microcontroller specific configuration. Constants used within specific libraries, the compiler or user programs. All sourced from chip data database.
+';This section of constants is specific to a microcontroller.  Therefore, the constants may not be present for a specific microcontroller.
+
+[Interrupts]
+'For specific details of the interrupts see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC identifier used within user code to expose the specific interrupt.
+
+[Registers]
+'For specific details of the registers see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC register name that can be used within user code to expose the specific register.
+PRODUCT_NOT_RELEASED_LEGACY,0
+INDF,0
+TMR0,1
+PCL,2
+STATUS,3
+FSR,4
+OSCCAL,5
+PORTB,6
+EECON,33
+EEDATA,37
+EEADR,38
+
+[Bits]
+'For specific details of the bits (all bits are relative to a register in terms of register.bits) see the microcontrollers datasheet.
+'The first parameter is the Great Cow BASIC bit name that can be used within user code to expose the specific register.bit.
+C,STATUS,0
+DC,STATUS,1
+Z,STATUS,2
+NOT_PD,STATUS,3
+NOT_TO,STATUS,4
+PA0,STATUS,5
+PA1,STATUS,6
+RBWUF,STATUS,7
+RB0,PORTB,0
+RB1,PORTB,1
+RB2,PORTB,2
+RB3,PORTB,3
+RB4,PORTB,4
+RB5,PORTB,5
+RD,EECON,0
+WR,EECON,1
+WREN,EECON,2
+WRERR,EECON,3
+FREE,EECON,4
+PSA,OPTION_REG,3
+T0SE,OPTION_REG,4
+T0CS,OPTION_REG,5
+NOT_RBPU,OPTION_REG,6
+NOT_RBWU,OPTION_REG,7
+TRISB0,TRISB,0
+TRISB1,TRISB,1
+TRISB2,TRISB,2
+TRISB3,TRISB,3
+TRISB4,TRISB,4
+TRISB5,TRISB,5
+
+[FreeRAM]
+
+[NoBankRAM]
+
+[Pins-DIP]
+0,RB0(IO)
+0,RB1(IO)
+0,RB2(IO)
+0,RB3(I)
+0,RB4(IO)
+0,RB5(IO)
+
+[ConfigOps]
+'For specific details of the config options see the microcontrollers datasheet.
+'The first parameter is the configuration field that can be used to expose the specific configuration bits.
+'The others parameter are the options the configuration field that can be set.
+OSC=LP,XT,INTRC,EXTRC,IOSCFS_4MHZ,IOSCFS_8MHZ
+WDT=OFF,ON
+CP=ON,OFF
+MCLR=OFF,ON
+CPDF=ON,OFF
+
+[Config]
+'For specific details of the config addresses see the microcontrollers datasheet.
+OSC_LP,1,4092
+OSC_XT,1,4093
+OSC_INTRC,1,4094
+OSC_EXTRC,1,4095
+WDT_OFF,1,4091
+WDT_ON,1,4095
+CP_ON,1,4087
+CP_OFF,1,4095
+MCLR_OFF,1,4079
+MCLR_ON,1,4095
+IOSCFS_4MHZ,1,4063
+IOSCFS_8MHZ,1,4095
+CPDF_ON,1,4031
+CPDF_OFF,1,4095
+IDLOC0,1,1600
+IDLOC1,1,1601
+IDLOC2,1,1602
+IDLOC3,1,1603
+

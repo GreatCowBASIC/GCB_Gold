@@ -1,0 +1,2282 @@
+object SyntaxManager: TSyntaxManager
+  Left = 232
+  Top = 280
+  object SyntAnal1: TLibSyntAnalyzer
+    Formats = <
+      item
+        DisplayName = 'Default'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Label'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clFuchsia
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Marked block'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clHighlightText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = clHighlight
+        FormatType = ftColor
+      end
+      item
+        DisplayName = 'Current Line'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = 15721469
+        FormatType = ftBackGround
+      end
+      item
+        DisplayName = 'Search Match'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindow
+        Font.Height = -16
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+        BgColor = clBlack
+      end
+      item
+        DisplayName = 'Comment'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clGreen
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsItalic]
+      end
+      item
+        DisplayName = 'Identifier'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlack
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'String'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clMaroon
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Number'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Symbol'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clMaroon
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Reserved word'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlue
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Function separator'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = clLime
+      end
+      item
+        DisplayName = 'Function background'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = 15204085
+        FormatType = ftBackGround
+      end
+      item
+        DisplayName = 'Current block bound'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clMaroon
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+        BgColor = 13369046
+        FormatType = ftColor
+        BorderTypeLeft = blSolid
+        BorderColorLeft = clGray
+        BorderTypeTop = blSolid
+        BorderColorTop = clGray
+        BorderTypeRight = blSolid
+        BorderColorRight = clGray
+        BorderTypeBottom = blSolid
+        BorderColorBottom = clGray
+      end
+      item
+        DisplayName = 'Preprocessor'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsItalic]
+      end
+      item
+        DisplayName = 'OP Keywords'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clNavy
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        FormatFlags = [ffItalic, ffUnderline, ffReadOnly, ffHidden]
+      end
+      item
+        DisplayName = 'Errors'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        FormatFlags = [ffItalic, ffUnderline, ffReadOnly, ffHidden, ffFontName, ffFontSize, ffFontCharset, ffVertAlign]
+      end>
+    TokenRules = <
+      item
+        DisplayName = 'Comment'
+        StyleName = 'Comment'
+        TokenType = 1
+        Expression = 
+          '#all chars after '#39' or ; to end of line'#13#10'#all chars after rem plu' +
+          's whitespace to end of line'#13#10#39'.*|'#13#10';.*|'#13#10'rem\s.*|'#13#10'//.*|'#13#10'(?s)/\' +
+          '*.*?(\*/|\Z)'#13#10#13#10#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Parser_IfBegin'
+        StyleName = 'Reserved word'
+        TokenType = 10
+        Expression = 
+          '###########################################'#13#10'##   find "if-then"' +
+          '  but not one-liner   ##'#13#10'######################################' +
+          '#####'#13#10'(?i)^[\x20\x09]*if(?=.*?(then|_)[\s]*?[\r\n'#39';])'#13#10'#(?i)   ' +
+          '  = case insensitive'#13#10'#^[\s]*if = line-begin then spaces then "i' +
+          'f"'#13#10'#           (only "if" has Token Style)'#13#10'#(?=    ) = followe' +
+          'd by ...'#13#10'#old#.*?then  = any char then "then"'#13#10'#.*?(then|_)  = ' +
+          'any char then "then" or "_"'#13#10'#[\s]*?   = spaces'#13#10'#[\r\n'#39';] = lin' +
+          'e-end or comment'#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Parser_IfEnd'
+        StyleName = 'Reserved word'
+        TokenType = 11
+        Expression = '# find "end if" '#13#10'(?i)^\s*end\s+if(?=[\s'#39';])'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'String'
+        StyleName = 'String'
+        TokenType = 4
+        Expression = 
+          '#if only one " string to end '#13#10'#of line will be highlighted, '#13#10'#' +
+          'otherwise after closing it '#13#10'#string will not be highlighted '#13#10'"' +
+          '.*?("|$)'#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Label'
+        StyleName = 'Label'
+        Expression = 
+          '# ^    search from begin of line '#13#10'# [\x20\x09]*  allow leading ' +
+          'spaces '#13#10'# \w+: 1-n chars followed by :'#13#10'^[\x20\x09]*\w+:'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'BIN'
+        StyleName = 'Number'
+        TokenType = 7
+        Expression = 
+          '#binary can be written '#13#10'# 0b01010101'#13#10'# b'#39'01010101'#39'  or'#13#10'0b[0-1' +
+          ']+ |'#13#10'#b'#39'[01]+'#13#10'b'#39'[01]('#39'|$)'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'HEX'
+        StyleName = 'Number'
+        TokenType = 7
+        Expression = 
+          '#HEX can be written '#13#10'# 0xF9A0'#13#10'# h'#39'F9A0'#39'  or'#13#10'0x[\da-f]+ |'#13#10'h\'#39 +
+          '[\da-f]\'#39'+'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Number_Constants'
+        StyleName = 'Default'
+        AlwaysEnabled = True
+        StatesRemove = 9
+        Expression = 
+          '# Numerical constants, that begins with digits'#13#10'32[\.]768k\s|'#13#10'3' +
+          '2p768k\s|'#13#10'32768k\s|'#13#10'32k768\s|'#13#10'31k\s'#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Float'
+        StyleName = 'Number'
+        TokenType = 6
+        Expression = 
+          '#with exp. dot is optional '#13#10'\d+ \.? \d+ e [\+\-]? \d+ |'#13#10'#witho' +
+          'ut exp. dot is required'#13#10'\d+ \. \d+'#13#10' '
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Integer'
+        StyleName = 'Number'
+        TokenType = 5
+        Expression = '#any sequence of digits'#13#10'\d+'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Symbol'
+        StyleName = 'Symbol'
+        TokenType = 3
+        Expression = '[/,\.;:\(\)=<>\+\-&%\$]+'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Any name'
+        StyleName = 'Identifier'
+        TokenType = 2
+        Expression = '#first character can'#39't be digit'#13#10'[\#,_,a-z_]\w*'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end>
+    BlockRules = <
+      item
+        DisplayName = 'Sub'
+        StyleName = 'Function background'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'function'
+              'macro'
+              'sub')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end'
+              'exit')
+            CondType = tcNotEqual
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'Sub End'
+        Highlight = True
+        NameFmt = '%s0 %s-1'
+        DynHighlight = dhRange
+        HighlightPos = cpBoundTagBegin
+        CollapseFmt = '%s0 %s-1'
+        TreeItemStyle = 'Reserved word'
+        TreeItemImage = 5
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Sub End'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'function'
+              'macro'
+              'sub')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Sub Begin Line Break'
+        StyleName = 'Function separator'
+        BlockType = btLineBreak
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'function'
+              'macro'
+              'sub')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end'
+              'exit')
+            CondType = tcNotEqual
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Sub End Line Break'
+        StyleName = 'Function separator'
+        BlockType = btLineBreak
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'function'
+              'macro'
+              'sub')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        LinePos = lbBottom
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Label End Line Break'
+        StyleName = 'Function separator'
+        BlockType = btLineBreak
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'return')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        LinePos = lbBottom
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Label Begin Line Break'
+        StyleName = 'Function separator'
+        BlockName = 'Label'
+        NotParent = True
+        BlockType = btLineBreak
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '^\s*\w+:')
+            CondType = tcMask
+            IgnoreCase = True
+          end>
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Label'
+        StyleName = 'Function background'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '\w+:')
+            CondType = tcStrictMask
+          end>
+        BlockEnd = 'Gosub End'
+        Highlight = True
+        NameFmt = '%s0'
+        DynHighlight = dhRange
+        HighlightPos = cpBoundTagBegin
+        CollapseFmt = '%s0'
+        TreeItemStyle = 'Reserved word'
+        TreeItemImage = 5
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Gosub End'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'return')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Reserved Words'
+        StyleName = 'Reserved word'
+        AlwaysEnabled = True
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '#ASMRAW'
+              '#CHIP'
+              '#CONFIG'
+              '#DEFINE'
+              '#ELSE'
+              '#ENDIF'
+              '#ENDSCRIPT'
+              '#IF'
+              '#IFDEF'
+              '#IFNDEF'
+              '#IFNOT'
+              '#INCLUDE'
+              '#MEM'
+              '#OPTION'
+              '#SAMEBIT'
+              '#SAMEVAR'
+              '#SCRIPT'
+              '#STARTUP'
+              '#UNDEFINE'
+              '%'
+              '_GLCDPage'
+              '_GLCDPagesH'
+              '_GLCDPagesL'
+              '10ms'
+              '10us'
+              '31k'
+              '32.768k'
+              'ABS'
+              'AD_REF_SOURCE'
+              'ADOff'
+              'Alias'
+              'ALLOC'
+              'AllOf'
+              'AND'
+              'Array'
+              'As'
+              'Asc'
+              'At'
+              'ATan'
+              'Average'
+              'BcdToDec_GCB'
+              'BIT'
+              'Bootloader'
+              'Box'
+              'Byte'
+              'ByteToBin'
+              'Call'
+              'canskip'
+              'Case'
+              'ChipADC'
+              'ChipEEprom'
+              'ChipFamily'
+              'ChipIO'
+              'ChipMHz'
+              'ChipName'
+              'ChipNameStr'
+              'ChipOsc'
+              'ChipPins'
+              'ChipProgrammerNameStr'
+              'ChipRAM'
+              'ChipReserveHighProg'
+              'ChipUsingIntOsc'
+              'ChipWords'
+              'CHR'
+              'Circle'
+              'ClearSMT1'
+              'ClearSMT2'
+              'ClearTimer'
+              'CLS'
+              'cos'
+              'CreateButton'
+              'CURSOROFF'
+              'CURSORON'
+              'DecToBcd_GCB'
+              'Difference'
+              'Dim'
+              'Dir'
+              'DisplayChar'
+              'DisplayValue'
+              'Do'
+              'DS18B20SetResolution'
+              'EERAM_AutoStore'
+              'EERAM_Backup'
+              'EERAM_HS'
+              'EERAM_HWStore'
+              'EERAM_I2C_Adr'
+              'EERAM_Read'
+              'EERAM_Recall'
+              'EERAM_Status'
+              'EERAM_Trecall'
+              'EERAM_Tstore'
+              'EERAM_Write'
+              'EERAM_Write_Command'
+              'Ellipse'
+              'Else'
+              'Else If'
+              'End'
+              'End Function'
+              'End Macro'
+              'End Repeat'
+              'End Select'
+              'End Sub'
+              'End Table'
+              'EPRead'
+              'EPWrite'
+              'Exit'
+              'Exit Do'
+              'Exit For'
+              'Exit Function'
+              'Exit Repeat'
+              'Exit Sub'
+              'Explicit'
+              'FALSE'
+              'FAST'
+              'FastHWSPITransfer'
+              'Fill'
+              'FilledBox'
+              'FilledCircle'
+              'FilledEllipse'
+              'FilledTriangle'
+              'FillRoundRect'
+              'FLASH'
+              'FLASHOFF'
+              'FLASHON'
+              'FnLSL'
+              'FnLSR'
+              'For'
+              'Forever'
+              'FOSC'
+              'FOSC4'
+              'Function'
+              'FVR_1x'
+              'FVR_2x'
+              'FVR_4x'
+              'FVR_off'
+              'FVRInitialize'
+              'FVRIsOutputReady'
+              'Get'
+              'GetUserID'
+              'GLCD_Close_PageTransaction'
+              'GLCD_NextionSerialPrint'
+              'GLCD_NextionSerialSend'
+              'GLCD_Open_PageTransaction'
+              'GLCDBackground'
+              'GLCDCLS'
+              'GLCDDisplay'
+              'GLCDDrawChar'
+              'GLCDDrawString'
+              'GLCDfntDefaultSize'
+              'GLCDFontWidth'
+              'GLCDForeground'
+              'GLCDGetTouch_Nextion'
+              'GLCDLocateString'
+              'GLCDLocateString_Nextion'
+              'GLCDPrint'
+              'GLCDPrint_Nextion'
+              'GLCDPrintDefaultFont_Nextion'
+              'GLCDPrintLargeFont'
+              'GLCDPrintString'
+              'GLCDPrintString_Nextion'
+              'GLCDPrintStringLn'
+              'GLCDPrintStringLn_Nextion'
+              'GLCDPrintWithSize'
+              'GLCDReadByte'
+              'GLCDRotate'
+              'GLCDSendOpInstruction_Nextion'
+              'GLCDSetContrast'
+              'GLCDTimeDelay'
+              'GLCDUpdateObject_Nextion'
+              'GLCDWriteByte'
+              'Gosub'
+              'Goto'
+              'h'
+              'HEFEraseBlock'
+              'HEFRead'
+              'HEFReadBlock'
+              'HEFReadByte'
+              'HEFReadWord'
+              'HEFWrite'
+              'HEFWriteBlock'
+              'HEFWriteWord'
+              'Hex'
+              'HFINTOSC'
+              'HI2C2AckpollState'
+              'HI2C2Mode'
+              'HI2C2Receive'
+              'HI2C2ReStart'
+              'HI2C2Send'
+              'HI2C2SetAddress'
+              'HI2C2Start'
+              'HI2C2StartOccurred'
+              'HI2C2Stop'
+              'HI2C2Stopped'
+              'HI2C2WaitMSSP'
+              'HI2CAckpollState'
+              'HI2CMode'
+              'HI2CReceive'
+              'HI2CReStart'
+              'HI2CSend'
+              'HI2CSetAddress'
+              'HI2CStart'
+              'HI2CStartOccurred'
+              'HI2CStop'
+              'HI2CStopped'
+              'HI2CWaitMSSP'
+              'HI2CWaitMSSPTimeout'
+              'HLine'
+              'HPWM'
+              'HPWM_CCPTimerN'
+              'HPWM_Fast'
+              'HPWMOff'
+              'HPWMUpdate'
+              'HSerGetNum'
+              'HSerGetString'
+              'HSerPrint'
+              'HSerPrintByteCRLF'
+              'HSerPrintCR'
+              'HSerPrintCR1'
+              'HSerPrintCR2'
+              'HSerPrintCR3'
+              'HSerPrintCR4'
+              'HSerPrintCR5'
+              'HSerPrintCRLF'
+              'HSerPrintLF'
+              'HSerPrintLF1'
+              'HSerPrintLF2'
+              'HSerPrintLF3'
+              'HSerPrintLF4'
+              'HSerPrintLF5'
+              'HSerPrintStringCRLF'
+              'HSerReceive'
+              'HSerReceive1'
+              'HSerReceive2'
+              'HSerReceiveFrom'
+              'HSerSend'
+              'HSerSpace'
+              'I2C_Adr_EERAM'
+              'I2CAckpoll'
+              'I2CReceive'
+              'I2CReset'
+              'I2CRestart'
+              'I2CSend'
+              'I2CSlaveDeviceReceive'
+              'I2CStart'
+              'I2CStartOccurred'
+              'I2CStop'
+              'If'
+              'Ignore'
+              'In'
+              'IndCall'
+              'InitGLCD'
+              'InitSer'
+              'InitSMT1'
+              'InitSMT2'
+              'InitTimer0'
+              'InitTimer1'
+              'InitTimer10'
+              'InitTimer12'
+              'InitTimer2'
+              'InitTimer3'
+              'InitTimer4'
+              'InitTimer5'
+              'InitTimer6'
+              'InitTimer7'
+              'InitTimer8'
+              'INKEY'
+              'Instr'
+              'Integer'
+              'IntegerToBin'
+              'Interrupt'
+              'IntOff'
+              'IntOn'
+              'KeypadData'
+              'KeypadRaw'
+              'Landscape'
+              'Landscape_Rev'
+              'LCase'
+              'LCD_I2C_Address_1'
+              'LCD_I2C_Address_2'
+              'LCD_I2C_Address_3'
+              'LCD_I2C_Address_4'
+              'LCD_I2C_Address_Current'
+              'LCD_IO'
+              'LCD_SPEED'
+              'LCD_VARIANT'
+              'LCD_VFD_DELAY'
+              'LCDBacklight'
+              'LCDCMD'
+              'LCDCreateChar'
+              'LCDCreateGraph'
+              'LCDCursor'
+              'LCDDisplayOff'
+              'LCDDisplayOn'
+              'LCDHex'
+              'LCDHome'
+              'LCDOFF'
+              'LCDON'
+              'LCDSpace'
+              'LCDWriteChar'
+              'Left'
+              'LeftPad'
+              'Len'
+              'LFINTOSC'
+              'Line'
+              'Locate'
+              'LOCKPPS'
+              'Log10'
+              'Log2'
+              'Loge'
+              'Long'
+              'LongtoBin'
+              'Loop'
+              'Ltrim'
+              'm'
+              'Macro'
+              'MEDIUM'
+              'MFINTOSC'
+              'Mid'
+              'MOD'
+              'ms'
+              'Next'
+              'NoBit'
+              'NoConfig'
+              'NoContextSave'
+              'NoLatch'
+              'NOT'
+              'NoVar'
+              'Off'
+              'On'
+              'On Interrupt'
+              'OneOf'
+              'Optional'
+              'OR'
+              'Out'
+              'Pad'
+              'Peek'
+              'PFMErase'
+              'PFMRead'
+              'PFMWrite'
+              'Play'
+              'PlayRTTTL'
+              'Poke'
+              'Portrait'
+              'Portrait_Rev'
+              'Pot'
+              'Power'
+              'Print'
+              'ProgramErase'
+              'ProgramRead'
+              'ProgramWrite'
+              'PS2ReadByte'
+              'PS2SetKBLeds'
+              'PS2WriteByte'
+              'Pset'
+              'Pulsein'
+              'PulseOut'
+              'PulseOutInv'
+              'Put'
+              'PWMModule'
+              'PWMOff'
+              'PWMOn'
+              'PWMOut'
+              'RaiseCompilerError'
+              'Random'
+              'Randomize'
+              'ReadAD'
+              'ReadAD10'
+              'ReadAD12'
+              'ReadDigitalTemp'
+              'ReadTable'
+              'ReadTemp'
+              'ReadTemp12'
+              'Repeat'
+              'ReserveHighProg'
+              'Return'
+              'Right'
+              'Rotate'
+              'RoundRect'
+              'Rtrim'
+              's'
+              'SAFEraseBlock'
+              'SAFRead'
+              'SAFReadBlock'
+              'SAFReadByte'
+              'SAFReadWord'
+              'SAFWrite'
+              'SAFWriteBlock'
+              'SAFWriteWord'
+              'Scale'
+              'Select'
+              'Ser1Print'
+              'Ser1Receive'
+              'Ser1Send'
+              'Ser2Print'
+              'Ser2Receive'
+              'Ser2Send'
+              'Ser3Print'
+              'Ser3Receive'
+              'Ser3Send'
+              'SerPrint'
+              'SerReceive'
+              'SerSend'
+              'Set'
+              'SetSMT1'
+              'SetSMT1Period'
+              'SetSMT2'
+              'SetSMT2Period'
+              'SetTimer'
+              'SetWith'
+              'ShortTone'
+              'Simple'
+              'sin'
+              'SLOW'
+              'SOSC'
+              'SPIMode'
+              'SPITransfer'
+              'Sqrt'
+              'SRAMRead'
+              'SRAMWrite'
+              'ST7735Rotation'
+              'ST7735SendCommand'
+              'ST7920cTile'
+              'ST7920GLCDClearGraphics'
+              'ST7920GLCDDisableGraphics'
+              'ST7920GLCDEnableGraphics'
+              'ST7920GLCDReadByte'
+              'ST7920gLocate'
+              'ST7920GraphicTest'
+              'ST7920gReaddata'
+              'ST7920gTile'
+              'ST7920lineh'
+              'ST7920LineHs'
+              'ST7920linev'
+              'ST7920Locate'
+              'ST7920Tile'
+              'ST7920WriteByte'
+              'ST7920WriteCommand'
+              'ST7920WriteData'
+              'StartSMT1'
+              'StartSMT2'
+              'StartTimer'
+              'Step'
+              'STOPCOMPILERERRORHANDLER'
+              'Stopscroll_uc1601'
+              'StopSMT1'
+              'StopSMT2'
+              'StopTimer'
+              'Str'
+              'Str32'
+              'String'
+              'StrInteger'
+              'Sub'
+              'SWAP'
+              'SWAP4'
+              'SYSDEFAULTCONCATSTRING'
+              'Table'
+              'tan'
+              'TFT_BLACK'
+              'TFT_BLUE'
+              'TFT_CYAN'
+              'TFT_DARKCYAN'
+              'TFT_DARKGREEN'
+              'TFT_DARKGREY'
+              'TFT_GREEN'
+              'TFT_GREENYELLOW'
+              'TFT_LIGHTGREY'
+              'TFT_MAGENTA'
+              'TFT_MAROON'
+              'TFT_NAVY'
+              'TFT_OLIVE'
+              'TFT_ORANGE'
+              'TFT_PINK'
+              'TFT_PURPLE'
+              'TFT_RED'
+              'TFT_WHITE'
+              'TFT_YELLOW'
+              'Then'
+              'Timer0'
+              'Timer1'
+              'Timer10'
+              'Timer12'
+              'Timer2'
+              'Timer3'
+              'Timer4'
+              'Timer5'
+              'Timer6'
+              'Timer7'
+              'Timer8'
+              'TM_1637_OEM_Lib-Variables'
+              'TM_6dReMap'
+              'TM_Blank0'
+              'TM_Bright'
+              'TM_ButnVal'
+              'TM_Disp'
+              'TM_DispBuf'
+              'TM_DispLen'
+              'TM_dpPos'
+              'TM_FlashRate'
+              'TM_KeyChk'
+              'TM_LEDs'
+              'TM_scroll'
+              'TM_ScrollRate'
+              'tmChrBuf'
+              'tmCLRbuf'
+              'tmCLRdisp'
+              'tmCtrlSnd'
+              'tmDecBuf'
+              'tmFlashDig'
+              'tmFlashDsp'
+              'tmFlashSeg'
+              'tmGetKey'
+              'tmHexBuf'
+              'tmScrlBuf'
+              'tmSegBuf'
+              'tmSndBuf'
+              'tmSndChr'
+              'tmSndDec'
+              'tmSndDig'
+              'tmSndHex'
+              'tmSndStr'
+              'To'
+              'Tone'
+              'Triangle'
+              'Trim'
+              'TRUE'
+              'TxCKIPPS'
+              'UCase'
+              'UNLOCKPPS'
+              'Until'
+              'us'
+              'Val'
+              'Val32'
+              'Var'
+              'VarToBin'
+              'VarWToBin'
+              'Vline'
+              'Volatile'
+              'Wait'
+              'While'
+              'Word'
+              'WORDTOBIN'
+              'XOR')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        Pen.Color = clRed
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Do'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'do')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'exit')
+            CondType = tcNotEqual
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'Loop'
+        NotCollapsed = True
+        DisplayInTree = False
+        HighlightPos = cpAny
+        DrawStaple = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Loop'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'loop')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'Do'
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'For'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'for')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'exit')
+            CondType = tcNotEqual
+            IgnoreCase = True
+          end>
+        BlockEnd = 'Next'
+        NotCollapsed = True
+        DisplayInTree = False
+        HighlightPos = cpAny
+        DrawStaple = True
+        Pen.Style = psDot
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Next'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'next')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'For'
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'X Begin'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'repeat'
+              'select')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end'
+              'exit')
+            CondType = tcNotEqual
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'X End'
+        NotCollapsed = True
+        DisplayInTree = False
+        HighlightPos = cpAny
+        DrawStaple = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'X End'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'repeat'
+              'select')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TagList.Strings = (
+              'end')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = 'X Begin'
+        DisplayInTree = False
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'If Begin'
+        ConditionList = <
+          item
+            CondType = tcMask
+            TokenTypes = 1024
+          end>
+        BlockEnd = 'If End'
+        NotCollapsed = True
+        DisplayInTree = False
+        HighlightPos = cpAny
+        DrawStaple = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'If End'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            CondType = tcMask
+            TokenTypes = 2048
+          end>
+        BlockEnd = 'If Begin'
+        NotCollapsed = True
+        DisplayInTree = False
+        HighlightPos = cpAny
+        DrawStaple = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Dim decl'
+        ConditionList = <
+          item
+            TokenTypes = 4
+          end
+          item
+            TagList.Strings = (
+              'dim')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        GroupFmt = 'Variables'
+        HighlightPos = cpBound
+        TreeItemImage = 4
+        TreeGroupImage = 0
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Block Comment'
+        BlockName = 'Block Comment'
+        ConditionList = <
+          item
+            TokenTypes = 2
+          end>
+        BlockEnd = 'Block Comment End'
+        DisplayInTree = False
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Block Comment End'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TokenTypes = 509
+          end
+          item
+            TokenTypes = 2
+          end>
+        BlockOffset = 1
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = '('
+        StyleName = 'Current block bound'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '(')
+            TokenTypes = 8
+          end>
+        BlockEnd = ')'
+        NotCollapsed = True
+        DisplayInTree = False
+        DynHighlight = dhBound
+        HighlightPos = cpBoundTagBegin
+        DynSelectMin = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = ')'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              ')')
+            TokenTypes = 8
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = '['
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '[')
+            TokenTypes = 8
+          end>
+        BlockEnd = ']'
+        NotCollapsed = True
+        DisplayInTree = False
+        DynHighlight = dhBound
+        HighlightPos = cpBoundTagBegin
+        DynSelectMin = True
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = ']'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              ']')
+            TokenTypes = 8
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = '#if'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '#if'
+              '#ifdef'
+              '#ifndef')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        BlockEnd = '#endif'
+        DisplayInTree = False
+        DynHighlight = dhBound
+        HighlightPos = cpAny
+        DrawStaple = True
+        IgnoreAsParent = False
+        AutoCloseMode = acmCloseNearest
+      end
+      item
+        DisplayName = '#endif'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '#endif')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Errors'
+        StyleName = 'Errors'
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'else if')
+            TokenTypes = 1
+            IgnoreCase = True
+          end>
+        DisplayInTree = False
+        HighlightPos = cpBound
+        Pen.Color = clRed
+        IgnoreAsParent = False
+      end>
+    CodeTemplates = <>
+    SubAnalyzers = <>
+    SampleText.Strings = (
+      #39' Comment: 1'
+      '; Comment: 2'
+      'REM Comment: 3'
+      '// Comment 4'
+      ''
+      '/* '
+      'block comment'
+      '*/'
+      ' '
+      ' !not                 '
+      ' #chip mega328p, 16'
+      ' #chip 16f18326, 32.768k'
+      ' #chip 16f18326, 31k'
+      '  '
+      ''
+      '  #if'
+      ' '
+      '  #endif'
+      ' '
+      '  Do Forever'
+      '    PulseOut PortB.5, 100 ms'
+      '    Wait 900 ms'
+      '  Loop'
+      ''
+      ''
+      ' Label2:'
+      ''
+      '  Do Forever'
+      '  '
+      '    Do'
+      '     Exit Do'
+      '    Loop While A>1'
+      '  '
+      '    Select Case X'
+      '     Case = 1'
+      '      If A>B Then X=1'
+      '     Case = 2'
+      '      If A<B Then X=2'
+      '     Case Else'
+      ''
+      '    End Select'
+      '   '
+      '  Loop'
+      ''
+      'Return'
+      ''
+      ''
+      'Sub Sub2'
+      ''
+      '  For ii = 1 To 10'
+      '    '
+      '    Repeat 8'
+      '        '
+      '       '#39'one-line if-then: '
+      
+        '       If X=1 Then Y=2  '#39'bug, if "then" is comment'#39's last word  ' +
+        'then'
+      '               '
+      '       If A=X Then  '#39'comment'
+      '           if b then '
+      '            Exit For'
+      '           End If'
+      '        Else If X=2 Then '
+      '           Exit If'
+      '        Else If X=3 Then'
+      '           Exit Repeat'
+      '       End If'
+      '    '
+      '    End Repeat'
+      '  '
+      '  Next  '
+      ''
+      'End Sub'
+      ''
+      'Function Func1'
+      ''
+      ' Exit Function'
+      ''
+      'End Function'
+      ''
+      ''
+      '')
+    TokenTypeNames.Strings = (
+      'Unknown'
+      'Comment'
+      'Identifier'
+      'Symbol'
+      'String'
+      'Integer const'
+      'Float const'
+      'Hex const'
+      'Char const'
+      'Token_IfBegin'
+      'Token_IfEnd')
+    MarkedBlockStyle = 'Marked block'
+    SearchMatchStyle = 'Search Match'
+    CurrentLineStyle = 'Current Line'
+    DefaultStyleName = 'Default'
+    Extentions = 'gcb bas pbs h'
+    LexerName = 'GreatCowBasic'
+    SkipSpaces = False
+    LineComment = #39
+    Charset = DEFAULT_CHARSET
+  end
+  object SyntAnal2: TLibSyntAnalyzer
+    Formats = <
+      item
+        DisplayName = 'Default'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Comment'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clGreen
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsItalic]
+      end
+      item
+        DisplayName = 'Key words'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clNavy
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Commands'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlack
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Params'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlue
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Echo'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clMaroon
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = clWindow
+      end
+      item
+        DisplayName = 'Label'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clPurple
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Marked block'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clHighlightText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = clHighlight
+        FormatType = ftColor
+      end>
+    TokenRules = <
+      item
+        DisplayName = 'Echo'
+        StyleName = 'Key words'
+        TokenType = 5
+        Expression = '@?echo'#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'echo text'
+        StyleName = 'Echo'
+        BlockName = 'echo start'
+        StrictParent = True
+        TokenType = 4
+        Expression = '[^<>\|\n]*[\n]*'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Comment'
+        StyleName = 'Comment'
+        TokenType = 1
+        Expression = 'rem\s.*'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Label'
+        StyleName = 'Label'
+        TokenType = 3
+        Expression = '^: .*'#13#10
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Command'
+        StyleName = 'Params'
+        TokenType = 2
+        Expression = '\S+'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end>
+    BlockRules = <
+      item
+        DisplayName = 'Key words'
+        StyleName = 'Key words'
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'Arp'
+              'Assoc'
+              'At'
+              'Atmadm'
+              'Attrib'
+              'Bootcfg'
+              'Break'
+              'Cacls'
+              'call'
+              'cd'
+              'Change'
+              'Chcp'
+              'Chdir'
+              'Chkdsk'
+              'Chkntfs'
+              'choice'
+              'Cipher'
+              'cls'
+              'Cmd'
+              'Cmstp'
+              'Color'
+              'Comp'
+              'Compact'
+              'Convert'
+              'copy'
+              'Cprofile'
+              'CScript'
+              'Date'
+              'Defrag'
+              'del'
+              'Dir'
+              'Diskcomp'
+              'Diskcopy'
+              'DiskPart'
+              'do'
+              'Doskey'
+              'Driverquery'
+              'echo'
+              'echo.'
+              'Endlocal'
+              'errorlevel'
+              'Eventcreate'
+              'Eventquery'
+              'Eventtriggers'
+              'Evntcmd'
+              'exist'
+              'Exit'
+              'Expand'
+              'Fc'
+              'Find'
+              'Findstr'
+              'Finger'
+              'Flattemp'
+              'for'
+              'Format'
+              'Fsutil'
+              'Ftp'
+              'Ftype'
+              'Getmac'
+              'goto'
+              'Gpresult'
+              'Gpupdate'
+              'Graftabl'
+              'Help'
+              'Helpctr'
+              'Hostname'
+              'if'
+              'in'
+              'Ipconfig'
+              'Ipseccmd'
+              'Ipxroute'
+              'Irftp'
+              'Label'
+              'Lodctr'
+              'Logman'
+              'Lpq'
+              'Lpr'
+              'Macfile'
+              'md'
+              'Mkdir'
+              'Mmc'
+              'Mode'
+              'More'
+              'Mountvol'
+              'Move'
+              'MS-DOS'
+              'Msiexec'
+              'Msinfo32'
+              'Nbtstat'
+              'Net'
+              'Netsh'
+              'Netstat'
+              'not'
+              'Nslookup'
+              'Ntbackup'
+              'Ntcmdprompt'
+              'Ntsd'
+              'OOpenfiles'
+              'Pagefileconfig'
+              'Path'
+              'Pathping'
+              'pause'
+              'Pbadmin'
+              'Pentnt'
+              'Perfmon'
+              'Ping'
+              'Popd'
+              'Print'
+              'Prncnfg'
+              'Prndrvr'
+              'Prnjobs'
+              'Prnmngr'
+              'Prnport'
+              'Prnqctl'
+              'Prompt'
+              'Pushd'
+              'Query'
+              'Rcp'
+              'Recover'
+              'Reg'
+              'Regsvr32'
+              'Relog'
+              'Rem'
+              'Rename'
+              'Replace'
+              'Resetsession'
+              'Rexec'
+              'Rmdir'
+              'Route'
+              'RRasdial'
+              'Rsh'
+              'Rsm'
+              'Runas'
+              'SC'
+              'Schtasks'
+              'Secedit'
+              'set'
+              'Setlocal'
+              'Sfc'
+              'shift'
+              'Shutdown'
+              'Sort'
+              'Start'
+              'Subst'
+              'sys'
+              'Systeminfo'
+              'Taskkill'
+              'Tasklist'
+              'Tcmsetup'
+              'TCP/IP'
+              'Telnet'
+              'Tftp'
+              'Time'
+              'Title'
+              'Tracerpt'
+              'Tracert'
+              'Tree'
+              'Type'
+              'Typeperf'
+              'Unlodctr'
+              'Verify'
+              'Vol'
+              'Vssadmin'
+              'VVer'
+              'W32tm'
+              'Winnt'
+              'Winnt32'
+              'WMIC'
+              'Xcopy')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'std commands'
+        Enabled = False
+        StyleName = 'Commands'
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'cd'
+              'copy'
+              'del'
+              'md'
+              'sys')
+            TokenTypes = 4
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'echo start'
+        StyleName = 'Echo'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'echo')
+            TokenTypes = 32
+            IgnoreCase = True
+          end>
+        BlockEnd = 'echo end'
+        NotCollapsed = True
+        Highlight = True
+        DisplayInTree = False
+        DynHighlight = dhRange
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'echo end'
+        BlockName = 'echo start'
+        StrictParent = True
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TokenTypes = 16
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end>
+    CodeTemplates = <>
+    SubAnalyzers = <>
+    SampleText.Strings = (
+      'rem MS-DOS batch file'
+      'rem'
+      '@echo off'
+      'cls'
+      'echo The command line is: %1 %2 %3 %4 %5'
+      'rem'
+      'rem now wait for the user ...'
+      'pause'
+      'copy c:\*.pas d:\'
+      'if errorlevel 1 echo | Error in copy action!')
+    TokenTypeNames.Strings = (
+      'Unknown'
+      'Comment'
+      'Identifier'
+      'Label'
+      'echo'
+      'echo cmd')
+    MarkedBlockStyle = 'Marked block'
+    DefaultStyleName = 'Default'
+    Extentions = 'bat cmd'
+    LexerName = 'Batch files'
+    SkipSpaces = False
+    LineComment = 'rem '
+    Charset = DEFAULT_CHARSET
+  end
+  object SyntAnal3: TLibSyntAnalyzer
+    Formats = <
+      item
+        DisplayName = 'Default'
+        Font.Charset = ANSI_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -13
+        Font.Name = 'Verdana'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Comment'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clGreen
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        FormatFlags = [ffBold, ffUnderline, ffStrikeOut, ffReadOnly, ffHidden, ffFontName, ffFontSize, ffFontCharset, ffVertAlign]
+      end
+      item
+        DisplayName = 'Marked block'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clHighlightText
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+        BgColor = clHighlight
+        FormatType = ftColor
+      end
+      item
+        DisplayName = 'Ident'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clMaroon
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'Integer'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'HEX'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clRed
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Label'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clFuchsia
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end
+      item
+        DisplayName = 'reserved words'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clNavy
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'Registers'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlue
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = [fsBold]
+      end
+      item
+        DisplayName = 'String'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clTeal
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Style = []
+      end>
+    TokenRules = <
+      item
+        DisplayName = 'Comment'
+        StyleName = 'Comment'
+        TokenType = 1
+        Expression = ';.*'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Labels'
+        StyleName = 'Label'
+        Expression = '\S+:{0,1}\s*$'#13#10
+        ColumnFrom = 1
+        ColumnTo = 1
+      end
+      item
+        DisplayName = 'Hex'
+        StyleName = 'HEX'
+        TokenType = 7
+        Expression = '[\da-f]+h \b'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Integer'
+        StyleName = 'Integer'
+        TokenType = 5
+        Expression = '\d+'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Ident'
+        StyleName = 'Ident'
+        TokenType = 2
+        Expression = '[a-z_%]\w*'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end
+      item
+        DisplayName = 'Str'
+        StyleName = 'String'
+        TokenType = 4
+        Expression = '("|'#39') .*? \1'
+        ColumnFrom = 0
+        ColumnTo = 0
+      end>
+    BlockRules = <
+      item
+        DisplayName = 'Registers'
+        StyleName = 'Registers'
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '#define'
+              '#include'
+              '__configah'
+              'al'
+              'ax'
+              'bh'
+              'bl'
+              'bp'
+              'bx'
+              'ch'
+              'cl'
+              'cs'
+              'cx'
+              'dh'
+              'di'
+              'ds'
+              'dx'
+              'eax'
+              'ebp'
+              'ebx'
+              'ecx'
+              'edi'
+              'edx'
+              'eip'
+              'es'
+              'esc'
+              'esi'
+              'esp'
+              'si'
+              'sp'
+              'ss')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Reserved words'
+        StyleName = 'reserved words'
+        BlockType = btTagDetect
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'ADC'
+              'ADD'
+              'ADDCF'
+              'ADDDCF'
+              'ADDFSR'
+              'ADDLW'
+              'ADDWCF'
+              'ADDWF'
+              'ADIW'
+              'AND'
+              'ANDI'
+              'ANDLW'
+              'ANDWF'
+              'ASR'
+              'ASRF'
+              'B'
+              'BANKISEL'
+              'BANKSEL'
+              'BC'
+              'BCF'
+              'BCLR'
+              'BDC'
+              'BLD'
+              'BNC'
+              'BNDC'
+              'BNZ'
+              'BRA'
+              'BRBC'
+              'BRBS'
+              'BRCC'
+              'BRCS'
+              'BREQ'
+              'BRGE'
+              'BRHC'
+              'BRHS'
+              'BRID'
+              'BRIE'
+              'BRLO'
+              'BRLT'
+              'BRMI'
+              'BRNE'
+              'BRPL'
+              'BRSH'
+              'BRTC'
+              'BRTS'
+              'BRVC'
+              'BRVS'
+              'BRW'
+              'BSET'
+              'BSF'
+              'BST'
+              'BTFSC'
+              'BTFSS'
+              'BZ'
+              'CALL'
+              'CBI'
+              'CBR'
+              'CLC'
+              'CLH'
+              'CLI'
+              'CLN'
+              'CLR'
+              'CLRC'
+              'CLRDC'
+              'CLRF'
+              'CLRW'
+              'CLRWDT'
+              'CLRZ'
+              'CLS'
+              'CLT'
+              'CLV'
+              'CLZ'
+              'CODE'
+              'COM'
+              'COMF'
+              'CP'
+              'CPC'
+              'CPI'
+              'CPSE'
+              'DA'
+              'DB'
+              'DE'
+              'DEC'
+              'DECF'
+              'DECFSZ'
+              'DT'
+              'DW'
+              'END'
+              'EOR'
+              'EQU'
+              'ERRORLEVEL'
+              'EXTERN'
+              'GLOBAL'
+              'GOTO'
+              'ICALL'
+              'IJMP'
+              'IN'
+              'INC'
+              'INCF'
+              'INCFSZ'
+              'IORLW'
+              'IORWF'
+              'JMP'
+              'LD'
+              'LDD'
+              'LDI'
+              'LDS'
+              'LFSR'
+              'LIST'
+              'LPM'
+              'LSL'
+              'LSLF'
+              'LSR'
+              'LSRF'
+              'MOV'
+              'MOVF'
+              'MOVFF'
+              'MOVFFL'
+              'MOVFW'
+              'MOVIW'
+              'MOVLB'
+              'MOVLP'
+              'MOVLW'
+              'MOVWF'
+              'MOVWI'
+              'MUL'
+              'NEG'
+              'NEGF'
+              'NOP'
+              'OR'
+              'ORG'
+              'ORI'
+              'OUT'
+              'PAGESEL'
+              'POP'
+              'PUSH'
+              'RCALL'
+              'RES'
+              'RESET'
+              'RET'
+              'RETFIE'
+              'RETI'
+              'RETLW'
+              'RETURN'
+              'RJMP'
+              'RLF'
+              'ROL'
+              'ROR'
+              'RRF'
+              'SBC'
+              'SBCI'
+              'SBI'
+              'SBIC'
+              'SBIS'
+              'SBIW'
+              'SBR'
+              'SBRC'
+              'SBRS'
+              'SEC'
+              'SEI'
+              'SEN'
+              'SER'
+              'SES'
+              'SET'
+              'SETC'
+              'SETDC'
+              'SETZ'
+              'SEV'
+              'SEZ'
+              'SHE'
+              'SKPC'
+              'SKPDC'
+              'SKPNC'
+              'SKPNDC'
+              'SKPNZ'
+              'SKPZ'
+              'SLEEP'
+              'ST'
+              'STD'
+              'STS'
+              'SUB'
+              'SUBCF'
+              'SUBDCF'
+              'SUBI'
+              'SUBLW'
+              'SUBWF'
+              'SWAP'
+              'SWAPF'
+              'TBLRD'
+              'TBLWT'
+              'TST'
+              'TSTF'
+              'WDR'
+              'XORLW'
+              'XORWF')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpBound
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'seg'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'segment')
+            TokenTypes = 4
+            IgnoreCase = True
+          end
+          item
+            TokenTypes = 4
+          end>
+        BlockEnd = 'seg end'
+        NameFmt = 'segment %s0'
+        RefToCondEnd = True
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'seg end'
+        BlockType = btRangeEnd
+        ConditionList = <
+          item
+            TagList.Strings = (
+              'ends')
+            TokenTypes = 4
+            IgnoreCase = True
+          end>
+        HighlightPos = cpAny
+        IgnoreAsParent = False
+      end
+      item
+        DisplayName = 'Label'
+        ConditionList = <
+          item
+            TagList.Strings = (
+              '\S+:{0,1}\s*$')
+            CondType = tcMask
+            TokenTypes = 1
+          end>
+        Highlight = True
+        NameFmt = '%s0'
+        DynHighlight = dhRange
+        HighlightPos = cpBound
+        DrawStaple = True
+        CollapseFmt = '%sz0'
+        SelfClose = True
+        TreeItemImage = 7
+        IgnoreAsParent = False
+      end>
+    CodeTemplates = <>
+    SubAnalyzers = <>
+    SampleText.Strings = (
+      '; x86 assembly sample source'
+      '  CODE'#9'SEGMENT'#9'BYTE PUBLIC '
+      '    ASSUME'#9'CS:CODE'
+      '    '
+      '    PUSH SS'
+      '    POP DS'
+      '    MOV AX, AABBh'
+      '    MOV'#9'BYTE PTR ES:[DI], 255'
+      '    JMP SHORT @AsmEnd'
+      ''
+      '  welcomeMsg DB '#39'Hello World'#39', 0'
+      ''
+      '  @AsmEnd:'
+      '    MOV AX, 0'
+      '    RET'
+      '    '
+      'test1 PROC NEAR'
+      '      MOV ax,10'
+      '      CALL test2'
+      '      RET'
+      'test1 ENDP'
+      ''
+      'test2 PROC FAR'
+      '      ADD ax,ax'
+      '      RET'
+      '      lfsr'
+      'test2 ENDP'
+      ''
+      '  CODE'#9'ENDS'
+      '  '
+      'PUSHALL MACRO'
+      '       PUSH AX BX CX DX'
+      '       PUSH DS SI'
+      '       PUSH ES DI'
+      #9'ENDM'
+      '    '
+      '; nasm macro taking 1 par'
+      '%MACRO DOSB 1'
+      '           mov ah, %1'
+      '           int 21h'
+      '%ENDMACRO    '
+      '  '
+      'END')
+    TokenTypeNames.Strings = (
+      'Unknown'
+      'Comment'
+      'Identifier'
+      'Symbol'
+      'String'
+      'Integer const'
+      'Float const'
+      'Hex const'
+      'Char const'
+      'Preprocessor')
+    MarkedBlockStyle = 'Marked block'
+    DefaultStyleName = 'Default'
+    Extentions = 'asm s S'
+    LexerName = 'Assembler'
+    Notes.Strings = (
+      'Fixed by Alex, uvviewsoft.com'
+      '+ macros/procs/segments in tree (for MASM/NASM)')
+    LineComment = ';'
+    Charset = DEFAULT_CHARSET
+  end
+end

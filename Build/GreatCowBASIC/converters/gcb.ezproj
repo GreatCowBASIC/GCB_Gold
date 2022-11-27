@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PROJECT>
+  <NAME>GCB</NAME>
+  <CHIP model="elab6">
+    <OSCILLATOR name="INTIO2">
+      <FREQUENCY />
+    </OSCILLATOR>
+    <PIN index="0">
+      <PIN_NAME />
+    </PIN>
+    <PIN index="1">
+      <PIN_NAME>LED2</PIN_NAME>
+    </PIN>
+    <PIN index="7">
+      <PIN_NAME />
+    </PIN>
+  </CHIP>
+  <CIRCUIT group="Power Supply" type="5V Voltage Regulator">
+    <NAME>Power Supply 1</NAME>
+    <COMMENT />
+    <IMAGE />
+    <CONNECTION index="0">
+      <PIN_INDEX>0</PIN_INDEX>
+    </CONNECTION>
+    <CONNECTION index="1">
+      <PIN_INDEX>7</PIN_INDEX>
+    </CONNECTION>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>6V Battery</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>Power Connector</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>Switch</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>Schottky Diode IN5819</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>Voltage Regulator LM7805</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE>100uF</VALUE>
+      <TYPE>16V Capacitor</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE>100uF</VALUE>
+      <TYPE>16V Capacitor</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE>100nF</VALUE>
+      <TYPE>Capacitor</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE>10k</VALUE>
+      <TYPE>Resistor</TYPE>
+    </COMPONENT>
+  </CIRCUIT>
+  <CIRCUIT group="LED" type="Active HIGH">
+    <NAME>LED 1</NAME>
+    <COMMENT />
+    <IMAGE />
+    <CONNECTION index="0">
+      <PIN_INDEX>1</PIN_INDEX>
+    </CONNECTION>
+    <COMPONENT>
+      <VALUE />
+      <TYPE>Red LED</TYPE>
+    </COMPONENT>
+    <COMPONENT>
+      <VALUE>390</VALUE>
+      <TYPE>Resistor</TYPE>
+    </COMPONENT>
+  </CIRCUIT>
+  <MANA_DOC />
+  <SPEC_DOC />
+  <DESIGN_DOC />
+  <MANA_XML />
+  <SPEC_XML />
+  <DESIGN_XML />
+  <PIN_SETTINGS>GCB_PinSettings.txt</PIN_SETTINGS>
+  <PART_LIST>GCB_PartList.txt</PART_LIST>
+  <TEST_PROCEDURE>GCB_TestProcedure.txt</TEST_PROCEDURE>
+  <PROJECT_SUMMARY>GCB_ProjectSummary.txt</PROJECT_SUMMARY>
+  <ASSEMBLY>GCB_ezCDAssembly.asm</ASSEMBLY>
+  <MAIN_IMAGE />
+</PROJECT>

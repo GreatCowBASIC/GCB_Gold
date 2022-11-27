@@ -1,0 +1,75 @@
+'''
+'''
+'''
+'''
+'''************************************************************************
+'''
+'''  PIC: 16F18855
+'''  Compiler: GCB
+'''  IDE: GCB@SYN
+'''
+'''  Board: Xpress Evaluation Board
+'''  Date: June 2016
+'''
+' ----- Configuration
+    'Chip Settings.
+    #chip 16f18855,32
+    #Config FEXTOSC_OFF, RSTOSC_HFINT32
+    #Config WRT_OFF, CPD_ON, MCLRE_ON
+
+; ----- Define Hardware settings
+    'Set the PPS of the PWM
+    UNLOCKPPS
+        RA3PPS = 0x000E;   'RA3->PWM6:PWM6OUT;
+        RA1PPS = 0x000E;   'RA1->PWM6:PWM6OUT;
+        RA2PPS = 0x000E;   'RA2->PWM6:PWM6OUT;
+        RA0PPS = 0x000E;   'RA0->PWM6:PWM6OUT;
+
+    'Set the PPS of the RS232 ports.
+    	RC0PPS = 0x0010		  'RC0->EUSART:TX;
+      RXPPS  = 0x0011 		'RC1->EUSART:RX;
+    LOCKPPS
+
+    '' -------------------LATA-----------------
+    '' Bit#:  -7---6---5---4---3---2---1---0---
+    '' LED:   ---------------|D5 |D4 |D3 |D2 |-
+    ''-----------------------------------------
+    ''
+
+; ----- Constants
+    #define USART_BAUD_RATE 19200
+    #define USART_TX_BLOCKING
+
+    #define LEDD2	PORTA.0
+    #define LEDD3	PORTA.1
+    #define LEDD4	PORTA.2
+    #define LEDD5	PORTA.3
+    Dir 		LEDD2 OUT
+    Dir 		LEDD3 OUT
+    Dir 		LEDD4 OUT
+    Dir 		LEDD5 OUT
+
+    #define Potentiometer 			PORTA.4
+    DIR			Potentiometer In
+
+    #define SWITCH_DOWN         0
+    #define SWITCH_UP           1
+    #define SWITCH      				PORTA.5
+    Dir 		SWITCH							In
+
+; ----- Variables
+  ' No Variables specified in this example. All byte variables are defined upon use.
+
+; ----- Quick Command Reference:
+  '[todo]
+
+
+; ----- Main body of program commences here.
+
+
+
+
+
+end
+
+; ----- Support methods.  Subroutines and Functions

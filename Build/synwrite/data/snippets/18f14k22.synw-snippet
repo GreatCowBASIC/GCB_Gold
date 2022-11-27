@@ -1,0 +1,5 @@
+name=18f14K22 Example Config
+id=
+lex=GreatCowBasic
+text=
+ #chip 18f14K22, 16 #config WDTE_OFF , MCLRE_OFF , CPD_OFF , BOREN_ON, IESO_OFF, FCMEN_OFF #config PLLEN_OFF , STVREN_OFF , LVP_OFF

@@ -1,0 +1,7 @@
+name=SerialDebug
+id=
+lex=GreatCowBasic
+text=
+  #ifdef serialdebug
+  
+  #endif

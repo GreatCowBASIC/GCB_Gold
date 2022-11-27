@@ -1,0 +1,76 @@
+'''
+'''
+'''
+'''
+'''************************************************************************
+'''
+'''  PIC: 16F18855
+'''  Compiler: GCB
+'''  IDE: GCB@SYN
+'''
+'''  Board: Xpress Evaluation Board
+'''  Date: June 2016
+'''
+' ----- Configuration
+    'Chip Settings.
+    #chip 16f18855,32
+    #config RSTOSC_HFINT32
+
+    #include <lowlevel\hwi2c2.h>
+
+
+    'Set the PPS of the RS232 and I2C2 ports.
+		UNLOCKPPS
+      RC0PPS = 0x0010		 		'RC0->EUSART:TX;
+      RXPPS  = 0x0011 		  'RC1->EUSART:RX;
+
+      RC3PPS = 0x0017				'RC3->MSSP2:SDA2;
+      SSP2DATPPS = 0x0013		'RC3->MSSP2:SDA2;
+      SSP2CLKPPS = 0x0014		'RC4->MSSP2:SCL2;
+      RC4PPS = 0x0016				'RC4->MSSP2:SCL2;
+		LOCKPPS
+
+    #define SWITCH_DOWN         0
+    #define SWITCH_UP           1
+
+    #define SWITCH      PORTA.5
+
+    #define LEDD2	PORTA.0
+    #define LEDD3	PORTA.1
+    #define LEDD4	PORTA.2
+    #define LEDD5	PORTA.3
+    Dir 		LEDD2 OUT
+    Dir 		LEDD3 OUT
+    Dir 		LEDD4 OUT
+    Dir 		LEDD5 OUT
+
+    #DEFINE ALARM1  PORTA.7
+    #DEFINE ALARM2  PORTA.6
+    Dir     ALARM1  IN
+    Dir     ALARM2  IN
+
+    #define USART_BAUD_RATE 19200
+    #define USART_TX_BLOCKING
+    #define sync SYNC_TX1STA
+
+; ----- Define Hardware settings for HWI2C2
+    ' Define I2C settings - CHANGE PORTS if required for your specific device.
+    #define HI2C2_BAUD_RATE 400
+    #define HI2C2_DATA PORTC.3
+    #define HI2C2_CLOCK PORTC.4
+    'Initialise I2C Master
+    'I2C pins need to be input for SSP2 module
+    Dir HI2C2_DATA in
+    Dir HI2C2_CLOCK in
+    'MASTER Second Port
+    HI2C2Mode Master
+
+; ----- Main body of program commences here.
+	' Now assumes Serial Terminal is operational
+
+
+  END
+
+
+
+; ----- Support methods.  Subroutines and Functions

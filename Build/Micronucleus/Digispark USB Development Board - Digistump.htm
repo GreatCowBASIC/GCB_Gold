@@ -1,0 +1,653 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3c.org/TR/1999/REC-html401-19991224/loose.dtd">
+<!-- saved from url=(0031)http://digistump.com/products/1 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><!-- BEGIN html --><HTML 
+xmlns="http://www.w3.org/1999/xhtml"><!-- BEGIN head --><HEAD><META 
+content="IE=11.0000" http-equiv="X-UA-Compatible">
+ <!-- Meta Tags --> 
+<META http-equiv="Content-Type" content="text/html; charset=utf-8"> <!-- Title --> 
+<META name="description" content="Digistump - Home of the Digispark"> 
+<TITLE>Digispark USB Development Board - Digistump</TITLE> <!-- Stylesheets --> 
+<LINK href="Digispark%20USB%20Development%20Board%20-%20Digistump_files/style.css" 
+rel="stylesheet" type="text/css"> <LINK href="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery.fancybox-1.3.4.css" 
+rel="stylesheet" type="text/css" media="screen"> <!-- Favicon --> <LINK href="/images/favicon.ico" 
+rel="shortcut icon"> <!-- Common JavascriptScript Code  --> 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery-1.6.1.min.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery.fancybox-1.3.4.pack.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/superfish.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/cufon-yui.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/Kartika_400.font.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery-ui-1.8.16.custom.min.js" type="text/javascript" charset="utf-8"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery.ui.mouse.min.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/custom.js" type="text/javascript"></SCRIPT>
+ 
+<STYLE>
+
+.placeholder
+{
+  color: #aaa;
+}
+.applylink{
+  text-decoration: none;
+}
+.applylink:hover{
+  text-decoration: underline;
+}
+
+</STYLE>
+ 
+<SCRIPT type="text/javascript">
+
+$( function() {
+
+$('[placeholder]').focus(function() {
+  var input = $(this);
+  if (input.val() == input.attr('placeholder')) {
+    input.val('');
+    input.removeClass('placeholder');
+  }
+}).blur(function() {
+  var input = $(this);
+  if (input.val() == '' || input.val() == input.attr('placeholder')) {
+    input.addClass('placeholder');
+    input.val(input.attr('placeholder'));
+  }
+}).blur();
+
+
+$('[placeholder]').parents('form').submit(function() {
+  $(this).find('[placeholder]').each(function() {
+    var input = $(this);
+    if (input.val() == input.attr('placeholder')) {
+      input.val('');
+    }
+  })
+});
+
+
+  $('.scripthide').show();
+  $(".add_to_cart").click(function(e){
+
+    e.preventDefault();
+    var add_button = $(this);
+    var product_id = $(this).data('product');
+    var product_type = $(this).data('type');
+    var product_qty = 1;
+    if ($('#product_qty_'+product_id).length > 0){
+      product_qty = $('#product_qty_'+product_id).val();
+    }
+
+    
+    $.get('/cart.php?ajax=1&add='+product_id+'&quantity='+product_qty, function(data){
+      //returns new total items and price for cart in current currency
+      var splitdata = data.split("%");
+      $('.cart_total').html(splitdata[0]);
+      $('.cart_items').html(splitdata[1]);
+    
+      if(product_type == 'single'){
+
+        $('.added_message').fadeIn(500);
+        $('.added_message').fadeOut(5000);
+      }
+      else{
+    
+        add_button.text('Added!');
+        setTimeout(function(){add_button.html('<img src="/styles/Images/add_icon.png" alt="add icon" />Add to Cart');},5000);
+      }
+
+
+
+    });
+
+
+    });
+});
+</SCRIPT>
+ <!--[if IE 7]>
+<script type="text/javascript">
+$(function() {
+       var zIndexNumber = 1000;
+       // Put your target element(s) in the selector below!
+       $("div").each(function() {
+               $(this).css('zIndex', zIndexNumber);
+               zIndexNumber -= 10;
+       });
+});
+
+</script>
+<![endif]--> <!-- Slider code 
+<script type="text/javascript">
+   window.onload = function () {
+	   //get the length of slider ul
+	   $(document).ready(function() {
+		   
+thisOne = document.getElementById("sliderproduct");
+items = thisOne.getElementsByTagName("li");
+$("#sliderproduct").css("width", ((items.length * 239)-22));
+
+});
+//slider code
+
+            var container = $('div.category_sliderGallery');
+            var ul = $('ul', container);
+            
+            var itemsWidth = ul.innerWidth() - container.outerWidth();
+            
+            $('#category_slider', container).slider({
+                min: 0,
+                max: itemsWidth,
+                handle: '#category_handle',
+                stop: function (event, ui) {
+                    ul.animate({'left' : ui.value * -1}, 500);
+                },
+                slide: function (event, ui) {
+                    ul.css('left', ui.value * -1);
+                }
+            });
+        };
+</script>--> 
+<SCRIPT type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-28298416-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</SCRIPT>
+ <!-- END head --> 
+<META name="GENERATOR" content="MSHTML 11.00.9600.18057"></HEAD> <!-- BEGIN body --> 
+<BODY><!-- Facebook Box code: place it always after the opening of the <body> tag --> <!--
+<div id="fb-root"></div>
+<script type="text/javascript" src="js/social_js/footer-facebook-code.js"></script> 
+--> <!-- End Facebook Box code --> 
+<!-- BEGIN  #main --> 
+<DIV id="main" style="padding-top: 10px; margin-top: 10px;"><!-- BEGIN  #header --> 
+    
+<DIV id="header"><!-- BEGIN  logo and slogan -->     <!--<div class="logoright"> <a href="index.html">Home</a>
+      <div class="logoright_bar"></div>
+      <a href="page-full-elements-with-sidebar.html">About Us</a>
+      <div class="logoright_bar"></div>
+      <a href="blog-page.html">Blog</a>
+      <div class="logoright_bar"></div>
+      <div id="pages_menu"> <a href="" class="page">Pages <img src="styles/Images/pages_arrow.png" class="pagesarrow" alt="parrow"></a>
+        <ul>
+          <li class="first"><a href="index.html">Index One</a></li>
+          <li><a href="index-2.html">Index Two</a></li>
+          <li><a href="index-3.html">Index Three</a></li>
+          <li><a href="index-4.html">Index Four</a></li>
+          <li><a href="category-page.html">Category One</a></li>
+          <li><a href="category-page-2.html">Category Two</a></li>
+          <li><a href="product-page.html">Single Product</a></li>
+          <li><a href="cart-page.html">Add to cart</a></li>
+          <li><a href="login-register-page.html">Login</a></li>
+          <li><a href="login-register-page.html">Register</a></li>
+          <li><a href="contact-page.html">Contact </a></li>
+          <li><a href="check-out.html">Check Out</a></li>
+          <li><a href="blog-page.html">Blog</a></li>
+          <li><a href="faq-page.html">Faq</a></li>
+          <li><a href="Bonus%20Page%20-%20Under%20Construction/index.html">Under Construction</a></li>
+        </ul>
+      </div>
+      <div class="logoright_bar"></div>
+      <a href="contact-page.html">Contact</a> </div>--> 
+    
+<DIV style="height: 100px; padding-bottom: 5px; float: left; z-index: 9999;"><A 
+href="http://digistump.com/"><IMG alt="Logo" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/logo.png" 
+border="0"></A></DIV>
+<DIV><!-- END  logo and slogan -->     <!-- BEGIN  account links and cart  -->   
+  
+<DIV id="headeright">
+<DIV class="header_right_align">
+<DIV 
+style="padding-top: 5px; padding-left: 50px; display: inline-block;">Currency: 
+</DIV>
+<DIV class="cat_opt_button_container">
+<DIV class="o_switcher" id="o_switcher"><SPAN class="o_selected"><A href="http://digistump.com/products/">USD</A></SPAN>
+<UL class="o_options">
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=USD">USD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=AUD">AUD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=BRL">BRL</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=CAD">CAD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=EUR">EUR</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=GBP">GBP</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=HKD">HKD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=ILS">ILS</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=INR">INR</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=JPY">JPY</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=MXN">MXN</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=MYR">MYR</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=NZD">NZD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=TWD">TWD</A></LI>
+  <LI><A href="http://digistump.com/?id=1&amp;sort=0&amp;ex=SGD">SGD</A></LI>
+  <LI><A 
+href="http://digistump.com/?id=1&amp;sort=0&amp;ex=ZAR">ZAR</A></LI></UL></DIV></DIV>
+<P style="height: 15px;">&nbsp;</P>
+<DIV class="bluetext" style="padding-top: 0px;"><A href="http://digistump.com/cart.php"><SPAN 
+class="cart_items">0</SPAN>&nbsp;items</A>         <A class="cart" style="padding-top: 15px; text-decoration: none; margin-left: 10px;" 
+href="http://digistump.com/cart.php">&nbsp;</A>         
+<DIV class="headerbar"></DIV><A href="http://digistump.com/cart.php"><SPAN 
+class="cart_total">$0.00&nbsp;USD</SPAN></A> </DIV></DIV></DIV></DIV><!-- END  account links and cart  --> 
+   <!-- <div class="mainbar">
+      <div class="mainbar_content"> <img class="loginlogo_s" src="styles/Images/loginlogo_s.png" alt="loginlogo" />
+        <div class="login"><a href="login-register-page.html" >Login</a></div>
+        <div class="createbar"></div>
+        <img class="create_s" src="styles/Images/create_s.png" alt="creates"/>
+        <div class="create"><a href="login-register-page.html" >Create an account</a></div>
+        <div id="currency_switcher" class="s_switcher"> <span class="s_selected">US Dollar</span>
+          <ul class="s_options">
+            <li><a href="">Euro</a></li>
+            <li><a href="">Pound Sterling</a></li>
+            <li><a href="">US Dollar</a></li>
+          </ul>
+        </div>
+        <div id="language_switcher" class="s_switcher"> <span class="s_selected"><img src="styles/Images/usa_flag.jpg" alt="English" /> English</span>
+          <ul class="s_options">
+            <li><a href=""><img src="styles/Images/usa_flag.jpg" alt="English" /> English</a></li>
+            <li><a href=""><img src="styles/Images/italia_flag.jpg" alt="Italian" /> Italiano</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>--> 
+    <!-- BEGIN  header menu  -->     
+<DIV class="s_nav" id="categories">
+<UL>
+  <LI><A href="http://digistump.com/category">Products</A></LI>
+  <LI><A href="http://digistump.com/news">News</A></LI>
+  <LI><A href="http://digistump.com/wiki">Wiki</A></LI>
+  <LI><A href="http://digistump.com/board">Forums</A></LI>
+  <LI><A href="http://digistump.com/distributors">Distributors</A></LI>
+  <LI><A href="http://digistump.com/services">Services</A></LI>
+  <LI><A href="http://digistump.com/about">About</A></LI></UL>
+<DIV class="searchli">
+<FORM action="/category" method="GET">
+<DIV class="button"></DIV><INPUT name="search" class="keyword" onfocus="if(this.value=='Search Products')this.value=''" onblur="if(this.value=='')this.value='Search Products'" type="text" size="10" maxlength="40" value="Search Products"> 
+        </FORM></DIV></DIV><!-- END  header menu --> <!-- END  .header -->   
+</DIV><!-- BEGIN  .content -->   
+<DIV class="content"><!-- BEGIN  central slide gallery-->     <!--<div class="sliderborder">
+      <div class="category_sliderGallery">
+        <ul id="sliderproduct">
+          <li> <a href="product-page.html"> <img src="styles/Images/Product_photos/category_slider_product1.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Auctor</span> <span class="category_slider_product_price">$491.99</span> </a> </li>
+          <li>
+            <div class="category_slider_sale1">-10%</div>
+            <a href="product-page.html"> <img src="styles/Images/Product_photos/category_slider_product2.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Metus In</span> <span class="category_slider_product_price">$696.85</span> </a> </li>
+          <li> <a href="product-page.html"> <img src="styles/Images/Product_photos/category_slider_product3.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Temport</span> <span class="category_slider_product_price">$152.99</span> </a> </li>
+          <li> <a href="product-page.html"> <img src="styles/Images/Product_photos/category_slider_product4.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Bibendum</span> <span class="category_slider_product_price">$122.00</span> </a> </li>
+          <li> <a href="product-page.html"> <img src="styles/Images/Product_photos/category_slider_product5.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Etiam Sagi</span> <span class="category_slider_product_price">$150.88</span> </a> </li>
+          <li> <a href="product-page.html" class="last"> <img src="styles/Images/Product_photos/category_slider_product6.jpg" alt="Image 1" title=""/> <span class="ptitle3 category_slider_product_title">Pellentesque</span> <span class="category_slider_product_price">$475.59</span> </a> </li>
+        </ul>
+        <div id="category_slider"> </div>
+        
+         END  central slide gallery 
+      </div>
+    </div>--> 
+    
+<DIV style="clear: both;"></DIV><!-- BEGIN left side menus -->     
+<DIV class="menu_block"><!-- BEGIN categories menu -->       
+<DIV class="hc" id="cat_menu_button"><A 
+href="http://digistump.com/category">Products</A></DIV>
+<UL id="category_menu2">
+  <LI><A class="selected" 
+  href="http://digistump.com/category/1"><SPAN><SPAN>Digispark</SPAN></SPAN>     
+        </A></LI>
+  <LI><A href="http://digistump.com/category/2"><SPAN><SPAN>Digispark Shield 
+  Kits</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/3"><SPAN><SPAN>Digispark Shield 
+  PCBs</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/19"><SPAN><SPAN>Digispark 
+  Pro</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/20"><SPAN><SPAN>Digispark Pro 
+  Shields</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/21"><SPAN><SPAN>Digispark Pro 
+  Shield PCBs</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/17"><SPAN><SPAN>DigiX</SPAN></SPAN> 
+            </A></LI>
+  <LI><A href="http://digistump.com/category/18"><SPAN><SPAN>Tools</SPAN></SPAN> 
+            </A></LI>
+  <LI><A 
+  href="http://digistump.com/category/4"><SPAN><SPAN>Components</SPAN></SPAN>    
+         <SPAN class="submenu_icon"></SPAN></A></LI>
+  <UL class="sub-menu">
+    <LI><A href="http://digistump.com/category/13"><SPAN><SPAN>Buttons and 
+    Switches</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/9"><SPAN><SPAN>Cables</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/12"><SPAN><SPAN>General</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/7"><SPAN><SPAN>Headers</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/15"><SPAN><SPAN>LCDs</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/8"><SPAN><SPAN>LEDs</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/6"><SPAN><SPAN>Wire</SPAN></SPAN></A></LI>
+    <LI><A 
+    href="http://digistump.com/category/14"><SPAN><SPAN>Wireless</SPAN></SPAN></A></LI></UL>
+  <LI><A 
+  href="http://digistump.com/category/10"><SPAN><SPAN>Sensors</SPAN></SPAN>      
+       <SPAN class="submenu_icon"></SPAN></A></LI>
+  <UL class="sub-menu">
+    <LI><A 
+    href="http://digistump.com/category/11"><SPAN><SPAN>Temperature</SPAN></SPAN></A></LI></UL>
+  <LI><A href="http://digistump.com/category/22"><SPAN><SPAN>Oak by 
+  Digistump</SPAN></SPAN>           </A></LI>
+  <LI><A href="http://digistump.com/category/23"><SPAN><SPAN>Oak 
+  Shields</SPAN></SPAN>           </A></LI><!--<li><a href="category_page.html"><span><span>Components</span></span></a></li>
+        <li><a href="category_page.html"><span><span>Tools</span></span></a></li>--> 
+          <!--<li><a href="https://digistump.com/digix-pre-order"><span><span>DigiX Pre-order!</span></span></a></li>--> 
+        </UL><!-- END categories menu -->           
+<DIV class="featured_container" style="width: 200px;"><A class="featured_text" 
+style="padding-left: 10px;" href="http://digistump.com/products/1#">Get Our 
+Updates!</A>         
+<UL class="featured" style="margin: 0px; padding-left: 5px;">
+  <FORM id="subform" action="/notify.php?side=1" method="POST"><INPUT name="last_page" type="hidden" value="/products/1"> 
+            
+  <LI><INPUT name="subnotifyemail" type="text" placeholder="Email Address" value=""> 
+            </LI>
+  <LI><SPAN class="featured_title" 
+  style="margin: 0px; padding-top: 10px;"><INPUT name="quarterly" type="checkbox" 
+  value="1"> Big News &amp; Updates (Quarterly)</SPAN></LI>
+  <LI><SPAN class="featured_title" 
+  style="margin: 0px; padding-top: 10px;"><INPUT name="weekly" type="checkbox" 
+  value="1"> New Products &amp; Updates (Weekly)</SPAN></LI></FORM></UL>
+<DIV class="add" style="color: white; padding-top: 10px; padding-left: 20px;"><A 
+style="color: white;" onclick="$('#subform').submit(); return false;" href="http://digistump.com/products/1#">Subscribe</A></DIV></DIV>
+<DIV class="divisory_bar2"></DIV></DIV><!-- <div style="font-family:Arial, Helvetica, sans-serif;font-size: 16px;padding-left: 235px; padding-bottom:20px;">
+    <b>Please note:</b> The shipment of Digistump orders made after 10/07 will be postponed until Saturday 10/24 - at which point all orders will be shipped promptly. You are still welcome to make an order during this time. Use the coupon code "FallFun" for 10% off during this delay.
+  </div>--> 
+      <!--
+      <div class="featured_container">
+        <div class="info_arrow"></div>
+        <a href="#" class="featured_text">Bestsellers</a>
+        <ul class="featured">
+          <li><a href="product-page.html"><img src="styles/Images/Product_photos/object01_thumb.jpg" class="featured_img" alt="featured img"/><span class="featured_title"><b>Lapsum irem</b></span> </a>
+            <div class="featured_date">19th Oct</div>
+            <div class="featured_bar"></div>
+            <div class="featured_views">239 views</div>
+          </li>
+          <li  class="divisory_bar"></li>
+          <li><a href="product-page.html"><img src="styles/Images/Product_photos/object02_thumb.jpg" class="featured_img" alt="featured img"/><span class="featured_title"><b>Lapsum irem</b></span> </a>
+            <div class="featured_date">19th Oct</div>
+            <div class="featured_bar"></div>
+            <div class="featured_views">239 views</div>
+          </li>
+          <li  class="divisory_bar"></li>
+          <li><a href="product-page.html"><img src="styles/Images/Product_photos/object03_thumb.jpg" class="featured_img" alt="featured img"/><span class="featured_title"><b>Lapsum irem</b></span> </a>
+            <div class="featured_date">19th Oct</div>
+            <div class="featured_bar"></div>
+            <div class="featured_views">239 views</div>
+          </li>
+          <li  class="divisory_bar"></li>
+          <li><a href="product-page.html"><img src="styles/Images/Product_photos/object04_thumb.jpg" class="featured_img" alt="featured img"/><span class="featured_title"><b>Lapsum irem</b></span> </a>
+            <div class="featured_date">19th Oct</div>
+            <div class="featured_bar"></div>
+            <div class="featured_views">239 views</div>
+          </li>
+        </ul>
+      </div>
+     <!-- <div class="divisory_bar2"></div> --> 
+            <!--BEGIN support form 
+      <div class="info_arrow"></div>
+      <a href="#" class="support_text">Support 24/24</a>
+      <ul class="support">
+        <li>LaDuis non dui vel turpis molestie vehicula convallis nec tortor. Lorem ipsum <a href="">dolor sit amet</a>, consectetur adipiscing elit. </li>
+      </ul>
+      END support form --> 
+      <!-- <div class="divisory_bar2"></div> -->             <!--BEGIN information form 
+      <div class="info_arrow"></div>
+      <a href="#" class="information_text">Information</a>
+      <ul class="information">
+        <li><a href="#">About Basico</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms &amp; Conditions</a></li>
+        <li><a href="contact-page.html">Contact Us</a></li>
+        <li><a href="#">Site Map</a></li>
+      </ul>--> 
+      <!--END information form -->             <!-- END left side menus -->      
+   <!--================================================================================--> 
+        
+<DIV id="central_content"><!-- BEGIN central slogan and rss feed -->       
+<DIV class="question1 ha">Digispark USB Development Board</DIV><!--<div class="question2 ha">Ipsum #100</div>--> 
+      
+<DIV style="clear: both;"></DIV><!--<div class="here">You are here:</div>
+      <div class="product_directory"><a href="#">Home</a></div>
+      <div class="product_directory arrows">»</div>
+      <div class="product_directory"><a href="#">category</a></div>
+      <div class="product_directory arrows">»</div>--> 
+      
+<DIV class="product_directory blue"><A 
+href="http://digistump.com/category/1">Digispark</A></DIV><!--<div class="category_rss">Stay tuned with our<a href="#">Feed RSS</a>
+        <div id="rss_logo"></div>
+      </div>--> 
+      
+<DIV style="padding: 27px 0px 0px; clear: both;"></DIV><!-- END central slogan and rss feed --> 
+            <!-- BEGIN central products -->             
+<DIV class="product_group"><!-- BEGIN product1 -->                 
+<DIV class="product_item">
+<DIV class="product_left"><A title="" class="simple_image" href="https://s3.amazonaws.com/digistump-resources/images/l/2520dcf84a0a3bf2257c2559d7a187db.jpg"><!--<span class="product_zoom" style="display: none;"><img src="styles/Images/ico-zoom.png" alt="Zoom Picture" title="Zoom Picture" style="border:none;"/></span>--> 
+              <IMG title="" alt="Image 1" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/2520dcf84a0a3bf2257c2559d7a187db.jpg"></A> 
+                        
+<DIV class="product_thumb_container"><A title="" class="simple_image" href="https://s3.amazonaws.com/digistump-resources/images/l/bb996eb2517add498a21d3e98c4e9ef0.jpg"><IMG 
+title="" class="thumb " alt="Image 2" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/bb996eb2517add498a21d3e98c4e9ef0.jpg"></A> 
+                                <A title="" class="simple_image" href="https://s3.amazonaws.com/digistump-resources/images/l/61e2f14edffc1edfa2685963155b0d33.jpg"><IMG 
+title="" class="thumb " alt="Image 3" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/61e2f14edffc1edfa2685963155b0d33.jpg"></A> 
+                                   <A title="" class="simple_image" href="https://s3.amazonaws.com/digistump-resources/images/l/fd986316fea91d4ebe78392ca785f1ad.jpg"><IMG 
+title="" class="thumb " alt="Image 4" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/fd986316fea91d4ebe78392ca785f1ad.jpg"></A> 
+                                       <A title="" class="simple_image" href="https://s3.amazonaws.com/digistump-resources/images/l/62779e34f1553179532b56e213a64f21.jpg"><IMG 
+title="" class="thumb last" alt="Image 5" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/62779e34f1553179532b56e213a64f21.jpg"> 
+                    </A>                      </DIV></DIV></DIV>
+<DIV class="product_right2">
+<DIV class="price_box" style="padding-right: 30px; background-color: transparent;">
+<DIV class="product_price" 
+style="width: 300px; font-size: 2.5em;">$8.95&nbsp;USD</DIV>
+<DIV class="product_data" style="width: 246px; text-align: center; right: 0px; padding-top: 10px; position: absolute;">
+Availabity:           <SPAN class="grey" style="font-weight: normal;">In 
+stock</SPAN></DIV><!--<span class="tax_price">Ex Tax:</span><span class="tax_price2">100.00 eur</span>--> 
+</DIV><!-- 
+          <div class="div_br"></div>
+          <div class="product_data">Stock:</div>
+          <div class="product_data grey">4212.00</div>--> 
+          <!--<div class="div_br"></div>
+          <div class="product_data">Brand:</div>
+          <div class="product_data grey">Apple</div>
+          <div class="div_br"></div>
+          <div class="product_data">Reward Points:</div>
+          <div class="product_data grey">Lapsum</div>
+          <div class="div_br"></div>
+          <div class="rating"> <span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star"></span><span class="star_num">5/5</span><span class="rev"><a href="">(2 reviews)</a></span> </div>
+          --> 
+          
+<DIV style="padding: 2px 0px 0px;"></DIV><!-- <form method="post" action="">
+            <div>
+              <select class="select" title="Select one">
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+                <option>Option 4</option>
+                <option>Option 5</option>
+              </select>
+            </div>
+          </form>--> 
+          
+<DIV style="padding: 22px 0px 0px;"></DIV><!--
+          <div class="p_soc">
+            <div class="s_cont" style="display:inline-block; margin:0 -18px 0 0;">
+              <g:plusone size="medium"></g:plusone>
+            </div>
+            <div class="s_cont" style="display:inline-block; margin:0 -1px 0 0;"> <a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-lang="it">Tweet</a><script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script></div>
+            <div class="s_cont">
+              <div id="fb-root"></div>
+              <script src="http://connect.facebook.net/en_US/all.js#appId=210150982376419&amp;xfbml=1"></script>
+              <fb:like href="http://www.facebook.com/themeforest" send="false" layout="button_count" width="110" show_faces="false" action="like" font="arial"></fb:like>
+            </div>
+          </div>
+          <div style="clear:both; padding:19px 0 0 0;"></div>
+          <div class="wish">+ <a href="wish-list.html">Add to your wish list</a></div>
+        -->           
+<DIV class="product_horizontal_bar" style="margin: 0px; padding: 6px 0px 0px; clear: both;"></DIV></DIV>
+<DIV class="addproduct">
+<FORM action="/cart.php?add=1">
+<DIV class="qty">Qty:</DIV><INPUT name="quantity" class="product_number" id="product_qty_1" type="text" maxlength="10" value="1"> 
+          
+<DIV class="product_add"><A class="add_to_cart scripthide" style="display: none;" 
+href="http://digistump.com/products/1#" data-type="single" data-product="1"><IMG 
+alt="add icon" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/add_icon.png">Add 
+to Cart</A>             <NOSCRIPT>&lt;input class="product_add" type="submit" 
+value="Add to Cart"&gt;</NOSCRIPT>           </DIV></FORM>
+<DIV class="product_data" 
+style="padding-top: 10px; font-size: 1.2em;">&nbsp;<SPAN class="added_message" 
+style="display: none;">&nbsp;&nbsp;&nbsp;Added to cart!</SPAN></DIV></DIV><!-- END product1 --> 
+        
+<DIV style="clear: both;"></DIV>
+<SCRIPT src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/jquery.ui.tabs.min.js" type="text/javascript"></SCRIPT>
+ 
+<SCRIPT type="text/javascript">
+$( function() {
+  $(".s_tabs").tabs({ fx: { opacity: 'toggle', duration: 300 } });
+});
+
+</SCRIPT>
+                 
+<DIV class="clear" id="product_tabs"></DIV>
+<DIV class="s_tabs grid_12 alpha omega">
+<UL class="s_tabs_nav clearfix">
+  <LI><A 
+  href="http://digistump.com/products/1#product_description">Description</A></LI>
+  <LI><A 
+  href="http://digistump.com/products/1#product_resources">Resources</A></LI><!-- <li><a href="#product_reviews">Comments</a></li> --> 
+            </UL>
+<DIV class="s_tab_box">
+<DIV id="product_description">
+<DIV class="description_title blue" style="padding-bottom: 10px; font-size: 1.1em;">Digispark 
+USB Development Board</DIV>
+<DIV class="description_text" style="color: black;">                The 
+Digispark is an Attiny85 based microcontroller development board similar to the 
+Arduino line, only cheaper, smaller, and a bit less powerful. With a whole host 
+of shields to extend its functionality and the ability to use the familiar 
+Arduino IDE the Digispark is a great way to jump into electronics, or perfect 
+for when an Arduino is too big or too much.<BR><BR>The Digispark is shipped 
+fully assembled except for the two included and easy to solder headers.<BR><BR>
+Here are the specs:<BR><BR>Support for the Arduino IDE 1.0+ (OSX/Win/Linux)<BR>
+Power via USB or External Source - 5v or 7-35v (12v or less recommended, 
+automatic selection)<BR>On-board 500ma 5V Regulator<BR>Built-in USB<BR>6 I/O 
+Pins (2 are used for USB only if your program actively communicates over USB, 
+otherwise you can use all 6 even if you are programming via USB)<BR>8k Flash 
+Memory (about 6k after bootloader)<BR>I2C and SPI (vis USI)<BR>PWM on 3 pins 
+(more possible with Software PWM)<BR>ADC on 4 pins<BR>Power LED and Test/Status 
+LED              </DIV></DIV>
+<DIV id="product_resources">
+<DIV class="description_title blue">Hardware License:</DIV>
+<DIV class="description_text"><A href="http://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA 
+3.0</A></DIV>
+<DIV class="description_title blue">Instructions, tutorials, etc:</DIV>
+<DIV class="description_text"><A href="http://digistump.com/wiki/">Wiki 
+Page</A></DIV>
+<DIV class="description_title blue">Sources:</DIV>
+<DIV class="description_text"><A href="https://s3.amazonaws.com/digistump-resources/files/97a1bb28_DigisparkSchematic.pdf">Schematics</A><BR></DIV>
+<DIV class="description_text"><A href="https://s3.amazonaws.com/digistump-resources/files/3a5187f5_digispark_sources.zip">Eagle 
+Files</A></DIV>
+<DIV class="description_title blue">Software:</DIV>
+<DIV class="description_text"><A href="http://digistump.com/wiki/digispark/tutorials/connecting">Download 
+Page</A></DIV>
+<DIV style="font-family: Arial, Helvetica, sans-serif; font-size: 12px;"><B> 
+Note: Schematics, source files, software, and datasheets are provided rovided 
+"as is", without warranty of any kind, express or implied, including but not 
+limited to the warranties of merchantability, fitness for a particular purpose 
+and noninfringement. in no event shall the authors or copyright holders be 
+liable for any claim, damages or other liability, whether in an action of 
+contract, tort or otherwise, arising from, out of or in connection with the 
+product or the use or other dealings in these products.           </B> 
+</DIV></DIV><!--<div id="product_reviews">
+              <div id="disqus_thread"></div>
+            <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'digistump'; // required: replace example with your forum shortname
+        var disqus_identifier  = 'product_1'; // required: replace example with your forum shortname
+        var disqus_title = 'Digispark USB Development Board'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the comments.</noscript>
+
+            </div>-->           </DIV></DIV>
+<DIV class="related he">Related<!--</div>
+        <div class="related grey he">--> 
+Products</DIV>
+<DIV style="clear: both;"></DIV>
+<DIV class="related_item "><A href="http://digistump.com/products/30"><IMG 
+width="124" height="99" title="" alt="Digispark Starter Kit" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/79d6e0b41c32f0d1f0022e9146713dbf.jpg"></A> 
+          
+<DIV class="related_right"><A href="http://digistump.com/products/30"><SPAN 
+class="related_product_title one">Digispark Starter Kit</SPAN></A> <BR>
+<DIV class="related_product_description">&nbsp;</DIV>
+<DIV class="related_product_price">$14.95&nbsp;USD</DIV></DIV></DIV>
+<DIV class="related_item last"><A href="http://digistump.com/products/102"><IMG 
+width="124" height="99" title="" alt="Digispark 5-Pack" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/fc8314c42c2f0b57703734ff4428b7e3.jpg"></A> 
+          
+<DIV class="related_right"><A href="http://digistump.com/products/102"><SPAN 
+class="related_product_title one">Digispark 5-Pack</SPAN></A> <BR>
+<DIV class="related_product_description">&nbsp;</DIV>
+<DIV class="related_product_price">$39.95&nbsp;USD</DIV></DIV></DIV>
+<DIV class="related_item "><A href="http://digistump.com/products/48"><IMG 
+width="124" height="99" title="" alt="Digispark Beginner Kit" src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/3f297edf42bcd74a6a605c7c64aef8ed.jpg"></A> 
+          
+<DIV class="related_right"><A href="http://digistump.com/products/48"><SPAN 
+class="related_product_title one">Digispark Beginner Kit</SPAN></A> <BR>
+<DIV class="related_product_description">&nbsp;</DIV>
+<DIV class="related_product_price">$16.95&nbsp;USD</DIV></DIV></DIV>
+<DIV class="related_item last"><A href="http://digistump.com/products/101"><IMG 
+width="124" height="99" title="" alt="Little Wire on Digispark Complete Package" 
+src="Digispark%20USB%20Development%20Board%20-%20Digistump_files/e0c9842e513c1e60c14ad25fabee3168.jpg"></A> 
+          
+<DIV class="related_right"><A href="http://digistump.com/products/101"><SPAN 
+class="related_product_title one">Little Wire on Digispark Complete 
+Package</SPAN></A> <BR>
+<DIV class="related_product_description">&nbsp;</DIV>
+<DIV class="related_product_price">$13.95&nbsp;USD</DIV></DIV></DIV>
+<DIV class="related_bottom"></DIV><!-- END central products -->       </DIV><!-- END #central_content--> 
+    </DIV><!-- BEGIN  #footer -->               <!--
+      <div class="horizontal_bar" style="margin:0;"></div>
+      <div class="footer_sbox">
+        <div class="footer_time"> <img src="styles/Images/timeicon.png" class="timeicon" alt="time" />
+          <div class="hc footer-title">Resources</div>
+          <div style="clear:both; margin:0; padding:0;"></div>
+          <div class="boxcontainer"> <img src="styles/Images/Product_photos/footer_thumb.jpg" class="footer_thumb_left"  alt="footerthumb"/>
+            <div class="footer_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam consequat <b>erat sed</b> augue vehicula ullamcorper. Suspendisse massa turpis, blandit sed rutrum non, condimentum ac nisl. </div>
+          </div>
+        </div>
+      </div> --> 
+      
+<DIV style="clear: both;"></DIV>
+<DIV class="horizontal_bar" style="margin: 0px; padding: 14px 0px 1px;"></DIV>
+<DIV id="footer">
+<DIV class="copyright">© 2015 Digistump LLC</DIV><!-- END  copyright  --> <!-- BEGIN  #footer_menu  --> 
+      
+<UL id="footer_menu">
+  <LI><A href="http://digistump.com/">Home</A> <SPAN 
+  class="footer_lilbar"></SPAN></LI>         <!--<li><a href="#">Feed RSS</a><span class="footer_lilbar"></span></li>--> 
+          <!--<li><a href="#">Sitemap</a><span class="footer_lilbar"></span></li>--> 
+          
+  <LI><A href="http://digistump.com/about">Contact Us</A></LI>         <!-- END  #footer_menu  --> 
+        </UL><BR><BR>
+<DIV style="clear: both;"></DIV><!-- BEGIN  copyright  -->             <!-- Credits  
+      <div id="credits">Credits by <a href="#">Aldema Studio</a> &#38; <a href="#"> Just 8D </a></div>--> 
+            <!-- END  #footer -->     </DIV><!-- END  .content -->   </DIV><!-- END  #main --> 
+</DIV>
+<P>&nbsp;</P>
+<P>&nbsp;</P><!-- END body --> </BODY><!-- END html --></HTML>

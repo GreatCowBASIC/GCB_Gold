@@ -1,0 +1,1038 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dosid="01391" id="" name="PIC10F322" rev="" xsi:noNamespaceSchemaLocation="PCG.xsd">
+    <manager name="System Module">
+        <register alias="CONFIG" name="CONFIG" width="0x10">
+            <setting alias="FOSC" default="EC" name="FOSC" description="Oscillator Selection bits">
+                <option description="INTOSC oscillator: CLKIN function disabled" name="INTOSC" alias="INTOSC" value="0x0"/>
+                <option description="EC: CLKIN function enabled" name="EC" alias="EC" value="0x1"/>
+            </setting>
+            <setting alias="BOREN" default="ON" name="BOREN" description="Brown-out Reset Enable">
+                <option description="Brown-out Reset enabled" name="ON" alias="ON" value="0x6"/>
+                <option description="Brown-out Reset enabled while running and disabled in Sleep" name="NSLEEP" alias="NSLEEP" value="0x4"/>
+                <option description="Brown-out Reset controlled by the SBOREN bit in the BORCON register" name="SBODEN" alias="SBODEN" value="0x2"/>
+                <option description="Brown-out Reset disabled" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="WDTE" default="ON" name="WDTE" description="Watchdog Timer Enable">
+                <option description="WDT enabled" name="ON" alias="ON" value="0x18"/>
+                <option description="WDT enabled while running and disabled in Sleep" name="NSLEEP" alias="NSLEEP" value="0x10"/>
+                <option description="WDT controlled by the SWDTEN bit in the WDTCON register" name="SWDTEN" alias="SWDTEN" value="0x8"/>
+                <option description="WDT disabled" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="PWRTE" default="OFF" name="PWRTE" description="Power-up Timer Enable bit">
+                <option description="PWRT disabled" name="OFF" alias="OFF" value="0x20"/>
+                <option description="PWRT enabled" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="MCLRE" default="ON" name="MCLRE" description="MCLR Pin Function Select bit">
+                <option description="MCLR pin function is MCLR" name="ON" alias="ON" value="0x40"/>
+                <option description="MCLR pin function is digital input, MCLR internally tied to VDD" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="CP" default="OFF" name="CP" description="Code Protection bit">
+                <option description="Program memory code protection is disabled" name="OFF" alias="OFF" value="0x80"/>
+                <option description="Program memory code protection is enabled" name="ON" alias="ON" value="0x0"/>
+            </setting>
+            <setting alias="LVP" default="ON" name="LVP" description="Low-Voltage Programming Enable">
+                <option description="Low-voltage programming enabled" name="ON" alias="ON" value="0x100"/>
+                <option description="High-voltage on MCLR/VPP must be used for programming" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="LPBOR" default="ON" name="LPBOR" description="Brown-out Reset Selection bits">
+                <option description="BOR enabled" name="ON" alias="ON" value="0x200"/>
+                <option description="BOR disabled" name="OFF" alias="OFF" value="0x0"/>
+            </setting>
+            <setting alias="BORV" default="LO" name="BORV" description="Brown-out Reset Voltage Selection">
+                <option description="Brown-out Reset Voltage (Vbor), low trip point selected." name="LO" alias="LO" value="0x400"/>
+                <option description="Brown-out Reset Voltage (Vbor), high trip point selected." name="HI" alias="HI" value="0x0"/>
+            </setting>
+            <setting alias="WRT" default="OFF" name="WRT" description="Flash Memory Self-Write Protection">
+                <option description="Write protection off" name="OFF" alias="OFF" value="0x1800"/>
+                <option description="000h to 07Fh write protected, 080h to 1FFh may be modified by PMCON control" name="BOOT" alias="BOOT" value="0x1000"/>
+                <option description="000h to 0FFh write protected, 100h to 1FFh may be modified by PMCON control" name="HALF" alias="HALF" value="0x800"/>
+                <option description="000h to 1FFh write protected, no addresses may be modified by PMCON control" name="ALL" alias="ALL" value="0x0"/>
+            </setting>
+        </register>
+        <modules>
+            <module group="Internal Oscillator" name="INTERNAL OSCILLATOR" type="osc_int16m" version="v5" sub_version="a0" instance="">
+                <property name="freqMaxEC" value="20000000"/>
+                <register alias="OSCCON" name="OSCCON" type="R,W" width="8">
+                    <setting alias="HFIOFS" default="unstable" name="HFIOFS" mask="0x1" type="R,W" porDefault="0x0">
+                        <option name="unstable" alias="unstable" value="0x0"/>
+                        <option name="stable" alias="stable" value="0x1"/>
+                    </setting>
+                    <setting alias="LFIOFR" default="31.25KHz_osc_not_ready" name="LFIOFR" mask="0x2" type="R,W" porDefault="0x0">
+                        <option name="31.25KHz_osc_ready" alias="31.25KHz_osc_ready" value="0x1"/>
+                        <option name="31.25KHz_osc_not_ready" alias="31.25KHz_osc_not_ready" value="0x0"/>
+                    </setting>
+                    <setting alias="HFIOFR" default="16MHz_osc_not_ready" name="HFIOFR" mask="0x8" type="R,W" porDefault="0x0">
+                        <option name="16MHz_osc_ready" alias="16MHz_osc_ready" value="0x1"/>
+                        <option name="16MHz_osc_not_ready" alias="16MHz_osc_not_ready" value="0x0"/>
+                    </setting>
+                    <setting alias="IRCF" default="8MHz" name="IRCF" mask="0x70" type="R,W" porDefault="0x6">
+                        <option name="16MHz" alias="16MHz" value="0x7"/>
+                        <option name="8MHz" alias="8MHz" value="0x6"/>
+                        <option name="4MHz" alias="4MHz" value="0x5"/>
+                        <option name="2MHz" alias="2MHz" value="0x4"/>
+                        <option name="1MHz" alias="1MHz" value="0x3"/>
+                        <option name="500KHz" alias="500KHz" value="0x2"/>
+                        <option name="250KHz" alias="250KHz" value="0x1"/>
+                        <option name="31KHz" alias="31KHz" value="0x0"/>
+                    </setting>
+                </register>
+                <register alias="CLKRCON" name="CLKRCON" type="R,W" width="8">
+                    <setting alias="CLKROE" default="disabled" name="CLKROE" mask="0x40" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="BORCON" name="BORCON" type="R,W" width="8">
+                    <setting alias="SBOREN" default="disabled" name="SBOREN" mask="0x80" type="R,W" porDefault="0x1">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="BORFS" default="disabled" name="BORFS" mask="0x40" type="R,W" porDefault="0x0">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="BORRDY" default="BOR Circuit is inactive" name="BORRDY" mask="0x1" type="R,W" porDefault="0x0">
+                        <option name="BOR Circuit is active" alias="BOR Circuit is active" value="0x1"/>
+                        <option name="BOR Circuit is inactive" alias="BOR Circuit is inactive" value="0x0"/>
+                    </setting>
+                </register>
+            </module>
+            <module group="RESET" name="RESET" type="rst_sib" version="v0" sub_version="a0" instance=""/>
+            <module group="WDT" name="WDT" type="wdt" version="v0" sub_version="" instance="">
+                <register alias="WDTCON0" name="WDTCON" type="R,W" width="8">
+                    <setting alias="WDTSEN" default="OFF" name="SWDTEN" mask="0x1" type="R,W" porDefault="0x0">
+                        <option name="OFF" alias="OFF" value="0x0"/>
+                        <option name="ON" alias="ON" value="0x1"/>
+                    </setting>
+                    <setting alias="WDTPS" default="1:65536" name="WDTPS" mask="0x3e" type="R,W" porDefault="0xb">
+                        <option name="1:32" alias="1:32" value="0x0"/>
+                        <option name="1:64" alias="1:64" value="0x1"/>
+                        <option name="1:128" alias="1:128" value="0x2"/>
+                        <option name="1:256" alias="1:256" value="0x3"/>
+                        <option name="1:512" alias="1:512" value="0x4"/>
+                        <option name="1:1024" alias="1:1024" value="0x5"/>
+                        <option name="1:2048" alias="1:2048" value="0x6"/>
+                        <option name="1:4096" alias="1:4096" value="0x7"/>
+                        <option name="1:8192" alias="1:8192" value="0x8"/>
+                        <option name="1:16384" alias="1:16384" value="0x9"/>
+                        <option name="1:32768" alias="1:32768" value="0xa"/>
+                        <option name="1:65536" alias="1:65536" value="0xb"/>
+                        <option name="1:131072" alias="1:131072" value="0xc"/>
+                        <option name="1:262144" alias="1:262144" value="0xd"/>
+                        <option name="1:524288" alias="1:524288" value="0xe"/>
+                        <option name="1:1048576" alias="1:1048576" value="0xf"/>
+                        <option name="1:2097152" alias="1:2097152" value="0x10"/>
+                        <option name="1:4194304" alias="1:4194304" value="0x11"/>
+                        <option name="1:8388608" alias="1:8388608" value="0x12"/>
+                    </setting>
+                </register>
+            </module>
+        </modules>
+    </manager>
+    <pins>
+        <pin ansel="ANSA0" lat="LATA0" name="RA0" tris="TRISA0" wpu="WPUA0" cn="RA0">
+            <pinNumber package="SOT6" value="1"/>
+            <pinNumber package="PDIP8" value="5"/>
+            <pinNumber package="DFN8" value="5"/>
+            <pinAlias alias="RA0" module="GPIO"/>
+            <pinAlias alias="PWM1" module="PWM1"/>
+            <pinAlias alias="CLC1IN1" module="CLC1"/>
+            <pinAlias alias="CWG1A" module="CWG1"/>
+            <pinAlias alias="AN0" module="ADC"/>
+        </pin>
+        <pin ansel="ANSA1" lat="LATA1" name="RA1" tris="TRISA1" wpu="WPUA1" cn="RA1">
+            <pinNumber package="SOT6" value="3"/>
+            <pinNumber package="PDIP8" value="4"/>
+            <pinNumber package="DFN8" value="4"/>
+            <pinAlias alias="RA1" module="GPIO"/>
+            <pinAlias alias="PWM2" module="PWM2"/>
+            <pinAlias alias="CLC1" module="CLC1"/>
+            <pinAlias alias="CWG1B" module="CWG1"/>
+            <pinAlias alias="AN1" module="ADC"/>
+            <pinAlias alias="CLKIN" module="INTERNAL OSCILLATOR">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="FOSC" value="EC"/>
+                </constraint>
+            </pinAlias>
+            <pinAlias alias="NCO1CLK" module="NCO1"/>
+        </pin>
+        <pin ansel="ANSA2" lat="LATA2" name="RA2" tris="TRISA2" wpu="WPUA2" cn="RA2">
+            <pinNumber package="SOT6" value="4"/>
+            <pinNumber package="PDIP8" value="3"/>
+            <pinNumber package="DFN8" value="3"/>
+            <pinAlias alias="RA2" module="GPIO"/>
+            <pinAlias alias="T0CKI" module="TMR0"/>
+            <pinAlias alias="INT" module="EXT_INT"/>
+            <pinAlias alias="NCO1" module="NCO1"/>
+            <pinAlias alias="CLC1IN2" module="CLC1"/>
+            <pinAlias alias="CWG1FLT" module="CWG1"/>
+            <pinAlias alias="CLKR" module="INTERNAL OSCILLATOR"/>
+            <pinAlias alias="AN2" module="ADC"/>
+        </pin>
+        <pin name="RA3" wpu="WPUA3" cn="RA3">
+            <pinNumber package="SOT6" value="6"/>
+            <pinNumber package="PDIP8" value="8"/>
+            <pinNumber package="DFN8" value="8"/>
+            <pinAlias alias="RA3" module="GPIO"/>
+            <pinAlias alias="MCLR" module="RESET">
+                <constraint name="configBit" type="lock">
+                    <constraintVariable name="MCLRE" value="ON"/>
+                </constraint>
+            </pinAlias>
+        </pin>
+        <pin name="VDD">
+            <pinNumber package="SOT6" value="5"/>
+            <pinNumber package="PDIP8" value="2"/>
+            <pinNumber package="DFN8" value="2"/>
+            <pinAlias alias="VDD" module="POWER"/>
+        </pin>
+        <pin name="VSS">
+            <pinNumber package="SOT6" value="2"/>
+            <pinNumber package="PDIP8" value="7"/>
+            <pinNumber package="DFN8" value="7"/>
+            <pinAlias alias="VSS" module="POWER"/>
+        </pin>
+    </pins>
+    <manager name="Pin Manager">
+        <register alias="ANSELA" name="ANSELA" width="8">
+            <setting alias="ANSA0" default="analog" name="ANSA0" mask="0x1">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA1" default="analog" name="ANSA1" mask="0x2">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+            <setting alias="ANSA2" default="analog" name="ANSA2" mask="0x4">
+                <option name="analog" alias="analog" value="0x1"/>
+                <option name="digital" alias="digital" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="IOCAP" name="IOCAP" width="8">
+            <setting alias="IOCAP0" default="disabled" name="IOCAP0" mask="0x1">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAP1" default="disabled" name="IOCAP1" mask="0x2">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAP2" default="disabled" name="IOCAP2" mask="0x4">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAP3" default="disabled" name="IOCAP3" mask="0x8">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="IOCAN" name="IOCAN" width="8">
+            <setting alias="IOCAN0" default="disabled" name="IOCAN0" mask="0x1">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAN1" default="disabled" name="IOCAN1" mask="0x2">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAN2" default="disabled" name="IOCAN2" mask="0x4">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAN3" default="disabled" name="IOCAN3" mask="0x8">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+        </register>
+        <register alias="IOCAF" name="IOCAF" width="8">
+            <setting alias="IOCAF0" default="disabled" name="IOCAF0" mask="0x1">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAF1" default="disabled" name="IOCAF1" mask="0x2">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAF2" default="disabled" name="IOCAF2" mask="0x4">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+            <setting alias="IOCAF3" default="disabled" name="IOCAF3" mask="0x8">
+                <option name="enabled" alias="enabled" value="0x1"/>
+                <option name="disabled" alias="disabled" value="0x0"/>
+            </setting>
+        </register>
+        <interrupt name="IOCI" flag="INTCONbits.IOCIF" enable="INTCONbits.IOCIE"/>
+        <register alias="OPTION_REG" name="OPTION_REG" type="R,W" width="8">
+            <setting alias="nWPUEN" default="disabled" name="nWPUEN" mask="0x80" type="R,W" porDefault="0x1" description="Weak Pull-up Enable">
+                <option name="enabled" alias="enabled" value="0x0"/>
+                <option name="disabled" alias="disabled" value="0x1"/>
+            </setting>
+        </register>
+    </manager>
+    <modules>
+        <module group="ADC" name="ADC" type="adc_sarcore_10bit" version="v3" sub_version="a0" instance="">
+            <interrupt name="ADI" flag="PIR1bits.ADIF" enable="PIE1bits.ADIE"/>
+            <property name="minimumTad" value="1E-6"/>
+            <property name="maximumTad" value="6E-6"/>
+            <register alias="ADCON0" name="ADCON" type="R,W" width="8">
+                <setting alias="ADON" default="disabled" name="ADON" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GO_nDONE" default="stop" name="GO_nDONE" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="stop" alias="stop" value="0x0"/>
+                    <option name="start" alias="start" value="0x1"/>
+                </setting>
+                <setting alias="CHS" default="AN0" name="CHS" mask="0x1c" type="R,W" porDefault="0x0">
+                    <option name="AN0" alias="AN0" value="0x0"/>
+                    <option name="AN1" alias="AN1" value="0x1"/>
+                    <option name="AN2" alias="AN2" value="0x2"/>
+                    <option name="Temp_indicator" alias="Temp_indicator" value="0x6"/>
+                    <option name="FVR" alias="FVR" value="0x7"/>
+                </setting>
+                <setting alias="ADCS" default="FOSC/2" name="ADCS" mask="0xe0" type="R,W" porDefault="0x0">
+                    <option name="FOSC/2" alias="FOSC/2" value="0x0"/>
+                    <option name="FOSC/8" alias="FOSC/8" value="0x1"/>
+                    <option name="FOSC/32" alias="FOSC/32" value="0x2"/>
+                    <option name="Frc" alias="Frc" value="0x3"/>
+                    <option name="FOSC/4" alias="FOSC/4" value="0x4"/>
+                    <option name="FOSC/16" alias="FOSC/16" value="0x5"/>
+                    <option name="FOSC/64" alias="FOSC/64" value="0x6"/>
+                    <option name="Frc" alias="Frc" value="0x7"/>
+                </setting>
+            </register>
+            <register alias="ADRES" name="ADRES" type="R,W" width="8">
+                <setting alias="ADRES" default="0x0" name="ADRES" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="CLC" name="CLC1" type="cla_clc" version="v1" sub_version="a0" instance="1">
+            <interrupt name="CLCI" flag="PIR1bits.CLC1IF" enable="PIE1bits.CLC1IE"/>
+            <register alias="CLCCON" name="CLC1CON" type="R,W" width="8">
+                <setting alias="LCMODE" default="AND-OR" name="LC1MODE" mask="0x7" type="R,W" porDefault="0x0" description="Logic Cell Mode bits">
+                    <option name="AND-OR" alias="AND-OR" value="0x0"/>
+                    <option name="OR-XOR" alias="OR-XOR" value="0x1"/>
+                    <option name="4-input AND" alias="4-input AND" value="0x2"/>
+                    <option name="SR latch" alias="SR latch" value="0x3"/>
+                    <option name="1-input D flip-flop with S and R" alias="1-input D flip-flop with S and R" value="0x4"/>
+                    <option name="2-input D flip-flop with R" alias="2-input D flip-flop with R" value="0x5"/>
+                    <option name="JK flip-flop with R" alias="JK flip-flop with R" value="0x6"/>
+                    <option name="1-input transparent latch with S and R" alias="1-input transparent latch with S and R" value="0x7"/>
+                </setting>
+                <setting alias="LCINTN" default="disabled" name="LCINTN" mask="0x8" type="R,W" porDefault="0x0" description="Logic Cell Negative Edge Interrupt Enable bit">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCINTP" default="disabled" name="LCINTP" mask="0x10" type="R,W" porDefault="0x0" description="Logic Cell Positive Edge Interrupt Enable bit">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCOUT" default="disabled" name="LC1OUT" mask="0x20" type="R" porDefault="0x0" description="Logic Cell Data Output Status bit">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCOE" default="disabled" name="LC1OE" mask="0x40" type="R,W" porDefault="0x0" description="Logic Cell Output Enable bit">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCEN" default="disabled" name="LC1EN" mask="0x80" type="R,W" porDefault="0x0" description="Logic Cell Enable bit">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="CLCPOL" name="CLC1POL" type="R,W" width="8">
+                <setting alias="LCG1POL" default="not_inverted" name="LC1G1POL" mask="0x1" type="R,W" porDefault="0x0" description="Logic Cell Gate 1 Output Polarity Control bit">
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                </setting>
+                <setting alias="LCG2POL" default="not_inverted" name="LC1G2POL" mask="0x2" type="R,W" porDefault="0x0" description="Logic Cell Gate 2 Output Polarity Control bit">
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                </setting>
+                <setting alias="LCG3POL" default="not_inverted" name="LC1G3POL" mask="0x4" type="R,W" porDefault="0x0" description="Logic Cell Gate 3 Output Polarity Control bit">
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                </setting>
+                <setting alias="LCG4POL" default="not_inverted" name="LC1G4POL" mask="0x8" type="R,W" porDefault="0x0" description="Logic Cell Gate 4 Output Polarity Control bit">
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                </setting>
+                <setting alias="LCPOL" default="not_inverted" name="LC1POL" mask="0x80" type="R,W" porDefault="0x0" description="Logic Cell Output Polarity Control bit">
+                    <option name="inverted" alias="inverted" value="0x1"/>
+                    <option name="not_inverted" alias="not_inverted" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="CLCSEL0" name="CLC1SEL0" type="R,W" width="8">
+                <setting alias="LCD1S" default="CLC1" name="LC1D1S" mask="0x7" type="R,W" porDefault="0x0" description="Logic Cell Data1 Input Selection bits">
+                    <option name="CLC1" alias="CLC1" value="0x0"/>
+                    <option name="CLCIN1" alias="CLCIN1" value="0x1"/>
+                    <option name="CLCIN2" alias="CLCIN2" value="0x2"/>
+                    <option name="PWM1OUT" alias="PWM1OUT" value="0x3"/>
+                    <option name="PWM2OUT" alias="PWM2OUT" value="0x4"/>
+                    <option name="NCO1OUT" alias="NCO1OUT" value="0x5"/>
+                    <option name="FOSC" alias="FOSC" value="0x6"/>
+                    <option name="LFINTOSC" alias="LFINTOSC" value="0x7"/>
+                </setting>
+                <setting alias="LCD2S" default="CLC1" name="LC1D2S" mask="0x70" type="R,W" porDefault="0x0" description="Logic Cell Data2 Input Selection bits">
+                    <option name="CLC1" alias="CLC1" value="0x0"/>
+                    <option name="CLCIN1" alias="CLCIN1" value="0x1"/>
+                    <option name="CLCIN2" alias="CLCIN2" value="0x2"/>
+                    <option name="PWM1OUT" alias="PWM1OUT" value="0x3"/>
+                    <option name="PWM2OUT" alias="PWM2OUT" value="0x4"/>
+                    <option name="NCO1OUT" alias="NCO1OUT" value="0x5"/>
+                    <option name="FOSC" alias="FOSC" value="0x6"/>
+                    <option name="LFINTOSC" alias="LFINTOSC" value="0x7"/>
+                </setting>
+            </register>
+            <register alias="CLCSEL1" name="CLC1SEL1" type="R,W" width="8">
+                <setting alias="LCD3S" default="CLC1" name="LC1D3S" mask="0x7" type="R,W" porDefault="0x0" description="Logic Cell Data3 Input Selection bits">
+                    <option name="CLC1" alias="CLC1" value="0x0"/>
+                    <option name="CLCIN1" alias="CLCIN1" value="0x1"/>
+                    <option name="CLCIN2" alias="CLCIN2" value="0x2"/>
+                    <option name="PWM1OUT" alias="PWM1OUT" value="0x3"/>
+                    <option name="PWM2OUT" alias="PWM2OUT" value="0x4"/>
+                    <option name="NCO1OUT" alias="NCO1OUT" value="0x5"/>
+                    <option name="FOSC" alias="FOSC" value="0x6"/>
+                    <option name="LFINTOSC" alias="LFINTOSC" value="0x7"/>
+                </setting>
+                <setting alias="LCD4S" default="CLC1" name="LC1D4S" mask="0x70" type="R,W" porDefault="0x0" description="Logic Cell Data4 Input Selection bits">
+                    <option name="CLC1" alias="CLC1" value="0x0"/>
+                    <option name="CLCIN1" alias="CLCIN1" value="0x1"/>
+                    <option name="CLCIN2" alias="CLCIN2" value="0x2"/>
+                    <option name="PWM1OUT" alias="PWM1OUT" value="0x3"/>
+                    <option name="PWM2OUT" alias="PWM2OUT" value="0x4"/>
+                    <option name="NCO1OUT" alias="NCO1OUT" value="0x5"/>
+                    <option name="FOSC" alias="FOSC" value="0x6"/>
+                    <option name="LFINTOSC" alias="LFINTOSC" value="0x7"/>
+                </setting>
+            </register>
+            <register alias="CLCGLS0" name="CLC1GLS0" type="R,W" width="8">
+                <setting alias="LCG1D1N" default="disabled" name="LC1G1D1N" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D1T" default="disabled" name="LC1G1D1T" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D2N" default="disabled" name="LC1G1D2N" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D2T" default="disabled" name="LC1G1D2T" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D3N" default="disabled" name="LC1G1D3N" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D3T" default="disabled" name="LC1G1D3T" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D4N" default="disabled" name="LC1G1D4N" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG1D4T" default="disabled" name="LC1G1D4T" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="CLCGLS1" name="CLC1GLS1" type="R,W" width="8">
+                <setting alias="LCG2D1N" default="disabled" name="LC1G2D1N" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D1T" default="disabled" name="LC1G2D1T" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D2N" default="disabled" name="LC1G2D2N" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D2T" default="disabled" name="LC1G2D2T" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D3N" default="disabled" name="LC1G2D3N" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D3T" default="disabled" name="LC1G2D3T" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D4N" default="disabled" name="LC1G2D4N" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG2D4T" default="disabled" name="LC1G2D4T" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="CLCGLS2" name="CLC1GLS2" type="R,W" width="8">
+                <setting alias="LCG3D1N" default="disabled" name="LC1G3D1N" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D1T" default="disabled" name="LC1G3D1T" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D2N" default="disabled" name="LC1G3D2N" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D2T" default="disabled" name="LC1G3D2T" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D3N" default="disabled" name="LC1G3D3N" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D3T" default="disabled" name="LC1G3D3T" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D4N" default="disabled" name="LC1G3D4N" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG3D4T" default="disabled" name="LC1G3D4T" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="CLCGLS3" name="CLC1GLS3" type="R,W" width="8">
+                <setting alias="LCG4D1N" default="disabled" name="LC1G4D1N" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D1T" default="disabled" name="LC1G4D1T" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D2N" default="disabled" name="LC1G4D2N" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D2T" default="disabled" name="LC1G4D2T" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D3N" default="disabled" name="LC1G4D3N" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D3T" default="disabled" name="LC1G4D3T" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D4N" default="disabled" name="LC1G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+                <setting alias="LCG4D4T" default="disabled" name="LC1G4D4T" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                </setting>
+            </register>
+        </module>
+        <module group="Ext_Interrupt" name="EXT_INT" type="int_8bit" version="v1" sub_version="" instance="">
+            <interrupt name="INTI" flag="INTCONbits.INTF" enable="INTCONbits.INTE"/>
+            <register alias="OPTION_REG" name="OPTION_REG" type="R,W" width="8">
+                <setting alias="INTEDG" default="rising_edge" name="INTEDG" mask="0x40" type="R,W" porDefault="0x1" description="INT Interrupt Edge Select bit">
+                    <option name="falling_edge" alias="falling_edge" value="0x0"/>
+                    <option name="rising_edge" alias="rising_edge" value="0x1"/>
+                </setting>
+            </register>
+        </module>
+        <module group="Memory" name="MEMORY" type="pfm" version="v0" sub_version="" instance="">
+            <register alias="PMADRL" name="PMADRL" type="R,W" width="8">
+                <setting alias="PMADRL" default="0x0" name="PMADR" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PMADRH" name="PMADRH" type="R,W" width="8">
+                <setting alias="PMADRH" default="0x0" name="PMADR8" mask="0x1" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PMDATL" name="PMDATL" type="R,W" width="8">
+                <setting alias="PMDATL" default="0x0" name="PMDATL" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PMDATH" name="PMDATH" type="R,W" width="8">
+                <setting alias="PMDATH" default="0x0" name="PMDATH" mask="0x3f" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PMCON1" name="PMCON1" type="R,W" width="8">
+                <setting alias="RD" default="do_not_initiate_read" name="RD" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="do_not_initiate_read" alias="do_not_initiate_read" value="0x0"/>
+                    <option name="initiate_read" alias="initiate_read" value="0x1"/>
+                </setting>
+                <setting alias="WR" default="write_complete" name="WR" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="write_complete" alias="write_complete" value="0x0"/>
+                    <option name="initiate_write" alias="initiate_write" value="0x1"/>
+                </setting>
+                <setting alias="WREN" default="disabled" name="WREN" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="WRERR" default="normal_completion" name="WRERR" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="normal_completion" alias="normal_completion" value="0x0"/>
+                    <option name="program_error" alias="program_error" value="0x1"/>
+                </setting>
+                <setting alias="LWLO" default="WR command writes/erases data" name="LWLO" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="WR command writes/erases data" alias="WR command writes/erases data" value="0x0"/>
+                    <option name="WR command updates write latch" alias="WR command updates write latch" value="0x1"/>
+                </setting>
+                <setting alias="FREE" default="write" name="FREE" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="write" alias="write" value="0x0"/>
+                    <option name="erase" alias="erase" value="0x1"/>
+                </setting>
+                <setting alias="CFGS" default="flash_eeprom" name="CFGS" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="flash_eeprom" alias="flash_eeprom" value="0x0"/>
+                    <option name="configuration" alias="configuration" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PMCON2" name="PMCON2" type="R,W" width="8">
+                <setting alias="PMCON2" default="0x0" name="PMCON2" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <property name="WRITE_FLASH_BLOCKSIZE" value="16"/>
+            <property name="ERASE_FLASH_BLOCKSIZE" value="16"/>
+            <property name="END_FLASH" value="0x200"/>
+            <property name="EEPROM_START_ADDRESS" value="0"/>
+            <property name="EEPROM_END_ADDRESS" value="0"/>
+            <property name="EEPROM_SIZE" value="0"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:0" value="SFR:0:0x0:0x40:sfr0"/>
+            <property name="TYPE:BANK:BEGIN:END:REGID:1" value="GPR:0:0x40:0x80:gpr0"/>
+        </module>
+        <module group="PWM" name="PWM1" type="pwm_10bit" version="v1" sub_version="a0" instance="1">
+            <register alias="PWMCON" name="PWM1CON" type="R,W" width="8">
+                <setting alias="PWMPOL" default="active_hi" name="PWM1POL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="active_hi" alias="active_hi" value="0x0"/>
+                    <option name="active_lo" alias="active_lo" value="0x1"/>
+                </setting>
+                <setting alias="PWMOE" default="disabled" name="PWM1OE" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PWMEN" default="disabled" name="PWM1EN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PWMDCH" name="PWM1DCH" type="R,W" width="8">
+                <setting alias="PWMDCH" default="0x0" name="PWM1DCH" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PWMDCL" name="PWM1DCL" type="R,W" width="8">
+                <setting alias="PWMDCL" default="0x0" name="PWM1DCL" mask="0xc0" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="PWM" name="PWM2" type="pwm_10bit" version="v1" sub_version="a0" instance="2">
+            <register alias="PWMCON" name="PWM2CON" type="R,W" width="8">
+                <setting alias="PWMPOL" default="active_hi" name="PWM2POL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="active_hi" alias="active_hi" value="0x0"/>
+                    <option name="active_lo" alias="active_lo" value="0x1"/>
+                </setting>
+                <setting alias="PWMOE" default="disabled" name="PWM2OE" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="PWMEN" default="disabled" name="PWM2EN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="PWMDCH" name="PWM2DCH" type="R,W" width="8">
+                <setting alias="PWMDCH" default="0x0" name="PWM2DCH" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+            <register alias="PWMDCL" name="PWM2DCL" type="R,W" width="8">
+                <setting alias="PWMDCL" default="0x0" name="PWM2DCL" mask="0xc0" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR0" type="tmr_0" version="v0" sub_version="a0" instance="0">
+            <interrupt name="TMRI" flag="INTCONbits.TMR0IF" enable="INTCONbits.TMR0IE"/>
+            <register alias="OPTION_REG" name="OPTION_REG" type="R,W" width="8">
+                <setting alias="PS" default="1:256" name="PS" mask="0x7" type="R,W" porDefault="0x7">
+                    <option name="1:2" alias="1:2" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:8" alias="1:8" value="0x2"/>
+                    <option name="1:16" alias="1:16" value="0x3"/>
+                    <option name="1:32" alias="1:32" value="0x4"/>
+                    <option name="1:64" alias="1:64" value="0x5"/>
+                    <option name="1:128" alias="1:128" value="0x6"/>
+                    <option name="1:256" alias="1:256" value="0x7"/>
+                </setting>
+                <setting alias="PSA" default="not_assigned" name="PSA" mask="0x8" type="R,W" porDefault="0x1">
+                    <option name="assigned" alias="assigned" value="0x0"/>
+                    <option name="not_assigned" alias="not_assigned" value="0x1"/>
+                </setting>
+                <setting alias="TMRSE" default="Increment_hi_lo" name="T0SE" mask="0x10" type="R,W" porDefault="0x1">
+                    <option name="Increment_lo_hi" alias="Increment_lo_hi" value="0x0"/>
+                    <option name="Increment_hi_lo" alias="Increment_hi_lo" value="0x1"/>
+                </setting>
+                <setting alias="TMRCS" default="T0CKI" name="T0CS" mask="0x20" type="R,W" porDefault="0x1">
+                    <option name="FOSC/4" alias="FOSC/4" value="0x0"/>
+                    <option name="T0CKI" alias="T0CKI" value="0x1"/>
+                </setting>
+                <setting alias="INTEDG" default="rising" name="INTEDG" mask="0x40" type="R,W" porDefault="0x1">
+                    <option name="falling" alias="falling" value="0x0"/>
+                    <option name="rising" alias="rising" value="0x1"/>
+                </setting>
+                <setting alias="nWPUEN" default="disabled" name="nWPUEN" mask="0x80" type="R,W" porDefault="0x1">
+                    <option name="enabled" alias="enabled" value="0x0"/>
+                    <option name="disabled" alias="disabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="TMR" name="TMR0" type="R,W" width="8">
+                <setting alias="TMR" default="0x0" name="TMR0" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="Timer" name="TMR2" type="tmr_2" version="v1" sub_version="a0" instance="2">
+            <interrupt name="TMRI" flag="PIR1bits.TMR2IF" enable="PIE1bits.TMR2IE"/>
+            <register alias="TCON" name="T2CON" type="R,W" width="8">
+                <setting alias="TCKPS" default="1:1" name="T2CKPS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:4" alias="1:4" value="0x1"/>
+                    <option name="1:16" alias="1:16" value="0x2"/>
+                    <option name="1:64" alias="1:64" value="0x3"/>
+                </setting>
+                <setting alias="TMRON" default="off" name="TMR2ON" mask="0x4" type="R,W" porDefault="0x0">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="on" alias="on" value="0x1"/>
+                </setting>
+                <setting alias="TOUTPS" default="1:1" name="TOUTPS" mask="0x78" type="R,W" porDefault="0x0">
+                    <option name="1:1" alias="1:1" value="0x0"/>
+                    <option name="1:2" alias="1:2" value="0x1"/>
+                    <option name="1:3" alias="1:3" value="0x2"/>
+                    <option name="1:4" alias="1:4" value="0x3"/>
+                    <option name="1:5" alias="1:5" value="0x4"/>
+                    <option name="1:6" alias="1:6" value="0x5"/>
+                    <option name="1:7" alias="1:7" value="0x6"/>
+                    <option name="1:8" alias="1:8" value="0x7"/>
+                    <option name="1:9" alias="1:9" value="0x8"/>
+                    <option name="1:10" alias="1:10" value="0x9"/>
+                    <option name="1:11" alias="1:11" value="0xa"/>
+                    <option name="1:12" alias="1:12" value="0xb"/>
+                    <option name="1:13" alias="1:13" value="0xc"/>
+                    <option name="1:14" alias="1:14" value="0xd"/>
+                    <option name="1:15" alias="1:15" value="0xe"/>
+                    <option name="1:16" alias="1:16" value="0xf"/>
+                </setting>
+            </register>
+            <register alias="PR" name="PR2" type="R,W" width="8">
+                <setting alias="PR" default="0xFF" name="PR2" mask="0xff" type="R,W" porDefault="0xff"/>
+            </register>
+            <register alias="TMR" name="TMR2" type="R,W" width="8">
+                <setting alias="TMR" default="0x0" name="TMR2" mask="0xff" type="R,W" porDefault="0x0"/>
+            </register>
+        </module>
+        <module group="NCO" name="NCO1" type="tmr_dds" version="v1" sub_version="a0" instance="1">
+            <interrupt name="NCOI" flag="PIR1bits.NCO1IF" enable="PIE1bits.NCO1IE"/>
+            <register alias="NCOCON" name="NCO1CON" type="R,W" width="8">
+                <setting alias="NEN" default="disabled" name="N1EN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="NOE" default="disabled" name="N1OE" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="NCOOUT" default="out_lo" name="N1OUT" mask="0x20" type="R" porDefault="0x0">
+                    <option name="out_lo" alias="out_lo" value="0x0"/>
+                    <option name="out_hi" alias="out_hi" value="0x1"/>
+                </setting>
+                <setting alias="NPOL" default="active_hi" name="N1POL" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="active_hi" alias="active_hi" value="0x0"/>
+                    <option name="active_lo" alias="active_lo" value="0x1"/>
+                </setting>
+                <setting alias="NPFM" default="FDC_mode" name="N1PFM" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="FDC_mode" alias="FDC_mode" value="0"/>
+                    <option name="PFM_mode" alias="PFM_mode" value="1"/>
+                </setting>
+            </register>
+            <register alias="NCOCLK" name="NCO1CLK" type="R,W" width="8">
+                <setting alias="NPWS" default="1_clk" name="N1PWS" mask="0xe0" type="R,W" porDefault="0x0">
+                    <option name="1_clk" alias="1_clk" value="0x0"/>
+                    <option name="2_clk" alias="2_clk" value="0x1"/>
+                    <option name="4_clk" alias="4_clk" value="0x2"/>
+                    <option name="8_clk" alias="8_clk" value="0x3"/>
+                    <option name="16_clk" alias="16_clk" value="0x4"/>
+                    <option name="32_clk" alias="32_clk" value="0x5"/>
+                    <option name="64_clk" alias="64_clk" value="0x6"/>
+                    <option name="128_clk" alias="128_clk" value="0x7"/>
+                </setting>
+                <setting alias="NCKS" default="NCO1CLK" name="N1CKS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="HFINTOSC_16MHz" alias="HFINTOSC_16MHz" value="0x2"/>
+                    <option name="FOSC" alias="FOSC" value="0x1"/>
+                    <option name="LC1OUT" alias="LC1OUT" value="0x3"/>
+                    <option name="NCO1CLK" alias="NCO1CLK" value="0x0"/>
+                </setting>
+            </register>
+            <register alias="NCOACCU" name="NCO1ACCU" type="R,W" width="8"/>
+            <register alias="NCOACCH" name="NCO1ACCH" type="R,W" width="8"/>
+            <register alias="NCOACCL" name="NCO1ACCL" type="R,W" width="8"/>
+            <register alias="NCOINCH" name="NCO1INCH" type="R,W" width="8"/>
+            <register alias="NCOINCL" name="NCO1INCL" type="R,W" width="8"/>
+        </module>
+        <module group="FVR" name="FVR" type="vref_bandgap_0buf" version="v20" sub_version="a0" instance="">
+            <register alias="FVRCON" name="FVRCON" type="R,W" width="8">
+                <setting alias="ADFVR" default="off" name="ADFVR" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="off" alias="off" value="0x0"/>
+                    <option name="1x" alias="1x" value="0x1"/>
+                    <option name="2x" alias="2x" value="0x2"/>
+                    <option name="4x" alias="4x" value="0x3"/>
+                </setting>
+                <setting alias="TSRNG" default="Lo_range" name="TSRNG" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="Lo_range" alias="Lo_range" value="0x0"/>
+                    <option name="Hi_range" alias="Hi_range" value="0x1"/>
+                </setting>
+                <setting alias="TSEN" default="disabled" name="TSEN" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="FVRRDY" default="disabled" name="FVRRDY" mask="0x40" type="R" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="FVREN" default="disabled" name="FVREN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+        </module>
+        <module group="CWG" name="CWG1" type="wg_cmpl" version="v2" sub_version="a0" instance="1">
+            <register alias="CWGCON0" name="CWG1CON0" type="R,W" width="8">
+                <setting alias="GCS0" default="FOSC" name="G1CS0" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="FOSC" alias="FOSC" value="0x0"/>
+                    <option name="HFINTOSC" alias="HFINTOSC" value="0x1"/>
+                </setting>
+                <setting alias="GPOLA" default="normal_polarity" name="G1POLA" mask="0x8" type="R,W" porDefault="0x0">
+                    <option name="normal_polarity" alias="normal_polarity" value="0x0"/>
+                    <option name="inverted_polarity" alias="inverted_polarity" value="0x1"/>
+                </setting>
+                <setting alias="GPOLB" default="normal_polarity" name="G1POLB" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="normal_polarity" alias="normal_polarity" value="0x0"/>
+                    <option name="inverted_polarity" alias="inverted_polarity" value="0x1"/>
+                </setting>
+                <setting alias="GOEA" default="disabled" name="G1OEA" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GOEB" default="disabled" name="G1OEB" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GEN" default="disabled" name="G1EN" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CWGCON1" name="CWG1CON1" type="R,W" width="8">
+                <setting alias="GIS" default="PWM1OUT" name="G1IS" mask="0x3" type="R,W" porDefault="0x0">
+                    <option name="NCO1OUT" alias="NCO1OUT" value="0x2"/>
+                    <option name="LC1OUT" alias="LC1OUT" value="0x3"/>
+                    <option name="PWM1OUT" alias="PWM1OUT" value="0x0"/>
+                    <option name="PWM2OUT" alias="PWM2OUT" value="0x1"/>
+                </setting>
+                <setting alias="GASDLA" default="inactive_state" name="G1ASDLA" mask="0x30" type="R,W" porDefault="0x0">
+                    <option name="inactive_state" alias="inactive_state" value="0x0"/>
+                    <option name="tri-stated" alias="tri-stated" value="0x1"/>
+                    <option name="driven_low" alias="driven_low" value="0x2"/>
+                    <option name="driven_high" alias="driven_high" value="0x3"/>
+                </setting>
+                <setting alias="GASDLB" default="inactive_state" name="G1ASDLB" mask="0xc0" type="R,W" porDefault="0x0">
+                    <option name="inactive_state" alias="inactive_state" value="0x0"/>
+                    <option name="tri-stated" alias="tri-stated" value="0x1"/>
+                    <option name="driven_low" alias="driven_low" value="0x2"/>
+                    <option name="driven_high" alias="driven_high" value="0x3"/>
+                </setting>
+            </register>
+            <register alias="CWGCON2" name="CWG1CON2" type="R,W" width="8">
+                <setting alias="GASDSCLC1" default="disabled" name="G1ASDSCLC1" mask="0x2" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GASDSFLT" default="disabled" name="G1ASDSFLT" mask="0x1" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GARSEN" default="disabled" name="G1ARSEN" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="GASE" default="no_auto_shutdown" name="G1ASE" mask="0x80" type="R,W" porDefault="0x0">
+                    <option name="no_auto_shutdown" alias="no_auto_shutdown" value="0x0"/>
+                    <option name="auto_shutdown" alias="auto_shutdown" value="0x1"/>
+                </setting>
+            </register>
+            <register alias="CWGDBR" name="CWG1DBR" type="R,W" width="8">
+                <setting alias="CWGDBR" default="0_counts" name="CWG1DBR" mask="0x3f" type="R,W" porDefault="0x0">
+                    <option name="0_counts" alias="0_counts" value="0x0"/>
+                    <option name="1to2_counts" alias="1to2_counts" value="0x1"/>
+                    <option name="2to3_counts" alias="2to3_counts" value="0x2"/>
+                    <option name="3to4_counts" alias="3to4_counts" value="0x3"/>
+                    <option name="4to5_counts" alias="4to5_counts" value="0x4"/>
+                    <option name="5to6_counts" alias="5to6_counts" value="0x5"/>
+                    <option name="6to7_counts" alias="6to7_counts" value="0x6"/>
+                    <option name="7to8_counts" alias="7to8_counts" value="0x7"/>
+                    <option name="8to9_counts" alias="8to9_counts" value="0x8"/>
+                    <option name="9to10_counts" alias="9to10_counts" value="0x9"/>
+                    <option name="10to11_counts" alias="10to11_counts" value="0xa"/>
+                    <option name="11to12_counts" alias="11to12_counts" value="0xb"/>
+                    <option name="12to13_counts" alias="12to13_counts" value="0xc"/>
+                    <option name="13to14_counts" alias="13to14_counts" value="0xd"/>
+                    <option name="14to15_counts" alias="14to15_counts" value="0xe"/>
+                    <option name="15to16_counts" alias="15to16_counts" value="0xf"/>
+                    <option name="16to17_counts" alias="16to17_counts" value="0x10"/>
+                    <option name="17to18_counts" alias="17to18_counts" value="0x11"/>
+                    <option name="18to19_counts" alias="18to19_counts" value="0x12"/>
+                    <option name="19to20_counts" alias="19to20_counts" value="0x13"/>
+                    <option name="20to21_counts" alias="20to21_counts" value="0x14"/>
+                    <option name="21to22_counts" alias="21to22_counts" value="0x15"/>
+                    <option name="22to23_counts" alias="22to23_counts" value="0x16"/>
+                    <option name="23to24_counts" alias="23to24_counts" value="0x17"/>
+                    <option name="24to25_counts" alias="24to25_counts" value="0x18"/>
+                    <option name="25to26_counts" alias="25to26_counts" value="0x19"/>
+                    <option name="26to27_counts" alias="26to27_counts" value="0x1a"/>
+                    <option name="27to28_counts" alias="27to28_counts" value="0x1b"/>
+                    <option name="28to29_counts" alias="28to29_counts" value="0x1c"/>
+                    <option name="29to30_counts" alias="29to30_counts" value="0x1d"/>
+                    <option name="30to31_counts" alias="30to31_counts" value="0x1e"/>
+                    <option name="31to32_counts" alias="31to32_counts" value="0x1f"/>
+                    <option name="32to33_counts" alias="32to33_counts" value="0x20"/>
+                    <option name="33to34_counts" alias="33to34_counts" value="0x21"/>
+                    <option name="34to35_counts" alias="34to35_counts" value="0x22"/>
+                    <option name="35to36_counts" alias="35to36_counts" value="0x23"/>
+                    <option name="36to37_counts" alias="36to37_counts" value="0x24"/>
+                    <option name="37to38_counts" alias="37to38_counts" value="0x25"/>
+                    <option name="38to39_counts" alias="38to39_counts" value="0x26"/>
+                    <option name="39to40_counts" alias="39to40_counts" value="0x27"/>
+                    <option name="40to41_counts" alias="40to41_counts" value="0x28"/>
+                    <option name="41to42_counts" alias="41to42_counts" value="0x29"/>
+                    <option name="42to43_counts" alias="42to43_counts" value="0x2a"/>
+                    <option name="43to44_counts" alias="43to44_counts" value="0x2b"/>
+                    <option name="44to45_counts" alias="44to45_counts" value="0x2c"/>
+                    <option name="45to46_counts" alias="45to46_counts" value="0x2d"/>
+                    <option name="46to47_counts" alias="46to47_counts" value="0x2e"/>
+                    <option name="47to48_counts" alias="47to48_counts" value="0x2f"/>
+                    <option name="48to49_counts" alias="48to49_counts" value="0x30"/>
+                    <option name="49to50_counts" alias="49to50_counts" value="0x31"/>
+                    <option name="50to51_counts" alias="50to51_counts" value="0x32"/>
+                    <option name="51to52_counts" alias="51to52_counts" value="0x33"/>
+                    <option name="52to53_counts" alias="52to53_counts" value="0x34"/>
+                    <option name="53to54_counts" alias="53to54_counts" value="0x35"/>
+                    <option name="54to55_counts" alias="54to55_counts" value="0x36"/>
+                    <option name="55to56_counts" alias="55to56_counts" value="0x37"/>
+                    <option name="56to57_counts" alias="56to57_counts" value="0x38"/>
+                    <option name="57to58_counts" alias="57to58_counts" value="0x39"/>
+                    <option name="58to59_counts" alias="58to59_counts" value="0x3a"/>
+                    <option name="59to60_counts" alias="59to60_counts" value="0x3b"/>
+                    <option name="60to61_counts" alias="60to61_counts" value="0x3c"/>
+                    <option name="61to62_counts" alias="61to62_counts" value="0x3d"/>
+                    <option name="62to63_counts" alias="62to63_counts" value="0x3e"/>
+                    <option name="63to64_counts" alias="63to64_counts" value="0x3f"/>
+                </setting>
+            </register>
+            <register alias="CWGDBF" name="CWG1DBF" type="R,W" width="8">
+                <setting alias="CWGDBF" default="0_counts" name="CWG1DBF" mask="0x3f" type="R,W" porDefault="0x0">
+                    <option name="0_counts" alias="0_counts" value="0x0"/>
+                    <option name="1to2_counts" alias="1to2_counts" value="0x1"/>
+                    <option name="2to3_counts" alias="2to3_counts" value="0x2"/>
+                    <option name="3to4_counts" alias="3to4_counts" value="0x3"/>
+                    <option name="4to5_counts" alias="4to5_counts" value="0x4"/>
+                    <option name="5to6_counts" alias="5to6_counts" value="0x5"/>
+                    <option name="6to7_counts" alias="6to7_counts" value="0x6"/>
+                    <option name="7to8_counts" alias="7to8_counts" value="0x7"/>
+                    <option name="8to9_counts" alias="8to9_counts" value="0x8"/>
+                    <option name="9to10_counts" alias="9to10_counts" value="0x9"/>
+                    <option name="10to11_counts" alias="10to11_counts" value="0xa"/>
+                    <option name="11to12_counts" alias="11to12_counts" value="0xb"/>
+                    <option name="12to13_counts" alias="12to13_counts" value="0xc"/>
+                    <option name="13to14_counts" alias="13to14_counts" value="0xd"/>
+                    <option name="14to15_counts" alias="14to15_counts" value="0xe"/>
+                    <option name="15to16_counts" alias="15to16_counts" value="0xf"/>
+                    <option name="16to17_counts" alias="16to17_counts" value="0x10"/>
+                    <option name="17to18_counts" alias="17to18_counts" value="0x11"/>
+                    <option name="18to19_counts" alias="18to19_counts" value="0x12"/>
+                    <option name="19to20_counts" alias="19to20_counts" value="0x13"/>
+                    <option name="20to21_counts" alias="20to21_counts" value="0x14"/>
+                    <option name="21to22_counts" alias="21to22_counts" value="0x15"/>
+                    <option name="22to23_counts" alias="22to23_counts" value="0x16"/>
+                    <option name="23to24_counts" alias="23to24_counts" value="0x17"/>
+                    <option name="24to25_counts" alias="24to25_counts" value="0x18"/>
+                    <option name="25to26_counts" alias="25to26_counts" value="0x19"/>
+                    <option name="26to27_counts" alias="26to27_counts" value="0x1a"/>
+                    <option name="27to28_counts" alias="27to28_counts" value="0x1b"/>
+                    <option name="28to29_counts" alias="28to29_counts" value="0x1c"/>
+                    <option name="29to30_counts" alias="29to30_counts" value="0x1d"/>
+                    <option name="30to31_counts" alias="30to31_counts" value="0x1e"/>
+                    <option name="31to32_counts" alias="31to32_counts" value="0x1f"/>
+                    <option name="32to33_counts" alias="32to33_counts" value="0x20"/>
+                    <option name="33to34_counts" alias="33to34_counts" value="0x21"/>
+                    <option name="34to35_counts" alias="34to35_counts" value="0x22"/>
+                    <option name="35to36_counts" alias="35to36_counts" value="0x23"/>
+                    <option name="36to37_counts" alias="36to37_counts" value="0x24"/>
+                    <option name="37to38_counts" alias="37to38_counts" value="0x25"/>
+                    <option name="38to39_counts" alias="38to39_counts" value="0x26"/>
+                    <option name="39to40_counts" alias="39to40_counts" value="0x27"/>
+                    <option name="40to41_counts" alias="40to41_counts" value="0x28"/>
+                    <option name="41to42_counts" alias="41to42_counts" value="0x29"/>
+                    <option name="42to43_counts" alias="42to43_counts" value="0x2a"/>
+                    <option name="43to44_counts" alias="43to44_counts" value="0x2b"/>
+                    <option name="44to45_counts" alias="44to45_counts" value="0x2c"/>
+                    <option name="45to46_counts" alias="45to46_counts" value="0x2d"/>
+                    <option name="46to47_counts" alias="46to47_counts" value="0x2e"/>
+                    <option name="47to48_counts" alias="47to48_counts" value="0x2f"/>
+                    <option name="48to49_counts" alias="48to49_counts" value="0x30"/>
+                    <option name="49to50_counts" alias="49to50_counts" value="0x31"/>
+                    <option name="50to51_counts" alias="50to51_counts" value="0x32"/>
+                    <option name="51to52_counts" alias="51to52_counts" value="0x33"/>
+                    <option name="52to53_counts" alias="52to53_counts" value="0x34"/>
+                    <option name="53to54_counts" alias="53to54_counts" value="0x35"/>
+                    <option name="54to55_counts" alias="54to55_counts" value="0x36"/>
+                    <option name="55to56_counts" alias="55to56_counts" value="0x37"/>
+                    <option name="56to57_counts" alias="56to57_counts" value="0x38"/>
+                    <option name="57to58_counts" alias="57to58_counts" value="0x39"/>
+                    <option name="58to59_counts" alias="58to59_counts" value="0x3a"/>
+                    <option name="59to60_counts" alias="59to60_counts" value="0x3b"/>
+                    <option name="60to61_counts" alias="60to61_counts" value="0x3c"/>
+                    <option name="61to62_counts" alias="61to62_counts" value="0x3d"/>
+                    <option name="62to63_counts" alias="62to63_counts" value="0x3e"/>
+                    <option name="63to64_counts" alias="63to64_counts" value="0x3f"/>
+                </setting>
+            </register>
+        </module>
+    </modules>
+    <manager name="Interrupt Manager">
+        <modules>
+            <module group="INT" name="INT" type="int_8bit" version="v0" sub_version="" instance="">
+                <register alias="INTCON" name="INTCON" type="R,W" width="8">
+                    <setting alias="INTF" default="no_interrupt" name="INTF" mask="0x2" type="R,W" porDefault="0x0" description="INT External Interrupt Flag">
+                        <option name="no_interrupt" alias="no_interrupt" value="0x0"/>
+                        <option name="interrupt_occurred" alias="interrupt_occurred" value="0x1"/>
+                    </setting>
+                    <setting alias="INTE" default="disabled" name="INTE" mask="0x10" type="R,W" porDefault="0x0" description="INT External Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="PEIE" default="disabled" name="PEIE" mask="0x40" type="R,W" porDefault="0x0" description="Peripheral Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                    <setting alias="GIE" default="disabled" name="GIE" mask="0x80" type="R,W" porDefault="0x0" description="Global Interrupt Enable">
+                        <option name="disabled" alias="disabled" value="0x0"/>
+                        <option name="enabled" alias="enabled" value="0x1"/>
+                    </setting>
+                </register>
+                <register alias="OPTION_REG" name="OPTION_REG" type="R,W" width="8">
+                    <setting alias="INTEDG" default="rising_edge" name="INTEDG" mask="0x40" type="R,W" porDefault="0x1" description="INT Interrupt Edge Select bit">
+                        <option name="falling_edge" alias="falling_edge" value="0x0"/>
+                        <option name="rising_edge" alias="rising_edge" value="0x1"/>
+                    </setting>
+                </register>
+            </module>
+        </modules>
+    </manager>
+</device>

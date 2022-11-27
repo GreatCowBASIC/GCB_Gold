@@ -1,0 +1,14 @@
+This release is brought to you by, in no specific order:
+
+This release is brought to you by, in no specific order:
+     Hugh Considine, Evan R. Venn, Chris Roper, William Roth, Jim Giordano,
+     Bernd Dau, Trevor Roydhouse, Pete Everett, Theo Loermans, 
+     Giuseppe D'Elia, Mark Stevenson, Derek Gore,  Ian Smith, Bernd Dau, 
+     Theo Loermans, Stuart Bury, Chris Hayden, Basil Hatzilaios, Urs Hopp, 
+     Kent Schafer, Angel Mier, ToniG,
+     and, of course, Frank Steinberg.
+
+
+I am sure there are others.  If I missed your name - please let us know, truly sorry.
+
+http://sourceforge.net/projects/gcbasic

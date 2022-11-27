@@ -1,0 +1,1884 @@
+These release notes relate to the release called <>
+
+This release is brought to you by, in no specific order:
+     Hugh Considine, Evan R. Venn, Chris Roper, William Roth, Jim Giordano,
+     Bernd Dau, Trevor Roydhouse, Pete Everett, Theo Loermans, Giuseppe D'Elia,
+     Mark Stevenson, Derek Gore,  Ian Smith, Bernd Dau, Theo Loermans, Stuart Bury,
+     Chris Hayden, Basil Hatzilaios, Urs Hopp, Kent Schafer, Angel Mier, ToniG and, of course, Frank Steinberg.
+
+     Again, I am sure there are others If I missed your name - please let us know, truly sorry
+
+   Please start your journey with Great Cow Basic here >> See this folder 'GCB@Syn\GreatCowBasic\Demos', or for the latest
+     see here http://sourceforgenet/projects/gcbasic/files/Demonstration%20Files/
+
+
+See https://1drv.ms/x/s!Ase-PX_n_4cvhJAysbPF3VJAnYaj3A for all changes after change/build 981
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.06 Release
+646     Fix      PS2        Revised defines in this header only. No functional change.[946]
+647     New      Converter  Added new parameter to deletetarget=y to all ini files.
+648     New      Compiler   Added new verbose parameter to show the oscillator automatically selected by the compiler.[947]
+649     Fix      DAT        Updated chip .DAT file with corrected internal clock frequencies for 12(l)f501, 16(l)f503, 16(l)f507, 16(l)f508 and 16(l)f509. [948]
+649     Fix      DAT        Updated chip .DAT file with corrected internal clock frequencies for 16(l)f1512/1513/1516/1517/1518/1519/1527/1529. [949]
+                            Removal of unsupported chips.
+                            Revised as follows: [959]
+                            1. Additional comments to dat files.
+                            2. Fix for K42 and K83 FreeRam section
+650     New      Compiler   Minor compiler change: Show source location of each subroutine in the assembly output[950]
+651     New      Compiler   Minor compiler change: Show source location of each macro in the assembly output[951, 958,1036]
+652     Fix      USART      Optimisation of HSerSend to support optimisation.
+653     Fix      Compiler   Adapted Table EEPROM write address to 0x310000 for K42 and K83 devices (was incorrectly at 0xF00000). Using ChipFamily=1 to test for these parts.[952,953]
+654     New      Compiler   Updated config to explicitly set to RSTOSC=HFINTOSC_1MHZ as the default. [954, 955]
+655     New      Compiler   Add /CP switch to out .config file. File contains the default config for the part. [956,957]
+656     New      GLCD
+657     Fix      initsys    Updated ANSELx to ensure parts without ADCCON[0] have ANSEL set correctly.[960]
+656     Fix      Core16     Correct BTG syntax [961]
+657     Fix      EEPROM     Revised to handle K40 Per Chip Errata Sheets to correctly support table reads on specific chips.[692]
+658     New      System     Revised defines in this header only. No functional change.[693,964]
+                            A huge clear out of comments and placement of comments within the #ifdef statements.
+659     Fix      GLCD       Corrected Dim GLCDPixelCount As Long in FilledBox method, was a Word.  A word can overflow.
+660     New      Program    Added AVR programmer using PICKit2 as option in programmer.
+661     New      PPSTool    PPSTool update to 1.78 Microchip MCC database.  v0.0.5.27
+662     Fix      Compiler   Save and restore EEPROM/NVM related registers if changed during interrupt for the K40 chip families[965]
+                            Updated Library - fix for typo in assigned of (FREE) bit in write NVMADR_EPWrite()[1129]
+663     New      HTML       Added OSC and Frequency. to HTML report for extraction to IDE[966,967,968,969] as following examples
+                            OSC: HS, 48
+                            OSC: INT, 64
+664     New      IDE        IDE information revised to provided OSC and Freq assumed by compiler.  Supports change 663. Example follows.
+                            Compiler Version (YYYY-MM-DD): 0.98.Great Cow Basic Compiler v0.99.build_1072 RC22 2019-11-02 (Windows 32 bit)   Program Memory: 2762/65536 words (4.21%)   RAM: 124/8192 bytes (1.51%)   OSC: INT, 64   Chip: 18F47K42
+665     Fix      PPSTool    v 0.0.5.28
+                            Checks XML version against Microchip website
+                            Attempts at reducing memory usage
+666     New      Website    New BSD download option added.  Thanks to SourceForge Team for resolving.
+667     New      GLCD       New ST7735 driver for the ADAFRUIT ST7735Rx160x80 GLCD.[1127]
+668     New      Converter  BMP2GCB supports a wider range of BMP files.
+669     Fix      Converter  BMP2GCB fixed to support long filenames v1.06
+670     New      DAT        Latest update to MPLAB 5.85 [970]
+671     New      GLCD       New e-Paper GLCD drivers for 3_12B and 7_5 inch display.
+672     Fix      LCD        LCD_IO 10,12. Saleae Logic Analyzer shows and up top 35% speed improvement. Removal of redundent I2C transmission.
+673     Nex      SRAM       New SRAM library.  SRAMRead and SRAMWrite added.  See Help and demos for usage.
+674     Fix      IDE        Change datasheets to correct Microchip web page... they changed things
+675     Fix      USART      Revised K42 Receive support to ensure data has been transmissed before the send operation, not (as was) afterwards.
+676     Fix      Compiler   Compiler fix: Fix interrupt context save and restore on 18FxxK42 chip[972]
+677     Fix      LCD        Revised LCDHOME to timing to ensure valid operation
+678     New      IDE/Help   Revised IDE to NOT maximise the Help  when opened within the IDE
+688     New      USB        Inclusion of Signed Win10 USB driver for LIBK/USB
+689     Fix      I2C/2      Corrected SSPxADD calculation for out of bound values for I2C and I2C2
+                            1. Added  compiler orrection for out of bounds conditions where the SSPxADD could be set incorrectly
+                            2. Added  compiler orrection for out of bounds conditions where the SSPxADD could be set incorrectly where value 0, 1 and 3 are not supported
+                            3. Corrected masking error where SSPxADD was masked with 127
+                            4. Added  compiler error message to I2C2 and not I2C when using I2C2
+                            5. Added  compiler error message to I2C and not I2C2 when using I2C
+                            6. Added  compiler test to  issue an error message SSPxADD is calculated greater
+690     Fix      DAT        Updated PIC10f320/PIC10f322 and PIC10f220/PIC10f222 for the CPU internal osc line [973,974]
+691     New      RWORDS     Formal release of Reserved Methods as reservedwords.txt [975,976,1124,1142]
+692     Fix      GSTools    Revised makeHEX.bat to improve compilation performance by removal ATTRIB and changed to DIR search to determine files of interest.[]
+693     Fix      PULSEOUT   Corrected PULSEOUT pulse width to correct extra clock cycle.  Existing programs will now have the correct pulse however program that have specific timing using pulseout may need correcting.
+694     New      PPSTOOL    Updated to recognise latest xml files from Microchip v0.0.5.29 and Memory usage and performance improvements [29]
+695     QA       ALL        Quality improvements to libraries [987,981]
+696     New      SPIRAM     New SPIRAM library[986,982]
+697     New      GLCD       New UC1601 library[987]
+698     New      GLCD       New ADAFRUIT ST7735Rx160x80 GLC library[983]
+699     New      GLCD       New ePaper library [983]
+700     Fix      GLCD       Updated all GLCD to support GLCDFntDefaultHeight [] [983]
+                            -Corrected Dim GLCDPixelCount As Long in FilledBox method, was a Word. A word can overflow.
+701     Fix      USART      Added new overloaded method for HSerSend [980]
+                            - Added new handler in HSerSend for USART modules with the TXREG register to improve performance
+                            - Added USARTHasDataSet to work around the evaluation issue in If USARTHasData Then issue
+                            - Revised #ifdef Var(TXREG) section of HSerReceive methods to ensure that previous data has been transmitted
+                            - Revised init to improve documentation
+702      Fix      LCD       Improved Method for toggling "E" in sub LCDNormalWriteByte [979, 1013, 1052]
+                            - Applies only to IC2/HI2C (LCD_I0, 12)
+                            - Improves LCD I2C performance by ~ 25%
+                            - Removed inaccurate speed comments for LCD_I0 10,12
+                            - Improved delay in LCDHome
+703      New      HWSPI     New MasterSSPADDMode for PIC to support fast mode SPI[978]
+704      Fix      HWI2C(2)  Functional change: Improved to handle out of band frequency selection based upon chip frequency, corrected SSPADD mask[977, 1012]
+705      New      Compiler  Added setting of ChipOsc and ChipUsingIntOsc constants based on oscillator in use (PIC only) [988]
+706      Fix      Compiler  Fixed bug in parsing of binary literals starting with 0b when at the very start of a line [988]
+707      New      Language  Updated message.dat [989]
+708      New      SYSTEM    Updated to change the setup (within initsys() ) to handle non-internal and other clock sources specifically LFINT (which is an internal Oscillator).
+                            Updated Library - Initsys() improved to support 24mhz[1131]
+                            Automatically sets internal LFINT when the selected 0.031 is the operating frequency. Therefore the compiler needs to set the config appropriately [990,993,1004, 1003, 1002, 1001,1000,999, 998, 997, 995, 1077 ]
+709      New      Compiler  Updated to support LFINTOSC via "32.768K" and "31K" and 125,250k and 500k replacing for frequency [991, 992, 1007, 996, 1010]
+                            Compiler isses a warning when an unknown xxK is specified.
+710      New      PPSTool   Updated to cater for K42 warning messages.[30,31]
+                            Also, updated to include a method to automatically download and update the XML files from Microchip - but you need at least .net framework 4.5 for it to work.
+                            If 4.0 is as high as you can go (i.e. windows XP) it still works as before so don't worry XP users.
+711      New      DAT       Added LFINT value called LFINTOSCClockSourceRegisterValue (sourced from CSV file) for internal OSC and correct Help entries[994,1005]
+                            Resolved 16f15313 family chips with incongruous data entries.
+712      New      IDE       Helper lxl file now supports the following as constants in the IDE.  31k and 32.768k []
+713      Fix      USE.INI   Updated USE.INI Corrected typo in AVR_Chips_Using_PK2. Replaced  "Filename"  with %Filename%
+                            Also, changed PK+ to PICKIT+ in description field.
+714      New      PPSTool   Updated tp handle XML files available (v1.79.0). [31]
+715      New      Compiler  Implementation reservedwords list for GOTO. Removed END. [1006,1018]
+716      Fix      Compiler  Resolved bug with variables that start with Return like ReturnValue [1008]
+717      Fix      SW I2C    Added LEFT to rotate I2CByte left on line 421 to explicitly state rotation[1011].
+718      New      Compiler  Added "XINST" to the default ASM. Using an alternative like MPLAB IDE explicitly 'set' the XINST as it was not specified. Adding XINST=OFF resolves for the future.[1014]
+719      Fix      GLCD      ILI9341 and ILI9340. Corrected the INIT to handle DI port [1015]
+720      Fix      DAT       Large memory Q10 and K42 now have a valid DAT file.[1016]
+                            All Q10 have debug bit removed
+                            All updated information language
+721      Fix      System    Removal of personal comments[1017]
+722      Fix      Compiler  Added CPD=OFF as a default for 18F [1019]
+723      Fix      Compiler  Fixed to for TABLE creation error where the table data was corrupted when hex data was defined like 0x4B'comment or -0x3B'comment. The trailing B was being picked up as Binary data.[1020,1025]
+724      New      Compiler  Support for // and /* BLOCK COMMENTS */ [1021,1022]
+725      New      IDE       Support for // and /* BLOCK COMMENTS */ in IDE
+                            (?s)/\*.*?(\*/|\Z)
+
+                            #all chars after ' or ; to end of line
+                            #all chars after rem plus whitespace to end of line
+                            '.*|
+                            ;.*|
+                            rem\s.*|
+                            //.*|
+726     New       Compiler  New capability #option REQUIRED [1023]
+                            Syntax
+                            #option REQUIRED PIC|AVR Constant|Register Message.Dat Entry|String
+                            #option REQUIRED PIC CHipEEPROM %NoEEProm%
+                            #option REQUIRED AVR CHipEEPROM "String Value"
+727     New       Libraries Updated libaries for #option required [1024,1030]
+                            New specific HEF and SAF libraries replacing the existing hefsaf.h
+728     New       DAT       All DAT file reissued with USART in chip section [1027,1028,1054]
+729     New       USART.H   Added #option required []
+730     New       Compiler  Compiler now supports #pragma config. This is to support using MPLAB-IDE source code within compiler. [1021]
+731     New       GLCD      Twin SS1306 GLCD library[1029]
+732     Fix       GLCD      Updated ILI9341x libaries to fix bit test issue [1031]
+733     New       USART     New capability USART.h #option REQUIRED [1032, 1037, 1038]
+734     New       Compiler  Improved Compilation Report with clock information [1033,1034,1035]
+735     New       Compiler  Compiler changes - support for setting variable bits by index. See bits only. [1026]
+736     Fix       Compiler  Compiler fix: Show error for bad On Interrupt mode. [1039]
+737     Fix       Compiler  Resolved case sensitive 'USEIF' statements in Programmer Editor[1040]
+738     Fix       Compiler  Fixed incorrect error message when option explicit used, and variables seen before definition, resolved undeclared OPTION_REG error[1041]
+                            Fixed RAM assignment to prevent accesses to higher bytes of variables using _H and similar from leading to additional RAM locations being allocated, part of change 735
+                            Error added if bits of an alias are addressed using a variable index, and the alias bytes are not consecutively located, part of change 735
+739     New       Reserved  Added Reserved.csv and Reserved.csv to manage Reserved word[1042,1048,1072]
+740     Fix       EEProm    Corrected support for 16f88xx chips [1043]
+741     New       LCD       Added K107 Serial LCD support [1044]
+742     Fix       Timer     Improved support for setting Timer0 TMRH byte for 16f183xx chips (8/16bit timer)[1045, 1078]
+743     Fix       Millis    Removed query text in library.[1046], and, Improved 16 mhz support [1110]
+744     Fix       USART     Revised HSerSend to correct TRMT blocking error[1047,1073]
+745     New       DS18B20   DS18B20.h new sub to set the resolution. D18B20SetResolution ( DS18B20_TEMP_9_BIT | DS18B20_TEMP_10_BIT, DS18B20_TEMP_11_BIT, DS18B20_TEMP_12_BIT )[1048]
+746     New       GLCD      New ADAFruit_mini_colorTFT_joystick_featherwing.h library.  [1050]
+747     Fix       Compiler  Minor compiler change: Changed to ensure ASM SHOWDEBUG is not processed by compiler but as comments.[1051]
+748     Fix       SSD1306   Fix for GLCDINIT to ensure the code does not impact other GLCDs. [1053]
+749     Fix       HWI2C     Revised hwi2c.h to correct SIC2Receive receive count impacted K42  HWIC2Receive operations. [1054]
+750     Fix       HWI2C     Updated to SI32CDisovery. Now using I2C1PIR.7 to detect part and renamed HIC2Init to HI2CInit [1055]
+751     New       HWI2C2    New HWI2C2 for K42 and Q43 parts.
+                            HWI2C2.h removal of constants that are not used.
+                            Revised LCD.H to support HWIC2C
+                            Revised lowlevel.dat to include hwi2c2.h automatically.
+752     New       SYSTEM    Adapted ProgramErase, ProgramRead and ProgramWrite to support PMADRH, PMADRL for newer chips.[1061]
+                            Tested ProgramErase, ProgramRead and ProgramWrite with EEWrite or HEFWrite on the following chips 12f1840, 12f1822, 12f1571, 12f1572, 12f1522 and 12f1501
+753     Fix       ADC       Isolation of ANSELx to reduce variables creation[1062]
+754     Fix       HWPWM     Revised to isolate Timer4 and Timer6 in HPWM()[1063,1064]
+755     Fix       USART     Software Serial updated to decrease memory usage. [1066]
+756     Fix       LCD       Revised LCD.h to support VFD initialisation.  New Constant LCD_VFD_DELAY implemented to set a delay between transmission of nibbles when using LCD_IO 4
+757     New       LCD       New LCD sub type supported 1601a. A 16 character / one row LCD with odd memory. See .h for memory details [1068]
+757     New       LCD       New LCD sub type supported 1601a. A 16 character / one row LCD with odd memory. See .h for memory details [1068]
+                            Use #define LCD_VARIANT 1601a to use this sub variant. Requires a LCD_IO then this sub type modifier.
+                            Updated Library - fix for LCD init. Faster and correction to previous release[1130]
+758     New       USART     Minor update to reduce RAM consumption using Serprint() with string constants.[1067]
+759     Fix       DAT       Revised memory and added 16F19197 parts, and, corrected Q10 UserID size/FreeRAM[1068,1070,1071]
+760     New       DAT       New ChipSectorRAMAddress constant is used in user programs to provide the value to Sector RAM Address[1076]
+                            New ChipSectorRAMAddressSize constant is used in user programs to provide the size of the Sector RAM
+761     New       Compiler  Improved WinTel processor determination to support 64bit WinTel compiler.  Installer updated to support 32bit and 64bit.[1075]
+                            Installation now included  32bit and 64bit compiler where the installer determines operating system support for 64bit.
+                            Using FreeBASIC compiler versions are follows:
+                            FreeBASIC Compiler - Version 1.07.1 (2019-09-27), built for win32 (32bit)
+                            FreeBASIC Compiler - Version 1.07.1 (2019-09-27), built for win64 (64bit)
+762     Fix       Compiler  Updated message.dat to correct OSC language[1074]
+763     New       Timer     Improve Settimer to better support new class of timers for timer 0. Added overloaded Settimer to resolve the the parts with selectable 8 or 16 bit timer.[1079]
+764     New       Compiler  Support for ATMEL chips with 16 GPRs.[1080,1081,1082,1085,1102]
+                            Compiler now generates correct instructions for AVR8L reduced core chips (ATtiny10 and ATtiny5, ATtiny20 chips)
+                            - Generated for the AVR8L reduced core chips
+                            - Change system variables to r16 to r31
+                            - Change to LDS and STS 7-bit handling
+                            Requires updated .DAT file with correct GPR value.
+765     Fix       Dat       Support for ATMEL chips with 16 GPRs. Updated .DAT file with correct GPR value.[1083,1084]
+                            All were re'gened with the following GPR=16 and ChipFamily=121
+                            ATtiny10
+                            ATtiny20
+                            ATtiny4
+                            ATtiny40
+                            ATtiny5
+                            ATtiny9
+766     New       System    String Support and OSC support for ChipFamily121[1087,1095]
+767     New       Core121   Introduce c for ATTinyRC devices.  This is a subset of the ChipFamily120[1086, 1091, 1090,1100]
+                            Revised table support for ChipFamily121.
+767     New       Include   Implemented max848xdigitalpot library [1092]
+768     New       PWM       Revised to support ChipFamily 121 - removal of explicit ASM[1094]
+769     New       ADC       Support for ChipFamily 121 and tidy up in LLREADAD and changed to ADLAR = ADLeftAdjust support 121 and reduce code size[1093]
+770     New       AVRDUDE   Added support for ChipFamily 121 parts
+771     New       Compiler  Updated to display programmer selected during programming operation[1098]
+772     New       Compiler  Update for Chipfamily 121 changes to support that "All of USART registers are NOT accessible using SBI and CBI instructions". See the datasheet.
+                            usart.h updated to reduce memory usage for Chipfamily 121 [1099]
+773     New       EEPROM    Major update to support 18FxxQ43 family[1103]
+774     New       SAF       Added SAF support for Q43. SAF library updated to handle the Q43 memory management[1104]
+775     New       PROGMEM   Added Q43 support in ProgramWrite and ProgramRead[1105]
+776     Fix       SELECT    Fix for SELECT CASE where no variable is specified[1101]
+777     Fix       Compiler  TBLPTRU word now set by string and data table operations on PIC 18FxxQ10 with over 16 kw (32 kB) of program memory, also see change804[1106]
+778     New       Converter Latest converters [1096]
+                            - BMP2GCB handles large BMPs by using converer with extension of .bmp640 as in #include "resources\640384_2.bmp640"
+                            - ePaper BMP converters. There create highly optimized/compressed tables. See e-Paper GLCD for example usage.
+                            - The creates a GCB Table as follows:
+                            -     Table <Name> as WORD
+                            -     ' start data
+                            -     640' dibHeader.Width = 640
+                            -     384' dibHeader.Height = 384
+                            -     0           Set color state
+                            -     <value of bytes at initial color state>
+                            -     <value of bytes at NOT previous color state>
+                            -     <value of bytes at NOT previous color state>
+                            -     <value of bytes at NOT previous color state>
+                            -     ....
+                            -     0xFFFF   'end of table marker
+                            -     0x001E   'end of table marker
+                            -     End Table
+779     New       GLCD      GLCD SH1106 SPI Support and ROTATE added. SetContrast corrected [1107,1108,1128]
+                            Updated Library - improved S4Wire_DATA isolation isolation
+780     Fix       SPI       Small tweak to hwspi.h to correct error on 16F1459 (different bit names in latest chip data)[1009]
+781     Fix       AVR       Compiler fix: Fixed issue when performing addition on AVR and first value is constant 1[1111]
+                            Compiler fix: Added additional parameter inspection for Source and Destination locations.[1112,1113]
+782     New       PROGRAM   Added new programmer option for ATPROGRAM.EXE.  Supports programmer tools as follows:
+                               avrdragon, avrispmk2, avrone, jtagice3,
+                               jtagicemkii, qt600, stk500, stk600, samice, edbg,
+                               medbg, nedbg, atmelice, pickit4, snap,
+                               powerdebugger, megadfu or flip.
+
+                            The Programmer Preferences uses the Tool Varaiable %atmelATPROGRAMdir% to state the installation direction of ATPROGRAM.EXE
+
+                            Added 'ATMEL mEDBG using TPI' programmer tool to support TPI.
+
+                             [tool = atprogram]
+                              desc = ATMEL mEDBG using TPI
+                              type = programmer
+                              useif =
+                              progconfig =
+                              command = %atmelATPROGRAMdir%\ATprogram.exe
+                              params = -t mEDBG -i TPI -d AT%ChipModel%  chiperase program  -f "%FileName%"
+                              workingdir = %atmelATPROGRAMdir%\
+783     Fix       MESSAGE  Improved error message of AVRrc chips[1115]
+784     Fix       PPSTOOL  v0.0.6.2[32]
+                           Minor update to accommodate new MCC XML files.
+                           Minor change to MCC updater due to changes on Microchip's server
+785     New       PROGRAM  New useini.bat and foini.bat in GS+Tools folder to support ATMEL IDE ASM validation
+786     Fix       Timer    Added TCNT1 handling SetTimer specific change for AVR[1116]
+787     Fix       IDE      Complete rewrite of displaying text on output window
+                            - small bugfix related to handling of programmer errors
+                            - complete rewrite of calculating AVR program memory from hexfile (now identical to avrdude message)
+                            - displaying available program memory for AVR
+                            - errormessage if program memory for AVR insufficient
+788     Fix       COMPILER Addition of WRT in config to prevent configuration words being missing[1117,1118]
+                           Updated to CHIPDEF.DAT to show improved config2 support.
+789     Fix       BNKCHCK  Updated BankCheck to improve usability in terms of the display. No functional changes to logic.[1118]
+790     Fix       SOUND    Fix for an uninitialised variable in SHORTONE()[1121]
+791     Fix       COMPILER Fix to prevent programming when a program error we reported[1120]
+792     Fix       COMPILER Fix for Family 15 Bank select issue when larger than 4095 bytes of RAM.[1122]
+793     New       DAT      Added ChipSelfWrite flag[1125]
+794     New       TM1637a  Added new TM1637a 7 Segment library[1123]
+795     New       USART    Added script adjustments for low frequency BPS [1132]
+                           Added script to detect USART calc errors. Use the following constants to control the checking and warning messages
+                             #define CHECK_USART_BAUD_RATE
+                             #define ISSUE_CHECK_USART_BAUD_RATE_WARNING
+796     New       COMPILER Minor change: Permit raw ASM through the ASM source when is leading with #DEFINE and UserCodeOnlyEnabled, all other cases should be treated as-was[1133]
+797     New       COMPILER Added intial Family122 support.
+798     New       PROGEDIT Add new paramater to support 'stated' chip name for the programming.  %chipprogrammername% [1135]
+                           %chipprogrammername% must exist in chip specific DAT file as "programmername ="
+
+                           USE.INI entry to support %chipprogrammername% is as follows:
+
+                          [tool = lgt8fx8p]
+                          desc = LGT8FX8P @57600
+                          type = programmer
+                          useif =
+                          progconfig =
+                          command = %instdir%\..\avrdude\avrdude.exe
+                          params = -c Arduino -b 57600  -P %port% -p %chipprogrammername% -U flash:w:"%filename%":i
+                          workingdir =
+                          port = COM5
+
+799   New       DAT       Added new parameter in [ChipData] section.  The ProgrammerName overrides the chipname parameter when programming with AVRDUDE etc.[1135,1136]
+                          ProgrammerName=lgt8fx328p
+899   New       COMPILER  Added support for new parameter in [CHipData] section/ProgrammerName = {name} [1135]
+900   New       COMPILER  Added support for CHIPPROGRAMMERNAMESTR to support programming of LGT chips using generic ATMEL names within AVRDUDE.[1138]
+901   New       LGTFamily New ADC support, new clock support, new spi suppport, new millis support[1139][1144][1145][1146]
+                          LGT328P changed to resolve the rjmp and jmp optimisation issue.
+                          And, updated system.h to support improved config of the clock.
+                          LGT328P final change to resolve the rjmp and jmp optimisation issue - changed the optimisation test to a constant.
+                          And, updated message.dat to handle messaging.
+902   New       DAT       LGT*328p chips with EEPROM support -0 to -8.
+                          Updated ADC support, updated clock support, updated spi suppport[1141]
+903   New       DAT       DAT chips updated to show page write/erase sizes[1147]
+904   Fix       TABLE     Fix to show when READTABLE does not have the correct number of parameters[1148]
+905   New       INITSYS   Added RAM clear down for Family122 chips[1149]
+906   Fix       F122      Improved SPI support by adding functional delay to HWSPI. Constant SPIDELAY_SCRIPT_MASTER specifies the clock cycle delay when using Family122.[1150]
+                          Added HWSPI_Fast_Write_Word_Macro [word_variable] to reduce code maintenance. Enables writing of Word to HWSPI at higher speed.
+                          ~~~
+                          HWSPI_Send_Word = GLCDBACKGROUND
+                          'Fast clear screen - use a macro to keep code simple
+                          HWSPI_Fast_Write_Word_Macro
+                          ~~~
+                          Revised XPT2046 to have improved read response by adding a simple delay.
+                          Existing libraries that do not use   HWSPI_Fast_Write_Word_Macro  for Family122 will need to be updated.
+907   Fix                 Corrected READTABLE/sysread() call for 18FxxQ43 chips by changing the 'sysread()' to replaceconstant 'sysread()'.[1151, 1152]
+                          Added EEPROM address for 18FxxQ43 chips to TABLE DATA command.
+                          Added check to ensure user cannot create a method() with the prefix if fn[1153]
+908   Fix                 GLCD nt7108c - Resolved IFDEF error in WriteByte and ReadByte, again by removing the 'then' statement[1154]
+909   New                 New tm1637_6d.h library[1155]
+910   New                 Minor update to DEF file format: PIC,AVR,PPS,ChipFamily [1156]
+911   New                 Add PICInfo to installer, removed GCGB icon from desktop and improved the installation process.
+912   Fix                 Updated chip datas files for SelfWrite and PROGMEM pages size for 18F chips.[1157]
+@RC36
+913   Fix                 Updated USART. Incorrect values in ALL previous versions[1158,1159]
+914   New                 Added 18FxxQ41 support.[1160,1161,1163]
+                          Updated to HWIC2C, SAF, EEPROM, compiler
+                          Added 18FxxQ41 demos.
+915   New     DAT         Addednew INC file generation tool.
+916   New     Compiler    Change to support line continuation[1162]
+917   fix     Timer       Correct Timer constants for AVRs[1164]
+@RC37
+918   Fix     Prep        Improved handling for braces within block comments. Preprocessor.awk updated[1168].
+919   Nex     DAT         All DAT files reissued with new entries as follows:
+                          New CHIPDATA entry to support ChipSubFamily and MemoryLock register, updated system.h with required constants. Required to support 18FxxQxx chip family[1166,1168]
+                          A rewrite of NVMADR_EPWrite/EPread to better support 18fxxQxx chips/NVMADRU register moving to ChipSubFamily.
+                          ChipFamily18FxxQ10 = 16100
+                          ChipFamily18FxxQ43 = 16101
+                          ChipFamily18FxxQ41 = 16102
+                          ChipFamily18FxxK42 = 16103
+                          ChipFamily18FxxK40 = 16104
+                          All other PICS are assigned = ChipFamily*1000.
+                          ChipSubFamily data is held in chipdata.csv file.
+920   Fix     Compiler    Small compiler fix: generate error if relative jump on AVR jumps to a non-existent location[1165,1170]
+921   Fix     EEPROM      Improved Write and Read support using ChipSubFamily[1167]
+922   Fix     PWM         Improved handling of CCP/PWM for ChipSubFamily = ChipFamily18FxxQ41. [1169]
+923   Fix     PICINFO     Reordered TABs and UI improvements.[@RC37]
+@RC38
+924   New     TBL+        Updated version of tinymultibootloader+.exe to 14.6.x.x
+925   Fix     Compiler    Small compiler fix: correction to EEProm address for table write 18FxxQxx operations.[1171]
+926   Fix     Compiler    Correction to 18f CONFIG in ASM to ensure the line is less than 200 characters.[1171]
+927   Fix     Compiler    Added syntax error to delay_ms() and delay_us()[1171]
+928   New     DAT         Added support for 18FxxQ40 PIC chips.
+929   New     Compiler    PIC-AS non operational support [1172]
+930   New     Compiler    First commit of PIC-AS support.[1173]
+              -Supported by ini file
+              [gcbasic]
+              assembler = PIC-as
+              [tool=pic-as]
+              type = assembler
+              command = C:\Program Files\Microchip\xc8\v2.31\pic-as\bin\pic-as.exe
+              params = -mcpu=%ChipModel% "%Fn_NoExt%.S" -misa=std -msummary=+mem,-psect,-class,-hex,-file,-sha1,-sha256,-xml,-xmlfull -Wl -mcallgraph=std -mno-download-hex -o"%Fn_NoExt%.hex" -Wl,-Map="%Fn_NoExt%.map" -Wa,-a
+              Install PIC-AS.EXR from Microchip website. And then change the 'command' above to the installation directory.
+              18F tested as passed
+              16F - many issues with PIC-AS. Tickets open with Microchip.
+              Assembly.bi - change ASMTIDY -no impact to existing code.
+              Processor.bi - Added label attributes
+              variables.bi - Added GetSFRBitValue and GetReversePICASIncFileLookupValue to resolve GCB and PIC-AS using different namespaces for registers
+              gcbasic.bas - Added label attributes and updated WriteAssembly() to handle new format of .S source files - this retains the ASM as-is. :-)
+
+931  New      SYSTEM      Added PFMRead and Write[1173,1174]
+@RC38.02
+932  Fix      Compiler    Improved handler for ChipFamilies not supported by PIC-AS[1175]
+              Improved 16F PIC-AS translator
+              Set default WRTB config to OFF
+@RC38.03
+933           Compiler    Added CONFIGTidy for PIC-AS to support reverse lookup for case sensitive Configs.[1177]
+                          Added Restoration of Duplicate configs. Deletion of duplicate configs is a non-destructive operation to support GCASM along side PIC-AS
+944  Fix      DAT         Correction of long standing [ASMConfig] section where the setting was being truncated.[1178]
+                          NOW:
+                          BBSIZE=BBSIZE_512
+                          BOREN=SBORDIS
+                          BORV=VBOR_2P45
+                          CLKOUTEN=OFF
+                          WAS:
+                          BBSIZE=512
+                          BOREN=SBORDIS
+                          BORV=2P45
+                          CLKOUTEN=OFF
+
+@RC38.04
+945           Compiler    Improved warning of PIC-AS support
+                          Removal of PIC-AS ASM from legacy ASM code.
+946           PWM16       Improved PWM16.h library.
+                          PWM16 library was developed for the 12&16F157x chip the constant is set to ChipPWM16TYPE=1.
+                          The new 18FxxQxx are set to ChipPWM16TYPE=2.  As ChipPWM16TYPE=2 are not tested the library and therefore a warning is issued.
+
+@RC38.05
+947           Installer   Installer now replaces USE.INI to ensure setup is stable.
+                          Later release(s) 'may' edit USE.INI to update with new information only.
+@RC39
+              Compiler    Initial PIC-AS for 18f
+@RC40         Compiler    Initial PIC-AS for 16f large programs[1180]
+948           DAT         Added new MCUs[1179]
+                          PIC16F15213
+                          PIC16F15214
+                          PIC16F15223
+                          PIC16F15224
+                          PIC16F15225
+                          PIC16F15243
+                          PIC16F15244
+                          PIC16F15245
+                          PIC16F15254
+                          PIC16F15255
+                          PIC16F15256
+                          PIC16F15274
+                          PIC16F15275
+                          PIC16F15276
+@RC40
+949           Compiler    Small update to use the ini file to handle corrections between ASM and PICAS.[1181]
+                          The ini file will search and replace config(s)  Example shown below:
+                            [patch=asm2picas]
+                            desc = PICAS correction entries. Format is STRICT as follows: Must have quotes and the equal sign as the delimeter. PartName +COLON+"BadConfig"="GoodConfig" Where BadConfig is from .s file and GoodConfig is from .cfgmap file
+                            16f8x:"intrc = IO"="FOSC=INTOSCIO"
+                            12f67x:"intrc = OSC_NOCLKOUT"="FOSC=INTRCIO"
+                            16F69x:"INTOSCIO = "="FOSC=INTRCIO"
+950           Compiler    Added Support for 10Fxx chips[1182]
+
+@RC40
+951           Compiler    Updated to resolve the XC8 xc.inc include file syntax error where the include MUST be placed after the CONFIG statements.[1183]
+                          The position is a fix at PIC-AS.EXE 2.32 to resolve 'syntax errors'
+952           GCLD        Add ST7789 GLCD library
+953           Compiler    Updated PIC-AS to remove 'align-2' from midrange .S source and improved reverse lookup to improve register handling
+
+@RC41
+954           Compiler    Updated to improve support for ASM only output when using INI file.[1185]
+                          /H[:0/N|1/Y]
+                          /H = make hex.
+                          0/N is an optional parameter to NOT make the hex
+                          1/Y is an  optional parameter to MAKE the hex
+                          /H will default to 1/Y make the HEX
+954           Compiler    Updated to improve errors.[1186]
+                          PIC-AS: Added 'warning' handler when 'warnings' are actually fatal.
+                          PIC-AS: Changed 'error' handler to just show 'errors'
+
+@RC42
+955           Compiler    Minor changes to FOR-NEXT to mandated use of Integer as stepvalue when variables are used for start and end parameters, and, add comments to ASM to show a constant was adapted by the compiler.
+                          Major changes to FOR-NEXT that improves the operation of the FOR-NEXT-STEP [1187.1188]
+                          Uploaded as users are now testing.
+                          Use '#define SUPPRESSFORNEXTHANDLERWARNING' to suppress all  FOR-NEXT-STEP warnings.
+                          Use #IGNOREWARNING at end of FOR-NEXT-STEP to suppress specific warning.  Useful for libraries
+
+@RC43
+956           Compiler    Major Change - Add TableString handler.[1189]
+                          Table support DoubleQuote, DoubleQuote comma delimited strings with escape characters.
+                          Accepted escape strings are shown in the table below.
+
+                          Escape sequence Meaning
+                          \0  null same as ASCII character 0. Same as \&000
+                          \a  beep
+                          \b  backspace
+                          \f  formfeed
+                          \l or \n  newline
+                          \r  carriage return
+                          \t  tab
+                          \&nnn ASCII char in decimal
+                          \\  backslash
+                          \"  double quote
+                          \'  single quote
+957           Build/Test  Added #skiptest to source GCB to 'skip' GCB source during testing.  Compiler ignores #skiptest.
+                          testcompilealldemos.bat updated.  Testing now creates additional log file - skipped.log
+
+@RC44
+958  New      USART       Added Support for 90S Series AVR[1190]
+
+@RC45
+959           Compiler    Minor changes to FOR-NEXT as follows:
+                          Improvement for FOR-NEXT. USELEGACYFORNEXT implemented, improved Integer negative handling[1191,1193,1194]
+                          Use `#define USELEGACYFORNEXT` to enable legacy FOR-NEXT support.
+                          Improved handling of FORNEXT. Use case all three parameters are Constnts. Now creates tmp variable when loopvar is an Integer[1198]
+                          FOR-NEXT - Improved handling of Positive integers when the startValue is lower than the EndValue[1199]
+                          FOR-NEXT fix for INTEGER operations[1200]
+960           Compiler
+                          Implemented TABLEtext handler for inline comments[1194]
+                          TABLEtext - Improved handling of formatting validation. New entries in language file.[1199]
+                          TABLEtext - Fix for numeric entries[1220]
+961    Fix    GLCD        Corrected Write_Transaction_Data_SSD1306 command/data section[1195]
+962    Fix    Strings     Add VarToBin, VarWToBin, IntegerToBin, LongtoBin methods[1196]
+963    Fix    SMT         Prepended "Chip" to constant SMTClockSourceVariant as necessary[1197]
+
+@RC46
+964    New    Compiler    PIC-AS updates [1201]
+                          Compiler tested with PIC-AS 2.32
+                          1. Added FCALL and LJMP support. Removal of adaption is .S processing section, now uses AddPageCommands(). CalcLineSize() now includes FCALL and LJMP for code size.
+                          2. Added BANKISEL support. BANKISEL is NOT supported by PIC-AS so this adds a macro to the .S to resolve.
+
+                          PIC-AS Support status
+                          - PIC-AS works for 18F.
+                          - PIC-AS has not been tested on AVR or LGT
+
+                          Known issues.  ALL caused by PIC-AS 2.32 NOT Great Cow BASIC compiler.
+                          These issues are slated to be resolved in PIC-AS 2.35
+                          - PIC-AS for 10f, 12f and 16f works for small chips but for larger chips Microchip are changing PIC-AS 2.35 resolve the following:
+                          * BANKSEL just does not operate correctly. Microchip have accepted this issue.
+                          * BTFSx instructions are not working as expected. The BTFSx instruction is a single word instruction but in some cases PIC-AS is expanding this into two instructions. This then causes (in some cases) the PROGMEM page to overflow - and, the resulting HEX is invalid. Microchip have a support ticket on this.
+                          * BANKISEL is not supported. Microchip have an open ticket on this to revert the BANKISEL.  This version of the compiler has a script to workaround this.
+                          * DECFSZ instruction does not operated correctly under certain conditions. This causes havoc with the page fitting routines. Microchip have a support ticket on this.
+965   Fix     ADC         Resolved typo in line 1613[1292]
+                          Improved Read A/D @3 to use ADCON0.GO rather than G0 as GO can also reference NVM1CON.GO
+966   Fix     GLCD        GLCD updates to ignore for-next warnings[1203]
+                          Revert missing library
+                          Add GLCD_TYPE_ST7789_240_240
+967   Fix     PIC-AS      Add picas.h - workaround for HEX and LINE reserved words in PIC-AS driver[1204]
+968   New     HWI2C       Add HWI2C support for 18FxxQ43[1205]
+969   Fix     HWSPI       No functional change - moved comments inside conditional compile[1206]
+970   Fix     HWPWM       Correct typo in ChipSubFamily Q41 in HMPWM[1207]
+971   Fix     PWM16       Added CHIPPWM16TYPE validation[1208]
+                          Remove PWM16 script warning
+972   Fix     System      Add ChipSubFamily = 15001 in initsys for new clock type[1209]
+973   Fix     USART       Removed incorrect mapping as TRMT is this broke USART1[1210]
+@RC47
+974   Fix     PIC-AS      Corrected missing ENDIF[1212]
+                          TAB tidy for PIC-AS .S file
+                          Added missing Language entry
+975   New     Prefs       Added Assembler choice to Prefs Editor[1211] and improved Variables tab[1213]
+@Release
+                          Updated Compiler to add PIC18 macro/defines for PIC18 only.
+976   New     Compiler    Updated compiler now supports 31k frequency for OSCCON chips like the 16f1829.  A zero value in the LFINTOSCClockSourceRegisterValue was being ignored.[1214,1216,1219]
+                          The following code is intended to set the OSCCON correctly (with the 31kSuppor t= added to .dat)
+                          #Chip 16F1829, 31k
+977   Fix     Compiler    PIC-AS fix: Change to FixFunctions() to maintain the IsLabel as this routine is moving the label reference.[1215]
+                          - GetMetaData(FindStart)->IsLabel = GetMetaData(CurrLine->Next)->IsLabel
+978   Fix     DAT         Updated DAT files to support 31kSupport for INTOSC and resolved 18F Q series default in ASMCONFIG[1217]
+979   Fix     Compiler    Released version / date [1218]
+980   Fix     Compiler    Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.06 Release[1220]
+981   Fix     DAT         Updated DAT files to correct typo on 31kSupport entry and update to ASMCONFIG[1221]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.05 Release
+632     Fix      Linux      Updated Linux install.sh to remove error and an update Linux support files. Already included in v0.98.05 [936]
+633     Fix      Timer      Updated INITIMER1, 3 and 5  to handle LFINTOSC [934, 935]
+634     New      GLCD       Add new Hperbole primitive.
+635     Fix      HEF        Renamed heflash to heflash_superceded.  Use the new HEFSAF library.[984]
+636     Fix      PreProc    Improved ELSE-IF-THEN error messaging in preprocessor.awk
+637     New      PWM        HPWMUpdate updated to support CCP1 to CCP5[938]
+638     New      GLCD       Adding Parabola and Hyperbole to GLCD capabilitie [939]
+639     Fix      GLCD       Updated SSD1306 library to inform user that low memory mode is being forced by low RAM MCU.[1056
+640     New      PPSTool    Added ICON to installation for Windows Distribution
+641     Fix      DAT        Corrected DAT files removing INC file error. Reported  https://sourceforge.net/p/gcbasic/discussion/chipfileforum/thread/5dbdbc873c/#2cec[941,1097]
+642     Fix      GCASM      GCASM message handler updated to show the source of the error condition.[942]
+643     New      GLCD       This header file did not allow for individual port assignments.  Modified it to allow for GLCD_DB0 - GLCD_DB7 to be set to any pin.  If the GLCD_PORT is defined then that is used.  PIC18F14K22 tested display.
+644     Fix      Compiler   Small compiler fix for PIC18F - assume that access bank for SFRs starts at a location that is a multiple of 16. Should correct banked/access selection for some variables.[943]
+645     Fix      DAT        Update to 18F dat files to include NoBankRAM section[944]
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.04 Release
+585     New      GLCD       SDD1289 library updated for OLED fonts and improvements to GLCDPrint methods [855, 874]
+586     Fix      GLCD       GLCD.h updated to support Touch capabilites[856]
+586     Fix      GLCD       ILI9342 library updated for Touch capabilities[857]
+587     New      GLCD       ILI9486L library updated for Added UNO 8bit support, Full port support, Touch support, OLED, fixed rotate and FilledBox updated.  Revised GCLD_RST/RESET support for ILI9486(l)[858,870,871,873]
+589     Fix      USART      Updated to isolate USART_DELAY in HSerSend[859]
+590     Fix      UNO        Updated UNO_mega328p.h to ensure #startup is prior to other modules[860]
+591     New      Touch      First formal release of the XPT2046 and ADS7843 Touch library[861]
+592     New      SYSTEM     Updated initsys to support 18fxxJ53 parts[862]
+593     New      IDE        Added Shift-F1 to IDE to open Microchip website with the correct datasheet.  Select the chip string - press Shift-F1
+594     Fix      I2C2       Updated hwi2c2.h to support 18F I2C variants in HI2C2Start[865]
+585     New      GLCD       glcd_SSD1306.h updated to add HWI2C2 support[864]
+586     Fix      GLCD       glcd_ILI9341.h  revised to support SPI without WCOL in GLCDCLS to support specific 18f devices[863]
+587     Fix      Compiler   Fix for maths addition of high bytes on 16F, errors occurred when any high byte had a value of 255 and the result was not placed back into the original variable.[866]
+588     New      Compiler   Improved checking of variable names[854]
+589     Fix      Timers     Improved constant definitions for Clock Sources for new microcontrollers.[867,868, 869]
+590     New      SCale      Added word implementation to Scale()[872]
+591     Fix      HEFSAF     hefsaf.h updated to prevent creation of variables when no HEFSAF exists on chipFamily 15,
+                            Further revised  to prevent _HEF_ABS_ADDR creating variables when no HEFM for ChipFamily 15[875,879]
+592     New      Clock      PCF85X3 released.  PCF85X3 is a Real Time Clock and Calendar.  Library and demos released.[876]
+593     New      Compiler   Added a feature Calculations can now be used to set bits. [877] example:  porta.1= ( ( 4 < TestVal )  OR 1 )
+594     New      Preproc    Updated preprocess.awk to better handle IF statements [878].
+595     New      GLCD       New T6963 library.  Requires glcd.h and glcd_ILI9486L.h as prerequisites. T6963 library supports 8 bit data ports and 8 independent pins.[880,887]
+596     Fix      serial     Resolve issue in the Softserial library. The issue only occurs on receive and only when AVR controllers are used and the second time the function was called - the bit order of the received byte was incorrect[882]
+597     Fix      GLCD       Updated ILI9340 and ILI9341 to add constant and script to resolve 64mhz at MasterFast.  #define HWSPIMode masterfast where #define HWSPIMode is masterslow|master|masterfast[881,883]
+598     New      GLCD       ILI9430 and ILI9431 new capability to set the hardware SPI speed to MasterSlow, Master, or MasterFast. Now defaults to MasterFast when ChipMhz is not 64mhz, as the MasterFast at 64mhz will not operate as expected s the ILI934x chip can operate at this SPI frequency.
+599     Fix      GLCD       GLCD drivers KS0108 and nt7108c revised to ensure GLCDDirection constant is not impacting the other GLCD library.
+600     New      Compiler   Revised config default in CalcConfig to set the FOSCEXT default as OFF [885]
+601     Fix      LCD        Revised LCD.h to improve handling of ANDs for LCD_state[886]
+602     Fix      ADC        Corrected AN29 address. Removed a typo. Prevented PORTD.5 ADC from operating as expected.[888,889]
+603     Fix      MAX7219    Max7219_LEDMATRIX_Driver.h updated to invert CLK when using Software SPI - now matches hardware SPI, and. resolved AVR initialisation issue.
+                            Also, Max7219_LEDMATRIX_Driver.h updated to provide user constant HWPSPI mode to control default SPIMode.  This is now same approach as other GLCDs initialisation 890,891,892,894]
+                            max7219 library update to add support for matrix orientation
+                            Default is 0, can be 90, 180 or 270
+                              #define Pset max7219_LEDMatrix_PSet_0
+                              '#define Pset max7219_LEDMatrix_PSet_90
+                              '#define Pset max7219_LEDMatrix_PSet_180
+                              '#define Pset max7219_LEDMatrix_PSet_270
+604     New      Program    Added new programmer entry to use.ini for PICkitPlus writing UserID
+605     New      SPI        hwspi.h updated to include new MasterUltraFast SPI Mode to support ultra fast SPI on AVR.
+606     Fix      GLCD       Improved HX8347 GLCD driver to handle constants[895]
+607     New      GLCD       Added UC8230s to GLCD addressing table.[895]
+608     New      GLCD       Adding beta UC8230 GLCD driver[896]
+609     Fix      DS3231     Updated to remove errant CLS in this library
+610     Fix      Compiler   Fix for critical 18fxxk42 and 18fxxk83 interrupt issue[898]
+611     Fix      DS18s20    DS18s20.h quality improvement to remove redundant code[899]
+612     Fix      Many       License update only[900]
+613     Fix      SYSTEM     Updated to remove script message and comment tidyup only[901]
+614     Fix      PWM16      Overflow/calculation errors fixed when working out duty cycle registers[902]
+615     New      Millis     Initial formal release of millis.h[903,913]
+616     Fix      EEProm     Revised bit check to ensure bit exists in ProgWrite - Bit(EEPGD)[904]
+617     Fix      SDD1289    Revised to ensure code is optimised[905]
+618     Fix      SPI        Major revision to hwspi.h to support K42.[907]
+                            For the K42 type SPI MODULE ONLY hardware SPI only
+                            You can specify an SPI baud rate - the baud rate is dependent on the chip frequency!
+                            If you get nothing, you have exceeded the SPI modules capabilites, so, slow down the BAUD RATE or use the SPI_BAUD_RATE_REGISTER constant, shown below.
+                            The default SPI_BAUD_RATE is 1/4th of the clock frequency in khz. Khz is used to allow for fine adjustment
+                            The following example is commented out intentionally
+                            #define SPI_BAUD_RATE 32000
+                            or, use an explicit constant as show below
+                            The following example is commented out intentionally
+                            #define SPI_BAUD_RATE_REGISTER 3
+                            Optionally, in specific SPI library like the ILI934x GLCDs, you can define the HWSPIMode by using #define HWSPIMode masterfast where #define HWSPIMode is masterslow|master|masterfast
+                            This will overwrite the default in the GLCD SPI library. This is so users do not have to change the library.
+                            the default is "masterfast"
+                            The following example is commented out intentionally
+                            #define HWSPIMode masterfast
+619     Fix      SPI        Updated SPI libaries all now use HWSPIMODESCRIPT constant[908]
+620     New      DAT        Updated and new Chipfiles[907,910]
+621     Fix      Compiler   Compiler change to CP default as OFF[911,912].
+622     Fix      Compiler   Compiler change to CLKOUTEN and VCAPEN as OFF [914]
+623     Fix      PPSTool    v0.0.5.26 Minor update to recognise latest MCC files [26]
+624     New      Install    Created an installer ICON
+625     New      GLCD       Added GLCDPrintWithSize (PrintLocX, PrintLocY, PrintData, FontSize [,Color])
+626     New      Compiler   Icon added to the EXE! [920]
+627     New      Includes   Tidied up to remove errant messages in the ASM - no functional changes[919]
+630     Fix      SPI        SPI Update to support HWSPIMODESCRIPT. Uses can now Define a constant called HWSPIMODESCRIPT = MASTERFAST|MASTER|SLOW.  This means the user can control the SPI speed without edit low level library[918][916]
+631     New      GLCD       Updated GLCD to remove errant messages
+                            Updated GLCD.h to include GLCDPrintWithSize() [917]
+632     Fix      Compiler   Compiler change: Added support for Else and Else If in single line If statements[922]
+                            Now supported If PORTA.1 then Dir PORTA.0 out Else Dir PORTA.0 in
+633     Fix      Compiler   Wait minutes now uses ms directly instead of calling seconds routine, saves a stack level resolving issues with MCSs with low stack count[921]
+634     Fix      Compiler   Error message now issued if both At and Alias used in a Dim statement, setting a variable location twice makes no sense. Help also updated [921]
+635     Fix      Compiler   Fixed bug which caused a false warning if the last two RAM locations were allocated to a variable.[921]
+636     Fix      Compiler   Compiler fix: Prevent erroneous reuse of temporary calculation variables in unary operators[915]
+637     Fix      Compiler   Error now shown for variables that alias themselves, rather than compiler crashing....[923]
+638     Fix      Compiler   Bank selection commands no longer inserted for variables in access bank (PIC)[923]
+639     Fix      Compiler   Unneeded ENDIF labels now deleted from assembly[923]
+640     Fix      GLCD       Updated ST7735 GLCD driver. Support of colorTAB for the different ST7735 chips.  Options are ST7735_BLACKTAB, ST7735_GREENTAB or ST7735_REDTAB.  Each tab is a different ST7735 configuration. If you do not know  your type try one at a time[924]
+641     Fix      Compiler   Change to set EEPROM to enable WRITE operations by setting WRTD by default[925]
+642     Fix      Compiler   Dir now checks port name more thoroughly, and accepts some alternative names for pins and slight compilation speed improvement[926]
+643     Fix      Utils      Bank Checker now knows access bank on 12F629/12F675/16F630 and strings test slightly altered[927]
+644     Fix      Compiler   Fixed Dir command (broken in r926) and automatic pin direction setting (always broken) on higher IO ports of AVR chips.[926]
+645     Fix      GLCD       Lots of GLCD libraries updates to improve quality. All NON-FUNCTIONAL changes.[929]
+646     New      GLCD       Added ST7735 support for Black, Green and Red ST7735 MCUs[930]
+647     New      GLCD       Added GLCDPrintBigString and supporting sub-methods[931]
+648     Fix      EEPROM     Revised bit check to ensure bit exists in EPWrite - NVMEN and added cleared NVCON1[932]
+649     Fix      SYSTEM     Updated to remove script message and comment tidyup only in initsys - comments are now contrained by #if..#endif[933]
+650     New      DEMOS      All demos are set as read-only upon installation.  To protect the shipped demos.  The IDE can and will overwrite if the overwrite dialog is selected.
+651     New      IDE        IDE Helpers (ACP and GCB) files updated to cater for all the new commands in the release
+652     New      Program    New Tool variable added.  %userid% to showcase the use of passing a userid to programmer. Therefore, this will be missing in this installation is an upgrade from a pervious version of the Great Cow BASIC IDE.
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.03 Release
+575     New     LEX         Added K42 instruction set to IDE lexer
+576     Fix     ADC         Revised to protect ADFM on 10f devices in READAD method[826]
+577     New     Linux       Revised installation scripts to support lowercase files and improved installation [827,833,835, 838, 839, 841, 842, 844, 845, 853]
+578     Fix     PPSTool     0.0.5.24:  Fixed bug which was setting RX pins as outputs not inputs (PIC18FxxK42 and similar)
+579     New     GLCD        Added NT7108C GLCD driver[828, 83]
+579     Fix     USART       Correct errant setting of SYNC on K42/83[829]
+580     Fix     GLCD        GLCD_SDD1289.h Updated to remove deprecated method [831,832]
+581     New     PWM         Added PWM adding PWM8 [834]
+582     Fix     GLCD        Updated ST7735 GLCD driver.  New OLED font support and general update to latest GLCD standard[836,837]
+583     Fix     Files       Updated files to lowercase. No functional change [840]
+582     Fix     GLCD        Updated GLCD.h to remove silly script error [843]
+583     New     PSMC        Added PSMCDesigner toolset
+578     Fix     PPSTool     0.0.5.25:  Fixed bug which was setting i2c pins for 18F*k42
+579     New     PWM         Library updated to support ENablebits.[848]
+580     New     ADC         Library updated to support 16f1834x ADC channels using CHS5 bit
+581     Fix     GLCD        GLCD_ST7735.h revised to use TFT colors. Updated GLCDCLS to be a lot faster and updated GLCDRotate to support bits.[849]
+582     Fix     DAT         Updated 16f178x for ReadAD10BitForceVariant[850]
+583     New     DFU         Inclusion of DFU USB programmer toolset in the Windows installer.
+584     Fix     GCGB        Refactoring GCGB[851, 852]
+
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.02 Release
+528     Fix     Compiler    Slight tweak to compiler source to (hopefully) fix compile error on Linux [746]
+529     New     Help        Help files uploaded to SF:SVN[747]
+530     New     Compiler    Compiler Internal changes to compiler to improve compilation speed [748]
+                            - A hash map is now used to look up subroutines
+                            - Compilation should now be about 20-40% faster with no change in generated assembly
+521     Fix     Initsys     Updated InitSys for 18f 48 mhz, added 48 mhz handler only. [749]
+522     Fix     Compiler    Compiler change: Variable aliases can now refer to specific array elements [750]
+523     Fix     DAT         Fixes for Updated to correct ASMCONFIG section where a .name has an underscore in many 18f parts. Resolved the underscore error conditions. [751]
+524     Fix     Compiler    Compiler fixes for page and bank selection on PIC 12-bit core chips [752]
+                            - Resolved Error: GCASM: Symbol SPL has not been defined on Tiny parts
+525     Fix     Compiler    Compiler change to allow allocation of larger arrays to bank 0 on PIC16F1 chips, and to correctly fixed addresses in the linear data memory [753]
+                            - Resovles Error: GCASM: Symbol RP0 has not been defined
+526     Fix     Prog        GCGB/Programmer Editor: Made programmer/tool editing dialog resizeable [754]
+527     Fix     Compiler    changes: [755]
+                          - Fixed silent failure when function used with On Interrupt
+                          - Added error message for missing End If after Else
+                          - More compilation speed improvements (about 10 to 20% faster, depending on size of source code)
+528     Fix     Compiler    changes: [755, 756 and 757]
+                          - Fixed silent failure when function used with On Interrupt
+                          - Added error message for missing End If after Else
+                          - More compilation speed improvements (about 30% to 40% faster, depending on size of source code
+                          - Return can now be used to return a value from a function, as in most BASIC dialects
+                          - Warning issues when Return has a value after it in a subroutine
+529    Fix      GLCD      Nextion.h library changes to correct Nextion read touch events. [758]
+530    Fix      GLCD      Nextion.h library added software support for read touch events. [759,760]
+                          Improved software serial support to GLCDGetTouch_Nextion method.  [761]
+531    Fix      Compiler  Fixed segfault caused when a call to a string function had a space between the name and the bracket for the parameters [762]
+532    Fix      GLCD      Revised GLCD Nextion Library to support numeric return - was a string returned. [763]
+533    Fix      DAT       16f Improved support 24mhz when using internal oscillator.
+534    Fix      system.h  Added 0.0625mhz  clock treatment for 16f USB parts for type 102 oscillator
+535    New      USB       USB new capabilities.[764][823]
+536    New      USB       Updated USB.h to include revised methods, public callbacks, use of allocated VEN/PID, improved buffer control and general Tidy up.[765]
+537    New      Updated   CLCDesigner to support 16f1844x parts
+538    New      PPSTool   Version 0.0.5.20 adds chip number added to output template.
+539    New      Prog      Added CuriousLoader programmer to programmer suite.[768]
+540    New      PCA9685   PCA9685.h driver.h driver library and a suite of demonstration files, see #540[773]
+541    Fix      Compiler  Improvement: added #asmraw directive. Anything following this will be inserted into assembly with no changes other than trimming spaces - no replacement of constants.[769]
+542    Fix      Compiler  Earlier fix #524 for page selection on 12 bit chips resulted in programs not running on any chips due to a missing goto. Missing goto now added.  [770]
+543    New      DAT       Dat file released for 16(l)f18445. Based on 16F18446 as the required INC file has not been released by Microchip.[771]
+544    New      DAT       Formal release of 16F184xx .dat
+                          16f18424.dat, 16f18425.dat, 16f18444.dat, 16f18445.dat, 16f18455.dat and 16f18456.dat. [772]
+540    New      PCA9685   PCA9685.h driver.h driver library and update suite of demonstration files supports 4 devices.[773]
+541    New      PWM       HPWM_CCPTimerN command as follows:  Support CCP/PWM modules where you can set the timer - so, you can get different frequencies.
+                          HPWM_CCPTimerN   CCP_PWM_Channel, Frequency, Duty, Timer Source.  Timer source defaults to timer 2, so, the timersource is optional. [774,775..776..781]
+                          Improved to support timevariant 2
+542    Fix      DAT       .Dat files update to MPASM 5.85 (MPLAB-X 5.05) Now with the new .dat file format (no date) we can see what changed.
+544    Fix      MCP23017  Revised library for general release.[822]
+545    Fix      PPSTOOL   Added the TRIS instruction for UART on the PIC18*K42.  Some other PICs have the BRGL/BRGH registers but the datasheet doesn�t mention clearing TRIS for those, so the affected chips as the ones where the UART/USART/EUSART is described as �uart_protocol v1� in the MCC XML files.
+                          Added colours/shading  � i.e. if you�ve already assigned something it just changes colour in the dropdown but you can keep assigning it to other pins/peripherals as many times as you like. As, you can in the MCC.
+                          0.0.5.22
+                          Updated MCC hashfile to include latest version of files from Microchip Minor update to help file
+546    New      DAT       Updated .dat to MCC version 5.01.  July 2018.
+                          Also patches for the miss match of 18f config [783,784, 785, 786, 787, 788, 789]
+547    Fix      Compiler  Minor compiler changes: [790]
+                          - Fixed bug in If - compilation of If with Else and a condition that is always false would result in invalid assembly unless /K:A switch was used
+                          - Fixed bug in handling of asm showdebug - anything with = was treated as assignment and compiled instead of remaining a comment
+548    Fix      RTCC      Improved library for Microchip RTCC to support VBAT (standby battery support)[792]
+549    Fix      USART     Revised usart.h to improve HSerSend support and remove timer wait that are not required.[793]
+550    Fix      GLCD      GLCD_SDD1289.h Updated to remove deprecated method [791]
+551    MacOs    Compiler  Darwin Adaptations and Scripts for DarwinBuild. Tested using  FreeBSD and macOS [794, 797, 798]
+552    New      GLCD      Added suppport for ILI9326 GLCD. [795]
+553    Fix      GLCD      Correct OLED print color parameter.  Was defaulting to Foreground only.
+554    New      Compiler  Compiler change: Added #option ReserveHighProg [words] to allow end of program memory to be kept free. Useful for HEF/SAF or bootloaders[799]
+555    New      Compiler  Compiler change: ChipReserveHighProg is exposed to the user.[800]
+556    New      Linux     New installation scripts added.[801][803]
+557    New      Lang      Updated language file to show /V[802]
+558    New      Compiler  TBLPTRU word now set by string and data table operations on PIC 18F with over 32 kw (64 kB) of program memory[804]
+559    New      DAT       Updated ChipWord for HEFSAF to detail constant type[806,825]
+560    Fix      DAT       Updated TimerSource for 18fxxQ10's[807][815]
+561    New      LCD       Added LCD_IO 3 capability.  See the Help for details.[821]
+562    New      Compiler  Small compiler change to set MVECEN off by default on PIC18F chips with vectored interrupts. Should fix interrupts on the 'K42 series until proper support for vectored interrupts is added. [640].  Added to release note retrospectively - was actually within v0.98.01 release.
+563    New      Compiler  Compiler fixes to add 18FxxK42 support: [637][639]..  Added to release note retrospectively - was actually within v0.98.01 release.
+                          - movffl instruction now substituted in place of movff where needed
+                          - core16.dat file changed to add movffl and changed lfsr instructions to GCASM
+                          - New 18F26K42 file added, others will need to be generated later
+564    New      HEXC      Hex file compare utility: Added reload button to reload both hex files with single click.
+                          - [639]..  Added to release note retrospectively - was actually within v0.98.01 release. [638]f
+565    Fix      MacOS    Updated the macOS readme.txt file for the DarwinBuild directory.[808]
+566    New      FreeBSD  New FreeBSD readme.txt file for the FreeBSDBuild directory.[809]
+567    Fix      Linux    updated the Linux install.sh to ensure it runs from the Sources directory. [810]
+568    Fix      FreeBSD  Fixed a typo in the FreeBSD Great Cow BASIC install shell script.[811]
+569    New      PPSTool  release (v0.0.5.23) of PPS Tool. This fixes the problem with setting up I2C on the PIC18FxK42 chips. [22]. Required latest dat files.
+                         Improved handling of I2C on IC18FxxK42/PIC18FxxK83 and similar File banners updated
+570    New      HEFSAF   New library to support HEF and SAF memory.[824][818]
+571    Fix      ADC      Adapted FVRInitialize to support 18f FVR with FVRST[816,817]
+572    New      EEprom   Added 18FxxQ10 EEprom support[820]
+573    Fix      SSD1289  Removal of SuperCededLine  from library[819]
+574    New      Lowlevel Added HEFSAF.h to lowlevel.dat[818]
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.01 Release
+434    New      PWM       PWM16 for the Microchip 16bit PMW modules! [649]
+435    Fix      Compiler  Fixed bug where temporary string variables were overwritten prematurely [650]
+                        - Added asm ShowDebug command - anything following this will have any constants replaced, and will then be inserted as a comment into the assembly at that location
+                        - Replaced debugging nops in system.h with asm ShowDebug
+                        - Temporary string variable sizes are now set based on the string to be copied into the variable - a temporary variable to store "Hello, world" would now be 13 bytes rather than 20 or 40 (depending on the chip).
+                        - Command line /K:A switch now correctly passes all input lines to assembly file. Comment lines were omitted erroneously ever since this switch was implemented.
+436   Fix      Compiler
+                        - Initial compiler changes for floating point/
+                        - Added conversion routines to convert between integer, single and double variables. All required conversion routines should now be present.
+                        - Compiler now looks for subroutines to do floating point addition, subtraction, multiplication and division, but these are not yet implemented
+                        - Rewrote code in compiler that handles Repeat command, functionality is the same but new code is much more compact and can be expanded to handle more bytes easily.
+437  Fix       PWM      Fix for HPWMUpdate. [651]
+438  Fix       Compiler Fix for #Script and ENDIF error. Patched pwm.h.[652]
+439  Fix       Comilier Fixes for compiler bugs: [653]
+                        - Fixed null pointer exception when the last script line processed is End If
+                        - Fixed two bugs in new temporary variable overwriting protection code, one which could cause the same new temporary variable to be overwritten, and one which would lock up the compiler if there was a recursive call.
+440  New       GLCD     Added function ReadPixel_ILI9341(x,y ) to library.[654]
+441  New       GLCD     Update to PCD8544 GLCD to support hardware SPI.[655]
+442  New       GLCD     Added HX8347 GLCD driver to GLCD library[656]
+443  New       GLCD     Updated ILI9341 to clear screen faster[656]
+444  New       GLCD     Updated libaries to support LCD like commands for GLCD.  GLCDPrintString, GLCDPrintStringLN and GLCDLocateString[657][659]
+445  Fix       DAT      Updated DATs to fully support PWMMatch event for PWM16 chips. [658]
+446  Fix       GLCD     HX8347G. Init updated to initialise PrintLocX and PrintLocY for character mode.
+447  Fix       Compiler Compiler fix: Compiler now gives an error message rather than locking up in some situations if a function call cannot be parsed and processed[660]
+448  Fix       PPSTOOL  Fix for errant settings being generated[0.5.12]
+449  New       IDE      New Xpress 16F18855 Snippet Template
+450  New       Compiler Two compiler improvements for PIC: [661/662]
+                        - Programmers in compiler settings file can now specify required config settings. If that programmer is used, the compiler will ensure that those config settings are present in the asm and hex files.
+                        - If /F switch used to bypass compilation when not needed, compiler will verify that config settings in the already compiled file match those required for the programmer. If not, a recompilation will be forced.
+                        - Added /F option to compiler. If specified, the compiler will check for an output hex file with a name matching the input file. If found, and if the hex file is newer than the input file and all libraries, compilation and assembly will be skipped, and any programmer specified will be called immediately.
+                        - Tiny compiler change - recognise EXTMCLR config setting as equivalent to MCLR [663]
+451  Fix       ADC      Revised a-d.h to support new bit on 16f153xx [664]
+452  New       GLCD     SSD1331 GLCD added. The display is a 96 * 64 Color OLED. The driver supports the SPI (hardware and software) mode and all the Great Cow BASIC commands for GLCD and Rotate etc with support for both legacy and OLED fonts [669]
+453  Fix       PPSTool  v0.0.5.14. Caching of XML data to improve loading time. Bugfixes relating to pin groups and packages
+454  Fix       Dat      18F26K40, 18F27K40, 18F46K40, 18F47K47, 16F19156 dat files updated to handle memory and sort Config. All Dat reissued.
+455  New       Compiler One compiler improvement [665]
+                        Added new /FO switch to compiler to flash old hex file, whether up to date or not.
+456  Fix       Linux    Install.sh improved to handle installation[666]
+457  New       Compiler Compiler improvements: [667]
+                      - Added ShowProgressCounters option - add to [gcbasic] section of ini file and set to n to remove percentage complete display in verbose mode
+                      - Compiler now returns exit code. Exit code will be 0xdeadbeef if errors found during compilation, exit code from programmer if programmer was run, or 0 otherwise.
+                      - Compiler will now call appropriate programmer automatically. Add a UseIf = line to the [tool] section, specify multiple programmers in the programmer = line in the [gcbasic] section, and the first programmer with a value useif condition will be chosen.
+458  New       RTCC     New library for Microchip RTCC capability.  MicroChipRTCC.h added and RTCC demonstation added to the demo suite. [668]
+459  Fix       Compiler Minor compiler fix: use SP rather than SPL on some smaller AVR devices[670]
+                        SPL, now it uses SPL if it exists, or SP if SP exists and SPL does not, or skips doing anything to set up the stack pointer if there is no SPL or SP register. This will give correct behaviour on the tiny26 which uses SP for the stack pointer, and on the other tiny chips (11, 12, 15 and 28) which have a 3 level hardware stack that does not require setting up.
+460  New       Program  Updated makehex and makeasm batch to remove version numbers.
+                        Updated GS+Tool.exe to support new program method
+                        New use.ini as sample in the GreatCowBASIC folder
+                        New useini.bat and foini.bat in GS+Tools folder to support new program method
+461  Update    Batch    Updated license information to remove version numbers.
+462  New       Compiler Compiler change: Added error message for when a subroutine and a variable have the same name[671]
+463  New       Compiler GCGB programmer selection improvements: [672]
+                        - Can now choose which programmers are preferred (drag and drop to reorder, or move between preferred and other programmers list)
+                        - Can now edit UseIf setting for programmers
+                        - Compile and Download With menu now makes the used programmer the most preferred one.
+                        - Also fixed a GCGB bug, += and -= operations were being corrupted.
+464  Update   GS+tools  Updated to G+Stools20171218.zip.  Can now call an additional batchfileaccording to known method: calling parameter is hexini batchfile being called is hexINI.bat Maybe it's useful to accomplish the make-HEX-only task.
+465  Update   PPSTool   v0.0.5.15  [16]
+                        - Updated MCC hashfile to include latest version of files from Microchip
+                        - Fixed bug in XML caching if same folder is chosen twice in a row
+467  New      Progfig   - New user interface from programmer management. [673-679]
+                        - In verbose mode, compiler now lists programmers as it decides which one to use
+                        - If a programmer returns a non-zero exit status, the compiler will generate a warning
+468  Fix      Compiler  Minor compiler update: Now shows warning if all selected programmers are skipped due to their useif conditions[679]
+                        Updated USE.INI file for defaults
+                        Revised PK2CheckPIC.BAT
+469  Fix      GLCD      SSD1306 added support for GLCDPrintStringLN etc. Setting variables to zero on print screen
+470  Fix      Compiler  Compiler fix: return exit code from programmer correctly again. (Broke in r678) [681]
+471  Fix      Compiler  Compiler change to ncrease tool/programmmer limit from 20 to 200 to resolve 'Aborting due to runtime error 6 (out of bounds array access) at line 11956 of gcbasic.bas::INITCOMPILER()' [682]
+472  Fix      Batch     Updated UseIni, MakeASM and MakeHEX to ensure the command line switches reflect the use of the ini.
+473  New      GCGB      GCGB improvements: [683]
+                        - Tabs are now an option for handling multiple documents, as well as the MDI window interface.
+                        - Fixed minor bug that could sometimes cause a newly set preference to be ignored until GCGB closed and opened again.
+474  New      Compiler  Compiler changes: [684]
+                        - Now reads variables from [toolvariables] section of ini file, and makes those replacements in tool exe and command line parameters
+                        - In addition to compile time, verbose mode now displays assembly time, programming time and total time, and these are all recorded in the compilation report.
+475  New      Compiler  Small compiler change: [685]
+                        - Now reads pausetimeout value from [gcbasic] section of ini file. If specified, all waits for a key press will time out after this many seconds.
+476  New      I2C       Support for KMode (18F*k42) I2C in Stateful Slave mode. Addition of two libraries and support demo programs.[695]
+477  Fix      DAT       Updated all 18F*K42 dat files to support I2C correctly. This update corrects the error in the I2C event names.
+478  Fix      7Segment  Updated DOT variable name to _DispDot to support variable checking with new compiler.
+479  New      DateStamp New converter added to support datestamp and build numbers when compiling. [687]
+                        See https://sourceforge.net/p/gcbasic/discussion/629990/thread/5dee1cb6/#699f for details
+480  New      DateStamp New converter updated to show build number during compiling.
+481  New      Max7219   New Max7219 LED Matrix driver and a set of demonstation file.
+482  Fix      HWIC2     Updated HWI2C to handle AVR low frequencies - improved warning message[689][690][691]
+483  Fix      PWM       Revised Warning for Baud Rate at low chip frequencies for AVR[692]
+484  New      Convert   New create date, time and version utility to automatically update date, time and version string for your program.[687,688]
+485  Fix      HWIC2     Updated HWI2C to handle AVR messages when only HWI2C is used[693]
+486  New      DS18B20   New DS28B20 multiport library and demostration code, see <DS18B20MulltiPort.h>.  New library supports multiple sensors on multiple ports. [694,696]
+487  New      USART     New HSerPrintStringCRLF method [704,705,706]
+488  Fix      PWM16     Updated to improve handling of duty cycle and add offset [702]
+489  Fix      7Segment  Updated to hanlde new compiler. There was a library variable called DOT and method called DOT() [701].
+490  New      Max7219   New Max7219_LEDMATRIX_Driver library.  See demonstrations folder for usage [700].
+491  Fix      GLCD      PCD8544 updated to support improved memory handling via a new Constant called GLCD_TYPE_PCD8544_IGNORE_MEMORY_WARNING  [699].
+492  Fix      GLCD      SDD1306 updated to support GLCDPrintLn [698].
+493  Fix      GLCD      HX8347 updated to support GLCDPrintLn [697].
+494  New      DateStamp Converter to provide version and date/time [707].  Exposes GCBBuildStr and GCBBuildTimeStr string variables via the #include as follows:
+                        #include "GCBVersionNumber.cnt"
+
+                        dim versionString as string * 40
+                        versionString = "Build"+GCBBuildStr
+                        versionString = versionString + "@"+GCBBuildTimeStr
+495 New       Program   Updated Micronucleus programmer.
+496 Fix       ADC       Updated to correctly support ATTinyXX ADREF for VCC[708]
+497 New       ChipFiles Supported added for [710 and 712]
+                        PIC16F18426
+                        PIC16F18446
+                        PIC16F19195
+                        PIC16F19196
+                        PIC18F25K83
+                        PIC18F26K83
+                        PIC18F27K42
+                        PIC18F47K42
+                        PIC18F57K42
+498 Fix       Compiler  Compiler Bug in long addition on 16F chips fixed, if any byte of the variable being added was 255 and a carry occurred when adding the bytes below, the result would be incorrect.  Also fixes for ENDIF labels could be removed, resulting in assembler errors if Else used. These are now left in place whether needed or not, this makes the assembly a bit messier but won't change the generated machine code. [711]
+499 New       Mega2560  New Mega2560 Port mapping include file.  <mega2560.h>
+500 New       Scale     New Scale method, this is similar to the Ardunio method Map() but this has more capabilities. Added to stdbasic.h.[713]
+501 Fix       MCP23017  Updated MCP23017 library to correct errant constant. [714, 715]
+502 Fix       GLCD      Correcting Bytes X1 & Y1 as these clashed with register bits.Now _x1 and _y1 for 9340, 9340, 1289 and ImageandFonts libraries. [716]
+503 Fix       GLCD      GLCD.h corrected for Ypos of the space character when using legacy fonts.
+504 New       GLCD      Added new library to support Nextion Display[717][718]
+505 New       LCD       Added new constant LCD_WIDTH
+506 Fix       DAT       Corrected CSWEN for 18f*7K42 chips.  Three chips impacted. [720]
+507 New       GLCD      One new Nextion GLCD driver and one updated Nextion GLCD driver, plus support in GLCD.H
+508 New       PPS       Released v0.0.5.16 Updated MCC hashfile to include latest version of files from Microchip Added support for diagrams for PIC18F2xJ13/53 [721]
+509 New       DAT       Updated DAT files. [722-726]
+510 New       Nextion   Nextion GLCD support added [730]
+511 New       Progfig   Updated to add enviroment editor and add new parameter for compiler. [727 and 728]
+512 Fix       Dat       Updates to license only [729]
+513 Fix       Progfig   GCGB Preferences window is now resizable and a Cow icon[731 and 732]
+514 Fix       GLCD      Change fontwidth to 5 pixels from 6.
+515 Fix       GCB@SYN   Updated to G+Stools20180429
+516 New       AVRDUDE   Updated to AvrDude 6.3:
+                        https://download.savannah.gnu.org/releases/avrdude/avrdude-6.3-mingw32.zip
+                        AvrDudess (only this version is compatible to AvrDude 6.3):
+                        http://blog.zakkemble.co.uk/files/748acd22/avrdudess.zip
+517 New       ADC       Improved support for 12bit ADCs to return 10bit values. Add ChipReadAD10BitForceVariant to the chip file where ChipReadAD10BitForceVariant is the divisor for the max value returned.
+518 New       USE.INI   Updated AVR programmers
+                        - added some popular AVR programmers (USBASP, Stk500v2).
+                        - refined/added arduino-boards
+519 FIX       Compiler  More descriptive error message when subroutine is too large on chips with 2048 word pages.
+                        - More descriptive error message when trying to append an integer to a string
+                        - Improved handling of if( conditions.  [734]
+520 FIX       Messages  Improved messages when only Flashing code from IDE [735]
+521 NEW       Sensors   Added BME280 and the TM1637 sensors libraries plus a BME/BMP temperature sensor demonstration.
+522 Fix       Compiler  Improvements to compiler's handling of Do errors:  [736]
+                       - Missing Loop now generates an error message
+                       - Invalid mode after Do or Loop now also produces an error message instead of failing silently.
+523 Fix       PPSTool   0.0.5.18
+                        Update to fix connection problems with sourceforge due to blocking of non secure connections
+                        (may require updates/hotfixes to installed .net framework to allow TLS1.2)
+524 New       CLCTool   Added CLC Tool to distribution, added to IDE.
+525 Fix       PPSSTool  0.0.5.18
+                        Updated to ensure XP compatibility
+526 Fix       Compiler  Minor compiler change: added error message when Do or Loop has no condition after While/Until[737]
+526 New       PP Tool   More changes to GCGB Preferences window, both for GCGB and in standalone Preferences Editor: [738]
+                        - Increased width of window
+                        - Removed unnecessary help buttons - tooltips display same information
+                        - Reordered tabs, programmer list is now first
+                        - Programmer list now scrolls automatically when dragging a programmer up or down in the list
+                        - References to GCGB in tooltips hidden in standalone mode
+527 New        GSTools  Updated to support PICKITCommandLine with respect to Output reporting
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.98.00 Release
+426    Fix      GLCD      Updated ILI9341 driver to support OLED Fonts[633]
+427    New      CCP/PWM   Updated to support CCP/PWM with scripts for CCP1/PWM thru CCP5/PWM[634]
+428    Fix      String    Revised to correct maths in StrInteger and label clash[635]
+429    Fix      HWI2C     Resolved lockup in 16f18855 class of chips because we had a double read in HSerRecieve(). Caused by mapping of registers.[636]
+430    Fix      IDE       Revised IDE LXL for handling IF-THEN-ELSE-IF
+431    New      Lots....  K42 chip support. Updated compiler, i2c, spi, adc, pwm and chipfiles.  See the K42 specific release note
+432    New      Compiler  Compiler fix to allow for interrupts on newer PIC18F chips with INTCON0 rather than INTCON register [641]
+433    Fix      I2C       Fixed I2C module support for I2C LCD and I2C Discovery. Updated LCD.H and HWI2C.H with 4 new demos.
+434    Fix      LCD       Fix for schmitt  trigger port issue in LCD.h, adding delay to fix. [733]
+435    New      DAT       Updated chip to add ReadAD10BitForceVariant to support readAD10 when using 12bit ADC.
+
+
+
+
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.97.01 Release
+
+337    Fix      Timers    Changed to support timers 3 / 5  for chips with TxCLK register. Previous release only supported Timer1 [568]
+338    Fix      Timers    Changed timer.h to include AVR support [569]
+339    Fix      GLCD      Improved INIT of GLCD devices to support I2C [570]
+340    Fix      GLCD      Speed improvements  by optimising write byte code
+341    New      Demos     New MPU6050 - 6 Axis sensor demonstration
+342    Fix      Demos     Improved various demonstrations as needed.
+343    New      PPSTool   Updated to v0.0.5.5 and 1.36.1 of XML [R8]
+344    New      SPI       Added FastHWSPITransfer ( byte_variable ) to support methods. Updated Help.
+345    Fix      Compiler  Fix for 18f large config buffer issue. [571]
+346    New      GLCD      New driver for GLCD SSD1306 displays with 128*32 pixels. Use #define GLCD_TYPE GLCD_TYPE_SSD1306_32 [578][579]
+347    Fix      Compiler  Fixed compiler bug: Incorrect error generated when GLCD SSD1306 displays with 128*32 used with unary operators on any microcontroller or rotate command on AVR.[572]
+348    Fix      system.h  Corrected a typo is system.h that impacted 18f only when using ansel8. Was setting ansel8 now now ansel9
+349    Fix      IDE       Updated IDE Helpers to include LCD reserved words
+350    Fix      ADC       Updated ADC library to further improve quality and improve consistent usage across the commands. [573/4]
+351    Fix      Help      Updated ReadAD, ReadAD10 and ReadAD12 to improve Information provided
+352    Fix      Compiler  Fixed compiler bug: Incorrect error generated when #option explicit used with unary operators on any microcontroller or rotate command on AVR.[572]
+353    Fix      GLCD      Updated GLCD SSD1306 to improve performance within PSET method and corrected errors with variable usage
+354    Fix      Help      Updated #define USART_TX_BLOCKING examples
+                          Updated Conditions page with the known constraints of using functions as test conditions
+                          Updated SPI section, adding FastHWSPITransfer method
+355    Fix      InitSys   18F ADC initialization error - obscure typo within INITSYS routine.
+356    New      Demos     A set of demos to show how to config and create interrupt timer routines for the AVR suite, includes timers calculation tools/software
+357    New      Demos     A set of demos to show how to config and create interrupt timer routines for the AVR suite, includes timers calculation tools/software
+358    New      GLCD      New GLCD Driver for the ILI9348L. New library and an update to GLCD.H
+359    Fix      GLCD      Fixed to FilledCircle to handle byte overrun in larger GLCD screen.
+360    Fix      Compiler  Fix for non-number (includes decimals)type of var in table [575] & [576]
+                          Fix for issue when additional comma is specified when creating an array
+                          Fix for leading 0 in table entries
+                          Errors 1 and 2 now create message log entry to ensure user see and resolves the errors.
+                          Updated message file to support new messages
+361    Fix      Help      Updated many sections. See Help change log
+362    Fix      Timers    Update DS1XXX.h libraries to remove If error condition[577]
+363    Fix      SDD1306   Added delay to allow display to power up fully befor initalization
+                          Clear display before DisplayON to hide garbage at POR / initalization
+364    Fix      HWI2C     Revised to improve 18f SEN support
+365    Fix      Standard  Revised DecToBcd_GCB and BcdToDec_GCB to prevent overwriting of system variables.[578]
+366    New      74XXX_EERAM Added new library for Microchip EERAM - (47XXX) [581]
+367    New      PWM       Added support for PWM3 and PWM5 modules.
+368    Fix      DAT       22 chip files updated for PWM Timer.
+                          16F1614, 16F1615, 16F1618  , 16F1619  , 16F1704  , 16F1705  , 16F1708  , 16F1709  , 16F1713  , 16F1716  , 16F1717  , 16F1718  , 16F1719  , 16F1768  , 16F1769  , 16F1773  , 16F1776  , 16F1777  , 16F1778  , 16F1779
+369    New      Compiler  New compiler features [584]
+                          All items from [ChipData] section of chip data files are now added to program as constants (with Chip added to the name - so Pins=28 in the chip data file creates a constant with the name ChipPins and the value 28 in the user program)
+                          Invalid items in a data table will cause an error message with the error location
+                          Else If implemented
+370    New       PWM      Added command HPWMUPdate and another set of improvements in the library
+371    Fix       PWM      New constants for user use PRxPeriodRegister and TimerXprescaleselectValue
+                          Support for 8bit call to 10bit PWM (non-CCP) method
+                          Memory improvements in terms of program size
+                          Support for HPWM_Fast within 10bit PWM (non-CCP) method
+                          Removal of script to calculate PR2Temp. Replaced with Sub-routine this reduces code size
+                          Removal of complexity by removal of FnLSL in calculateDuty method
+                          Added support for HPWMOff ( channel, PWMHardware ). Turns of 10bit PWM (non-CCP) channel
+                          Improved documentation
+372    Fix       Compiler Core fixes to Else If implementation [589]. Fixed Else If bug: constant only conditions were not being removed correctly
+373    Fix       GCGB     Updated GCGB to support Else If implementation and new Array capabilities.
+374    Fix       HWI2C    Added support for PIC chips with bit "SEN_SSP1CON2"
+375    New       PWM      All new PWM for ATMEL AVR miccontrollers. Full range supported.
+                          Proven on  mega2560 (mega board), mega328p (uno), tiny85, tiny44v and tiny2313a
+                          Includes:
+                          - PWMON and PWMOFF for channel 2 default, and check defined alternate frequency and duty cycle.
+                          - 8-bit duty cycle for all channels.
+                          - Frequency supprt across all channels with optimisation of code
+                          - Demonstration code shows the simple four step process to setup and use a PWM channel
+376    Fix       PPSTOOL  [0.0.5.8] Fixed crash when the PIC doens't have a PDIP package
+                          Fixed incorrect pinout on some chips
+                          Minor updates to help
+                          Manifest file that comes with the XML files is no longer used by default
+                          Added option to read list of PIC numbers from the manifest file or the XML file names
+                          Fixed crash when peripherals defined twice in XML file
+                          The pinout diagram for the 16LF19197, 16LF19195 and 16LF19196 at the moment - they don't come in a DIP package.
+377    New        GLCD    New ILI9481L 16 Bit GLCD driver.
+378    New        SMT     Added SMT Timer capability.  This is a 24-bit timer capability!!
+379    Fix        Timer.h These corrections & changes as shown below:
+                          Added specific INITTIMER 2/4/6/8  support for chips with TxCLKCON register
+                          93 chips including 16F188xx, 16F177x, 16F153xx, 16F16xx & 18FxxK40
+
+                          Added overload subs for Inittimer 2//4/6/8 for the chips above
+                          InittimerX (TMRSource,TMRPres, TMRPost)
+                          Source can be one of the below:  (same as timer1 on these chips)
+                          Constants kept for compatibility
+                                   OSC     Equates to  1      'FOSC/4
+                                   EXT     Equates to  0      'T1CKIPPS
+                                   EXTOSC  Equates     6     ' SOSC
+
+                                   'Some Aditional Clock Sources
+
+                                   SOSC Equates to      6
+                                   MFINTOSC Equates to  5
+                                   LFINTOSCEquates to   4
+                                   HFINTOSCEquates to   3
+                                   FOSCEquates to       2
+                                   FOSC4Equates to      1
+                                   TxCKIPPSEquates      0
+
+                          Several other sources may be available but can vary from chip to chip
+                          These can be included manually per the specific chip's Datasheet
+
+                          The original Initiimer 2/4/6 Subs (no source)  also now  works,
+                          with these chips but will default to FOSC/4 as the source.  To
+                          use any clock source other than FOSC/4 the xlock souurce MUST be
+                          specified in the Inittimer2/4/6/8 sub.
+
+                          Added Generic Postscale constants for chips as they are all the same.
+                          PostScales can be:
+
+                                POST_1        Equates to 0
+                                POST_2        Equates to 1
+                                POST_3        Equates to 2
+                                POST_4        Equates to 3
+                                POST_5        Equates to 4
+                                POST_6        Equates to 5
+                                POST_7        Equates to 6
+                                POST_8        Equates to 7
+                                POST_9        Equates to 8
+                                POST_10       Equates to 9
+                                POST_11       Equates to 10
+                                POST_12       Equates to 11
+                                POST_13       Equates to 12
+                                POST_14       Equates to 13
+                                POST_15       Equates to 14
+                                POST_16       Equates to 15
+
+                          Corrected multiple typos in PIC inittimer 5/7 where the wrong bits/registers were selected
+380     Fix     EEPROM    Corrected EEPROM support for 18FxxK40/42. Sses a different method to point to the NVMADRH:NVMADRL Registers.  They also have different bit names as well as  one different register name.
+                          The changes in methods NVMADDR_EPWRITE & NVMADDR_EPREAD
+381     Fix     PPSTool   Updated to v0.0.5.9
+                          Program now uses the release number of the chipdata rather than the creation date of the manifest.txt file.
+                          When changing the location of the XML files, the dialog box defaults to the last used location.
+382     New     PPSTool   XML 1.45 - added 26 new devices and latest release of the tool.
+383     New     Chips     Support for PIC16(L)F15313,PIC16(L)F15323, PIC16(L)F15324, PIC16(L)F15344 released
+384     New     Chips     Support for 16(l)f19155, 16(l)f19156, 16(l)f19175, 16(l)f19176, 16(l)f19185, 16(l)f19186, 18f24q10, 18f25q10, 18(l)f26k42, 18(l)f45k42, 18(l)f46k42, 18(l)f55k42, 18(l)f56k42
+385     Fix     System.h  Fixed issue with some chips with respect to bit protection on ICF2
+386     New     GLCD      Support for SSD1036 in text only mode to support low memory microcontrollers.  Use the constant GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY to use the low memory, no graphics model of operation.
+387     Fix     DAT       Add optional ConfigBaseLoc parameter to chip data files. Used to specify starting location for assembler to use for config words on PIC18F - set to last config word location.
+388     Fix     PWM       Revised to protect CCP1M0-3 being set when no CCP module exists.[594]
+389     New     GLCD      SSD1306 and SH1106 libraries now support Text Mode and Low Memory Mode for GLCD operations.  These are very cool!
+                          Example of low memory usage
+                              #define GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY    'This defined will be required on high RAM devices to activate low memory capability
+                              #define GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE
+
+                                GLCD_Open_PageTransaction 0,7
+                                  GLCDPrint 0,10, "Great Cow BASIC"
+                                  GLCDPrint 0,52, "Page 2"
+                                  Box 0,0,127,63
+                                GLCD_Close_PageTransaction
+
+                          New transation commands for GLCD are 'GLCD_Open_PageTransaction' and 'GLCD_Close_PageTransaction'.
+390    Fix      Compiler  Fixed issue with lockup when uses multiple braces on a command. Fixes for some compiler bugs in the handling of brackets in subroutine/function calls. [598]
+                          Further fixes for parsing of brackets in subroutine parameters, another attempt now with completely re-written code for this [599, 600, 602, 604, 605 and 606]
+391    Fix      DAT       Updated 105 18F chipfiles for ConfigBaseLoc parameter
+392    New      GCLD      Updated Circle and FilledCircle routines to improve performance. Reverted to original.
+392    New      GCLD      Updated SHH1106 and SDD1306 to improve performance of non Full Mode GLCD
+393    New      Compiler  Added support for word, integer and long arrays [585]
+394    Fix      Chips     Add optional ConfigBaseLoc parameter to chip data files. Used to specify starting location for assembler to use for config words on PIC18F - updated 18f dat files.
+395    Fix      Compiler  Replaced very large fixed size array in assembler with linked list, removes size limit on assembler output and should remove warning on Linux when building GCBASIC[608]
+396    Fix      GLCD      Corrected SetContrast commands within GLCD.H to point to correct commands in specific libraries
+397    Fix      GCGB      Fix for GCGB bug that causes error when constants have a hex value followed by a comment [609]
+398    New      DAT       New capabilty for assembler support with movlb instruction on 18F25K42 and other 18F chips with 63 banks of RAM. [610]
+399    Fix      GCGB      Fixed GCGB bug: An If with a comment on the same line with more than one space between the Then and the comment would be misinterpreted. An extra End If would be erroneously inserted  [613]
+400    New      Compiler  Improvements to Select command: [614]
+                          - Case statements can now use To operator (ie Case 3 To 5)
+                          - Experimental jump table mode added. Reduces program size in some situations to enable in test mode create constant called SELECT_USE_JUMP_TABLES. Will become default in future releases.
+401    New      PWM       Support for PWM1 and PWM2 - this is disabled by default. YOU MUST ENABLE
+402    Fix      Compiler  Fix for bug in select statement introduced in commit 614. The presence of a second Select block in a subroutine would cause a null pointer exception.[615]
+403    Fix      DAT       Fix for RAM in 10F320 dat file.
+404    New      PPS       Updated to pic10-pic12-pic16-pic18_v1.55.jar. Added 10 new devices with updates to XML
+                          PIC18F25K83
+                          PIC18F26K83
+                          PIC18F27K42
+                          PIC18F47K42
+                          PIC18F57K42
+                          PIC18LF25K83
+                          PIC18LF26K83
+                          PIC18LF27K42
+                          PIC18LF47K42
+                          PIC18LF57K42
+405    Fix      GCGB      Reverted demos\new folder to support GCGB. Also, added README file to this folder.
+406    Fix      GCGB      Fixed parsing errors in GCGB, related to comments after If statements, comments after sub/function definitions, and assignment operations with no spaces before/after the = sign [617]
+407    New      PPSTool   v0.0.5.11.  Updated to include hash information for latest xml files from Microchip [r13]
+408    Fix      EEPROM    Removed depencies on Register.Bits - just use Bits. This prevents variables being created. And, change Script from NVMADRH to NVMADRL test. As, not all chips have NVMADRH the 18F25K42 for instance.
+409    Fix      Compiler  Fixes for two compiler bugs: [618]
+                          - #option explicit was not recognised when combined with other #options
+                          - Empty Do loops were compiled incorrectly and would never exit, unless /K:A switch used to preserve input code in assembly
+410    Fix      Compiler  Fix for two compiler bugs: [619]
+                          - If a subroutine call had a parameter value with brackets, anything after brackets would be ignored
+                          - Brackets with spaces between them after a subroutine declaration caused the subroutine to be ignored
+411    New      GLCD      New OLED Fonts for SSD1306. Can be ported to other devices with ease.  To use
+                          `#define GLCD_OLED_FONT`  'to enable the new fonts.
+                          `GLCDfntDefaultSize = 1`  or 2 where size 1 is 8*5 with Size 2 is 16*10.
+412    Fix      Compiler  Two compiler changes: [620]
+                          - Fixed bug when If statement condition involved testing two bits and a logic operator
+                          - Added error message for variable names that start with a number - this usually either a sign of a deeper problem, or a name choice that will cause problems with MPASM.
+413    Fix      Compiler  Fix for compiler bug: [621]
+                          - Setting the return value of a function by using it as a subroutine parameter did not work
+414    New      GLCD      Added OLED fonts to standard GLCD libraries, to use include in your user program.
+                          These fonts give you more real estate in terms of pixels and they look cool.
+                          #define   #define GLCD_OLED_FONT
+                          Supports `GLCDfntDefaultSize = 1`  or 2 where size 1 is 8*5 with Size 2 is 16*10.
+                          To access and extended font for GLCDfntDefaultSize = 2, the large fontset, use
+                          #define OLEDFont2 OLEDExtendedFont2  'This will provide fontset of 0x20 to 0xFF. This is not included by default as this takes up a lot memory.
+415    Fix      Compiler  Improved If statement error checking: An If without an End If now permits further compilation of If statements in that subroutine to detect further errors. [622]
+416    ---      DAT       Chips below are not released and therefore not supported.
+                          PIC12F520 PIC18F66J99 PIC18F86J99 PIC18F96J72 PIC18F96J99 PIC18F97J72
+                          Many of these devices are very old and legacy and therefore not supported.
+                          PIC16CR926 PIC16F19197 PIC18F242 PIC18F2439 PIC18F248 PIC18F252
+                          PIC18F2539 PIC18F258 PIC18F442 PIC18F4439 PIC18F448 PIC18F452
+                          PIC18F4539 PIC18F458 PIC18LF46j53 PIC18F6525 PIC18F6620 PIC18F6621
+                          PIC18F8525 PIC18F8620 PIC18F8621 PIC18F8720 PIC16F19197
+417    Fix      Compiler  Revised Table handler for hex number to improve support for Linux [623]
+418    New      Terminal  Reverted terminal to previous release and replaced default terminal as CoolTerm
+419    Fix      Chips     Fix for 18(l)F*K20 and K22 and other to set the frequency correctly
+420    New      Compiler  [625] Added #samevar and #samebit directives - use these to show that two or more system variables (or bits) with different names are actually the same variable and can be used interchangeably. Use any name and the appropriate one for the current chip will be substituted.
+                          Added ability to set multiple bits in a single assignment command. Add [canskip] at the start to skip any invalid bits. Example: "bit2, bit1, bit0 = 5"
+421    New      system.h  [626][627]Changed system.h to correct internal oscillator speeds on 18F2620, and make use of new compiler directives to partially simplify the code
+422    Fix      system.h  [628]Updated system.h to change the priority of the setting of the PLL bit.
+423    Fix      system.h  [629, 63] INITSYS now handles two true tables for frequency... between 16 and 0.125
+                          Test on 18f2425 (type1 max frq of 8mhz) and 18f26k22 (type2 max frq of 16mhz)
+                          Assumes IntOSCCONFormat in DAT filed.
+424    Fix      DAT       Republished all PIC DAT Files to support header with IntOSCCONFormat
+425    Fix      system.h  Added improved error hanlding
+
+
+Changes to Great Cow Basic and Great Cow Graphical Basic since v0.96.00 Release
+
+303     Fix     HWI2C     Revised to add SSPIF = SSP1IF support for newer chips[549]
+304     New     Compiler  Added priorities to #startup to support PPS.
+                          Subroutines will be called in order from smallest to largest number.
+                          InitSys has priority 80, lowlevel communication routines are 90, everything else defaults to 100.
+                          Also, Fixed AVR bug - SysReadAD variables were treated as registers incorrectly [550]
+305     Fix     Installer Fixes to the installer to handle Windows 10.
+306     Fix     HWIC2     Minor fixes to HW I2C Slave code to support interrupts. [553]
+307     Fix     system.h  Added Oscillator Support for 18FxxK40 [554]
+                          Added NVMREG fix for 18FxxK40 A2/A3 Silicon [556]
+308     Fix     Demos     Updated 65 demostration files to use the revised #startup for PPS,  essentially implementing new feature [550].
+309     Fix     Compiler  Fixed assembler bug on 18F - config words were being incorrectly generated in rare cases [557]
+310     New     DAT       .Dat file generator now list Bits in  a logical order with lower numeric registers given priority. Resolve bit naming issues so BF willl be BF.SSP1STAT rather than BF being assigned to SSP2STAT
+                          This a major release of .dats
+311     New     DAT       Added new defaults to [ASMCONFIG] section for 18f devices. See 18FDefaultASMConfig.txt for defaults.
+312     Fix     Linux     Revised install.sh to from "#!/bin/sh" to "#!/bin/bash". [558][562]
+313     Fix     DAT       Refreshed .dat files to revert LF files, where required, and to improve register/bit order[559]
+314     Fix     .H        Revised Fnlsl and Fnlsr to support overloading saves 10 bytes. []
+315     Fix     Compiler  Fix for undeclared variable error when option explicit on, and a subroutine parameter is used inside that subroutine with a bitwise If statement or logic (And/Or/Xor) operator. [562]
+316     Fix     Compiler  Fix for error message when option explicit used and a Set command is used in a subroutine on a parameter for that routine. [563]
+317     New     .H        Interrupt on Change now supports PortChange for any IOC event. Check the event bit for the event source.
+318     Fix     usart.h   Updated HSerGetNum to support 0-99999 range and to prevent buffer overruns
+319     New     GLCD      SDD 1306 now supports SPI.
+320     Fix     LCD       Fixed to LCD for two wire support to resilve backlight issue.
+321     Fix     Compiler  Fix to 18f Config to parse config correctly [564]
+322     New     PPSTool   New PPSTool. This is Beta release - please use the forum of bug reporting. This tool suppport the easy configuration of PPS for Great Cow BASIC
+323     New     SWSerial  New soft serial drivers for Microchip and AT microcontrollers.   These new libraries compact and blindingly fast!  Demos include also, of course.
+324     New     GETUseriD A new libary to support ID identification of Microchip microcontrollers.  See the demo folder for lots of examples.
+325     New     Demos     New CLC demonstration for Xpress board.
+326     Fix     PPSTool   Republished to fix error in release.
+327     Fix     DAT       Add optional ConfigBaseLoc parameter to chip data files. Used to specify starting location for assembler to use for config words on PIC18F - set to last config word location minus 15.
+                          Repubish    PIC18F65J50, PIC18F66J50, PIC18F66J55, PIC18F67J50, PIC18F85J50, PIC18F86J50, PIC18F86J55 and PIC18F87J50
+328     New     GLCD      Added new low memory and text support using 128 and 0 byte glcd buffer
+328     New     GLCD      Added ellipse methods including fill method
+
+
+
+v0.96.00 Release
+
+287     New     HW Slave  New library added for Hardware I2C library. GCB support buffer i2C slave. [535]
+288     Fix     HWI2C     Fixed missing definition for slave functionality.
+289     Fix     GLCD      Improved support for 18f chip when using ILI934x.h driver. [536]
+290     Fix     system.h  Revised support for OSCCAL on Family 14 chips
+291     Fix     7Segment  Fixed the driver to support default common operations.
+292     New     7Segment  Added DisplaySegment method. [531]
+293     Fix     IDE       Revised IDE dialogs to remove the pesky Plugins option
+294     New     Compiler  Allow compiler to pass chip model to converters [532] and, delete the target file[534]
+295     New     Converter Support compiler to pass parameters to converters [533]
+                          params = %filename% %chipmodel%
+                          That will pass in the filename as the first argument and the chip model as the second
+                          (Filename is the name of the file to convert, not the converted file)
+                          You can also include anything else in there, provides freedom in calling other programs.
+296     New     Compiler  Added new chip capbility for the following chips [538]:
+                          16f15325, 16f15345, 16f15354, 16f15355, 16f15356, 16f15375, 16f15376, 16f15385, 16f15386, 16f18854, 16f18855, 16f18857, 16f18875, 16f18876 and 16f18877
+                          New movlb instruction on newer 16F1 chips.
+                          Setting ChipFamilyVariant = 1 in the chip data file for a 16F1 chip will cause the use of the new movlb instruction.
+                          Fixed issue with #define introduced recently - any #define statements in subroutines were ignored.
+297     New     Demos     69 new demos for newly supported microcontrollers
+298     New     Install   Revised installer to improve creation and management of desktop icons
+299     Fix     Compiler  Fixed an issue where array elements where not addressable when using option explicit [541]
+300     Fix     ASM       Fixed an issue with xorwf issue on 18F [539]
+301     Fix     IDE       General improvements to Lexel to include more Great Cow BASIC commands
+                          Removal of inoperative menu Options
+                          Package now marked as Great Cow BASIC specific build.
+                          IDE exe now at version 6.22.2290
+302     Fix     Compiler  Internal compiler changes to support hex and binary literals conversion to decimal in the preprocessor, which has new conversion code that should fix a long standing issue when two binary constants are specified on the same line, one with 0b and the other with b''
+                          Resolved Known Issue #5. [543][542]
+
+
+
+v0.95.010 Release
+
+266     New     Compiler  Added #option NoConfig to support TinyBootLoader
+                          Changed GCASM to also remove config settings from generated hex file when option selected.
+                          Changed code at reset vector to always support bootloader, adds two words to program size on 16F but these were NOP instructions previously so no impact on total program memory used for program.
+267     Fix     .DAT      12F1501.dat file were incorrect, so the compiler wasn't using the right locations to pass the delay length into the delay routine.
+268     Fix     Compiler  Fix to system.h GCB does not load saved calibration data into OSCCAL register on Baseline . Therefore the FOSC is inaccurate when using internal RC oscillator. [515]
+269     New     Compiler  New support for overloaded functions.
+                          Fix for insufficient common RAM warning when ReadAD is overloaded
+                          Fix for pagesel being assembled incorrectly on  12F/16F with less than 2048 words of program memory [519]
+270     New     Compiler  New CCP5 PWM functionality [517 & 518]
+271     Fix     Compiler  Fix for issue in overloaded functions - compiler was calling the other overloaded version when return value was manipulated
+                          Fix for pagesel being assembled incorrectly on 12F1/16F1 chips with 2048 or less words of program memory - gcasm now ignores pagesel on these chips, as MPASM does [519]
+272     New     IDE       Updated Syn.exe to the latest release.
+273     Fix     Compiler  Fix compiler to improve #option explicit handling [525]
+                          Several compiler fixes:
+                          Variables that are declared but not used are no longer allocated RAM.
+                          - when accessing higher bytes of multi-byte variables
+                          - SysPointerX and SysIntStateSave variables no longer generate errors
+                          Fixed bug when multiple 0b or H' constants are present on a line - only the first was being correctly translated.
+                          Fixed "NLVariable" error message
+274     Fix     ADC.H     New capability to support ADCReadX() overloaded functionality.
+                          ADReadPreReadCommand new define to support user code insertion
+                          ReadAD reverted to 8 bit value (was integer)
+                          ReadAD overloaded function support Differtial ADC reading - returns an integer
+                          ReadAD10 reverted to 8 or 10 bit value as 2015 releasse (was integer)
+                          ReadAD10 overloaded function support Differtial ADC reading - returns an integer
+                          ReadAD12 returns a word (was integer)
+                          ReadAD12 overloaded function support Differtial ADC reading - returns an integer
+275     New     GLCD      New SH1106 device driver
+276     New     RS232     Added Serprint Long support.  Sub SerPrint (In Ser_Select, In SerPrintVal As Long)
+277     Fix     RS232     Added 5 ms delay to init to ensure lines are settled. Defaults to #define SerialInitDelay 5
+278     Fix     7Segment  Revised to support turning off the selects and added Deselect(s) by using
+                          #define DispSelectA/B/C/D revised to actually select the correct device.
+                          #define DispDeSelectA/B/C/D optional to deselect a device.
+279     Fix     GCASM     Allow tris instruction to handle PORTD and PORTE on larger 12-bit core chips (example: 16F59) [521]
+280     Fix     Compiler  Fixed bit variable comparison where to bit constants were not generating correct ASM[523]
+281     New     TBL+      New version of TBL+ bootloader software. v.0.11.1.8. Includes functional changes and language improvements.
+282     Update  Help      Help updated to reflect new release.
+283     Fix     I2c.h     Revised to support new chip architectures correctly
+284     Fix     I2c2.h    Revised to support new chip architectures correctly
+285     Fix     pwm.h     Fixed legacy PWM command. BIT tests were executing the incorrect ASM.
+286     Fix     Compiler  Fix 16 bit subtraction on  12 bit instruction core chips (12F5x, 16F5x families) [527]
+
+
+
+v0.95.009 Release
+Changes to Great Cow Basic and Great Cow Graphical Basic since Feb 2016 Release
+260     New     Compiler  Support for 16f183xx microcontrollers
+261     Fix     Compiler  Fixed false errors for #option explicit [491]
+262     Fix     Compiler  Fixed for 16f18855 settimer. [497]
+263     Fix     Linux     Fixed for Linus installer [499]
+264     New     Demos     A series of demostration file for tge 16f183xx to showcase and test the microcontroller.
+265     New     GLCD      New SH1106 GLCD driver and assiocated demos.
+
+230     Fix     Compiler  Improved performance to increase productivity. Massively reduced compilation time!!
+                          Fixed bug when two addresses (using @) added as a parameter for a condition.
+                          Altered assembler symbol table storage. Now stored as hash map rather than list, which allows much faster lookups. Assembler should be now much faster for large programs [461]
+                          - Hashmaps used for constants, and new replacement code is faster
+                          Linked lists used instead of fixed size arrays in assembler
+                          Timer prescaler constants PS1_1/1, PS1_1/2, etc removed from timer.h. Constants with operators in the name are not supported by the compiler now, but some compatibility code in the preprocessor will allow old timer prescaler constants to be used. [465]
+                          Help file updated and timer.h has been changed to reflect these changes.
+231     New     DAT       Support for 16f18855 and the assiocated range of chips. Minor compiler and assembler fixes and new chip data to add support for 16[L]F1885x chips [460]
+232     New     .H        Support for 16f18855 as follows [455]:
+                          System.h
+                          I2c.h
+                          hwi2c.h
+                          usart.h
+                          hwspi.h
+                          stdbasic.h
+                          pwm.h
+                          eeprom.h
+                          a-d.h
+                          timer.h
+                          These file ARE required to support the 16F18855 processor range.
+233    Fix      FRAM      Updated to improve bit handling
+234    Fix      DS2482.h  Updated to improve bit handling
+235    Fix      Help      Corrected and improved to remove errors and omssisions.
+236    New      a-h.d     Optimisation options.
+237    New      pwm.d     Optimisation options.
+238    New      TOOLS     Xpress board tool support easy programming.  Simple utility to load hex file into Microchip Xpress board. Will find the drive letter assigned to the board, then copy the specified hex file to it. (Note: Does not validate the hex file in any way!) [459]
+239    New      Compiler  Compiler now exposes two extra constants - ChipADC, which gives number of A/D inputs on the current chip, and ChipIO, which gives the number of general purpose IO pins [452]
+240    Fix      Compiler  Fix for error when a constant including multiple commands separated by : is used as a command inside a macro [453]
+241    New      Compiler  Allow use of hex constants for array indexes in constants[456]
+242    New      Compiler  Allow double quotes inside strings - use "" to insert " into a string [457]
+                          Allow semicolons inside strings
+                          Fix for issue when #include statement indented with tab
+                          Variable name checking improved
+243    New      DAT       Fixed chip data comparison utility, now ignores comments in chip data files as it should [458]
+244    Fix      Compiler  Fixed compiler bug - compiler was overwriting OSC constant from timer.h [463]
+245    New      Compiler  compiler improvements:
+                          C If compiling for LF type , compiler will use F chip data file automatically if LF file not found. LF files will be removed where they are identical to F files.
+                          - IntOn/IntOff changed. These now use a saved status flag in each subroutine, rather than a global counter. Ensure that there is only one IntOff on entry to a subroutine, and only one IntOn on each exit path.
+                          - #option volatile bit (where bit is an IO bit, like PORTB.0) added. This causes the compiler to set the bit without any glitches when copying a value from another variable, but will increase code size slightly. [467]
+246    Fix      DAT        chip data updated. New chips added, some errors corrected, and most LF files removed. [468]
+247    New      Compiler  Compiler improvements [469]:
+                          - Bit functions now allowed
+                          - Not operator now works with bit variables
+248    New      Compiler  Fixes for #option explicit. Compiler no longer generates incorrect error messages for subroutine parameters or some condition checks. [470]
+249    New      Compiler  Changes to stdbasic.h after recent compiler improvements.
+                          Removed AVR versions of FnEQUBit and FnNOTBit, previous -only versions now compile correctly for both chip families.
+                          Comments added that SetWith, FnEQUBit and FnNOTBit should now be replaced by built-in compiler operations. Sensitive pins can be marked as volatile, and native assignment operators will set without glitching, replacing SetWith. Bits are now correctly handled by built-in Not operator. [471]
+250   Fix       GCGB      Minor GCGB changes [471]:
+                          - Now uses F chip data file if file for  1xLFxxx chip is missing
+                          - Fixed bug which created invalid variables when variables created from Parameter Editor window
+251   Fix       Compiler  Fixed compiler bugs [472]:
+                          - Calculations like wordvar = 100 + 200 + 100 now performed correctly. The first addition was performed based on the type of the input values, not the output variable as it should have been.
+                          - ReadTable bug fixed. When the table position was given by a word variable declared outside of the main routine, the high byte of the position was ignored.
+252   Fix       Compiler  Fix for bug when accessing elements after position 255 of an array using a variable on  18F [473]
+253   Fix       Compiler  Compiler bugfixes for recently introduced errors [474]:
+                          - Fix for register bug on AVR - compiler was not recognising which registers could have literals loaded directly, and was loading into another register temporary first.
+                          - Fix for bit variable bug when Not operator used in condition
+                          - Fix for high bytes disappearing from the result of any calculations in brackets
+254   Fix       Compiler  Fixed AVR assembler bug - lds and sts instructions were accessing the wrong location when used to access one of the first 63 IO registers
+255   New       DAT       New chip data files for mega32u4 and mega16u4 chips [476]
+256   New       Demos     A host of 16f18855 demos for the Xpress Evaluation Board.
+257   Fix       Compiler  Fix for 18f1230, 18f1231, 18f1330 and 18f1331 comparator initialisation [480]
+258   New       Compiler  New commands to support Microchip PPS.  LOCKPPS and UNLOCKPPS now included. See help.
+259     New     I2c       Improved software i2c timeout handler. Software I2C now support Use_i2c_Timeout [485]
+
+Major enhancements or changes with a new release of the supporting chip files
+The chip files are now NOT backwardly compatible  You cannot use v095 (or later) releases with releases prior to v095
+
+
+@v095006
+213     Fix      HWI2C      Removed delay from MSSPWAIT when the event had been correctly detected
+214     New      Compiler   Added support for Linux
+215     New      Batchfile  Added chip check to flashbat
+216     Fix      USART      Revised default USART port in the init routines
+217     Fix      DAT        Revised 18f13k22dat, 18f14k22dat and 18f14k22lindat
+218     Fix      DAT        Corrected clock speeds supported by internal oscillator on 18Fxx20 and 18Fxx23 chips [435]
+219     New      Compiler   Changed compiler install location detection [425]
+220     Fix      HEFM       Updated library to provide warning when not HEFM microprocessors
+221     Fix      PK2        Updated PK2 chip data file
+222     New      Help       All new Help File(s).. lots of changes
+223     Fix      Compiler   Allow setting of individual OPTION_REG bits on 12-bit core  (10F2xx/12F5x/16F5x chips)
+224     Fix      Batchfile  Further enhancement to MakeHexbat to stop testing of non archived files.
+225     New      Timer      Includes supports for ChipFamily12 timers [441]. Implements Option_reg to support write only OPTION register.  Impacts 12-bit core  (10F2xx/12F5x/16F5x chips)
+226     New      Timer      Support for huge list of AVR chips to support timer2 that use register TCCR2A as follows:
+                            90usb1286 90can128  90can32 90can64 90usb1286 90usb1287 90usb646  90usb647  90usb82 mega1280  mega1281  mega1284
+                            mega1284p mega1284rfr2  mega128rfa1 mega128rfr2 mega164a  mega164p  mega164pa mega165 mega165a  mega165p  mega165pa
+                            mega168 mega168a  mega168p  mega168pa mega168pb mega169 mega169a  mega169p  mega169pa mega2560  mega2561  mega2564rfr2
+                            mega256rfr2 mega324a  mega324p  mega324pa mega325 mega3250  mega3250a mega3250p mega3250pa  mega325a  mega325p  mega325pa
+                            mega328 mega328p  mega329 mega3290  mega3290a mega3290p mega3290pa  mega329a  mega329p  mega329pa mega32u6  mega48
+                            mega48a mega48p mega48pa  mega48pb  mega640 mega644 mega644a  mega644p  mega644pa mega644rfr2 mega645 mega6450
+                            mega6450a mega6450p mega645a  mega645p  mega649 mega6490  mega6490a mega6490p mega649a  mega649p  mega64rfr2  mega88
+                            mega88a mega88p mega88pa  mega88pb  tiny441 tiny841
+227     Fix     EEProm.h    Fix to EEPROM routines for  microcontrollers with EEDATL register instead of EEDAT or EEDATA. [446]
+228     New     Compiler    Support in compiler to handle 12F/16F  microcontrollers with more than 4 configuration words. [447]
+229     Fix     DSxx.H      Fix for Defines only [448].
+
+@v095005
+This release correctly packaged the files from 004 and 003 The package was incorrect
+Index   Fix|New  Class      Description
+212     New      Parser     Added GCB parser to check for common errror  This is included in MakeHexbat
+
+@v095004
+Index  Fix|New  Class       Description
+210     New      USART      Support for AVR USART 1, 2, 3 and 4
+211     Fix      Timer      Improved timerh to resolve timing controls
+
+
+@v095003
+Index  Fix or New  Class      Description
+202     Fix         Timerh    Major release of timerh
+203     Fix         AVR       Revised program batchfile to better support MEGA2560
+204     New         LCDH      Added support for 40 x 4 LCD devices Updated help to support 40 x 4 devices
+205     Fix         LCDH      Revised LCD10 & LCD12 initialisation timing by removing 2 second delay
+206     Fix         USARTH    Revised driver to support #define DefaultUsartReturnValue = 255 When NOT using USART_BLOCKING the return value is defined by DefaultUsartReturnValue
+                              Users can now detect no data was received
+207     New         StringH   Added new command LEFTPAD()
+208     Fix         StringH   Revised command PAD() to return correct value!
+209     New         Demos     More Great Cow Basic Demonstration Board demos added
+
+
+
+
+@v095002
+Index  Fix or New  Class      Description
+200     Fix        Timerh     Fix for timerh to resolve AVR Timer0 issues
+201     New        PK2/PK3     Revised driver file to support more chips
+
+@v095001
+Index  Fix or New  Class      Description
+86                MPASM      "MPASM compatibility issue - movlw   (high StringTable1) & 127
+                           https://sourceforgenet/p/gcbasic/discussion/596084/thread/f3803b79/?limit=25#7d6f"
+                                  When MPLAB ensure 'disabled case sensitivity' is selected and in  MLAB X you also have to
+                                  select "Build in absolute mode" in MPASM Global Options
+87      Fix                 IDE Updated the IDE to support #chip not being present in the main source code
+88           New  COMPILER  Minor adjustment to allow "chip model" text in compilation report to be translated and
+                           added Chip Model to HTML, TXT and ASM output files - [292/3]
+89           New  DEMO CODE  Added new Keypad demos Publish in forum and Website
+90      Fix       DRIVER     "Revised usarth to support TXSTA1 register   USARTH corrects baud rate problems with
+                           P1C18F25K80 and maybe some others The problem was that the BRGH1 bit was not being set
+                                  because the affected chips have no TX1STA register They instead have a TXSTA1 register
+                                  and no alias register name in their respective dat files This caused the compiler to create
+                                  an ASM that attempted to set a register that did not exist Thus the actual register was
+                                  not set  - [294]" None
+91 Information only           NOTE "RAM usage   getting most out of the available memory The root cause of the issue
+                           is the allocation of the array in the available bank memory An array of 6 bytes will fit
+                                  into the free space in one bank, but the array of 7 will not  GCBASIC currently cannot
+                                  split an array over banks, so if there are 6 bytes free in one bank and 5 in another,
+                                  you cannot have an array of 7 bytes This would be very hard to do efficiently on 12F/16F,
+                                  there would be a whole series of special function registers in the middle of the array
+                                  This not the case on 16F1/18F as linear addressing makes it easy to span banks because
+                                  the SFRs are not making the problem (as with 12F/16F) " Help File Updated
+92           New  DRIVER     "Revised PWM/h to correct hwpwm config and add hwpwm 4
+                                    - ADDED #IFDEF for CCP4CON for clarity
+                                    - Fixed CCPCONCache Variable Problem where PWMOn did not work with s with Enhanced CCP1 Module
+                                    - Added New PWMOff Sub at end of file (Uses Overloading)
+                                    NOTES:
+                                    PWMOn still only works with Channel 1 (Same as previous versions)
+                                     and uses #defines for PWMFreq and PWMDuty If Defines are omitted in
+                                     the main program Then it defaults to 38KHz / 50% Duty
+                                    PWMOff with no channel entry only works with channel 1
+                                    PWMOff (Channel) works with all 4 channels [295]" Help File Updated
+93      Fix       GCGB      Altered GCGB to allow array size to be set by a constant - [299] Help File Updated
+94      Fix       COMPILER  Fix for INSTR not compiling when a single character ASCII 32 is the search parameter
+95      New       GCGB      Added internal error dialog to GCGB Displays unhandled exceptions to user instead of crashing - [301] None
+96      Fix       COMPILER  Fixes for bank and page selection issues in IndCall - [298] None
+97      Fix       DAT      Fix for incorrect internal clock speed on 18F2620 - [296] None
+98      Fix       DAT      The 12LF1552 chip data file added to distribution Update Web site
+99      Fix       DAT      Add chip data files (including one for the 18F45K50) to SVN  Update Web site
+100      Fix       DAT      Adding some new chip data files that were not in SVN -[302] Update Web site
+101      Fix       COMPILER  Fix for issue when passing single character string to array parameter of subroutine [304] None
+102      Fix       GCGB      Minor GCGB fix to prevent crash when %P is in code [303] None
+103           New  DRIVER     A new driver for the OLED GLCD display driver for the SSD1306  Includes demonstration code [311]
+                           Help File Updated
+104      Fix       DEMO CODE  "A number of demonstration files  fixed:  Two DS18B20 demos that have the same pin used for DQ and
+                           an LCD data line now changed to portc4
+                                    Temperature Sensor to LCD 16F886gcb
+                                    Temperature Sensor to GLCD 16F886gcb" None
+105           New  DRIVER     Added HEFM support and HEFM demonstration code for 16F1509gcb  New functionality included in
+                           HEFMh - [312] Help File Updated
+106           New  DRIVER     Added information on how to set address on mjkdz I2C lcd1602 Modules ' [320]  Help File Updated
+107      Fix       COMPILER  Fix for issue when Bit and Var are in same condition in a script Added constants ChipWords (to
+                           give size of program memory in words) and ChipEEPROM (to give size of on-chip EEPROM in bytes)
+                                  [321] Help File Updated
+108           New  DRIVER     A new driver for the MCP4XXXDigitalPot and demonstration code Changed hwspih to support software
+                           spi no functional changes - [323] Update Web Site
+109           New  DRIVER     A new driver for the PCF8574h I2C Serial Expanders includes demonstration code - [328] Update Web Site
+110           New  COMPILER  Data tables can now be loaded directly from files - example: Table MyData From "sourcefileraw"  - [329]
+                           Help File Updated and Demonstration code
+111           New  GCGB      Added appconfig file to allow GCGB to run on NET 45/46 when NET 35 is not installed
+                           Allows use on newer Windows versions without having to install NET 35- [330] Help File Updated
+112           New  DAT      Revised new chip data utility  Now compares basic chip parameters (clock speed, RAM/Flash size, etc),
+                           interrupts, and special function registers and bits Still needs work to compare memory ranges and
+                                  configuration settings, and to better report results - [331] None
+113           New DEMO CODE     Added Vendor Boards demonstration code  The Rev-ED UK Revolution 18f Demonstration Board [333] Update Web Site
+114           New            AVR AVR capability only:  Added AD_VREF_DELAY option to change charging time for VRef capacitor on AVR
+                           to charge from internal VRef ReadAD was not accurate for internal reference without this - [334]
+                                  Help File Updated
+115           New  DRIVER     "Added support for Timers 5/7/8/10 and 12
+                                  Alsom Cleartimer x  no longer stops timers 1/3/5/7 - it now simple clears the register
+                                  Added Timerh support for s that use SOSCEN instead of OSCEN
+                                  Added support for Timer 0 16-Bit mode for specific microprocessors  See Help File for details
+                                  Corrected InitTimer0 page in the Help File, it is incorrectly written for AVR in previous releases of the Help File
+                                  The following AVR constants are now accepted:
+                                  PS_1, PS_8, PS_64, PS_256, PS_1024"
+                                  Please see Help File for more details
+116           New  DRIVER     New driver for second Hardware I2C port via the HI2C2 command set Help File Updated and Demonstration code
+117           New  DRIVER     New driver for ILI9340 GCLD display Help File Updated and Demonstration code
+118           New  DRIVER     New driver for SDD1289 GCLD display Help File Updated and Demonstration code
+                           New generic Graphical Commands are:
+                                   RoundRect
+                              CreateButton
+                              FillRoundRect
+119      Fix       GCGB      Fix for bug triggered by constants with name but no value - [335] None
+120      Fix       DAT      "The following DAT files were affected These have RCREG1 bet are missing entries for OERR1 CREN1 [353]
+                                  16F1704, 16F1705, 16F1708, 16F1709  47 s were affected by this instead of the suspected original 5
+                                  Updated USARTH Determine if OEER1 and CREN1 were present in the dat file
+                                  " http://sourceforgenet/p/gcbasic/discussion/596084/thread/7ceec881/?limit=25#9bf6
+121      Fix          IDE      "Cannot Change Editor Fonts in GCB@Syn (Synwrite)
+                           This issue has been resolve as the font setting has been removed from the lexers Changing the font
+                                  in SynWrites menu ""Options  Settings  Font   Text"" now affects to ALL source code (incl bat, h, txt)
+                                  windows " "Updated Readme file with CGB@SYN"
+122           New  GCB       Linux Support:
+                                      This is not distro-specific, in any case it works perfect under Ubuntu
+                                      1) Install FreeBasic:
+                                      http://wwwfreebasicnet/wiki/CompilerInstalling
+                                      2) Download the GreatCowBasic package (with source code):
+                                      eg from the link above, https://sourceforgenet/p/gcbasic/code/HEAD/tree/GCBASIC/trunk/
+                                      3) Unpack the GreatCowBasic:
+                                      eg in /usr/share/GCBasic
+                                      4) move to the fresh unpacked directory:
+                                      cd /usr/share/GCBasic
+                                      5) Compile the GreatCowBasic:
+                                      fbc -exx -v -arch 586 gcbasicbas
+                                      6) If no error occurs, you're now ready to run the GCBasic compiler with the command:
+                                      gcbasic
+                                      7) Enjoy it! :-)
+                                      Help File Updated
+123       Fix      DAT       "Resolved issue with hardware RS232 Serial setting incorrect baud rate with 18F25K80
+                                        This will likely affect the following chips
+                                         18F25K80  18LF25K80
+                                         18F26K80  18LF26K80
+                                         18F45K80  18LF45K80
+                                         18F46K80  18LF46K80
+                                         18F65K80  18LF65K80
+                                         18F66K80  18LF66K80
+                                        The measured TX baud rate is ~1/4 of the expected baud rate at any clock frequency or baud setting
+                                        MCU clock speed was verified correct with output on clock out pin and testing 1 ms wait time
+                                        Compiler: 094 2015-04-02" Updated USARTH
+124          New     Documentation  Generating Accurate Pulses () How to Generate Accurate Pulses with  - Help File Updated
+125                Documentation  A constant such as a pin name cannot be passed to a SUB, so use MACRO instead
+                               Help File Updated to show a method
+126       Fix      DAT           Resolved issue where 18F14K22 was not operate correctly when set to 32MHz or 64 MHz Updated systemh
+127       New                    Documentation Add Inversion of KS0108 display
+                               KS0108 can now show the characters up-side-down The only step you should follow is to type:
+                               use #define GLCDDirection 1
+                               glcd_KS0108h updated to support inversion" Help File Updated
+128       Fix      DRIVER       Fixed LCDH as it was erroneously writing  to ASM Defines appeared in ASM file
+129                Documentation  Measuring Pulse Width To Sub-Microsecond Resolution with  Capture & Compare added to Help File
+130  New           Dat          New Configuration Data
+                                       18f24j10dat,18f24j11dat,18f24j50dat,18f25j10dat,18f25j11dat,18f44j10dat
+                                       18f44j11dat, 18f44j50dat, 18f45j10dat, 18f45j11dat, 18f45j50dat, 18f63j90dat, 18f64j90dat,
+                                       18f65j10dat, 18f65j15dat, 18f65j50dat, 18f65j90dat, 18f66j10dat, 18f66j11dat, 18f66j15dat,
+                                       18f66j16dat, 18f66j50dat, 18f66j55dat, 18f66j60dat, 18f66j65dat, 18f66j90dat, 18f66j93dat,
+                                       18f83j90dat, 18f84j90dat, 18f85j10dat, 18f85j15dat, 18f85j50dat, 18f85j90dat, 18f86j10dat,
+                                       18f86j11dat, 18f86j15dat, 18f86j16dat, 18f86j50dat, 18f86j55dat, 18f86j60dat, 18f86j65dat,
+                                       18f86j72dat, 18f86j90dat, 18f86j93dat, 18f87j10dat, 18f87j11dat, 18f87j50dat, 18f87j60dat,
+                                       18f96j65dat, 18f96j72dat, 18f97j60dat, 18f97j72dat
+
+
+131       Fix      DAT          DAT error http://sourceforgenet/p/gcbasic/discussion/579125/thread/5a02effd/#931a
+132                Documentation  Added Weak Pullups to Help File
+133      New       Demo Code      Added new example code to Help file to blink an LED for the number of times and duration as determined
+                               by the input parameters
+134      New       Documentation  Added "How to select reference source for ADC on ATmega328" to Help File
+135      New       Documentation  Added set Setting Clock frequency to Help File
+136       Fix      Documentation  Add references to #define USART_DELAY 5 ms  ' default is 1 ms and that a wait is required in programs
+                                      for the usart buffer to empty before the end of the program  If not, you may lose a few characters as
+                                      the chip goes to sleep Help File Updated
+137       New      DRIVER       New driver for ILI9340 GCLD display Help File Updated and Demonstration code
+138       Fix      COMPILER      Fixed inconsistency in AVR program memory size measurement - words now used consistently Updated
+                               compiler should only be used for AVR with new chip data files that have memory size measured in words -
+                                      these will be uploaded once some issues are corrected
+139      New       Documentation  Added Default Interrupt handlers to Help File  Explained existing capability in the Help File
+                               Help File Updated
+140       Fix      Documentation  Corrected SPIMode command parameters Help File Updated
+141      New       COMPILER      Added #option NoContextSave Additional supported added in build [355]
+142        Fix      COMPILER      Fix for AVR PORTH direction not being set correctly
+143      New       Help File      Revision to the creation and publication process for the Help File and the Web Site Help
+144      New       COMPILER      New command Warning ""String"" | Msg(WarningStringName)
+145       Fix      COMPILER      Fix for data table bug on 16F/16F1 - incorrect address was being read when the table data started
+                               at an address ending in 0xFF Fix for incorrect address issue when assembling data tables for 16F1
+                                      with MPASM [338]
+146      New       GLCD DRIVERs  New global variable supports scaling of fonts on Bitmapped GLCD displays  GLCDfntDefaultsize = 1
+                               Default value is 1
+                               Supports by SD1289, ILI9340, Nokia & ST7735
+                               The GLCDfntDefaultsize is now mandated on all displays  A GLCDfntDefaultsize =0 or and undefined
+                                      variable will not display any fonts Help File Updated
+147      New       Documentation  Color GLCD drivers not support color for GLCD specific command  If a  GLCD specific command is not
+                               passed a color parameter then the current GLCDForeground color will be used Help File Updated
+148      New       COMPILER      Compiler now issues error warning when methods are  called and a parameter is NOT passed when the
+                               parameter is mandated An example is called HSerPrintByteCRLF, a parameter is required
+                                      NOTE:  You may have to correct existing code to remove empty brackets and/or add the correct number
+                                      of parameter to existing calls[355]
+149      New       LCD           New release of LCD_IO for One Wire and Two Wire support as follows:
+                                      - 1 wire LCD connection with shiftreg 74HC595
+                                      - 2 wire LCD connection only with 74HC164 /74LS164
+                                      - LCD background light in 1 and 2-wire mode controlled via the shift register
+
+                                      2-wire mode now uses 74HC164  Previous support for 74LS174 has been deprecated because the 74LS174
+                                      has no connections free for controlling a LCDBacklight
+                                      Diagram of the 2-wire mode with 74HC164 has changed with respect to the connection from the diode with
+                                      pin 11 (QF) has changed to pin 13 (QH)
+                                      By doing this there are 2 pins free:  Pin 11 will be used for controlling the LCD backlight
+                                      LCD_IO 2 now supports two methods  LCD_IO 2 & 2_74xx174 and 2_74xx164  This is to maintain backwards compatibility
+                                      See the Help File for more detail
+150      New       Demo Code      Added new example code for AVR timers - shows how to implement PWM on AVR
+151           New  DRIVER       New driver for ADS7843 Touch Screen driver  Help File Updated and Demonstration code
+152      Fix       Help File      Added Play and PlayRttl commands to the Help file Great Cow Basic supported playing of music since 2012!  Groovy baby
+153           New  GLCD          Added tools and instructions to convert images for GCBasic SSD1289 driver, see \GreatCowBasic\converters\Graphic Converter
+                                      Tools folder in your installation
+154           New  Maths          Added DIFFERENCE command calculates the difference between two word or byte variables
+155           New  Bitwise        FnNotBit(A, B)   is equivalent to A = !B
+156           New  Bitwise        FnEquBit(A, B)  is equivalent to A = B
+157           New  Bitwise        Fnlsl( A, B, X) is equivalent to A = B << X
+158           New  Bitwise        Fnlsr( A, B, X) is equivalent to A = B >> X
+159           New  COMPILER      Added new command line switch /WX to show warnings as hard errors
+160           New  COMPILER      Added verification when using #Option Invalid option will cause hard errors
+161           New  Bitwise        Setwith ( TargetBit, Source ) allows a Bit Field to be set or cleared according to the contents of a variable
+162      Fix       PreProcessor  Fix for chips where they have the ADCON register rather than ADCON0 register  Ensure ANSEL is set correctly
+163           New                New driver for HMC5883L 3-Axis Compass  This is an I2C driver, software and hardware I2C Supports key HMC5833L deriatives
+164      Fix      I2C             Fix for 18f Hardware I2C where the IC2 protocol was not stable in the v094 release
+165      Fix & New  I2C           Fixed Hic2waitmssp, and exposed HI2CWaitMSSPTimeout as a global variable Updated Help File
+166           New   Programmer     Inclusion in the release of the GCB Utility to automatically scan and program the Arduino Leonardo See the GCB@Syn\AVRDude folder of the distribution
+167           New  Programmer     Inclusion in the release of the Micronucleus programming software for the Digispark product range, additional Tiny85 demos and updated FlashAVRBAT
+168           New  Installer      Commence usage of InnoInstaller package
+169           New  IDE           Add 'View Demos' to IDE See the ICON!
+170           New  compiler      Change the array size method to check for errors and to enable use of two constants to calculate array size
+171           New  demo          Added WII Nunchuk demostration and driver <NunChuckh>
+172           New   Maths          New ATAN function  Pass two vectors (tyally X and Y )  Returns an angle
+173       Fix       Converter      Updated BMP2GCBexe to support complex file names and long filename directory structure
+174           New  IDE           Latest release of SynWrite
+175           New   Programmer     Updated Pgm Can now program some of the interesting new  devices now - ie 16f145x
+176           New                Updated IPEPusher that can handle the "modified-hex-autodetect" function which is released with Microchip IPE 305
+177           New  Programmer     Add TinyBootLoader+ software and option to flashbat IDE now supports Serial a serial Programmer
+178      Fix       COMPILER      Fix for handling of Long variables in Table(s)
+179           New  IDE           IDE Help for GCB can now be set not to be maximised Remove the parameter from  the Tools/Customise External Tools/1 as {CurrentWord} maximise
+180           New  ADC           Added ReadAD12 function for Microchip microchips that support 12 bit ADC
+181      FIX       COMPILER      Fix for overloading issue - compiler would not select appropriate overloaded subroutine when the subroutine had an optional parameter, and the call to the subroutine did not specify a value for that parameter
+182      FIX       COMPILER      Fix for string parameter handling bug Compiler was not creating a temporary string variable correctly in some instances, leading to parameters not being passed to subroutines
+183      FIX       COMPILER      Fixed GCASM bug when assembling bc, bnc, bz, bnz on  18F
+184      FIX       COMPILER      Fixed string comparison bug on all chips - comparing two empty strings now returns TRUE
+185      FIX       COMPILER      Restored default USART_DELAY to 1 ms to speed up serial communication
+186      FIX       DAT          Fix for 18F45K80 ANSEL bits Digital ports now work as expected
+187      NEW       Installer      GCB now has an installer!  Uninstall now leaves the demo folders
+188      Fix        IDE            Fixed to allow users to select Demo files from the initial load of the IDEEXE
+189      Fix       Dat         Fix for initialisation of chip timer for the following:
+                                      18F23K22
+                                      18F24K22
+                                      18F25K22
+                                      18F26K22
+                                      18F43K22
+                                      18F44K22
+                                      18F45K22
+                                      18F46K22
+
+
+                                      18LF23K22
+                                      18LF24K22
+                                      18LF25K22
+                                      18LF26K22
+                                      18LF43K22
+                                      18LF44K22
+                                      18LF45K22
+                                      18LF46K22
+190      FIX       COMPILER      Fix to allow % (Modulo) operator in conditions
+192      New       Drivers        Release of te ALPS-EC11 Drivers for encoders
+193      Fix       PK2           Updated dat file to support 17f1788/89
+194      New       Compiler      Added Str32 to handle string values from Longs Help and IDE updated
+195      New       Compiler      Added Val32 to handle Longs from large strings Help and IDE updated
+196      New       USART          Added support for USART2 Adding HSerReceive1, HSerReceive2,HSerReceiveFrom,HSerGetNum and HSerGetString
+197      FIX       IDE           Updated G+Stoolexe This release improved the memory usage report for AVR microprocessors
+198      New       COMPILER      Added StrInteger to support integer to string variable support
+199      NEW       ADC           Added Differtial ADC reading  New parameter can be passed to ReadADx See the help file
+200      Fix       Compiler       Fixed bug in which adding () after subroutine name would cause compilation errors and fixed infinite loop in compiler when a function call did not have a closing bracket [415]
+@[416]             Compiler      Version change!
+
+
+
+Previous changes to Great Cow Basic and Great Cow Graphical Basic since May 2014 Release See the release note from 31st March 2015
+
+The previous release was called 094
+
+This release is brought to you by, in no specific order:
+     Hugh Considine (of course!), Evan Venn, Theo Loermans, William Roth, Kent Schafer,
+     Jacque Erdermaal, Thomas Henry, Perry Weinthal, Marco Cariboni,
+     Avast, Chuck Hellebuyck, Frank Steinberg, Jim Nordquist
+     I am sure there are others If I missed your name - please let us know, truly sorry
+
+Index Fix New Classification Description & GCB User Impact
+1 Yes  GCBasic  GCBasic fixed an issue for a byte multiply bug on  18F devices This fix is for specific issue when multiplying by 2 ( 2 * [times]) error
+2  Yes GCBasic  GCBasic was enhanced to include Exit Repeat as an instruction within the Repeat-End Repeat loop New command - Exit Repeat
+3  Yes GCBasic  GCBasic was enhanced to accept more configuration options with the same names for the same config settings on a
+4 Yes  GCBasic  GCBasic fixed an issue when setting the #config on 18F  The fix resolves default values were not being overridden  None
+5  Yes GCBasic  GCBasic was enhanced to include ChipNameStr and ChipRAM constants to get current chip name and RAM as a string for general usage New constants - ChipNameStr and ChipRAM
+6  Yes GCBasic  "GCBasic was enhanced to support the definition of data tables with multiple elements on a single line, separated by commas" "Revised usage   Now  data tables can have multiple elements on a single line, separated by commas"
+7  Yes GCBasic  GCBasic was enhanced to allow constants and calculations to be used in data table entries Revised usage   Now  data tables can have constants and calculations
+8  Yes GCBasic  GCBasic was enhanced to add a SetTimer subroutine to set 16 bit timer values correctly New command - SetTimer
+9 Yes  GCBasic  GCBasic was revised to fix an issue when adding byte variable to larger constant on  (14 bit core)
+10  Yes GCBasic  GCBasic was enhanced to increase the maximum size of data tables from 255 elements to 10000 elements Revised usage New limits
+11 Yes  GCBasic  GCBasic was enhanced to show error message if chip data file has a pin count of 0 None
+12 Yes      Support file (stringh) was revised to fix bugs with respect to handling of MID and LEFT methods
+13 Yes  GCBasic  GCBasic was revised to fix an issue involving long data tables and a false syntax error being reported in SYSTEMH None
+14  Yes EEPROM  "A new EEPROMH file  Now supports writing/reading bytes, strings and array to I2C Serial EEPROM devices" New hardware specific command set  See the associated documentation
+15  Yes DS18B20  A new DS18B20H file  Supports three different ways of reading temperature from these inexpensive devices New hardware specific command set  See the associated documentation
+16  Yes I2C - Software A revised software I2CH header file  Now supports Master mode and Slave mode  Improved documentation is included in this support file - same command set
+17  Yes EEPROM - FRAM A revised FRAMH EEPROM header file  Support for this I2C Serial EEPROM devices New hardware specific command set  See the associated documentation
+18  Yes LCD  "A revised LCDH file   Improved in terms of speed and functionality New commands also  LCDDisplayOn, LCDDisplayOff, LCDBacklite (On | Off ), new LCDHex command with the optional [, LeadingZeroActive ] parameter to print leading HEX zeros" "New commands:  LCDDisplayOn, LCDDisplayOff, LCDBacklite (On | Off ),  new LCDHex command with the optional [, LeadingZeroActive ] parameter "
+19  Yes GLCD  A new Nokia 3110/PCD 9850 GLCD driver  Use GLCDH to access this hardware driver New hardware specific command set  See the associated documentation
+20  Yes GLCD  A revised ST7735 color GLCD driver Use GLCDH to access this hardware driver New hardware specific command set  See the associated documentation
+21  Yes TIMERS  A revised support file to update support for Timer4 and Timer6 for
+22  Yes CONVERTERS New functionality to support #include <*bmp> and the auto creation of tables of BMP files New functionality  See the Help File
+23 Yes  ADC  A revised ADCH to fixe A/D on ATtiny861 and other related devices
+24  Yes GCGB  Great Cow Graphical Basic user interface was updated to allow printing of integer variables
+25 Yes  GCBasic  GCBasic was revised to fix and issue for negate operator on AVR
+26  Yes SerPrint           Support files were enhances to add the method to print via the software port  GCBasic now supports SerPrint (integer)  New command  SerPrint (integer)
+27 Yes  GCGB  Great Cow Graphical Basic was revised to the  Replace Constants window to improved handling
+28 Yes  GCBasic  "GCBasic was revised to fix a swap4 issue on AVR with respect to the ""swap"" method and ""swap4 method," None
+29 Yes  GCBasic  GCBasic was revised to improve LOG handling for AVR and 18f devices
+30  Yes CLOCK  New device driver for the Maxim DS2482 Real Time Clock device New hardware specific command set  See the associated documentation
+31 Yes  GCBasic  GCBasic was enhanced to resolve an issue for subroutine/function parameter parsing bug
+32  Yes GLCD  Support files for GLCD were revised to provide new functionality in support of multiple GLCD fonts GLCD specific command set  See the associated documentation
+33 Yes  GCBasic  GCBasic was enhanced to resolve issue involving long data tables and a false syntax error being reported in SYSTEMH None
+34  Yes CHIP FILES New chip data files for  and AVR
+35  Yes CLOCK  Improved device driver for the DS1307 Real Time Clock device New hardware specific command set  See the associated documentation
+36  Yes GCBasic  "GCBasic was enhanced to support for larger arrays using linear memory for 16f and 12f  Arrays are now limited to 10,000 or limited by the available RAM" Revised usage New limits
+37  Yes GLCD  Revised GLCDH to support a larger number of GCLD devices All GCLD drivers revised GLCD specific command set  See the associated documentation
+38 Yes  CHIP FILES Revised chip data files for 16c84dat for improved chip support None
+39     GCBasic  GCBasic was fixed to support correct handling of large data table size high byte on 18F
+40 Yes  CHIP FILES Revised chip data files for 18F26K22/46K22 (added XINST = off as default)
+41 Yes Yes GCBasic  GCBasic was enhanced to allow slightly larger programs and data tables Fixed bug in assembler when dealing with larger programs - address was being written incorrectly to output hex file
+42     HPWM  Added HPWM_Fast constant This declaration is intended to speed up HPWM routine when duty cycle changes but frequency does not New constants - HPWM_Fast
+43 Yes  GCBasic  GCBasic was revised to fix an issue Timer 0 on 18F2620 None
+44  Yes PAD  "New command PAD  This method Pads a string  PAD ( string, length [, [char] defaults to spaces )" "New command PAD (string, length, [char])"
+45  Yes CLOCK  "New hardware drivers for DS1307, DS3231 and MCP7940N real time clocks  These drivers now support software and hardware I2C" New hardware specific command set  See the associated documentation
+46 Yes  CHIP FILES Revised some 18F chip data files to set secondary oscillator pins to general purpose I/O by default
+47 Yes  GCBasic  GCBasic was revised to fix the Rotate command on 18F chips  This fix was for the carry bit wasn't being saved properly for long variables Impacted SIMPLE rotate only
+48  Yes CLOCK  New hardware driver for the DS1672 32-bit clock support Includes documentation and example code New hardware specific command set  See the associated documentation
+49  Yes CLOCK  New hardware driver for the DS1377 RTC clock support Includes documentation and example code New hardware specific command set  See the associated documentation
+50 Yes  GCBasic  GCBasic was revised to fix the AVR variable microsecond delay length when delay is a multiple of 256 us
+51 Yes  GCBasic  GCBasic was revised to Implement a variable microsecond delay on AVR Requires chip speed greater than 3 MHz
+52 Yes  CONFIG  Changed SYSTEMH to improved internal oscillator configuration This change should fix speed on 12F1501 and possibly others
+53 Yes  GCGB  Revised GCGB advanced settings dialog GCGB can now set GCBASIC #option directive
+54  Yes GCBasic  "GCBasic was enhanced to altered the redirection of all I/O pin writes from PORTx to LATx registers on  16F1/18F This enhancement may increase size of program on 16F1 due to extra bank switching, disable with #option nolatch if problems occur" New Option #option nolatch
+55 Yes  GCBasic  GCBasic was revised to fix an assembler error when using Poke or Peek on AVR
+56 Yes  GCBasic  GCBasic was revised to fix the @ operator issue on AVR devices
+57 Yes  GCBasic  GCBasic was revised to fix internal oscillator speed issues on 18FxxK20 chips None
+58 Yes  SERIAL  "Improved RS232h to improve timing of serial communications  These changes are as documented in the Help File   However, for existing users that have previously used Software RS232 the configuration should be reviewed prior to compiling to ensure the configuration is correct" None
+59  Yes LCD  Revised LCDH support for LCDs  Now supports for I2C LCD - type 10 - YwRobot LCD1602 IIC V1 or the Sainsmart LCD_ I2C adapter New command  LCD_IO 10
+60  Yes LCD  Revised LCDH support for LCDs  Now supports for I2C LCD - type 12- Ywmjkdz I2C adapter with pot bent over top of chip New command  LCD_IO 12
+61  Yes SENSOR  New hardware driver for the SRF01 sensor GCB now includes the SRF01h New hardware specific command set  See the associated documentation
+62  Yes I2C - Hardware Revised Hardware I2C support  HWI2CH now includes support for AVR TWI/I2C
+63  Yes GCGB  Great Cow Graphical Basic user interface was updated to enable users to select and review the 2015 release of the demonstration code
+64  Yes DEMOS  New demonstration files for Great Cow Basic
+65  Yes DEMOS  GCB@SYN: Includes 2015 release of the demonstration code
+66  Yes GCB@SYN  GCB@SYN: SynWrite updated to 6161970 None
+67  Yes GCB@SYN  GCB@SYN: GCB lexer improvement to match release level of GCBasic None
+68  Yes GCB@SYN  GCB@SYN: GCB lexer improvements (labels in syntaxtree) None
+69  Yes GCB@SYN  GCB@SYN: G@Stools adapted to SynWrites and GCBs new folder-structure None
+70  Yes GCB@SYN  GCB@SYN: Inclusion of samples for Arduino bootloaders added to flashAVRbat None
+71  Yes GCB@SYN  GCB@SYN: pgm updated to 183 None
+72  Yes GCB@SYN  GCB@SYN:  AvrDude updated to 61 None
+73  Yes GCB@SYN  GCB@SYN: GUI for AvrDude changed to AvrDudess None
+74 Yes  CHIP FILES 16F946dat updated to correct pin direction error message on PortG5 None WIP
+75 Yes      Known Error: IF-AND-THEN error when using AVR compilation to handle 2-bit LCD displays Please use workaround by expanding these conditional tests
+76 Yes  GCBasic  "IF-string_test_condition-THEN when using AVR compilation  Examples errors include if left(string,#), mid, len etc " None
+77 Yes  GCBasic  Fix for LCDCreateChar array passing error  1) For  AVR compilation error  SYSTEMP conditional test caused compilation error 2) For  resolved bankselect issue
+78 Yes  GCBasic  Fix for internal oscillator speed setting on 18F2620
+79 Yes  GCBasic  Fix for error in calculating string table size that could cause incorrect use of relative jump/relative call on 18F
+80 Yes  GCBasic  "Fix for AVR variablebit multiplier error where btye=btyevar+(bytevarn * n) failed to be calculated correctly  Implemented  a new register variable, SysBitTest, which shares a location with SysDivLoop"
+81 Yes      Simple word and byte calcs are failing without casting  Multiplication without casting is now deprecated   Casting has been required since the release of 3/6/12  Please ensure code now uses casting when required  None
+82 Yes  SYSTEMH           Fixed AVR string handling error  Error: GCASM: Symbol SYSREADA has not been defined Updated SYSTEMH to initialise variable correctly
+83  Yes GCBasic         GCBASICEXE now returns version number and exits  /version None
+84 Yes  SYSTEMH            CLEARTIMER now reset timer, where appropriate, and resets to 0 None
+85  Yes LCDH           LCDCreateChar will now reset to the saved LCD position\location if RW is defined, or else this method will reset the cursor to 0,0 None
+86 Yes      Known Error: AVR compiling shows incorrect memory usage  AVR users should use other tools to assess memory usage This will be resolved in future releases
+87      Yes                   SYSTEMH            Revised to set frequency related issues
+88      Yes                   CHIP FILES Revised some 18F chip data files to set Frequency and Delay Timings correctly
+89  Yes     Release includes kit 2 and kit 3 software and information packages and assiocated license files

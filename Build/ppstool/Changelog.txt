@@ -1,0 +1,134 @@
+﻿PPS Tool
+Copyright Peter Everett 2022
+
+This file Is part Of PPS Tool.
+
+PPS Tool Is free software: you can redistribute it And/Or modify
+it under the terms Of the GNU General Public License As published by
+the Free Software Foundation, either version 3 Of the License, Or
+(at your option) any later version.
+
+PPS Tool Is distributed In the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY Or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License For more details.
+
+You should have received a copy Of the GNU General Public License
+along with PPS Tool.  If Not, see < http:  //www.gnu.org/licenses/>.
+
+Changelog
+
+v0.0.6.3
+Fixed problem with auto updater due to changes on Microchip's website
+Handles problem where xml files refer to pins which don't exist on the chip
+Fixed problem with template file with custom formatted lock/unlockpps statements
+
+v0.0.6.1
+Fixed problem with auto updater due to changes on Microchip's website
+
+0.0.6.0
+NEW utility for downloading and extracting the XML files from Microchip's website (requires .net 4.5 to work)
+Help updated for above
+Fixed possible crash on startup
+Additional note about baud rate for dedicated I2C modules (K42 PICs etc.)
+
+0.0.5.29
+Updated MCC hashfile to include latest version of files from Microchip
+Minor performance improvement when hashing XML files (only does it once instead of twice)
+Pinout diagram compatible with 16 bit PICs.  Generates GCB PPS code for 16 bit PICs(!) although untested
+Excessive memory usage under some circumstances fixed (constantly defining new SolidBrushes)
+
+0.0.5.28
+Version number of the XML files is taken directly from the Microchip website, not the GCB pages
+
+0.0.5.27
+Updated MCC hashfile to include latest version of files from Microchip
+
+0.0.5.26
+Updated MCC hashfile to include latest version of files from Microchip
+
+0.0.5.25
+Fixed bug when setting the i2c levels on non i2c pins
+
+0.0.5.24
+Fixed bug which was setting RX pins as outputs not inputs (PIC18FxxK42 and similar)
+
+0.0.5.23
+Sets additional registers for I2C on PIC18FxxK42 and similar (levels, open drain, direction)
+Note - requires updated chip file for GCB.
+
+0.0.5.22
+Updated MCC hashfile to include latest version of files from Microchip
+Minor update to help file
+
+0.0.5.21
+Sets pin direction where necessary for UART (PIC18FxxK42 and similar)
+Items in dropdowns highlighed to show when they have already been assigned
+Minor updates to help file
+
+0.0.5.20
+Chip number added to PPS output
+Progress bar added to holding dialog while xml files are read
+
+0.0.5.19
+Fixed erroneous targeting of .net 4.5 instead of .net 4.0
+Fixed crash when checking for updates if no folder for the XML files has been chosen
+
+0.0.5.18
+Update to fix connection problems with sourceforge due to blocking of non secure connections
+(may require updates/hotfixes to installed .net framework to allow TLS1.2)
+
+0.0.5.16
+Updated MCC hashfile to include latest version of files from Microchip
+Added support for diagrams for PIC18F2xJ13/53
+
+0.0.5.15
+Updated MCC hashfile to include latest version of files from Microchip
+Fixed bug in XML caching if same folder is chosen twice in a row
+
+0.0.5.14
+Caching of XML data to improve loading time
+Changed how pin grouping is dealt with to fix bug with some devices
+Fixed bug with non PDIP chips not allowing anything to be selected
+
+0.0.5.13
+Fixed problem with some pins being marked as bidirectional when they aren't
+Fixed problem with some perpiherals not showing up in input/output dropdowns
+Fixed problem with dropdown showing pins which don't exist
+
+0.0.5.11
+Updated MCC hashfile to include latest version of files from Microchip
+
+0.0.5.10
+Migrated to VS2017
+Fixed a bug which caused a crash when XML file uses 'SPDIP' instead of 'PDIP' for the package type
+Updated MCC hashfile to include latest version of files from Microchip
+Update to version checking to report version when using file from GCB SF page if hashfile is out of date
+Added colouring of pins when assigning to peripherals
+
+0.0.5.9
+About box now reports chipdata version, not the date the manifest file was created (v1.36 and 1.36.1 are identical)
+File location dialog box defaults to current/last used path
+
+0.0.5.8
+Fixed crash when the PIC doens't have a PDIP package
+Fixed incorrect pinout on some chips
+Minor updates to help
+Manifest file that comes with the XML files is no longer used by default
+
+0.0.5.7
+Added option to read list of PIC numbers from the manifest file or the XML file names
+Fixed crash when peripherals defined twice in XML file
+
+0.0.5.6
+Minor changes to text and icon
+
+0.0.5.5 (bugfix)
+XML file update check fixed
+Pinout error on some chip diagrams fixed
+
+0.0.5.4 (bugfix)
+Check for XML file update included in About box
+Rebuild to fix exception when clicking 'Add' button
+
+0.0.5.3 (Initial public release)

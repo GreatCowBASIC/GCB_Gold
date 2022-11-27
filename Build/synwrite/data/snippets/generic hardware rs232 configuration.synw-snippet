@@ -1,0 +1,13 @@
+name=Generic Hardware RS232 Configuration
+id=
+lex=GreatCowBasic
+text=
+		' THIS CONFIG OF THE SERIAL PORT WORKS WITH A  MAX232 (or equiv) THEN TO PC		' Ports are defined in datasheet or by PPS
+		' USART settings
+		#define USART_BAUD_RATE 9600
+		#define USART_BLOCKING 
+		#define USART_BLOCKING
+		' You change the usart delay value. Uncomment next line 
+		' #define USART_DELAY 5 ms
+		' Let USART settle down
+		wait 500 ms 

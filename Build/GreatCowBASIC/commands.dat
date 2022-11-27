@@ -1,0 +1,597 @@
+[Categories]
+Flow Control
+Input/Output
+Communication
+Display (LCD)
+Display (7 segment)
+Timers
+Variables
+Miscellaneous
+
+'[COM_Test]
+'[Icon = Test
+'Syntax = Test %P1%
+'P1 = Percent, range50-100, Test percentage
+'Category = Flow Control
+'OnlyIn = If
+
+[COM_If]
+Icon = if
+Syntax = If %P1% Then
+P1 = Condition, condition, The code between If and End If runs only when this is true
+Match = End If, end if
+Tooltip = Runs a section of code if a condition is true
+Category=Flow Control
+
+[COM_Wait]
+icon = wait
+Syntax = Wait %P1% %P2%
+P1 = Length, number, Length of the delay
+P2 = Units, CGR_Delay, Units for the length of the delay
+Tooltip = Pauses the program for a fixed length of time
+Category=Flow Control
+
+[COM_Do]
+icon = Do
+Syntax = Do %P1% %P2%
+P1=Mode, CGR_Do, Mode of the Do loop
+P2=Condition, condition, Loop repeats while/until this condition is true
+Constraint = P2 clear hide when P1 Forever
+Match = Loop, Loop
+Tooltip = Repeats a section of code forever, or while/until a condition is true
+Category=Flow Control
+
+[COM_For]
+Icon = for
+Syntax = For %P1% = %P2% To %P3%
+P1 = Counter, var, Counts how many times the loop has been repeated
+P2 = Start, number, Set the counter to this value before beginning to loop
+P3 = End, number, Stop looping when the counter reaches this value
+Match = Next, Next
+Tooltip = Repeats a section of code a certain number of times, and keeps track of how many times it has been repeated
+Category=Flow Control
+
+[COM_Repeat]
+Icon = Repeat
+Syntax = Repeat %P1%
+P1=Repetitions, number, Number of times to repeat the section of code
+Match=End Repeat, EndRepeat
+Tooltip = Repeats a section of code a certain number of times
+Category=Flow Control
+
+[COM_Else]
+icon = Else
+Syntax = Else
+Tooltip = Marks a section of code to run inside an If block when the condition is false
+Category = Flow Control
+OnlyIn = If
+
+[COM_Wait For]
+icon = WaitFor
+Syntax = WaitFor %P1% %P2%
+P1 = Mode, CGR_WaitFor, Mode of the Wait command
+P2 = Condition, condition, Wait while/until this condition is true
+Tooltip = Pauses the program until or while a condition is true
+Category=Flow Control
+
+[COM_Label]
+Icon = Label
+Syntax = %P1%:
+P1 = Label Name, label, The name of this label
+Tooltip = Marks a place in the program for a Goto icon to go to
+Category = Flow Control
+
+[COM_Goto]
+Icon = goto
+Syntax = Goto %P1%
+P1 = Destination, label, The name of the label to jump to
+Tooltip = Jumps to and runs a different part of the program
+Category=Flow Control
+
+[Com_Exit Sub]
+icon=ExitSub
+Syntax=Exit Sub
+OnlyIn = sub
+Tooltip = Ends the current subroutine and jumps back to the code that ran the subroutine
+Category=Flow Control
+
+[COM_Pulseout]
+Icon = pulseout
+Syntax = PulseOut %P1%, %P2% %P3%
+P1 = IO Pin, IO_pin, The pin to pulse
+P2 = Time Length, number, Length of time for the pin to remain on
+P3 = Time Units, CGR_Delay, Units for the length of time
+Tooltip = Turns on a pin of the chip for a certain amount of time
+Category=Input/Output
+
+[COM_Set]
+icon = set
+Syntax = Set %P1% %P2%
+P1 = Bit, bit, The bit to set
+P2 = Status, CGR_SET, Desired status of the bit
+Tooltip = Turns pins of the chip or bits of the chip's memory on and off
+Category=Input/Output
+
+[COM_PWM Out]
+Icon=PWMOut
+Syntax=PWMout %P1%, %P2%, %P3%
+P1 = Channel, CGR_PWMOut, Output channel (1-4)
+P2 = Duty Cycle, Byte, Duty Cycle (1-255)
+P3 = Cycles, Byte, The number of cycles to produce
+Tooltip = Produces a series of PWM pulses
+Category = Input/Output
+
+[COM_Pot]
+Icon = pot
+Syntax = Pot %P1%, %P2%
+P1 = Input Pin, IO_Pin, The pin to read
+P2 = Output Variable, var_byte, Store the value in this variable
+Tooltip = Reads the value of a potentiometer or LDR on any pin of the chip
+Category = Input/Output
+
+[COM_Dir]
+Icon = dir
+Syntax = Dir %P1% %P2%
+P1 = IO pin or port, IO_pin, The pin or port to set the direction of
+P2 = Direction, CGR_DIR, The desired direction
+Tooltip = Controls whether a pin will be used to input or output data
+Category=Input/Output
+
+[COM_HPWM]
+Icon=HPWM
+Syntax=HPWM 1, %P1%, %P2%
+P1 = Frequency, Byte, Frequency (KHz)
+P2 = Duty Cycle, Byte, Duty Cycle (1-255)
+Tooltip = Sets the PWM generator on the chip to generate pulses, and starts the pulse generation
+Category = Input/Output
+
+[COM_PWMOn]
+Icon=PWMOn
+Syntax=PWMOn
+Tooltip = Turns on the PWM generator. Uses the settings in Hardware Settings - use HPWM if the program needs to change settings
+Category=Input/Output
+
+[COM_PWMOff]
+Icon=PWMOff
+Syntax=PWMOff
+Tooltip = Turns off the PWM generator
+Category=Input/Output
+
+[COM_Tone]
+icon = Tone
+Syntax = Tone %P1%, %P2%
+P1 = Frequency, number, Frequency to produce (Hz)
+P2 = Duration, number, Duration in 10ms units
+Tooltip = Produces a tone of a certain frequency
+Category = Input/Output
+
+[COM_Init Serial]
+icon = InitSer
+Syntax = InitSer %P1%, %P2%, %P3%, %P4%, %P5%, %P6%, %P7%
+P1 = Channel, CGR_RS232_Channels, Channel to initialise
+P2 = Speed, CGR_RS232_rates, Send/Receive Rate (bps)
+P3 = Start, byte, Number of start bits
+P4 = Data, byte, Number of data bits
+P5 = Stop, byte, Number of stop bits
+P6 = Parity, CGR_RS232_parity, Parity bit
+P7 = Inversion, CGR_RS232_invert, Signal Inversion
+Tooltip = Sets up an RS232 channel. Hardware Settings is used to set which pins the channels connect to.
+Category = Communication
+
+[COM_Serial Print]
+Icon=serprint
+Syntax=SerPrint %P1%, %P2%
+P1 = Channel, CGR_RS232_Channels, Channel to send to
+P2 = Message, string|byte|word, Message or number to transmit
+Tooltip = Sends a message or number over a serial connection
+Category = Communication
+
+[COM_Serial Send]
+icon = sersend
+Syntax = SerSend %P1%, %P2%
+P1 = Channel, CGR_RS232_Channels, Channel to send to
+P2 = Data, byte, Value to send
+Tooltip = Sends a raw byte over the serial connection.
+Category = Communication
+
+[COM_Serial Receive]
+icon = serreceive
+Syntax = SerReceive %P1%, %P2%
+P1 = Channel, CGR_RS232_Channels, Channel to read from
+P2 = Data, var, Variable to store value in
+Tooltip = Reads a byte from the serial connection
+Category = Communication
+
+[COM_I2C Start]
+icon = i2cstart
+Syntax = I2CStart
+Tooltip = Trigger or wait for an I2C start condition
+Category = Communication
+
+[COM_I2C Send]
+icon = i2csend
+Syntax = I2CSend %P1%
+P1 = Data, byte, Value to send
+Tooltip = Sends a raw byte over the I2C connection.
+Category = Communication
+
+[COM_I2C Receive]
+icon = i2creceive
+Syntax = I2CReceive %P1%
+P1 = Data, var, Variable to store value in
+Tooltip = Reads a byte from the I2C connection
+Category = Communication
+
+[COM_I2C Stop]
+icon = i2cstop
+Syntax = I2CStop
+Tooltip = Trigger or wait for an I2C stop condition
+Category = Communication
+
+[COM_SPI Mode]
+icon = spimode
+Syntax = SPIMode %P1%
+P1 = Mode, CGR_SPI_Modes, SPI module mode
+Tooltip = Sets the mode for the on-chip SPI module
+Category = Communication
+
+[COM_SPI Transfer]
+icon = spitransfer
+Syntax = SPITransfer %P1%, %P2%
+P1 = Data Out, byte, Value to send
+P2 = Data In, var, Variable to store recieved value in
+Tooltip = Transfers data over an SPI connection
+Category = Communication
+
+[COM_Clear Screen]
+Icon=CLS
+Syntax=CLS
+Tooltip = Clears the LCD
+Category=Display (LCD)
+
+[COM_Move Cursor]
+Icon=LOCATE
+Syntax = Locate %P1%, %P2%
+P1 = Row, byte, New cursor row
+P2 = Column, byte, New cursor column
+Tooltip = Moves the cursor on the LCD
+Category=Display (LCD)
+
+[COM_Print]
+Icon=Print
+Syntax=Print %P1%
+P1 = Message, string|byte|word|integer, Message or number to display
+Tooltip = Shows a message or number on the LCD, at the cursor location
+Category=Display (LCD)
+
+[COM_Write LCD Char]
+Icon=LCDWriteChar
+Syntax=LCDWriteChar %P1%
+P1 = Character, byte, ASCII code of character to show
+Tooltip = Write a character on the LCD, based on an ASCII code
+Category = Display (LCD)
+
+[COM_Display Value]
+Icon=DisplayValue
+Syntax=DisplayValue %P1%, %P2%
+P1 = Display, CGR_7SEG, Display to use
+P2 = Value, byte, Number to display
+Tooltip = Displays a number from 0 to 9 on a 7 segment display
+Category=Display (7 segment)
+
+[COM_Display Character]
+Icon=DisplayChar
+Syntax=DisplayChar %P1%, %P2%
+P1 = Display, CGR_7SEG, Display to use
+P2 = Character, byte, ASCII value of the character
+Tooltip = Displays a letter on a 7 segment display
+Category=Display (7 segment)
+
+[COM_Rotate]
+Icon = Rotate
+Syntax = Rotate %P1% %P2%
+P1 = Variable, var, The variable to alter
+P2 = Direction, CGR_Rotate, The direction to rotate in
+Tooltip = Rotates the bits inside a variable
+Category=Variables
+
+[COM_Set Variable]
+Icon = Let
+Syntax = Let %P1% = %P2%
+P1 = Variable, var, Variable to set
+P2 = New Value, number, Value to load into variable
+Category = Variables
+Tooltip = Sets the value of a variable
+help=settingvariables.htm
+
+[COM_Comment]
+Icon = Comment
+Tooltip = Allows text to be inserted into the program to describe what a section of code does
+Category=Miscellaneous
+
+[COM_Read EEPROM]
+icon=EPRead
+Syntax = EPRead %P1%, %P2%
+P1 = Location, number, EEPROM location to read from
+P2 = Output Variable, var, Variable to store the value in
+Tooltip = Reads a value from the long term data memory of the chip
+Category=Miscellaneous
+
+[COM_Write EEPROM]
+icon=EPWrite
+Syntax = EPWrite %P1%, %P2%
+P1 = Location, number, EEPROM location to write to
+P2 = Value, byte, Value to write to EEPROM
+Tooltip = Writes a value to the long term data memory of the chip
+Category=Miscellaneous
+
+[COM_Read Table]
+icon=readtable
+Syntax=ReadTable %P1%, %P2%, %P3%
+P1 = Table, table, Data table to read
+P2 = Table Location, byte, Item in table to read
+P3 = Output Variable, var, Variable to store retrieved value in
+Tooltip = Reads a value from a data table. To create a table, open Program > Data Tables
+Category=Miscellaneous
+
+[COM_Setup Timer 0]
+icon=InitTimer0
+Syntax=InitTimer0 %P1%, %P2%
+P1 = Clock Source, CGR_TMR0S, Source of the timer clock pulse
+P2 = Prescaler, CGR_TMR0P, Clock divider (prescaler) ratio
+Tooltip = Sets up Timer 0 on the chip
+Category=Timers
+
+[COM_Setup Timer 1]
+icon=InitTimer1
+Syntax=InitTimer1 %P1%, %P2%
+P1 = Clock Source, CGR_TMR1S, Source of the timer clock pulse
+P2 = Prescaler, CGR_TMR1P, Clock divider (prescaler) ratio
+Tooltip = Sets up Timer 1 on the chip
+Category=Timers
+
+[COM_Clear Timer]
+icon = ClearTimer
+Syntax = ClearTimer %P1%
+P1 = Timer, CGR_TimerClear, Timer to clear
+Tooltip = Resets a timer to 0
+Category = Timers
+
+[COM_Start Timer]
+icon = StartTimer
+Syntax = StartTimer %P1%
+P1 = Timer, CGR_TimerStart, Timer to start
+Tooltip = Starts a timer
+Category = Timers
+
+[COM_Stop Timer]
+icon = StopTimer
+Syntax = StopTimer %P1%
+P1 = Timer, CGR_TimerStart, Timer to stop
+Tooltip = Stops a timer
+Category = Timers
+
+[FN_ReadAD]
+P1 = Analog Input, CGR_ADChannels, Analog input to read
+Returns = Byte
+Desc = Measures the analog voltage level on a pin at 8-bit resolution.
+
+[FN_ReadAD10]
+P1 = Analog Input, CGR_ADChannels, Analog input to read
+Returns = Word
+Desc = Measures the analog voltage level on a pin at full resolution
+
+[FN_Random]
+Returns = Byte
+Desc = Generates a random number between 0 and 255
+
+[FN_KeypadData]
+Returns = Byte
+Desc = Gives the number of the currently pressed key, or 255 if no key is pressed
+
+[FN_InKey]
+Returns = Byte
+Desc = Reads an ASCII code from a PS/2 keyboard
+
+[CGR_Delay]
+us
+10us
+ms
+s
+m
+h
+
+[CGR_RS232_rates]
+r300
+r600
+r1200
+r2400
+r4800
+r9600
+r19200
+
+[CGR_RS232_Channels]
+1
+2
+3
+
+[CGR_RS232_Parity]
+None
+Even
+Odd
+
+[CGR_RS232_Invert]
+Normal
+Invert
+
+[CGR_SPI_Modes]
+MasterFast
+Master
+MasterSlow
+SlaveSS
+Slave
+
+[CGR_SET]
+On
+Off
+
+[CGR_DIR]
+In
+Out
+
+[CGR_Rotate]
+Left
+Right
+
+[CGR_Do]
+While
+Until
+Forever
+
+[CGR_WaitFor]
+While
+Until
+
+[CGR_7SEG]
+1
+2
+3
+4
+
+[CGR_PWMOut]
+1
+2
+3
+4
+
+[CGR_TMR0S]
+Osc
+Ext
+
+[CGR_TMR0P]
+PS0_1/2
+PS0_1/4
+PS0_1/8
+PS0_1/16
+PS0_1/32
+PS0_1/64
+PS0_1/128
+PS0_1/256
+
+[CGR_TMR1S]
+Osc
+Ext
+ExtOsc
+
+[CGR_TMR1P]
+PS1_1/1
+PS1_1/2
+PS1_1/4
+PS1_1/8
+
+[CGR_TimerClear]
+0
+1
+2
+
+[CGR_TimerStart]
+1
+2
+
+[CGR_I2C_MODES]
+Master
+Slave
+
+[CONF_LCD]
+Name=Liquid Crystal Display
+All; Data Bits; LCD_IO; CGR_LCDIO
+LCD_IO 0; Send subroutine; LCDWriteByte; Subroutine
+LCD_IO 2; Clock Pin; LCD_CB; IO_pin
+LCD_IO 2; Data Pin; LCD_DB; IO_pin
+LCD_IO 4,8; R/W Pin; LCD_RW; IO_pin
+LCD_IO 4,8; RS Pin; LCD_RS; IO_pin
+LCD_IO 4,8; Enable Pin; LCD_Enable; IO_Pin
+LCD_IO 8; Data Port; LCD_DATA_PORT; IO_Port
+LCD_IO 4; DB4 Pin; LCD_DB4; IO_pin
+LCD_IO 4; DB5 Pin; LCD_DB5; IO_pin
+LCD_IO 4; DB6 Pin; LCD_DB6; IO_pin
+LCD_IO 4; DB7 Pin; LCD_DB7; IO_pin
+
+[CGR_LCDIO]
+0
+2
+4
+8
+
+[CONF_7SEG]
+Name=7 Segment
+All; Number of displays; DISP_COUNT; range1-4
+All; Segment A Pin; DISP_SEG_A; IO_Pin
+All; Segment B Pin; DISP_SEG_B; IO_Pin
+All; Segment C Pin; DISP_SEG_C; IO_Pin
+All; Segment D Pin; DISP_SEG_D; IO_Pin
+All; Segment E Pin; DISP_SEG_E; IO_Pin
+All; Segment F Pin; DISP_SEG_F; IO_Pin
+All; Segment G Pin; DISP_SEG_G; IO_Pin
+All; Segment Dot Pin; DISP_SEG_DOT; IO_Pin
+DISP_COUNT 2,3,4; Display 1 Select; DISP_SEL_1; IO_Pin
+DISP_COUNT 2,3,4; Display 2 Select; DISP_SEL_2; IO_Pin
+DISP_COUNT 3,4; Display 3 Select; DISP_SEL_3; IO_Pin
+DISP_COUNT 4; Display 4 Select; DISP_SEL_4; IO_Pin
+
+[CONF_SOUND]
+Name=Sound
+All; Output Pin; SoundOut; IO_Pin
+
+[CONF_SOFTPWM]
+Name=PWM (Software)
+All; Channel 1 Pin; PWM_Out1; IO_Pin
+All; Channel 2 Pin; PWM_Out2; IO_Pin
+All; Channel 3 Pin; PWM_Out3; IO_Pin
+All; Channel 4 Pin; PWM_Out4; IO_Pin
+
+[CONF_HARDPWM]
+Name=PWM (Hardware)
+All; Frequency (KHz); PWM_Freq; byte
+All; Duty Cycle (%); PWM_Duty; range1-100
+
+[CONF_KEYPAD]
+Name=Keypad
+All; Column 1 Pin; KEYPAD_COL_1; IO_Pin
+All; Column 2 Pin; KEYPAD_COL_2; IO_Pin
+All; Column 3 Pin; KEYPAD_COL_3; IO_Pin
+All; Column 4 Pin; KEYPAD_COL_4; IO_Pin
+All; Row 1 Pin; KEYPAD_ROW_1; IO_Pin
+All; Row 2 Pin; KEYPAD_ROW_2; IO_Pin
+All; Row 3 Pin; KEYPAD_ROW_3; IO_Pin
+All; Row 4 Pin; KEYPAD_ROW_4; IO_Pin
+
+[CONF_RS232]
+Name=RS232 (Software)
+All; Send A High; SendAHigh; Command
+All; Send A Low; SendALow; Command
+All; Receive A High; RecAHigh; Condition
+All; Receive A Low; RecALow; Condition
+All; Send B High; SendBHigh; Command
+All; Send B Low; SendBLow; Command
+All; Receive B High; RecBHigh; Condition
+All; Receive B Low; RecBLow; Condition
+All; Send C High; SendCHigh; Command
+All; Send C Low; SendCLow; Command
+All; Receive C High; RecCHigh; Condition
+All; Receive C Low; RecCLow; Condition
+
+[CONF_USART]
+Name=RS232 (Hardware)
+All; Baud Rate (bps); USART_BAUD_RATE; Constant
+
+[CONF_I2C]
+Name=I2C
+All; Mode; I2C_MODE; CGR_I2C_MODES
+All; Data Pin; I2C_DATA; IO_Pin
+All; Clock Pin; I2C_CLOCK; IO_Pin
+
+[CONF_PS2]
+Name=PS/2 Interface
+All; Data Pin; PS2DATA; IO_Pin
+All; Clock Pin; PS2CLOCK; IO_Pin
