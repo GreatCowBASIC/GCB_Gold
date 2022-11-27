@@ -1,7 +1,7 @@
 <div id="GCstudio-logo" align="center">
     <br />
     <img src="https://github.com/GreatCowBASIC/Corporate_Identity/blob/master/SRC/Logo/LogoSVG.svg" alt="GC Studio Logo" width="210"/>
-    <h1>GC Studio Installer and Update Manufacturing Environment</h1>
+    <h1>GCB ToolChain Gold Build</h1>
     <h3>Our mission is to create the best programming tools For Microchip PIC, Atmel AVR and LogicGreen LGT microcontrollers.</h3>
 </div>
 
