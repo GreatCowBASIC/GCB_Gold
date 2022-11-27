@@ -6,10 +6,10 @@
         {
             "label": "Build GCB Compiler",
             "type": "shell",
-            "command": "C:\\GCB@Syn\\FBASIC\\x86\\fbc.exe gcbasic.bas -arch 586 -exx -x gcbasic.exe",
+            "command": "${env:GCBASIC_INSTALL_PATH}\\FBASIC\\x86\\fbc.exe gcbasic.bas -arch 586 -exx -x gcbasic.exe",
                // "args": ["gcbasic.bas","-arch 586","-exx","-x","gcbasic.exe"],
                     "options": {
-                        "cwd": "C:\\GCB@Syn\\GreatCowBasic\\",
+                        "cwd": "${env:GCBASIC_INSTALL_PATH}\\GreatCowBasic\\",
                         
 
                         // "label": "Build GCB Compiler",
