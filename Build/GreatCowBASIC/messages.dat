@@ -173,6 +173,8 @@ MakeS = "Assembling program using PIC-AS"
 MakeExternalTool  = "Assembling program using "%tool%""
 Family122OptimisationMessage = "Family 122 - rjmp and rcall optimisation disabled"
 SystemIncludeMessage = " (System Include)"
+LibraryIncludeMessage = " (Library Include)"
+
 
 SendToPIC = "Downloading program ..."
 PromoMessage1 = "<p>Enjoying Great Cow BASIC ? Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience.</p>"
