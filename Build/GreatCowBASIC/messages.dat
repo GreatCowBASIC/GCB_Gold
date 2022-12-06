@@ -312,6 +312,7 @@ SubToBigForPage = "Subroutine %sub% is %size% words, the size limit on the curre
 SubTooBig = "Subroutine %sub% is too large. Reduce its size, or switch to a more powerful chip"
 SymbolNotDefined = "Symbol [SFR]%symbol% has not been defined. Inspect ASM file to determine error "
 SynErr = "Syntax Error"
+SynIllegalBitMaths = "Illegal operation:  Bit variables cannot be added or subtracted"
 TableItemInvalid = "Item %item% cannot be stored in the table"
 TableNotFound = "Lookup table %Table% not found"
 TooManyArrayElements = "The number of array %Array% elements is too large.  The limit using this method is %Max%"
