@@ -5,7 +5,7 @@
     <h3>Our mission is to create the best programming tools For Microchip PIC, Atmel AVR and LogicGreen LGT microcontrollers.</h3>
 </div>
 
-This is the Gold Build of the GCB ToolChain.
+This is the Gold Build of the GCB ToolChain as used on GC Studio official builds.
 
 ## Common Locations:
 
