@@ -951,7 +951,17 @@ Sub InitUSART
 
   #IFNDEF ONEOF(USART_BAUD_RATE,USART1_BAUD_RATE,USART2_BAUD_RATE,USART3_BAUD_RATE,USART4_BAUD_RATE,USART5_BAUD_RATE)
     #IFNDEF STOPCOMPILERERRORHANDLER
-      RaiseCompilerError "%USART_NO_BAUD_RATE%"   'uses messages.dat
+      //! Your program has a reference to Serial opertions however the Serial setup has not been completed.
+      //!
+      //! You should add the constants like those shown below. 
+      //!
+      //! #DEFINE USART_BAUD_RATE 9600
+      //! #DEFINE USART_TX_BLOCKING
+      //! #DEFINE USART_DELAY OFF
+      //! 
+      //! Please close this library once you have resolved or remove the Serial setup or commands respectively.
+      //! 
+                      RaiseCompilerError "%USART_NO_BAUD_RATE%"   'uses messages.dat
     #ENDIF
   #ENDIF
 
