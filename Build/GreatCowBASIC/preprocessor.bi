@@ -588,6 +588,7 @@ SUB PreProcessor
   Dim InConditionalStatementCounter as Integer = 0
   Dim ConditionalStatus as Integer
   Dim As Single StartOfCommentBlock, EndOfCommentBlock
+  Dim LibraryInclude as Integer = 0
 
   Dim As String CachedCmd( 20 )
   Dim As Integer CachedPMode( 20 )
@@ -665,6 +666,7 @@ SUB PreProcessor
                 Temp = Mid(Temp, INSTR(Temp, Chr(34)) + 1)
                 Temp = Trim(Left(Temp, INSTR(Temp, Chr(34)) - 1))
                 Temp = AddFullPath(Temp, ProgDir)
+                LibraryInclude = 0
               ElseIF INSTR(Temp, "<") <> 0 THEN
                 Temp = Mid(Temp, INSTR(Temp, "<") + 1)
                 Temp = Left(Temp, INSTR(Temp, ">") - 1)
@@ -673,6 +675,7 @@ SUB PreProcessor
                 'So to comply, ensure filename between angle brackets (not path) is made lowercase before attempting file retrieval.
                 'Assume only a filename lies between < and > and now stored in Temp
                 Temp = AddFullPath(LCase(Temp), ID + "\include\") 'was Temp = AddFullPath(Temp, ID + "\include\")
+                LibraryInclude = 1
               END IF
 
               Temp = ShortName(Temp) 'Path and Filename
@@ -696,6 +699,7 @@ SUB PreProcessor
                   SourceFiles += 1
                   SourceFile(SourceFiles).IncludeOrigin = ";?F" + Str(T) + "L" + Str(LC) + "S0?"
                   SourceFile(SourceFiles).FileName = TranslatedFile
+                  SourceFile(SourceFiles).SystemInclude = LibraryInclude
                 End If
 
               End If '#INCLUDE

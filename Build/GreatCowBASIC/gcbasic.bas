@@ -654,6 +654,7 @@ Dim Shared As Single StartTime, CompEndTime, AsmEndTime, ProgEndTime
 Dim Shared As Double DebugTime
 Dim Shared As String ChipPICASDataFile,ChipPICASConfigFile,ChipPICASRoot, Conditionaldebugfile
 Dim Shared As Integer StringConCatLengthAdapted = 0
+dim shared As integer WholeINSTRdebug = 0 
 
 'Assembler vars
 DIM SHARED As Integer ToAsmSymbols
@@ -788,8 +789,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 Release Candidate 2022-11-06"
-buildVersion = "1189"
+Version = "1.00.00 2022-12-06"
+buildVersion = "1202"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -3835,6 +3836,10 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   V2Type = TypeOfValue(V2, Subroutine(SourceSub))
   DestType = TypeOfVar(Answer, Subroutine(DestSub))
   CalcType = DestType
+
+  If ( V1Type = "BIT" AND ( Instr( V1, ".") <> 0 ))  Or  ( V2Type = "BIT"  AND ( Instr( V2, ".") <> 0  ))  Then
+      LogError Message("SynIllegalBitMaths"), Origin
+  End if
 
   'Remove cast from output var
   Answer = DelType(Answer)
@@ -15709,17 +15714,25 @@ CheckArrayAgain:
       CurrVar = CurrVarLoc->MetaData
       With *CurrVar
         If .Size > 1 Then
-          IF WholeINSTR(InLine, .Name) = 2 AND INSTR(InLine, "(") <> 0 THEN
-' 1044           IF Instr( Inline, "SYSSTRINGPARAM" ) > 0 Then
-'                ArrayFound = 0
-'            End If
+'WholeINSTRdebug=-1
+'print origin; "{"+str(WholeINSTR(InLine, .Name ))+"} "
+          IF ( WholeINSTR(InLine, .Name ) = 2 AND INSTR(InLine, "(") <> 0)  THEN
             IF WholeINSTR(InLine, .Name + "()") = 2 THEN
               ArrayFound = 0
+             
+              IF Instr( Inline, .Name ) <> 1 Then
+                'This permits the support of  array population such as array() = 1,2,3,4....
+                Temp = Message("ArrayAssignmentIncorrect")
+                Replace Temp, "%Name%", .Name
+                LogError Temp, Origin
+              END IF
+              
             Else
               ArrayFound = CurrVarLoc
               EXIT Do
             End If
           END IF
+'WholeINSTRdebug=0          
         END IF
       End With
 
@@ -18325,10 +18338,21 @@ SUB WriteErrorLog
         NEXT
         'Prepare message
         If GCGB = 0 Then
-          OutMessage(PD) = Fi + " (" + Str(L) + "): " + MessageType + Me
-          If SourceFile(F).SystemInclude = -1 then
-              OutMessage(PD) = OutMessage(PD) +message("SystemIncludeMessage")
-          End if
+          'New handler for SynWrite and GC Code IDEs.
+	      ' <file> ** ( ... a system include file (within lowlevel.dat)
+	      ' <file> * ( ... an system include  file, like #include <>
+	      ' <file> ** ( ... other files.
+          Select Case SourceFile(F).SystemInclude
+              Case -1
+                OutMessage(PD) = Fi + " ** (" + Str(L) + "): " + MessageType + Me
+                OutMessage(PD) = OutMessage(PD) +message("SystemIncludeMessage")
+              Case 1
+                OutMessage(PD) = Fi + " * (" + Str(L) + "): " + MessageType + Me
+                OutMessage(PD) = OutMessage(PD) +message("LibraryIncludeMessage")
+              Case Else
+                'Standard message
+                OutMessage(PD) = Fi + " (" + Str(L) + "): " + MessageType + Me
+          End Select 
         Else
           'Use special error format for GCGB (or other IDE that breaks program into subs)
           OutMessage(PD) = Left(MessageType, 1) + "|" + Fi + "|" + Str(S) + "|" + Str(I) + "|" + Me

@@ -2210,38 +2210,69 @@ Sub WaitForKeyOrTimeout
   End If
 End Sub
 
-FUNCTION WholeINSTR (DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
-  Dim As String DataSource, Temp, Find
-  Dim As Integer T
-
-  DataSource = UCase(DataIn): Find = UCase(FindIn)
-
-  IF INSTR(DataSource, Find) = 0 THEN WholeINSTR = 0: EXIT FUNCTION
-  IF LEN(DataSource) = LEN(Find) THEN WholeINSTR = 2: EXIT FUNCTION
-
-  DoWholeINSTRAgain:
-  T = 0
-
-  IF INSTR(DataSource, Find) = 1 THEN T = 1
-  IF T = 0 THEN
-    Temp = Mid(DataSource, INSTR(DataSource, Find) - 1, 1)
-    IF IsDivider(Temp) THEN T = 1
-  END IF
-
-  IF INSTR(DataSource, Find) + LEN(Find) - 1 = LEN(DataSource) THEN T = T + 1
-  IF T < 2 THEN
-    Temp = Mid(DataSource, INSTR(DataSource, Find) + LEN(Find), 1)
-    IF IsDivider(Temp) THEN T = T + 1
-  END If
-
-  IF T = 1 And SearchAgain THEN
-    Replace DataSource, Find, Chr(30)
-    IF INSTR(DataSource, Find) <> 0 THEN GOTO DoWholeINSTRAgain
-  END IF
-
-  WholeINSTR = T
-
-END FUNCTION
+'Returns 
+'  0 = if there is no substring match
+'  2 = if perfect match
+'
+'  1 = there is a match of one 
+' +1 = there is some sort of divider as the last character of the find string 
+' +1 = if the find string is at then end of the search string 
+'  2 = if two matches happen, I think the find string and one special character.
+'
+'WholeInstr is there to check if a string contains a substring within it, but with dividers. 
+'The returned value should be 0 if the substring is not in there by itself. 
+'The returned value should be 1 if the substring is in there, but has something before or after it. 
+'The returned value should be 2 if the string is in there with a divider at either side.
+'
+'Examples:
+'WholeInstr("ABC", "B") = 0
+'WholeInstr("AB C", "B") = 1
+'WholeInstr("A BC", B") = 1
+'WholeInstr("A B C", "B") = 2
+'
+'So WholeInstr("H1Events1", "Events") should be returning 0, because 1 is not a divider character.
+'
+'The well named T variable is the output. If the substring is there with a divider (or the start of the string) before it, 1 is added. If the substring is there with a divider (or the end of the string) after it, another 1 is added.
+'
+'A divider character should be anything that IsDivider says is a divider. The start or end of a string is also treated as a divider, hence the special case for if the substring is the entire string.
+'
+FUNCTION WholeINSTR(DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
+    Dim As String DataSource, Temp, Find
+    DataSource = UCase(DataIn): Find = UCase(FindIn)
+    
+    Dim As Integer StartPos, SearchEnd, SearchLen, Score, BestScore
+    
+    BestScore = 0
+    
+    'Get end of search location
+    SearchLen = Len(Find)
+    SearchEnd = Len(DataSource) - SearchLen + 1
+    'If DataIn is too small to contain Find, return 0. If exact match, return 2
+    If SearchEnd < 0 Then Return 0
+    If DataSource = Find Then Return 2
+    
+    For StartPos = 1 To SearchEnd
+        'Found search term?
+        If Mid(DataSource, StartPos, SearchLen) = Find Then
+            Score = 0
+            'Add one to score if start of string or divider before search term
+            'Add another one if end of string or divider after search term
+            If StartPos = 1 Or IsDivider(Mid(DataSource, StartPos - 1, 1)) Then Score = 1
+            If StartPos = SearchEnd Or IsDivider(Mid(DataSource, StartPos + SearchLen, 1)) Then Score += 1
+            'Perfect match, quit now. If searching for more, keep searching.
+            If Score = 2 Then Return 2
+            If SearchAgain Then
+                If Score > BestScore Then
+                    BestScore = Score
+                End If
+            Else
+                Return Score
+            End If
+        End If
+    Next
+    
+    Return BestScore
+End Function
 
 Function WholeInstrLoc(DataSource As String, FindTemp As String) As Integer
 

@@ -91,6 +91,7 @@
 '             Improved INIT for K40 type uC
 '             Added RAISECOMPILERERROR where appropiate
 '             Improved handling of variable comport and Defaultusartreturnvalue variable to only set when more than one USART
+' 14/12/2022  Correct InitUSART for K22 ( missing register update )
 
 
 
@@ -1009,12 +1010,17 @@ Sub InitUSART
                     #ifdef var(SPBRGL)
                       SPBRGL = SPBRGL_TEMP
                     #endif
-                    'BRG16: 16-bit Baud Rate Generator bit
-                    '1 = bsf - 16-bit Baud Rate Generator is used
-                    '0 = bcf - 8-bit Baud Rate Generator is used
+
+                    #ifdef var(SPBRG)
+                      SPBRG = SPBRGL_TEMP
+                    #endif
+
+                    //~ BRG16: 16-bit Baud Rate Generator bit
+                    //~ 1 = bsf - 16-bit Baud Rate Generator is used
+                    //~ 0 = bcf - 8-bit Baud Rate Generator is used
                     BRG16 = BRG16_TEMP
                   #endif
-                  'Set High Baud Rate Select bit
+                  //~ Set High Baud Rate Select bit
                   BRGH = BRGH_TEMP
               #endif
 
@@ -1029,11 +1035,16 @@ Sub InitUSART
               #endif
 
              #IFNDEF var(U1CON0)
-              'Enable async and TX mode
-              //~ This works for non K42 type chips
+              //~ Enable async and TX mode
               //~ Changed to canskip to silently exit when no USART
-              [canskip]SYNC=0
-              [canskip]TXEN=1
+              //~ Changed to canskip to silently exit when no USART
+              #IFDEF bit(SYNC)
+                SYNC=0
+              #ENDIF
+              #IFDEF bit(TXEN)
+                TXEN=1
+              #ENDIF
+
              #ENDIF
 
              #ifdef bit(SPEN)
