@@ -319,6 +319,7 @@ TooManyArrayElements = "The number of array %Array% elements is too large.  The 
 TooManyErrors = "Too many errors"
 UndeclaredArray = "Array %array% has not been declared"
 UndeclaredVar = "Variable %var% was not explicitly declared"
+UndeclaredMacroVar = "Macro variable %var% not declared - type unknown"
 UsartBaudTooLow = "USART baud rate is too low"
 UseSYSDEFAULTCONCATSTRING = "COMPILER INFORMATION: DIMension of SYSSTRINGPARAM%param1%*%param2%.  Use constant SYSDEFAULTCONCATSTRING to specify size"
 VarAliasAndAt = "Alias and At cannot be used together, both set the variable location"

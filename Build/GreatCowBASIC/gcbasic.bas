@@ -789,8 +789,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2022-12-06"
-buildVersion = "1202"
+Version = "1.00.00 2022-12-15"
+buildVersion = "1205"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -8618,7 +8618,14 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
         END If
         'Replace parameters
         For RP = 1 to .Params
-          WholeReplace TempData, .Called->Params(RP).Name, .Param(RP, 1)
+          'Change 1205 add the IF check to stop recursive replacement  - so, the IF and ENDIF
+          If .Called->Params(RP).Name <> .Param(RP, 1) Then
+            WholeReplace TempData, .Called->Params(RP).Name, .Param(RP, 1)   'this was the original line. When the two params are the same then the compiler locked up as it never exits WholeReplace()
+          Else
+            Temp = Message("UndeclaredMacroVar")
+            Replace Temp, "%var%", .Param(RP, 1)
+            LogError Temp, .Origin
+          End If
         Next
         'Hide macro name (if macro is a function)
         If .Called->IsFunction Then
