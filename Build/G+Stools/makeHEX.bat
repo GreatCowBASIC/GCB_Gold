@@ -57,62 +57,9 @@ if exist FirstRun.dat (
   REM Process current source file as we do not need to check the existing files.
   goto CurrentFile
 )
-rem
-rem Now, validate all .h files
-rem
-echo. > include\Inspecting_Libraries.h
-
-dir include\*.h /b /s /aa > filesofinterest.txt
-
-if not exist filesofinterest.txt goto CurrentFile
-
-for /F "delims=|" %%i in (filesofinterest.txt) do (
-
-    REM Show file being processed
-    REM echo              %%i
-
-    ..\G+Stools\gawk.exe -v NoHeaderMessage=1 -f ..\G+Stools\preprocess.awk  "%%i"
-    REM Set the archive bit, so, we know we have processed this file.
-    attrib "%%i" -A
-
-)
-
-
-:CurrentFile
-REM Now compile current file.
-..\G+Stools\gawk.exe -v NoHeaderMessage=1 -f ..\G+Stools\preprocess.awk %filename%
-if exist Errors.txt (
-
-  REM
-  REM Check for any Error messages
-  REM
-  findstr /L "Error:" Errors.txt
-
-  if errorlevel 1 (
-    REM Do not exit,  there must only be warnings from the preprocessor.
-    REM Show the errors
-    type errors.txt
-
-    REM
-    REM Copy the error file for later processing.
-    REM
-    copy errors.txt preprocesserror.txt > nul
-    ) ELSE (
-    REM
-    REM Show errors
-    REM
-    goto preprocesserror
-  )
-)
 
 REM echo.
 goto compilecode
-
-:preprocesserror
-rem type errors.txt
-Echo.
-Echo Exiting...
-goto end
 
 REM  Call GCBasic to make an asm-file and assemble to hex-file:
 
