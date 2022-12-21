@@ -571,6 +571,7 @@ Declare Sub TableString (DataSource As String, TF As String )
 Declare Function AddFullPath(CurrPath As String, FullPathIn As String = "") As String
 DECLARE SUB Calculate (SUM As String)
 DECLARE FUNCTION CountOccur (Source As String, Search As String, SearchWhole As Integer = 0) As Integer
+DECLARE FUNCTION CountSubstring (Source As String, Search As String) As Integer
 Declare Function DelType (InString As String) As String
 DECLARE FUNCTION GetByte (DataSource As String, BS As Integer) As String
 Declare Function GetElements(InData As String, DivChar As String = "", IncludeDividers As Integer = 0) As LinkedListElement Pointer
@@ -732,6 +733,7 @@ Dim Shared As Integer AFISupport = 0
 Dim Shared As Integer StoredGCASM = 0
 Dim Shared As Integer MakeHexMode = 1
 Dim Shared As Integer Columnwidth = 77
+Dim Shared As UByte   ReservedwordC = 0
 
 'Config correct code
 Dim Shared as string adaptedConfigLine
@@ -789,8 +791,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2022-12-15"
-buildVersion = "1205"
+Version = "1.00.00 2022-12-20"
+buildVersion = "1208"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -820,7 +822,6 @@ buildVersion = "1205"
 
 Version = Version + " : Build " + buildVersion
 
-CreateReservedWordsList()
 
 'Initialise assorted variables
 Star80 = ";********************************************************************************"
@@ -882,191 +883,195 @@ SysVars = HashMapCreate
 SysVarBits = HashMapCreate
 ASMCommands = HashMapCreate
 
+CreateReservedWordsList()
+If  ErrorsFound Then Goto Fin 
 'Load files and tidy them up
 PreProcessor
 
-If FlashOnly Then
-  Print Message("SkippingCompile")
-  CompEndTime = Timer
-  AsmEndTime = CompEndTime
-  CompileSkipped = -1
-  GoTo DownloadProgram
-End If
-
-'Compile
-CompileProgram
-
-'Allocate RAM
-IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("AllocateRAM")
-AllocateRAM
-
-IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("TidyCode")
-TidyProgram
-
-'Combine subs
-IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("LocatingSubs")
-MergeSubroutines
-
-'Final optimisation
-FinalOptimise
-
-If VBS = 1 THEN PRINT : PRINT SPC(5); Message("WritingASM")
-WriteAssembly
-CompEndTime = Timer
-
-'If no errors, show success message and assemble
-IF Not ErrorsFound THEN
-  'Success message
-  PRINT Message("CompiledSuccess");
-'  IF VBS = 0 THEN
-'    PRINT
-'  Else
-    Dim Temp As String
-    Temp = Trim(Str(CompEndTime - StartTime))
-    IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-    PRINT Message("CompTime") + Temp + Message("CompSecs")
-    If NoSummary = 0 Then
-      PRINT
-      PRINT Message("Summary")
-
-      PRINT SPC(5); Message("DataRead")
-
-      PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
-      PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
-      PRINT SPC(5); Message("ChipUsage")
-      Temp = Message("UsedProgram")
-      Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
-      Replace Temp, "%total%", Str(ChipProg)
-      If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
-      PRINT SPC(10); Temp
-      Temp = Message("UsedRAM")
-      Replace Temp, "%used%", Str(StatsUsedRam)
-      Replace Temp, "%total%", Str(ChipRAM)
-      If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
-
-
-      PRINT SPC(10); Temp
-
-
-      OscType = ""
-      If ModePIC Then
-        If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
-          OscType = " (" + Message("CRIntOsc") + ")"
-        Else
-          OscType = " (" + Message("CRExtOsc") + ")"
-        End If
-      End If
-      PRINT SPC(10);
-      If ModePIC Then
-          Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType
-      Else
-          Print "OSC: " + Str(ChipMhz) + "Mhz"
-      End If
-    End If
-'  END IF
-
-  If ModeAVR then
-        AFISupport = 0
-  End IF
-
-  If AsmExe <> "" and MakeHexMode = 1 Then
-
-    IF UCase(AsmExe) = "GCASM" THEN
-      'Internal assembler
-      PRINT
-      PRINT Message("MakeASM")
-      AssembleProgram
-
-    ELSEIF instr(UCase(AsmExe),"PIC-AS") > 0 THEN
-
-      'AssembleProgram
-      PRINT
-      PRINT Message("MakeS")
-      PICASAssembler
-      'IF Not ErrorsFound THEN PRINT Message("PICASMSuccess")
-
-
-    Else
-      ExtAssembler
-    END If
-
-    AsmEndTime = Timer
-    'If VBS = 1 Then
-     ' Dim Temp As String
-     ' Temp = Trim(Str(AsmEndTime - CompEndTime))
-     ' IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-     ' PRINT Message("AsmTime") + Temp + Message("CompSecs")
-    'End If
-
-      IF Not ErrorsFound THEN
-        Dim Temp As String
-        Temp = Trim(Str(AsmEndTime - CompEndTime))
-        IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-        PRINT Message("ASMSuccess") + Message("AsmTime") + Temp + Message("CompSecs")
-      End If
-
+If Not ErrorsFound Then
+  If FlashOnly Then
+    Print Message("SkippingCompile")
+    CompEndTime = Timer
+    AsmEndTime = CompEndTime
+    CompileSkipped = -1
+    GoTo DownloadProgram
   End If
 
+  'Compile
+  CompileProgram
+
+  'Allocate RAM
+  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("AllocateRAM")
+  AllocateRAM
+
+  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("TidyCode")
+  TidyProgram
+
+  'Combine subs
+  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("LocatingSubs")
+  MergeSubroutines
+
+  'Final optimisation
+  FinalOptimise
+
+  If VBS = 1 THEN PRINT : PRINT SPC(5); Message("WritingASM")
+  WriteAssembly
+  CompEndTime = Timer
+
+  'If no errors, show success message and assemble
+  IF Not ErrorsFound THEN
+    'Success message
+    PRINT Message("CompiledSuccess");
+    '  IF VBS = 0 THEN
+    '    PRINT
+    '  Else
+      Dim Temp As String
+      Temp = Trim(Str(CompEndTime - StartTime))
+      IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+      PRINT Message("CompTime") + Temp + Message("CompSecs")
+      If NoSummary = 0 Then
+        PRINT
+        PRINT Message("Summary")
+
+        PRINT SPC(5); Message("DataRead")
+
+        PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
+        PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
+        PRINT SPC(5); Message("ChipUsage")
+        Temp = Message("UsedProgram")
+        Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
+        Replace Temp, "%total%", Str(ChipProg)
+        If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
+        PRINT SPC(10); Temp
+        Temp = Message("UsedRAM")
+        Replace Temp, "%used%", Str(StatsUsedRam)
+        Replace Temp, "%total%", Str(ChipRAM)
+        If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
 
 
-
-End If
-AsmEndTime = Timer
-
-'Download program
-DownloadProgram:
-  IF (  PrgExe <> "" AND  Ucase(RIGHT(PrgExe,4)) <> "NONE"  AND AsmExe <> "" ) AND ErrorsFound = 0 THEN
-    PRINT
-    Dim Temp As String
-    Temp = Message("SendToPIC")
-    Replace Temp, "%PrgName%", Trim(Str(PrgName))
-    PRINT Temp
-    PrgExe = ReplaceToolVariables(PrgExe, "hex",, PrgTool)
-    PrgParams = ReplaceToolVariables(PrgParams, "hex",, PrgTool)
-
-    #ifdef __FB_WIN32__  'Need to test as WIN32 matches both 32 and 64 bit
-        if dir(PrgExe)="" then
-            'Temp = "Programmer executable " + PrgExe + " does not exist"
-            Temp = Message("ProgrammerNotFound")
-            Replace Temp, "%PrgExe%", PrgExe
-            LogError Temp
-        End if
-    #endif
-
-    If ErrorsFound = 0 Then
-      IF VBS = 1 THEN PRINT SPC(5);"Calling    : " + PrgExe
-      IF VBS = 1 THEN PRINT SPC(5);  "Parameters : " + PrgParams
+        PRINT SPC(10); Temp
 
 
-      Dim As String SaveCurrDir
-      SaveCurrDir = CurDir
-      If PrgDir <> "" Then ChDir ReplaceToolVariables(PrgDir, "hex")
-
-      ExitValue = Exec(PrgExe, PrgParams)
-
-      'Check for programmer success, should have 0 exit value
-      If ExitValue <> 0 And (LCase(PrgExe) <> "none" And LCase(Right(PrgExe, 5)) <> "\none") Then
-        Dim Temp As String
-        Temp = Message("WarningProgrammerFail")
-        Replace Temp, "%status%", Trim(Str(ExitValue))
-        LogWarning Temp
-      Else
-        ExitValue = 0
-        ProgEndTime = Timer
-
-        If VBS = 1 Then
-          Dim Temp As String
-          Temp = Trim(Str(ProgEndTime - AsmEndTime))
-          IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-          PRINT Message("ProgTime") + Temp + Message("CompSecs")
+        OscType = ""
+        If ModePIC Then
+          If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
+            OscType = " (" + Message("CRIntOsc") + ")"
+          Else
+            OscType = " (" + Message("CRExtOsc") + ")"
+          End If
+        End If
+        PRINT SPC(10);
+        If ModePIC Then
+            Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType
+        Else
+            Print "OSC: " + Str(ChipMhz) + "Mhz"
         End If
       End If
-      ChDir SaveCurrDir
-    End If
-  END If
-ProgEndTime = Timer
+  '  END IF
 
-'Issue message
+    If ModeAVR then
+          AFISupport = 0
+    End IF
+
+    If AsmExe <> "" and MakeHexMode = 1 Then
+
+      IF UCase(AsmExe) = "GCASM" THEN
+        'Internal assembler
+        PRINT
+        PRINT Message("MakeASM")
+        AssembleProgram
+
+      ELSEIF instr(UCase(AsmExe),"PIC-AS") > 0 THEN
+
+        'AssembleProgram
+        PRINT
+        PRINT Message("MakeS")
+        PICASAssembler
+        'IF Not ErrorsFound THEN PRINT Message("PICASMSuccess")
+
+
+      Else
+        ExtAssembler
+      END If
+
+      AsmEndTime = Timer
+      'If VBS = 1 Then
+      ' Dim Temp As String
+      ' Temp = Trim(Str(AsmEndTime - CompEndTime))
+      ' IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+      ' PRINT Message("AsmTime") + Temp + Message("CompSecs")
+      'End If
+
+        IF Not ErrorsFound THEN
+          Dim Temp As String
+          Temp = Trim(Str(AsmEndTime - CompEndTime))
+          IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+          PRINT Message("ASMSuccess") + Message("AsmTime") + Temp + Message("CompSecs")
+        End If
+
+    End If
+
+
+
+
+  End If
+  AsmEndTime = Timer
+
+  'Download program
+  DownloadProgram:
+    IF (  PrgExe <> "" AND  Ucase(RIGHT(PrgExe,4)) <> "NONE"  AND AsmExe <> "" ) AND ErrorsFound = 0 THEN
+      PRINT
+      Dim Temp As String
+      Temp = Message("SendToPIC")
+      Replace Temp, "%PrgName%", Trim(Str(PrgName))
+      PRINT Temp
+      PrgExe = ReplaceToolVariables(PrgExe, "hex",, PrgTool)
+      PrgParams = ReplaceToolVariables(PrgParams, "hex",, PrgTool)
+
+      #ifdef __FB_WIN32__  'Need to test as WIN32 matches both 32 and 64 bit
+          if dir(PrgExe)="" then
+              'Temp = "Programmer executable " + PrgExe + " does not exist"
+              Temp = Message("ProgrammerNotFound")
+              Replace Temp, "%PrgExe%", PrgExe
+              LogError Temp
+          End if
+      #endif
+
+      If ErrorsFound = 0 Then
+        IF VBS = 1 THEN PRINT SPC(5);"Calling    : " + PrgExe
+        IF VBS = 1 THEN PRINT SPC(5);  "Parameters : " + PrgParams
+
+
+        Dim As String SaveCurrDir
+        SaveCurrDir = CurDir
+        If PrgDir <> "" Then ChDir ReplaceToolVariables(PrgDir, "hex")
+
+        ExitValue = Exec(PrgExe, PrgParams)
+
+        'Check for programmer success, should have 0 exit value
+        If ExitValue <> 0 And (LCase(PrgExe) <> "none" And LCase(Right(PrgExe, 5)) <> "\none") Then
+          Dim Temp As String
+          Temp = Message("WarningProgrammerFail")
+          Replace Temp, "%status%", Trim(Str(ExitValue))
+          LogWarning Temp
+        Else
+          ExitValue = 0
+          ProgEndTime = Timer
+
+          If VBS = 1 Then
+            Dim Temp As String
+            Temp = Trim(Str(ProgEndTime - AsmEndTime))
+            IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+            PRINT Message("ProgTime") + Temp + Message("CompSecs")
+          End If
+        End If
+        ChDir SaveCurrDir
+      End If
+    END If
+  ProgEndTime = Timer
+
+  'Issue message
+End If
 
 IF Not ErrorsFound and MuteBanners = -1 THEN
     Randomize timer
@@ -17263,9 +17268,9 @@ Sub WriteAssembly
 
   ' ASM file
   If ModePIC Then
-      PRINT #1, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip MPASM/MPLAB-X Assembler"
+      PRINT #1, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip MPASM/MPLAB-X Assembler using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
   Else
-      PRINT #1, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip AVR Assembler"
+      PRINT #1, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip AVR Assembler using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
   End If
   Print #1, ";Need help? "
   Print #1, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
@@ -17280,7 +17285,7 @@ Sub WriteAssembly
 
   if AFISupport = 1 then
       ' AS file
-      PRINT #2, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip PIC-AS"
+      PRINT #2, ";Program compiled by Great Cow BASIC (" + Version + ") for Microchip PIC-AS using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
   Print #2, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
   Print #2, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
   Print #2, ";or, email:"
@@ -19603,6 +19608,7 @@ Sub CreateReservedWordsList
   dim ReservedWordFile as string
   dim ReservedWordIn as string
   dim ReservedWordCounter as Integer
+  dim As Byte ReservedwordLoop = 0
 
   'Detect GCBASIC install directory
   ID = ExePath
@@ -19640,7 +19646,15 @@ Sub CreateReservedWordsList
       ReservedWords( ReservedWordCounter )  = ReservedWordIn
 '      print ReservedWords( ReservedWordCounter )
       ReservedWordCounter = ReservedWordCounter +1
+      For ReservedwordLoop = 1 to len ( ReservedWordIn )
+          If ReservedWordCounter > 1 then
+            ReservedwordC = ReservedwordC + ASC( Mid(ReservedWordIn,ReservedwordLoop ,1) )
+          End if
+      Next 
   Loop
   CLOSE  #1
-
+  If Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) ) + ReservedwordC <> 255 Then
+      LogError "Invalid Reservedwords.dat - reinstall Great Cow BASIC toolchain"
+  End If
+  ReservedwordC = Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) )     
 End Sub

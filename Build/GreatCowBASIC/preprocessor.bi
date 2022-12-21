@@ -589,6 +589,8 @@ SUB PreProcessor
   Dim ConditionalStatus as Integer
   Dim As Single StartOfCommentBlock, EndOfCommentBlock
   Dim LibraryInclude as Integer = 0
+  Dim as Integer functionCounter, subCounter, endfunctionCounter, endsubCounter = 0
+  Dim as String firstSubEncountered = ""
 
   Dim As String CachedCmd( 20 )
   Dim As Integer CachedPMode( 20 )
@@ -821,9 +823,9 @@ SUB PreProcessor
             LINE INPUT #FileNo, DataSource
             If Len(DataSource) <> 0 Then
               'Optionally, to include in code.
- '             PCC += 1: PreserveCode(PCC) = "; Line " + Str(InsertLineNo) +": " + Trim(DataSource)
- '             IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
- '             IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+     '             PCC += 1: PreserveCode(PCC) = "; Line " + Str(InsertLineNo) +": " + Trim(DataSource)
+     '             IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+     '             IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
             Else
               DataSource = ""
             End If
@@ -1245,6 +1247,104 @@ SUB PreProcessor
         IF Left(DataSource, 3) = "IF " AND INSTR(DataSource, "THEN") = 0 THEN
           LogError Message("NoThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
         END IF
+
+        'This section syntax checks the source for improved syntax checking
+        'GOTO jumpEndofimprovedsyntaxchecking
+        
+        If Left( DataSource,4) = "SUB " Then
+          If endsubCounter = 0 Then
+            If subCounter = 0 Then
+              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            Else
+              LogError Message("MissingEndSubDef"), firstSubEncountered
+              Close
+              exit sub  
+            End if
+            subCounter = subCounter + 1
+            endsubCounter = 0
+          else
+            LogError Message("MissingEndSubDef"), firstSubEncountered
+            Close
+            exit sub
+          end if
+        End if
+        
+        If Left( DataSource,7) = "END SUB" Then
+          If subCounter = 1 Then
+            endsubCounter = 0
+            subCounter = 0
+            firstSubEncountered = ""                       
+          Else
+            LogError Message("MissingSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            Close
+            exit sub
+          End if
+        End if
+          
+        If Left( DataSource,9) = "FUNCTION " Then
+          If endfunctionCounter = 0 Then
+            If functionCounter = 0 Then
+              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            Else
+              LogError Message("MissingEndFuncDef"), firstSubEncountered
+              Close
+              exit sub  
+            End if
+            functionCounter = functionCounter + 1
+            endfunctionCounter = 0
+          else
+            LogError Message("MissingEndFuncDef"), firstSubEncountered
+            Close
+            exit sub
+          end if
+        End if
+        
+        If Left( DataSource,12) = "END FUNCTION" Then
+          If functionCounter = 1 Then
+            endfunctionCounter = 0
+            functionCounter = 0
+            firstSubEncountered = ""                       
+          Else
+            LogError Message("MissingFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            Close
+            exit sub
+          End if
+        End if
+
+        If Left( DataSource,6) = "ELSEIF" Then
+            LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            Close
+            exit sub
+        End If
+
+        If Left( DataSource,7) = "ELSE IF" Then
+          If Instr( DataSource, " THEN" ) = 0 Then
+              LogError Message("ElseIfMissingThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Close
+              exit Sub
+          End If
+        End If
+
+
+        If instr( DataSource, "(" ) + instr( DataSource, ")" ) <> 0 Then
+          If countSubstring(DataSource,"(" ) <> countSubstring(DataSource,")" ) Then
+            LogError Message("MissingParenthesesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          End If 
+        End If
+
+        If instr( DataSource, "[" ) + instr( DataSource, "]" ) <> 0 Then        
+          If countSubstring(DataSource,"[" ) <> countSubstring(DataSource,"]" ) Then
+            LogError Message("MissingBracketsError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          End If
+        End if
+        If instr( DataSource, "{" ) + instr( DataSource, "}" ) <> 0 Then
+          If countSubstring(DataSource,"{" ) <> countSubstring(DataSource,"}" ) Then
+            LogError Message("MissingBracesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          End If 
+        End if
+
+        jumpEndofimprovedsyntaxchecking:
+
 
         'Replace <> with ~ (not equal)
         Do While INSTR(DataSource, "<>") <> 0: Replace DataSource, "<>", "~": Loop
@@ -1709,7 +1809,7 @@ SUB PreProcessor
             Next
 
 
-'            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
+       '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
             TempData = Message("NotaValidDirective")
             Replace TempData, "%directive%", DataSource
             LogError TempData, " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
@@ -1828,11 +1928,10 @@ SUB PreProcessor
     Open CDF For Output As #CDFFileHandle
   End if
 
+
   PercOld = 0
   CurrPerc = 0.5
-  'PercAdd = 1 / APC * 100
   CurrPos = Subroutine(0)->CodeStart->Next
-
   Do While CurrPos <> 0
 
     Temp = CurrPos->Value

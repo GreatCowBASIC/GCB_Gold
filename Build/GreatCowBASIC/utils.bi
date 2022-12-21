@@ -1153,6 +1153,20 @@ FUNCTION IsLet (DataSource As String) As Integer
 
 END Function
 
+
+Function CountSubstring(s As String, search As String) As Integer
+  If s = "" OrElse search = "" Then Return 0
+  Dim As Integer count = 0, length = Len(search)
+  For i As Integer = 1 To Len(s)
+    If Mid(s, i, length) = Search Then
+      count += 1
+      i += length - 1
+    End If
+  Next
+  Return count
+End Function
+
+
 Function IsSysTemp(VarNameIn As String) As Integer
   'Check if a variable name is a system temp variable
   '(Check if name is SysTempn, where n is a number, possibly followed by _H, _U or _E)

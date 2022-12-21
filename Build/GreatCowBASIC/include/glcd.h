@@ -1,5 +1,5 @@
 /*    Graphical LCD routines for the GCBASIC compiler
-    Copyright (C) 2012-2020 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
+    Copyright (C) 2012-2022 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -60,6 +60,7 @@
     1/12/19  Addded GLCD_TYPE_EPD_EPD7in5 support
     31/01/21 revised Underscrore to permit contig lines
     25/02/21 Added GLCD_TYPE_ST7789_240_240 support
+    19/12/22 Revised GLCDPrintLoc to correct Xpos value.
 
 */
 'Constants that might need to be set
@@ -1064,7 +1065,7 @@ Sub GLCDPrintWithSize(In PrintLocX as word, In PrintLocY as word, in LCDPrintDat
   #endif
 
   'Update the current X position for GLCDPrintString
-  PrintLocX = GLCDPrintLoc
+   GLCDPrintLoc = PrintLocX
 
   'Write Data
   For GLCDPrint_String_Counter = 1 To GLCDPrintLen
