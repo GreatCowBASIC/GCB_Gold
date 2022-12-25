@@ -1,4 +1,4 @@
-'       Copyright (C) 2013-2020  Perry, Evan Venn and Jack James
+'       Copyright (C) 2013-2022  Perry, Evan Venn and Jack James
 '       ================================================================================
 '       MCP23017 Library for Great Cow BASIC Compiler
 '       --------------------------------------------------------------------------------
@@ -23,7 +23,7 @@
 '       License along with this library; if not, write to the Free Software
 '       Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 '
-'
+'       23/12/2022      Updated to remove typo from MCP23017_SendByte
 '       --------------------------------------------------------------------------------
 '       ********************************************************************************
 '       --------------------------------------------------------------------------------
@@ -114,7 +114,7 @@
         #Define INTCONA = 0x08
         #Define INTCONB = 0x09
 
-'       IOCON – I/O EXPANDER CONFIGURATION REGISTER See datasheet
+'       IOCON ï¿½ I/O EXPANDER CONFIGURATION REGISTER See datasheet
         #Define IOCONA 0x0A
         #Define IOCONB 0x0B
 
@@ -128,8 +128,8 @@
 '       INTERRUPT FLAG REGISTER
 '       The INTF register reflects the interrupt condition on the port pins of
 '       any pin that is enabled for interrupts via the GPINTEN register.
-'       A ‘set’ bit indicates that the associated pin caused the interrupt.
-'       This register is ‘read-only’.
+'       A ï¿½setï¿½ bit indicates that the associated pin caused the interrupt.
+'       This register is ï¿½read-onlyï¿½.
 '       Writes to this register will be ignored.
         #Define INTFA 0x0E
         #Define INTFB 0x0F
@@ -137,7 +137,7 @@
 '       INTERRUPT CAPTURE REGISTER
 '       The INTCAP register captures the GPIO port value at
 '       the time the interrupt occurred.
-'       The register is ‘reado nly’ and is updated only when an interrupt occurs.
+'       The register is ï¿½reado nlyï¿½ and is updated only when an interrupt occurs.
 '       The register will remain unchanged until the interrupt is
 '       cleared via a read of INTCAP or GPIO.
         #Define INTCAPA 0x10
@@ -188,7 +188,7 @@ Sub MCP23017_SendByte (In MCP23017_device, In MCP23017_instr , In MCP23017_data)
            HI2CSend( MCP23017_device )
            HI2CSend( MCP23017_instr )
            HI2CSend( MCP23017_data )
-           HII2CStop
+           HI2CStop
         #EndIf
 End Sub
 
@@ -276,8 +276,8 @@ End Sub
 
 '       ==============================================================================
 '       Configurazione Pull-Up della PORTA A
-'       Se il bit è settato a 1 il pin corrispondente, se configurato
-'       come input, è pullappato alto internamente con una resistenza da 100K.
+'       Se il bit ï¿½ settato a 1 il pin corrispondente, se configurato
+'       come input, ï¿½ pullappato alto internamente con una resistenza da 100K.
 '       Pull-Up configuration of PORT A
 '       If the bit is set to 1, the corresponding pin, if configured
 '       as input, is internally high-lapped with a 100K resistor.
@@ -289,8 +289,8 @@ End Sub
 
 '       ==============================================================================
 '       Configurazione Pull-Up della PORTA B
-'       Se il bit è settato a 1 il pin corrispondente, se configurato
-'       come input, è pullappato alto internamente con una resistenza da 100K.
+'       Se il bit ï¿½ settato a 1 il pin corrispondente, se configurato
+'       come input, ï¿½ pullappato alto internamente con una resistenza da 100K.
 '       Pull-Up configuration of PORT B
 '       If the bit is set to 1, the corresponding pin, if configured
 '       as input, is internally high-lapped with a 100K resistor.
@@ -304,8 +304,8 @@ End Sub
 '       INTERRUPT FLAG REGISTER   (READ)
 '       The INTF register reflects the interrupt condition on the port pins of
 '       any pin that is enabled for interrupts via the GPINTEN register.
-'       A ‘set’ bit indicates that the associated pin caused the interrupt.
-'       This register is ‘read-only’.
+'       A ï¿½setï¿½ bit indicates that the associated pin caused the interrupt.
+'       This register is ï¿½read-onlyï¿½.
 '       Writes to this register will be ignored.
 '       -------------------------------------------------------------------------------
 Function ReadInterruptFlagA (In DeviceAddress) As Byte
@@ -321,7 +321,7 @@ End Function
 '       INTERRUPT CAPTURE REGISTER (READ)
 '       The INTCAP register captures the GPIO port value at
 '       the time the interrupt occurred.
-'       The register is ‘reado nly’ and is updated only when an interrupt occurs.
+'       The register is ï¿½reado nlyï¿½ and is updated only when an interrupt occurs.
 '       The register will remain unchanged until the interrupt is
 '       cleared via a read of INTCAP or GPIO.
 '       ------------------------------------------------------------------------------
