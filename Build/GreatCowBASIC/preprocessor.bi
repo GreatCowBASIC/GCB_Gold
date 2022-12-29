@@ -868,12 +868,6 @@ SUB PreProcessor
         DataSource= "#CONFIG"+Mid( Trim(DataSource) , 15)
       End if
 
-      'Support inclusion of C++ code direct from MPLAB-IDE
-      If Instr(  Ucase(DataSource), UCASE("bits.") ) > 0   then
-        DataSource = Ucase(DataSource)
-        Replace  DataSource, "BITS", ""
-
-      End if
       'Remove developer comments
         If Left(Trim(DataSource), 2) = "'~" OR Left(Trim(DataSource), 2) = ";~" OR Left(Trim(DataSource), 5) = "REM ~" OR Left(Trim(DataSource), 3) = "//~" Then
           Goto LoadNextLine

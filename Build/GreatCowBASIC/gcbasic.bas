@@ -791,8 +791,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2022-12-20"
-buildVersion = "1208"
+Version = "1.00.00 2022-12-28"
+buildVersion = "1210"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
