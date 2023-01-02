@@ -314,6 +314,7 @@ OutOfProgMem = "Program is too large, cannot fit all subroutines into available 
 OutOfRegSpace = "Out of registers. Please break up any complex calculations"
 OutOfRegSpaceAVRrc = "Out of registers. This specific AVRrc microcontroller has limited registers. Please use BYTE variables where ever possible, do not use logic (OR/AND etc) on anything but BYTE variables, use ROTATE rather than mutliplication. Essentially keep the code very simple."
 PICASFailtoLaunch = "PIC-AS failed to execute: %var%"
+ReadADMissingparentheses = "READAD | READAD10 | READAD12 function(s) required parentheses () as parameter delimeters"
 RecursiveDefine = "Recursive define"
 RepeatMissingCount = "No value given for Repeat"
 ReservedTableTextCharacter = "Reserved chararacter - you cannot use ASCII 255"
