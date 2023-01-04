@@ -1,5 +1,5 @@
 ' GCBASIC - A BASIC Compiler for microcontrollers
-' Copyright (C) 2006 - 2022 Hugh Considine and the Great Cow BASIC team
+' Copyright (C) 2006 - 2023 Hugh Considine, Evan R. Venn and the Great Cow BASIC team
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -791,8 +791,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2022-12-28"
-buildVersion = "1210"
+Version = "1.00.00 2023-01-01"
+buildVersion = "1213"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -3735,7 +3735,7 @@ Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As
       'Are we in the user program? Test for ;?F1L....  Because we dont change library code
       If Instr( UCASE( Origin), ";?F1L" ) > 0 Then
         ' LogWarning "Using AVR hardware maths - simplify statement to ensure correct ASM generation"
-        OutList->CodeEnd = LinkedListInsert(OutList->CodeEnd, ";Using AVR hardware maths - simplify maths to improve ASM generatation to use hardware AVR MUL directive")
+        If PreserveMode <> 0 Then OutList->CodeEnd = LinkedListInsert(OutList->CodeEnd, ";Complex math calculation.  AVR hardware MUL directive disabled  - simplify calculation to enable MUL for Byte math")
         HMult = 0
       End If
     End if

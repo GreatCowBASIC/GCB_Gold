@@ -1,7 +1,7 @@
 ' ============= Prototype TableString ============= 2021-03-02
 ' GCBASIC - A BASIC Compiler for microcontrollers
 '  Preprocessor
-' Copyright (C) 2006 - 2021 Hugh Considine
+' Copyright (C) 2006 - 2023 Hugh Considine and Evan R. Venn
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -1339,7 +1339,15 @@ SUB PreProcessor
 
         jumpEndofimprovedsyntaxchecking:
 
-
+        'Is this the user source and readad* - needs to have ( and )
+        If RF = 1 Then
+          If instr( DataSource, "READAD" ) Then
+            If countSubstring(DataSource,"(" ) = 0 or  countSubstring(DataSource,")" ) = 0 Then
+              LogError Message("ReadADMissingparentheses") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            End If
+          End If
+        End If
+        
         'Replace <> with ~ (not equal)
         Do While INSTR(DataSource, "<>") <> 0: Replace DataSource, "<>", "~": Loop
         'Replace => with } (equal or greater)
