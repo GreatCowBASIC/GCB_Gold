@@ -1,6 +1,6 @@
 ' GCBASIC - A BASIC Compiler for microcontrollers
 '  Miscellaneous routines
-' Copyright (C) 2006 - 2021 Hugh Considine
+' Copyright (C) 2006 - 2023 Hugh Considine and Evan R. Venn
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by

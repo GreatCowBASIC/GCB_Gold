@@ -203,7 +203,8 @@ Sub PrepareBuiltIn
   AddConstant("CHIP_" + ChipName, "")
   AddConstant("CHIPMHZ", Str(ChipMhz))
   AddConstant("CHIPRESERVEHIGHPROG", Str(ReserveHighProg))
-
+  AddConstant( SelectedAssembler, "TRUE" )
+  
   If ModePIC Then AddConstant("PIC", "")
   If ModeAVR Then
     AddConstant("AVR", "")
@@ -1342,8 +1343,10 @@ SUB PreProcessor
         'Is this the user source and readad* - needs to have ( and )
         If RF = 1 Then
           If instr( DataSource, "READAD" ) Then
-            If countSubstring(DataSource,"(" ) = 0 or  countSubstring(DataSource,")" ) = 0 Then
-              LogError Message("ReadADMissingparentheses") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            If WholeINSTR( DataSource, "READAD" ) = 2 OR  WholeINSTR( DataSource, "READAD10" ) = 2  OR WholeINSTR( DataSource, "READAD12" ) = 2  Then
+              If countSubstring(DataSource,"(" ) = 0 or  countSubstring(DataSource,")" ) = 0 Then
+                LogError Message("ReadADMissingparentheses") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              End If
             End If
           End If
         End If
@@ -2188,6 +2191,26 @@ SUB PreProcessor
 
   'Replace constants and calculations in tables with actual values
   ReadTableValues
+
+  'Create constant for selected assembler
+  IF VBS = 1 THEN PRINT
+  IF ModePIC Then
+    IF AFISupport = 1  Then
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberPICAS")
+    ELSEIF UCase(AsmExe) = "GCASM" then
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberGCASM")
+    Else
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";AsmTool
+    END if
+  END IF
+  IF ModeAVR Then
+    IF UCase(AsmExe) = "GCASM" Then
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberGCASM")
+    Else
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";AsmTool
+    END if
+  END IF
+  IF VBS = 1 THEN PRINT
 
 End SUB
 

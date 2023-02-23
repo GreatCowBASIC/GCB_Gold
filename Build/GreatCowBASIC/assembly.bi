@@ -419,6 +419,7 @@ Function AsmTidy (DataSource As String ,  StoredGCASM as integer ) As String
         DataSource = ucase(DataSource)
 
     End if
+
   END IF
 
 
@@ -498,6 +499,22 @@ Function AsmTidy (DataSource As String ,  StoredGCASM as integer ) As String
       End If 
   End If
   
+  If AFISupport = 1 and UserCodeOnlyEnabled = -1 then
+    'Check for Reservedword case
+    dim ReservedWordCounter as Integer
+    For ReservedWordCounter = 0 to RESERVED_WORDS
+        If Instr(Ucase(Trim(Temp)), Ucase(trim(ReservedWords(ReservedWordCounter)))) > 0 And LEN(ReservedWords(ReservedWordCounter))> 2 THEN
+            replace( Temp, Ucase(ReservedWords(ReservedWordCounter)),  ReservedWords(ReservedWordCounter)  )
+            exit for
+        End if
+    Next
+    'remove MPASM errorlevel setting from .S source
+    If Instr( ucase(temp), "ERRORLEVEL") > 0 Then
+      temp = ";"+temp
+    End if
+
+  End if
+
   'Format command, output result
   IF  INSTR(Temp, " EQU " ) = 0 then
     IF INSTR(Temp, " ") <> 0 THEN Replace Temp, " ", Chr(9)

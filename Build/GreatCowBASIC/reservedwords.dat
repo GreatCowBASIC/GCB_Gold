@@ -1,8 +1,8 @@
-KeyWord 64
+KeyWord 29
 #ASMRAW
 #CHIP
 #CONFIG
-#DEFINE
+#define
 #ENDIF
 #ELSE
 #ENDSCRIPT
@@ -79,6 +79,7 @@ DisplayChar
 DisplayValue
 Do
 DS18B20SetResolution
+equ
 EERAM_AutoStore
 EERAM_Backup
 EERAM_HS
@@ -213,6 +214,14 @@ HPWMOff
 HPWMUpdate
 HPWM_CCPTimerN
 HPWM_Fast
+HPWM16Init
+HPWM16
+HPWM16On
+HPWM16Off
+HPWM16_Log2
+HPWM16_setPRPS
+HPWM16_setDC
+HPWM16_setGoing 
 HSerGetNum
 HSerGetString
 HSerPrint

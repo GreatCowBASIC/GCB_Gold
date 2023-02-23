@@ -659,6 +659,7 @@ dim shared As integer WholeINSTRdebug = 0
 
 'Assembler vars
 DIM SHARED As Integer ToAsmSymbols
+DIM SHARED As String  SelectedAssembler
 
 'Code Array
 Dim Shared CompilerOutput As CodeSection Pointer
@@ -765,6 +766,7 @@ const   ChipFamily18FxxQ40 as integer = 16105
 const   ChipFamily18FxxQ84 as integer = 16106
 const   ChipFamily18FxxK83 as integer = 16107
 const   ChipFamily18FxxQ83 as integer = 16108
+const   ChipFamily18FxxQ71 as integer = 16109
 
 const   INSERTFILENOTOPEN = 1
 const   INSERTFILEOPEN    = 2
@@ -791,8 +793,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-01-01"
-buildVersion = "1213"
+Version = "1.00.00 2023-02-21"
+buildVersion = "1216"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -848,6 +850,10 @@ OldSBC = -1
 DebugTime = 0
 MakeHexMode = 1
 Conditionaldebugfile = ""
+SelectedAssembler = "GCASM"
+
+
+AddConstant("CHIPASSEMBLER", SelectedAssembler )
 
 ChipProgrammerName=""
 _31kSupported.State = 0
@@ -889,6 +895,7 @@ If  ErrorsFound Then Goto Fin
 PreProcessor
 
 If Not ErrorsFound Then
+
   If FlashOnly Then
     Print Message("SkippingCompile")
     CompEndTime = Timer
@@ -14100,9 +14107,11 @@ SUB InitCompiler
                 Case "assembler"
                 If AsmNotSet Then
                   AsmExe = MsgVal
+                  SelectedAssembler = MsgVal
                   if instr( ucase(MsgVal), "PIC-AS") > 0 then
                           AFISupport = 1
                   End If
+                  Replace ( SelectedAssembler, "-", "" )
                 End if
 
                 Case "conditionaldebugfile"
@@ -16094,8 +16103,10 @@ Sub ReadPICASChipData
 #ELSE
 
   'read the INC in and put into ARRAY   ReverseIncFileLookup(
-  dim as string InLine
+  dim as string InLine, tmpfilename
   dim as integer ffile, fresult,findex
+  dim as string SearchExe
+  dim as integer F, Result, ChipSupported
 
 'ChipPICASConfigFile,ChipPICASRoot
 
@@ -16108,13 +16119,56 @@ Sub ReadPICASChipData
   ChipPICASConfigFile = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\dat\cfgmap\"+LCase(ChipName) + ".cfgmap"
   ChipPICASConfigFile = mid( ChipPICASConfigFile , 2)
 
+  SearchExe =  AsmExe
+  ReplaceAll ( SearchExe, Chr(34), "" )
+  if trim(dir(SearchExe)) = "" Then
+    LogError Message("PICASAssemblerNotFound")
+    LogError ChipPICASRoot+"\bin\pic-as.exe " + Message( "PICASNotFound" )
+    
+    WriteErrorLog
+    ErrorsFound = - 1
+    end
+  end If
 
-   'Check that the chip data is present
+  'Now check if chip is supported
+  tmpfilename = FI
+  replace ( tmpfilename, ".GCB", ".tmp")
+  kill tmpfilename
+  F = FreeFile
+  
+  'Execute the PIC-AS compiler to provide a list of the chips
+  Result = Shell( chr(34)+chr(34)+SearchExe+chr(34)+" -mprint-devices > " + chr(34) + tmpfilename + chr(34) + chr(34) )
+  Open tmpfilename For Input As #F
+  ChipSupported = 0
+
+  DO WHILE NOT EOF(F)
+    LINE INPUT #F, InLine
+    If Instr( Ucase(Inline), Ucase(ChipName) ) > 0 Then
+        ChipSupported = -1
+    End if
+  Loop
+  Close #F
+  kill tmpfilename
+  if ChipSupported = 0 Then
+    LogError Message("PICASChipNotSupported")
+    WriteErrorLog
+    ErrorsFound = - 1
+    End
+  End if
+
+ 
+  'now check that the chip data file is present
     findex = 0
     ' Find the first free file number.
     ffile = FreeFile
-    fresult = OPEN ( ChipPICASDataFile For Input As ffile )
+     if trim(dir(ChipPICASDataFile)) = "" Then
+        LogError Message("PICASChipNotSupported")
+        WriteErrorLog
+        ErrorsFound = - 1
+        end
+    End if
 
+    fresult = OPEN ( ChipPICASDataFile For Input As ffile )
     If fresult <> 0 then
         LogError Message("PICASNotFound")
         WriteErrorLog
@@ -16125,13 +16179,13 @@ Sub ReadPICASChipData
     DO WHILE NOT EOF(ffile)
       LINE INPUT #ffile, InLine
       if left( InLine,7) =  "#define" and instr( inline, "BANKMASK") = 0  <> 0 then
-         'read next line
-         LINE INPUT #ffile, InLine
+        'read next line
+        LINE INPUT #ffile, InLine
 
-         If instr( ucase(inline), "EQU") > 0 then
-            ReverseIncFileLookup( findex ).Value = trim(mid(inline, 1, instr(inline," equ ")-5))
-            ReverseIncFileLookup( findex ).NumVal = val("&h"+trim( mid( inline,instr(inline," equ ")+5,  InStr( inline,chr(34) ) -1 )  ))
-            findex = findex +1
+        If instr( ucase(inline), "EQU") > 0 then
+          ReverseIncFileLookup( findex ).Value = trim(mid(inline, 1, instr(inline," equ ")-5))
+          ReverseIncFileLookup( findex ).NumVal = val("&h"+trim( mid( inline,instr(inline," equ ")+5,  InStr( inline,chr(34) ) -1 )  ))
+          findex = findex +1
         end if
       end if
 
@@ -17705,14 +17759,15 @@ Sub WriteAssembly
           dim Param3 as string
           dim elements0() as string
           dim outstring as string
+          dim preservedline as Integer
           outline = CurrLine->Value
-
+          preservedline = 0
           if GetMetaData(Currline)->IsLabel = 0 then
             'Not a label so adapt the register and the register.bit
 
             Select Case ChipFamily
 
-              Case 16
+            Case 16
 
                   'Tested on 18f16q41
 
@@ -17843,9 +17898,7 @@ Sub WriteAssembly
                   end if
 
 
-              Case Else
-
-
+            Case Else
                   If instr( outline, "," ) > 0 then
 
                       'Take the initial line of code and split into the array
@@ -17942,22 +17995,65 @@ Sub WriteAssembly
                   else
                       'lots of code looks like this... "BANKSEL ADCON0"  where there is register.. check the register is valid and reverse
                       erase currentLineElements
+
+                      'Some #RAWASM is actually hidden in PRESERVE lines, so, we need to extract and tranform
+                      If Left(outline, 8) = "PRESERVE" Then
+                          preservedline = -1
+                          Dim as Integer PresPos
+                          PresPos = VAL(Mid(outline, 10))
+                          outline = PreserveCode(PresPos)
+                      End if
+                                          
                       if instr(trim(outline), " ") <> 0 then
-                          StringSplit ( trim(outline), " ",-1,currentLineElements() )
-                          Param1 = currentLineElements(0)
-                          Param2 = currentLineElements(1)
+                          Dim tmpOutLine as String = outline
+                          replaceall ( tmpOutLine, "(", " " )
+                          replaceall ( tmpOutLine, ")", " " )
+                          replaceall ( tmpOutLine, "[", " " )
+                          replaceall ( tmpOutLine, "]", " " )
+                          replaceall ( tmpOutLine, ">>", " " )
+                          replaceall ( tmpOutLine, "<<", " " )
+                          StringSplit ( trim(tmpOutLine), " ",-1,currentLineElements() )
+                          If UserCodeOnlyEnabled = -1 then
+                            Dim elementcounter as Byte
+                            Dim registerbitlocation as String
+                            'walk the elements replacing BIT constant will value using the reverse lookups
+                            For elementcounter = 0 to ubound(currentLineElements)
+                            
+                                if GetSFRBitValue(currentLineElements(elementcounter)) <> "" then
+                                    registerbitlocation = GetSFRBitValue(currentLineElements(elementcounter))
+                                    if registerbitlocation <> "" then                                   
 
-                          if GetSysVar(Param2) <> 0 then
-                            Param2 = GetReversePICASIncFileLookupValue ( GetSysVar(Param2)->location )
+                                        replace( outline, currentLineElements(elementcounter), registerbitlocation )
 
-                            if Param2 <> "" then
-                                  outline = chr(9)+Param1+" "+Param2
-                                  if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
-                                    if PICASDEBUG then Print #2, ";B9: ASM Source was: "+CurrLine->Value
-                                  end if
+                                    end if
+                                end if
+
+                                
+                                if HasSFR ( currentLineElements(elementcounter) ) Then
+                                    'walk the elements replacing BIT constant will value using the reverse lookups
+                                    ' not implemented - awaiting Microchips explaination of how Indirect Addresssing works
+                                    ' show SFRs
+                                    ' print currentLineElements(elementcounter), Val(HashMapGetStr(Constants, UCase(currentLineElements(elementcounter)))) 
+                                end if
+                            Next
+
+                          else
+
+                            Param1 = currentLineElements(0)
+                            Param2 = currentLineElements(1)
+
+                            if GetSysVar(Param2) <> 0 then
+                              Param2 = GetReversePICASIncFileLookupValue ( GetSysVar(Param2)->location )
+
+                              if Param2 <> "" then
+                                    outline = chr(9)+Param1+" "+Param2
+                                    if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
+                                      if PICASDEBUG then Print #2, ";B9: ASM Source was: "+CurrLine->Value
+                                    end if
+                              end if
                             end if
                           end if
-
+                          
                       end if
 
 
@@ -17965,10 +18061,13 @@ Sub WriteAssembly
 
 
 
-              End Select
+            End Select
+            'print CurrLine->Value, outline
+            'CurrLine->Value = outline
+
 
           else
-
+            'must be a label
 
             if trim(outline) <> "" then
                 if PreserveMode <> 0 then print #2,  AsmTidy( "Global " +ucase(outline) ,0 )
