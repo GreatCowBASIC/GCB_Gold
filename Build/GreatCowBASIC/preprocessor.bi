@@ -504,6 +504,7 @@ Sub PrepareBuiltIn
 
   If ModePIC Then
     CurrPos = LinkedListInsert(CurrPos, "DMIN_START")
+    GetMetaData(CurrPos)->IsLabel = -1
     CurrPos = LinkedListInsert(CurrPos, "SysWaitTempMS = 60000")
     CurrPos = LinkedListInsert(CurrPos, "Delay_MS")
     CurrPos = LinkedListInsert(CurrPos, " decfsz SysWaitTempM, F")
@@ -524,6 +525,7 @@ Sub PrepareBuiltIn
 
   If ModePIC Then
     CurrPos = LinkedListInsert(CurrPos, "DHOUR_START")
+    GetMetaData(CurrPos)->IsLabel = -1
     CurrPos = LinkedListInsert(CurrPos, "SysWaitTempM = 60")
     CurrPos = LinkedListInsert(CurrPos, "Delay_M")
     CurrPos = LinkedListInsert(CurrPos, " decfsz SysWaitTempH, F")
