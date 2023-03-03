@@ -793,8 +793,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-02-23"
-buildVersion = "1218"
+Version = "1.00.00 2023-03-03"
+buildVersion = "1219"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -11342,6 +11342,7 @@ Sub PICASAssembler
   AsmExe = ReplaceToolVariables(AsmExe,,, AsmTool)
 
   AsmParams = ReplaceToolVariables(AsmParams, "asm",, AsmTool)
+
   IF VBS = 1 THEN PRINT SPC(5); Message("Calling") + AsmExe
 
   Result = Shell( chr(34)+AsmExe+" "+AsmParams+" 2>&1"+chr(34))
@@ -19116,6 +19117,9 @@ Sub MergeSubroutines
               CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ40  )  then
               CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ40 EEPROM Address 0x380000)")
+              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+            ElseIf ( ChipSubFamily = ChipFamily18FxxQ71 )  then
+              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
               CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
             ElseIf ChipFamilyVariant = 1 then
               CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamilyVariant EEPROM Address 0x310000)")

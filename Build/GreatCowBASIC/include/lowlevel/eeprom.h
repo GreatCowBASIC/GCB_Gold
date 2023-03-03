@@ -52,7 +52,7 @@
 ' 02/10/21: Fixed Q41 GO_NVMCON0 issue where GO is no longer valid.
 ' 02/01/22: Added suppoort for ChipFamily18FxxQ84
 ' 06/10/21: Fixed Q40 GO_NVMCON0 issue where GO is no longer valid.
-
+' 28/02/23: Added suppoort for ChipFamily18FxxQ71
 
 #option REQUIRED PIC CHipEEPROM %NoEEProm%
 #option REQUIRED AVR CHipEEPROM %NoEEProm%
@@ -369,6 +369,13 @@ Sub NVMADR_EPWrite(IN SysEEAddress as WORD , in EEData)
         NVMADRU = 0x31
        #ENDIF
 
+       #if ChipSubFamily = ChipFamily18FxxQ71
+       'Select DATA EE section (0x380000 - 0x3803FF) for ChipFamily18FxxQ71
+        NVMADRU = 0x38
+        //Set the NVMCMD control bits for DFM Byte Read operation
+        NVMCON1 = NVMCON1 and 0XF8 or 0x03' set bits ,1 and0
+       #ENDIF
+
        NVMADRH =SysEEAddress_h
        NVMADRL =SysEEAddress
        NVMDATL = EEData
@@ -556,6 +563,16 @@ Sub NVMADR_EPRead(IN SysEEAddress AS word  , out EEDataValue )
         NOP
         NOP
         NOP
+       #ENDIF
+
+       #if ChipSubFamily =  ChipFamily18FxxQ71
+       'Select DATA EE section (0x380000 - 0x3803FF) for ChipFamily18FxxQ71
+        NVMADRU = 0x38
+        NVMADRH =SysEEAddress_h
+        NVMADRL =SysEEAddress
+       'Set the NVMCMD control bits for DFM Byte Read operation by clearing NVMCMD[2:0] NVM Command bits
+        NVMCON1 = 0
+        GO_NVMCON0 = 1
        #ENDIF
 
       EEDataValue = NVMDATL

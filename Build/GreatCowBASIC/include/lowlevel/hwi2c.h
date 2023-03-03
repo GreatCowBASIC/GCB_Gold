@@ -52,7 +52,8 @@
 '    Updated Dec 2020 - Added support for 18FxxQ10
 '    Updated Jan 2021 - Added support for 18FxxQ43
 '    Updated Sep 2021 - Revised SI2CDiscovery adding #IFDEF var(I2C1CNTL) and #IFDEF var(I2C1CNT) to isolate Q43 that only supports I2C1CNT
-' 14/08/22 Updated user changeable constants only - no functional change
+'            14/08/22 - Updated user changeable constants only - no functional change
+'            28/02/23 - Added support fort 18FxxQ71 and resolved constant isolation
 
 'User changeable constants
 
@@ -144,7 +145,7 @@
       If PIC Then
 
             If Bit(I2C1CON0_EN) Then
-                'Redirects to I2C Module for new MSSP aka K42 family
+                'Redirects to I2C Module for new MSSP aka K-Mode family
                 HI2CInit =    SI2CInit
                 HI2CStart =   SI2CStart
                 HI2CStop =    SI2CStop
@@ -707,7 +708,7 @@ End Sub
 
 
 sub HI2CInit
-    asm showdebug  This method sets the variable `HI2CCurrentMode`, and, if required calls the method `SI2CInit` to set up new MSSP modules - aka K42s family chips
+    asm showdebug  This method sets the variable `HI2CCurrentMode`, and, if required calls the method `SI2CInit` to set up new MSSP modules - aka K-Mode family chips
     HI2CCurrentMode = 0
 
     'Initialise the I2C module
@@ -748,15 +749,25 @@ end sub
     #DEFINE I2C1CLOCK_FOSC           0X01
     #DEFINE I2C1CLOCK_FOSC4          0X00
 
-    #DEFINE I2C1CLOCKSOURCE         I2C1CLOCK_MFINTOSC
+    
 
 
     #define I2C1I2C1CON0Default     0x04
     #define I2C1I2C1CON1Default     0x80
     #define I2C1I2C1CON2Default     0x21
 
-    #define HI2CITSCLWaitPeriod 70    'minimum of twenty plus 5 clock ticks
 
+#script
+
+  IF NODEF(HI2CITSCLWaitPeriod) THEN
+      HI2CITSCLWAITPERIOD = 70 'minimum of twenty plus 5 clock ticks
+  END IF 
+
+  IF NODEF(I2C1CLOCKSOURCE) THEN
+      I2C1CLOCKSOURCE = I2C1CLOCK_MFINTOSC
+  END IF 
+
+#endscript
 
 '    Example
 '
@@ -772,7 +783,7 @@ end sub
 'Check the define above this method
 
 Sub SI2CInit
-    asm showdebug  This method sets the MSSP modules for K42s family chips
+    asm showdebug  This method sets the MSSP modules for K-mode family chips
 
     Dir HI2C_DATA out
     Dir HI2C_CLOCK out
@@ -801,7 +812,7 @@ Sub SI2CInit
 End sub
 
 Sub SI2CStart
-  asm showdebug  Redirected for K42 family probalby called HI2CStart
+  asm showdebug  Redirected for K-Mode family probalby called HI2CStart
   asm showdebug  This method sets the registers and register bits to generate the I2C  START signal. Master_mode only.
 
         HI2C1StateMachine = 1
@@ -812,7 +823,7 @@ Sub SI2CStart
 End Sub
 
 Sub SI2CReStart
-  asm showdebug  Redirected for K42 family probalby called HI2CReStart
+  asm showdebug  Redirected for K-mode family probalby called HI2CReStart
   asm showdebug  This method sets the registers and register bits to generate the I2C  RESTART signal. Master_mode only.
         HI2C1StateMachine = 3
         HI2CWaitMSSPTimeout = false
@@ -820,7 +831,7 @@ Sub SI2CReStart
 End Sub
 
 Sub SI2CStop
-  asm showdebug  Redirected for K42 family probalby called HI2CStop
+  asm showdebug  Redirected for K-mode family probalby called HI2CStop
   asm showdebug  This method sets the registers and register bits to generate the I2C  STOP signal
 
     'Waits up to 254us then set the error state
@@ -849,7 +860,7 @@ End Sub
 
 
 Sub SI2CSend ( in I2Cbyte )
-    asm showdebug  Redirected for K42 family probalby called HI2CSend
+    asm showdebug  Redirected for K-mode family probalby called HI2CSend
     asm showdebug  This method sets the registers and register bits to send I2C data
 
     'This is now a state Machine to cater for the new approach with the I2C module
@@ -951,7 +962,7 @@ End Sub
 
 
 Sub SI2CReceive (Out I2CByte, Optional In HI2CGetAck = 1 )
-  asm showdebug  Redirected for K42 family probalby called HI2CReceive
+  asm showdebug  Redirected for K-mode family probalby called HI2CReceive
   asm showdebug  This method sets the registers and register bits to get I2C data
       I2C1CNT = 1
       HI2CWaitMSSPTimeout = 0
@@ -1072,7 +1083,7 @@ sub SI2CDiscovery ( address )
 
     wait while I2C1STAT1.TXBE <> 1
 
-    #IF ChipSubFamily =  ChipFamily18FxxQ41
+    #IF ChipSubFamily =  ChipFamily18FxxQ41 or ChipSubFamily =  ChipFamily18FxxQ71 
 
       'this chip has a proper STOP bit, so, get statis and exit SUB
       HI2CSend 0

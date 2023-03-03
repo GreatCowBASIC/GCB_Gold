@@ -44,7 +44,7 @@
       HEF_START_ADDR = 32
       HEF_NUM_BLOCKS = 0
 
-    IF ChipHEFMemWords = 128 OR ChipSAFMemWords = 128 then
+    IF ChipHEFMemWords = 128 OR ChipSAFMemWords = 128 OR ChipSAFMemWords = 1024 then
        HAS_HEFSAF = TRUE
     End IF
 

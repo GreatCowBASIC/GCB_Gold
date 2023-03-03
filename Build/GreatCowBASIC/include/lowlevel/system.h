@@ -80,6 +80,7 @@
 '    28082021 - Add SysMultSub64, SysDivSub64, SysCompEqual64 and SysCompLessThan64
 '    28022022 - Revised PFMread and added PFMWrite to support Q43 chips
 '    19082022 - Revised to add ChipSubFamily 15002/3/4 support in initsys for new clock type
+'    28022023 - Added support fort 18FxxQ71
 
 ' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
 
@@ -111,6 +112,8 @@
 #DEFINE  ChipFamily18FxxQ84 = 16106
 #DEFINE  ChipFamily18FxxK83 = 16107
 #DEFINE  ChipFamily18FxxQ83 = 16108
+#DEFINE  ChipFamily18FxxQ71 = 16109
+
 
 
 
@@ -4002,18 +4005,16 @@ sub ProgramWrite(In EEAddress, In EEDataWord)
   #IF VAR(EEADRH)
     EECON2 = 0x55
     EECON2 = 0xAA
-  #ENDIF
-  #IF VAR(PMCON2)
-    PMCON2 = 0x55
-    PMCON2 = 0xAA
-  #ENDIF
-  #IF VAR(PMCON2)
-    PMCON2 = 0x55
-    PMCON2 = 0xAA
-  #ENDIF
-  #IF VAR(NVMCON2)
-    NVMCON2 = 0x55
-    NVMCON2 = 0xAA
+  #ELSE
+    #IF VAR(PMCON2)
+      PMCON2 = 0x55
+      PMCON2 = 0xAA
+    #ELSE
+      #IF VAR(NVMCON2)
+          NVMCON2 = 0x55
+          NVMCON2 = 0xAA
+      #ENDIF
+    #ENDIF
   #ENDIF
 
 

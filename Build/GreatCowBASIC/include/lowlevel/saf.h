@@ -28,6 +28,8 @@
 '    14.07.2020    Updated to support Q43 chips
 '    20.12.2020    Revised to support Q41 chips by removing the #SameVar NVMLOCK, NVMCON2 as they are NOT the samevar
 '    11.04.2022    Revised to support Q43 chips by adding bit tests in write operation
+'    03.03.2023    Revised to support Q71 chips by adding changing addressing from byte to word for the addressing.
+
 
 
 #option REQUIRED PIC ChipSAFMemWords "SAF.  No SAF memory."
@@ -187,7 +189,7 @@ Function SAFReadWord(IN _HEF_REL_ADDR2) as Word
 
 END Function
 
-Sub SAFRead(in _HEF_REL_ADDR, out _HEF_DataByte as Byte)
+Sub SAFRead(in _HEF_REL_ADDR as Word, out _HEF_DataByte as Byte)
   'overloaded sub byte only
   #IFDEF HAS_HEFSAF TRUE
 
@@ -235,7 +237,7 @@ Sub SAFRead(in _HEF_REL_ADDR, out _HEF_DataByte as Byte)
 
 END SUB
 
-Sub SAFRead(in _HEF_REL_ADDR, out _HEF_DataWord as Word)
+Sub SAFRead(in _HEF_REL_ADDR as WORD, out _HEF_DataWord as Word)
   'overloaded sub Word or byte
 
   #IFDEF HAS_HEFSAF TRUE
@@ -289,7 +291,7 @@ END SUB
 
 
 
-Sub SAFReadWord(IN _HEF_REL_ADDR, OUT _HEF_DataWord as Word)
+Sub SAFReadWord(IN _HEF_REL_ADDR as WORD, OUT _HEF_DataWord as Word)
 
   #IFDEF HAS_HEFSAF TRUE
 
@@ -624,7 +626,7 @@ Sub SAFWriteBlock(in _HEF_BlockNum, in _HEF_Buffer(), Optional in _HEF_Count = H
 
             NVMLOCK = 0x55
             NVMLOCK = 0xAA
-            
+
             #if BIT(GO_NVMCON0)
               GO_NVMCON0 = 1
               wait while GO_NVMCON0 = 1
@@ -712,7 +714,7 @@ Sub SAFWriteBlock(in _HEF_BlockNum, in _HEF_Buffer(), Optional in _HEF_Count = H
 
 End Sub
 
-Sub SAFWrite(in _HEF_REL_ADDR, in _HEF_DataByte as Byte)
+Sub SAFWrite(in _HEF_REL_ADDR as WORD, in _HEF_DataByte as Byte)
 
   #IFDEF HAS_HEFSAF TRUE
 
@@ -742,7 +744,7 @@ Sub SAFWrite(in _HEF_REL_ADDR, in _HEF_DataByte as Byte)
 
 End sub
 
-Sub SAFWriteWord(in _HEF_REL_ADDR, in _HEF_DataWord as Word)
+Sub SAFWriteWord(in _HEF_REL_ADDR As Word, in _HEF_DataWord as Word)
 
   #IFDEF HAS_HEFSAF TRUE
 
