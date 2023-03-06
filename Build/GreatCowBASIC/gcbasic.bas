@@ -752,6 +752,8 @@ Dim Shared as Integer patchCounter = 0
 Dim Shared As String OutMessage(MAX_OUTPUT_MESSAGES)
 Dim Shared As Integer OutMessages, ErrorsFound
 
+#Define TYPECHECKSIZE 40
+
 Dim Shared As String UserDefineStartLabel
 
 Dim As Integer CD, T, PD
@@ -793,8 +795,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-03-03"
-buildVersion = "1219"
+Version = "1.00.00 2023-03-04"
+buildVersion = "1220"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -19386,7 +19388,7 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
   Dim As String ValueName
   Dim As Integer TCC, SS, CD, FindSub, SubLoc
   Dim TempValue As Double
-  Dim TypeCheck(20) As String
+  Dim TypeCheck( TYPECHECKSIZE ) As String
   TCC = 0
   FinalType = ""
 
@@ -19483,6 +19485,13 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
     If IsDivider(Temp) AND Temp <> "." AND Temp <> ";" AND Temp <> "$" And Temp <> "[" And Temp <> "]" Then
       IF Trim(CurrentItem) <> "" Then
         TCC += 1
+        If TCC > TYPECHECKSIZE Then
+            'fatal error
+            LogError "TYPECHECKSIZE exceed - reduce complexity: "+ValueNameIn
+            WriteErrorLog
+            ErrorsFound = - 1
+            end
+        End if
         TypeCheck(TCC) = Trim(CurrentItem)
         CurrentItem = ""
       End If
@@ -19492,6 +19501,13 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
   Next
   If Trim(CurrentItem) <> "" Then
     TCC += 1
+      If TCC > TYPECHECKSIZE Then
+        'fatal error
+        LogError "TYPECHECKSIZE exceed - reduce complexity: "+ValueNameIn
+        WriteErrorLog
+        ErrorsFound = - 1
+        end
+    End if    
     TypeCheck(TCC) = Trim(CurrentItem)
   End If
 
