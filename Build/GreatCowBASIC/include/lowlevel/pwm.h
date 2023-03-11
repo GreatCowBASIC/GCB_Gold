@@ -1,5 +1,5 @@
 '    Pulse Width Modulation routines for Great Cow BASIC
-'    Copyright (C) 2006-2020 Hugh Considine, William Roth, Kent Schafer and Evan R. Venn
+'    Copyright (C) 2006-2023 Hugh Considine, William Roth, Kent Schafer and Evan R. Venn
 '
 '
 '    This library is free software; you can redistribute it and/or
@@ -129,7 +129,9 @@
 ''' 30/12/2020 Revised sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )/SetupCCPPWMRegisters section to identify the Q41 chip that only has ONE CCP1PMW! That is new... one CCP1. Just like the old days
 ''' 25/01/2020 Correct typo in ChipSubFamily Q41 in HMPWM
 ''' 10/01/2022 Revised sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )/SetupCCPPWMRegisters section to identify the Q40 chip that only has ONE CCP1PMW! That is new... one CCP1. Just like the old days
-' 14/08/22 Updated user changeable constants only - no functional change
+''' 14/08/2022 Updated user changeable constants only - no functional change
+''' 09/02/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist
+'''            Update to remove ASM comments but retaining the comments in this library
 
 
 'user changeable constants
@@ -225,6 +227,15 @@
       PWMOff = AVRPWMOff
     End If
 
+    If PIC Then
+      ' added to issue warning
+      If NOVAR(CCP1CON) Then
+        If NODEF(DISABLECCPFIXEDMODEPWM) Then
+          Error "This chip does not support CCP1/PWM - use `#DEFINE DISABLECCPFIXEDMODEPWM` to disable CCP1/PWM"
+        End if
+      End If
+    End If
+
     _v9081Patch=1
 
   #endscript
@@ -242,15 +253,15 @@ Sub InitPWM
 
       Dim PRx_Temp as LONG
 
-      'Script to calculate constants required for given Frequency and Duty Cycle
+      '~Script to calculate constants required for given Frequency and Duty Cycle
       #script
 
-      'revised to support new chips like 16f18326*, 16f18555 and related microcontrollers"
+      '~revised to support new chips like 16f18326*, 16f18555 and related microcontrollers"
        if bit(CCP1MODE0) then
 
             if nobit(CCP1M0) Then
 
-    '          warning "Supporting microcontrollers like the 16f18326 and related microcontrollers for CCPxMODEx"
+    '~          warning "Supporting microcontrollers like the 16f18326 and related microcontrollers for CCPxMODEx"
               CCP1M0 = CCP1MODE0
               CCP1M1 = CCP1MODE1
               CCP1M2 = CCP1MODE2
@@ -336,16 +347,16 @@ Legacy_StartofFixedCCPPWMModeCode:
 
       #ifndef DisableCCPFixedModePWM
 
-          'You can disable all the legacy CCPPWM fixed mode code to reduce program size
+          '~You can disable all the legacy CCPPWM fixed mode code to reduce program size
 
-          'This section is Library code, so it generates ASM
-          'This section uses the constants defined the script above.
-          'Essentially, sets CCPCONCache with the bits set correctly.
-          'And, timer 2.  Remember timer 2 can be the timer for CCP/PWM but the other timers can be specified for certain parts.
+          '~This section is Library code, so it generates ASM
+          '~This section uses the constants defined the script above.
+          '~Essentially, sets CCPCONCache with the bits set correctly.
+          '~And, timer 2.  Remember timer 2 can be the timer for CCP/PWM but the other timers can be specified for certain parts.
 
 
 
-          'If CCP1CON does not exist then there is NO CCP1 so no point in setting, as all this is to set up the CCP1 using constants method
+          '~If CCP1CON does not exist then there is NO CCP1 so no point in setting, as all this is to set up the CCP1 using constants method
           #ifdef Var(CCP1CON)
 
                 DIM CCPCONCache as BYTE
@@ -478,7 +489,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
 
     #script
-Rev2018FixedPWMModeHandler:
+      Rev2018FixedPWMModeHandler:
 
        'Fixed mode of Non CCP/PWM calculate constants required for given Frequency and Duty Cycle
        'Process:
@@ -1523,15 +1534,15 @@ Rev2018FixedPWMModeHandler:
           end if
 
        end if
-EndFixedPWMModeHandler:
+       EndFixedPWMModeHandler:
     #endscript
-    'This is the end of script section, now we use the constants created to updated registers.
+    '~This is the end of script section, now we use the constants created to updated registers.
 
 StartofFixedPWMModeCode:
 
-      'Set registers using the constants from script
-      'This is repeated for timer 2, 4 and 6 - and the two timer variants and the 9 PWM channels
-      'This uses the user defined constants to set the appropiate registers.
+      '~Set registers using the constants from script
+      '~This is repeated for timer 2, 4 and 6 - and the two timer variants and the 9 PWM channels
+      '~This uses the user defined constants to set the appropiate registers.
       #IFDEF PWM_Timer2_Freq
           T2CON = (T2CON and 143) or Script_OR_T2CON    ' Set Timer x PreScaler
           #if var(T2CLKCON)
@@ -1955,8 +1966,8 @@ StartofFixedPWMModeCode:
       #ENDIF
 
 SetPWMDutyCode:
-      'This section finally, sets the Duty using the constants from the script.
-      'This uses the user defined constants to set the appropiate registers.
+      '~This section finally, sets the Duty using the constants from the script.
+      '~This uses the user defined constants to set the appropiate registers.
       #IFDEF PWM_1_Duty
         #IFDEF VAR(PWM1CON)   'Means this is a PWM Channel chip
           PWM1CON =  Script_PWM1CON
@@ -2154,8 +2165,7 @@ SetPWMDutyCode:
 
       #ENDIF
 
-Rev2018_EndofFixedPWMModeCode:
-  'This is the end of the fixed PWM Mode handler
+  '~This is the end of the fixed PWM Mode handler
   #endif
 
 
@@ -2953,58 +2963,62 @@ SetupCCPPWMRegisters:
 
   #ifdef USE_HPWMCCP1 TRUE
 
-    #ifdef AddHPWMCCPSetup1
-      AddHPWMCCPSetup1
+    #ifdef VAR(CCP1CON)
+      //~Only process this section when CCP1CON exists
+      
+      #ifdef AddHPWMCCPSetup1
+        AddHPWMCCPSetup1
+      #endif
+
+      #ifndef BIT(CCP1FMT)
+
+          #ifdef NoVar(CCP2CON)
+            'NoVar(CCP2CON) - We assumne there is is only 1 CCP module on Chip and this assumes the legacy chip do not have CCP1FMT
+            PRx_Temp = PWMDuty * (PRx_Temp + 2)
+            CCPR1L = PRx_Temp_H
+            If PWMDuty = 0 Then CCPR1L = 0  ' Assure OFF at Zero
+            SET CCP1CON.CCP1M3 ON
+            SET CCP1CON.CCP1M2 ON
+            SET CCP1CON.CCP1M1 OFF
+            SET CCP1CON.CCP1M0 OFF
+          #endif
+
+          #ifdef BIT(C1TSEL0)
+          C1TSEL0 = TimerSelectionBits.0
+          C1TSEL1 = TimerSelectionBits.1
+          #endif
+
+      #endif
+
+      #if ChipSubFamily = ChipFamily18FxxQ41 OR ChipSubFamily = ChipFamily18FxxQ40
+          'Identify the Q40 or Q41 chips that only have ONE CCP1PMW
+          calculateDuty 'Sets PRx_Temp  to the duty value for bits 15-8 and 7-6
+          CCPR1H = PRx_Temp_H
+          CCPR1L = PRx_Temp
+          SET CCP1M3 ON
+          SET CCP1M2 ON
+          SET CCP1M1 ON
+          SET CCP1M0 ON
+
+          #ifdef bit(CCP1EN)
+            SET CCP1EN ON
+          #endif
+
+          #ifdef bit(CCP1CON_EN)
+            SET CCP1CON_EN ON
+          #endif
+
+          #ifdef bit(CCP1FMT)
+            SET CCP1FMT ON
+          #endif
+
+      #endif
+
+      #ifdef AddHPWMCCPExit1
+        AddHPWMCCPExit1
+      #endif
+
     #endif
-
-    #ifndef BIT(CCP1FMT)
-
-        #ifdef NoVar(CCP2CON)
-          'NoVar(CCP2CON) - We assumne there is is only 1 CCP module on Chip and this assumes the legacy chip do not have CCP1FMT
-          PRx_Temp = PWMDuty * (PRx_Temp + 2)
-          CCPR1L = PRx_Temp_H
-          If PWMDuty = 0 Then CCPR1L = 0  ' Assure OFF at Zero
-          SET CCP1CON.CCP1M3 ON
-          SET CCP1CON.CCP1M2 ON
-          SET CCP1CON.CCP1M1 OFF
-          SET CCP1CON.CCP1M0 OFF
-        #endif
-
-        #ifdef BIT(C1TSEL0)
-        C1TSEL0 = TimerSelectionBits.0
-        C1TSEL1 = TimerSelectionBits.1
-        #endif
-
-    #endif
-
-    #if ChipSubFamily = ChipFamily18FxxQ41 OR ChipSubFamily = ChipFamily18FxxQ40
-        'Identify the Q40 or Q41 chips that only have ONE CCP1PMW
-        calculateDuty 'Sets PRx_Temp  to the duty value for bits 15-8 and 7-6
-        CCPR1H = PRx_Temp_H
-        CCPR1L = PRx_Temp
-        SET CCP1M3 ON
-        SET CCP1M2 ON
-        SET CCP1M1 ON
-        SET CCP1M0 ON
-
-        #ifdef bit(CCP1EN)
-          SET CCP1EN ON
-        #endif
-
-        #ifdef bit(CCP1CON_EN)
-          SET CCP1CON_EN ON
-        #endif
-
-        #ifdef bit(CCP1FMT)
-          SET CCP1FMT ON
-        #endif
-
-    #endif
-
-    #ifdef AddHPWMCCPExit1
-      AddHPWMCCPExit1
-    #endif
-
   #endif
 
 

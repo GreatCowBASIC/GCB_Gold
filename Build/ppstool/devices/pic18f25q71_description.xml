@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dosid="03742" id="" name="PIC18F5
-6Q71" rev="" xsi:noNamespaceSchemaLocation="PCG.xsd">
+<device xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dosid="03742" id="" name="PIC18F25Q71" rev="" xsi:noNamespaceSchemaLocation="PCG.xsd">
     <manager name="System Module">
         <register alias="CONFIG1" name="CONFIG1" width="8">
             <setting alias="FEXTOSC" default="ECH" name="FEXTOSC" description="External Oscillator Selection">
