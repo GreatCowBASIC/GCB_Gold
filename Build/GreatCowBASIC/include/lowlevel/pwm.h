@@ -132,6 +132,8 @@
 ''' 14/08/2022 Updated user changeable constants only - no functional change
 ''' 09/02/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist
 '''            Update to remove ASM comments but retaining the comments in this library
+''' 19/03/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist using #opion required not a script
+
 
 
 'user changeable constants
@@ -139,6 +141,8 @@
 
 'end user changeable constants
 
+
+#OPTION REQUIRED PIC CCP1CON "This chip does not support CCP1/PWM - use `#DEFINE DISABLECCPFIXEDMODEPWM` to disable CCP1/PWM"
 
 
   'Optionalal DisableCCPFixedModePWM will disable the Fixed Mode CCP/PWM
@@ -225,15 +229,6 @@
       HPWM = AVRHPWM
       PWMOn = AVRPWMOn
       PWMOff = AVRPWMOff
-    End If
-
-    If PIC Then
-      ' added to issue warning
-      If NOVAR(CCP1CON) Then
-        If NODEF(DISABLECCPFIXEDMODEPWM) Then
-          Error "This chip does not support CCP1/PWM - use `#DEFINE DISABLECCPFIXEDMODEPWM` to disable CCP1/PWM"
-        End if
-      End If
     End If
 
     _v9081Patch=1

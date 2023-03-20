@@ -1230,6 +1230,10 @@ SUB PreProcessor
           If INSTR(DataSource, " ELSE ") <> 0 Then Replace DataSource, " ELSE ", " :ELSE: "
           DataSource = DataSource + ": END IF"
         END If
+		'Convert single-line ELSE statement to multiple line
+        IF LEFT(DataSource, 4 ) = "ELSE" AND LEN(DataSource ) <> 4 Then
+          DataSource = "ELSE:"+MID(DataSource,5)
+        END IF
 
      MultiCommand:
 
