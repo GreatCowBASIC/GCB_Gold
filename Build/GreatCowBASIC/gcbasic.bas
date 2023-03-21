@@ -795,8 +795,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-03-19"
-buildVersion = "1225"
+Version = "1.00.00 2023-03-21"
+buildVersion = "1226"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -1528,7 +1528,15 @@ SUB AddBankCommands(CompSub As SubType Pointer)
 
     'Add banksel
     If BankselNeeded Then
-      LinkedListInsert(CurrLine->Prev, " banksel " + VarInBank)
+      'Prevent BANKSEL being added UserCodeOnlyEnabled at end of program
+      If UserCodeOnlyEnabled = 0  Then 
+        LinkedListInsert(CurrLine->Prev, " banksel " + VarInBank)
+      Else 
+        If CurrLine->Next <> 0 Then
+          'Must be UserCodeOnlyEnabled=-1, and not end of the user program
+          LinkedListInsert(CurrLine->Prev, " banksel " + VarInBank)
+        End if
+      End If
     End If
     ''Add final banksel, need to return in bank 0
     'If CurrLine->Next = 0 And FinalBankselNeeded Then
@@ -17763,6 +17771,7 @@ Sub WriteAssembly
           dim elements0() as string
           dim outstring as string
           dim preservedline as Integer
+          dim showonceflag as Byte = 0
           outline = CurrLine->Value
           preservedline = 0
           if GetMetaData(Currline)->IsLabel = 0 then
@@ -18015,6 +18024,8 @@ Sub WriteAssembly
                           replaceall ( tmpOutLine, "]", " " )
                           replaceall ( tmpOutLine, ">>", " " )
                           replaceall ( tmpOutLine, "<<", " " )
+                          replaceall ( tmpOutLine, "  ", " " )
+                          
                           StringSplit ( trim(tmpOutLine), " ",-1,currentLineElements() )
                           If UserCodeOnlyEnabled = -1 then
                             Dim elementcounter as Byte
@@ -18024,11 +18035,19 @@ Sub WriteAssembly
                             
                                 if GetSFRBitValue(currentLineElements(elementcounter)) <> "" then
                                     registerbitlocation = GetSFRBitValue(currentLineElements(elementcounter))
-                                    if registerbitlocation <> "" then                                   
+                                    
+                                    if registerbitlocation <> "" then           
+                              
+                                        If showonceflag = 0 and Instr(Ucase(outline), "#ASMRAW") = 0  and  Left(outline, 8) <> "PRESERVE" and trim(ucase(registerbitlocation)) <> trim(ucase(currentLineElements(elementcounter))) then
+                                          Print #2, ";"+trim(outline)
+                                          showonceflag = -1
+                                        end if
 
                                         replace( outline, currentLineElements(elementcounter), registerbitlocation )
 
+                                    
                                     end if
+
                                 end if
 
                                 

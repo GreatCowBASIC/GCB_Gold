@@ -204,6 +204,10 @@ Sub PrepareBuiltIn
   AddConstant("CHIPMHZ", Str(ChipMhz))
   AddConstant("CHIPRESERVEHIGHPROG", Str(ReserveHighProg))
   AddConstant( SelectedAssembler, "TRUE" )
+
+  'Add a constant to indicate first RAM location
+  AddConstant("CHIPSHAREDRAM",  str(NoBankLoc(1).StartLoc) )  
+  
   
   If ModePIC Then AddConstant("PIC", "")
   If ModeAVR Then
@@ -1231,8 +1235,10 @@ SUB PreProcessor
           DataSource = DataSource + ": END IF"
         END If
 		'Convert single-line ELSE statement to multiple line
-        IF LEFT(DataSource, 4 ) = "ELSE" AND LEN(DataSource ) <> 4 Then
-          DataSource = "ELSE:"+MID(DataSource,5)
+        IF LEFT(DataSource, 4 ) = "ELSE" AND LEN(DataSource ) <> 4 Then 
+          If INSTR(DataSource, "IF") = 0 and INSTR(DataSource, "THEN") = 0 Then 
+            DataSource = "ELSE:"+MID(DataSource,5)
+          End If
         END IF
 
      MultiCommand:
