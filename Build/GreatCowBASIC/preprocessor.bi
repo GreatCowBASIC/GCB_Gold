@@ -1623,11 +1623,18 @@ SUB PreProcessor
           'Automatic initialisation preparation
           IF Left(DataSource, 8) = "#STARTUP" Then
             With SourceFile(RF)
-              .InitSub = Trim(Mid(DataSource, 9))
-              .InitSubPriority = 100
-              If InStr(.InitSub, ",") <> 0 Then
-                .InitSubPriority = Val(Mid(.InitSub, InStr(.InitSub, ",") + 1))
-                .InitSub = Trim(Left(.InitSub, InStr(.InitSub, ",") - 1))
+              If .InitSubFound = 0 then
+                .InitSub = Trim(Mid(DataSource, 9))
+                .InitSubPriority = 100
+                If InStr(.InitSub, ",") <> 0 Then
+                  .InitSubPriority = Val(Mid(.InitSub, InStr(.InitSub, ",") + 1))
+                  .InitSub = Trim(Left(.InitSub, InStr(.InitSub, ",") - 1))
+                End If
+                .InitSubFound = 1
+              Else
+                Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+                Temp = Message("TooManyStartups")
+                LogError Temp, Origin
               End If
             End With
 
@@ -2202,7 +2209,10 @@ SUB PreProcessor
   IF VBS = 1 THEN PRINT
 
   'Replace constants and calculations in tables with actual values
+  IF VBS = 1 THEN PRINT
+  If VBS = 1 THEN PRINT SPC(5); "Reading Table(s) Values";
   ReadTableValues
+  IF VBS = 1 THEN PRINT
 
   'Create constant for selected assembler
   IF VBS = 1 THEN PRINT
@@ -2330,6 +2340,14 @@ Sub ReadTableValues
             If CastOrder(TypeOfValue(Value, 0)) > CastOrder(.Type) Then
               .Type = TypeOfValue(Value, 0)
             End If
+  
+            if .Items > MAXTABLEITEMS then 
+
+              OutMessage = Message("OutOfTableSpace")
+              LogError(OutMessage, GetOriginString(Origin))
+              exit sub
+              
+            end if
 
             .Items += 1
             .Item(.Items) = MakeDec(Value)

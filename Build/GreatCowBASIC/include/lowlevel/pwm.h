@@ -133,7 +133,7 @@
 ''' 09/02/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist
 '''            Update to remove ASM comments but retaining the comments in this library
 ''' 19/03/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist using #opion required not a script
-
+''' 05/04/2024 Revised to add CHIPTIMERXCLOCKSOURCESVARIANT to support chip that FOSC/4 clock source in T2CLKCON, T4CLKCON or T6CLKCON equate to 0b0000000 - the standard is 0b00000001
 
 
 'user changeable constants
@@ -156,6 +156,16 @@
     #define HPWM6 6
     #define HPWM7 7
     #define HPWM8 8
+
+    #SAMEBIT C1TSEL0, CCP1TSEL0
+    #SAMEBIT C1TSEL1, CCP1TSEL1
+    #SAMEBIT C2TSEL0, CCP2TSEL0
+    #SAMEBIT C2TSEL1, CCP2TSEL1
+    #SAMEBIT C3TSEL0, CCP3TSEL0
+    #SAMEBIT C3TSEL1, CCP3TSEL1
+    #SAMEBIT C4TSEL0, CCP4TSEL0
+    #SAMEBIT C4TSEL1, CCP4TSEL1
+
 
   #script
 
@@ -800,7 +810,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if bit(T2CKPS2) then
 
-             'Set Prescaler bits
+             'Set Prescaler bits1
               if Script_Tx_PR = 1 Then
                 Script_OR_T2CON = b'0000000'
               end if
@@ -818,7 +828,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if nobit(T2CKPS2) then
 
-              'Set Prescaler bits
+              'Set Prescaler bits2
               if Script_Tx_PR = 1 Then
                 Script_OR_T2CON = b'0000000'
               end if
@@ -1146,7 +1156,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if bit(T4CKPS2) then
 
-             'Set Prescaler bits
+             'Set Prescaler bits T4CON
               if Script_Tx_PR = 1 Then
                 Script_OR_T4CON = b'0000000'
               end if
@@ -1164,7 +1174,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if nobit(T4CKPS2) then
 
-              'Set Prescaler bits
+              'Set Prescaler bits T4CON
               if Script_Tx_PR = 1 Then
                 Script_OR_T4CON = b'0000000'
               end if
@@ -1491,7 +1501,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if bit(T6CKPS2) then
 
-             'Set Prescaler bits
+             'Set Prescaler bits T6CON
               if Script_Tx_PR = 1 Then
                 Script_OR_T6CON = b'0000000'
               end if
@@ -1509,7 +1519,7 @@ Legacy_StartofFixedCCPPWMModeCode:
 
           if nobit(T6CKPS2) then
 
-              'Set Prescaler bits
+              'Set Prescaler bits T6CON
               if Script_Tx_PR = 1 Then
                 Script_OR_T6CON = b'0000000'
               end if
@@ -2759,15 +2769,23 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8 bit resolution on timer 2
       If PWMFreq <> PWMFreqOld Then
   #endif
 
-          ' Commence calculations of PMW parameters
-          ' This figures out Postscaler required.  We can set to 1, 4 or 16 to set Tx_PR
-          ' So, start with 1 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 4
-          ' So, using 4 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 16
-          ' So, using 16
-          ' This simply set Tx_PR to 1,4 or 16
+          //~ Commence calculations of PMW parameters
+          //~ This figures out Prescaler required.  We can set to 1, 4 or 16 to set Tx_PR
+          //~ So, start with 1 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 4
+          //~ So, using 4 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 16
+          //~ So, using 16
+          //~ This simply set Tx_PR to 1,4 or 16
 
           Tx_PR = 1
+// wait 1 s
+// HserPrintCRLF 2
+// HserPrint "PWMFreq " + str(PWMFreq)
+// HserPrintCRLF
+// HserPrint "PWMOsc1 " + str(PWMOsc1)
+// HserPrintCRLF
           PRx_Temp = PWMOsc1 / PWMFreq
+// HserPrint "1) PRx_Temp " + str(PRx_Temp)
+// HserPrintCRLF          
           IF PRx_Temp_H > 0 then
             Tx_PR = 4
             'Divide by 4
@@ -2794,33 +2812,38 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8 bit resolution on timer 2
             set STATUS.C off
             rotate PRx_Temp right
           end if
-
+// HserPrint "2) PRx_Temp " + str(PRx_Temp)
+// HserPrintCRLF
+// HserPrint "Tx_PR " + str(Tx_PR)
+// HserPrintCRLF
           'added to handle different timer sources
           'added to support HPWM_CCPTimerN. Makes the code longer but more flexible
           'user optimisation to reduce code.
 CCPPWMSetupClockSource:
+          //~ Tx_PR is either 1, 4, 16 or 64.  This is controlled by the maths section.  
+          //~ So, other values are NOT ever going to be selected.
           select case _PWMTimerSelected
 
              #ifdef USE_HPWM_TIMER2 TRUE
              case 2:
                 PR2 = PRx_Temp
-                'Set the Bits for the Postscaler
-                'Setup Timerx by clearing the Prescaler bits - it is set next....
+                'Set the Bits for the Prescaler
+                'Setup Timer2 by clearing the Prescaler bits - it is set next....
                 #ifdef bit(T2CKPS2)
                     SET T2CKPS0 OFF
                     SET T2CKPS1 OFF
                     SET T2CKPS2 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T2CON@1
                     if Tx_PR = 4  then SET T2CKPS1 ON
                     if Tx_PR = 16 then SET T2CKPS2 ON
                     if Tx_PR = 64 then SET T2CKPS2 ON: SET T2CKPS1 ON
                 #endif
 
-                'Revised to show overflow issue
+                '~Revised to show overflow issue
                 #ifndef bit(T2CKPS2)
                     SET T2CKPS0 OFF
                     SET T2CKPS1 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T2CON@2
                     if Tx_PR = 4  then SET T2CKPS0 ON
                     if Tx_PR = 16 then SET T2CKPS1 ON
                     'Overflowed - this chip cannot handle the desired PWMFrequency. Lower clock speed.
@@ -2830,11 +2853,21 @@ CCPPWMSetupClockSource:
 
                 'Set Clock Source, if required
                 #ifdef var(T2CLKCON)
-                    'Set to FOSC/4 for backward compatibility
-                    T2CLKCON.T2CS0 = 1
-                    T2CLKCON.T2CS1 = 0
-                    T2CLKCON.T2CS2 = 0
-                    T2CLKCON.T2CS3 = 0
+                  #ifndef  CHIPTIMERXCLOCKSOURCESVARIANT
+                      'Set to FOSC/4 for backward compatibility@2a where CS<3:0> = 0001 = Fosc/4
+                      T2CLKCON.T2CS0 = 1
+                      T2CLKCON.T2CS1 = 0
+                      T2CLKCON.T2CS2 = 0
+                      T2CLKCON.T2CS3 = 0
+                  #else
+                    #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                      'Set to FOSC/4 for backward compatibility@2b where CS<3:0> = 0000 = Fosc/4
+                      T2CLKCON.T2CS0 = 0
+                      T2CLKCON.T2CS1 = 0
+                      T2CLKCON.T2CS2 = 0
+                      T2CLKCON.T2CS3 = 0
+                    #endif
+                  #endif
                 #endif
               #endif
 
@@ -2842,13 +2875,13 @@ CCPPWMSetupClockSource:
                 #ifdef var(T4CON)
                  case 4:
                      PR4 = PRx_Temp
-                    'Set the Bits for the Postscaler
+                    'Set the Bits for the Prescaler
                     'Setup Timerx by clearing the Prescaler bits - it is set next....
                     #ifdef bit(T4CKPS4)
                         SET T4CKPS0 OFF
                         SET T4CKPS1 OFF
                         SET T4CKPS4 OFF
-                        'Set Prescaler bits
+                        'Set Prescaler bits T4CON@1
                         if Tx_PR = 4  then SET T4CKPS1 ON
                         if Tx_PR = 16 then SET T4CKPS4 ON
                         if Tx_PR = 64 then SET T4CKPS4 ON: SET T4CKPS1 ON
@@ -2859,7 +2892,7 @@ CCPPWMSetupClockSource:
                       #ifdef bit(T4CKPS0)
                         SET T4CKPS0 OFF
                         SET T4CKPS1 OFF
-                        'Set Prescaler bits
+                        'Set Prescaler bits T4CON@2
                         if Tx_PR = 4  then SET T4CKPS0 ON
                         if Tx_PR = 16 then SET T4CKPS1 ON
                         'Overflowed - this chip cannot handle the desired PWMFrequency. Lower clock speed.
@@ -2870,11 +2903,21 @@ CCPPWMSetupClockSource:
 
                     'Set Clock Source, if required
                     #ifdef var(T4CLKCON)
-                        'Set to FOSC/4 for backward compatibility
-                        T4CLKCON.T4CS0 = 1
-                        T4CLKCON.T4CS1 = 0
-                        T4CLKCON.T4CS2 = 0
-                        T4CLKCON.T4CS3 = 0
+                      #ifndef  CHIPTIMERXCLOCKSOURCESVariant
+                          'Set to FOSC/4 for backward compatibility@4a where CS<3:0> = 0001 = Fosc/4
+                          T4CLKCON.T4CS0 = 1
+                          T4CLKCON.T4CS1 = 0
+                          T4CLKCON.T4CS2 = 0
+                          T4CLKCON.T4CS3 = 0
+                      #else
+                        #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                          'Set to FOSC/4 for backward compatibility@4b where CS<3:0> = 0000 = Fosc/4
+                          T4CLKCON.T4CS0 = 0
+                          T4CLKCON.T4CS1 = 0
+                          T4CLKCON.T4CS2 = 0
+                          T4CLKCON.T4CS3 = 0
+                        #endif
+                      #endif
                     #endif
                 #endif
              #endif
@@ -2883,13 +2926,13 @@ CCPPWMSetupClockSource:
                 #ifdef var(T6CON)
                   case 6:
                     PR6 = PRx_Temp
-                    'Set the Bits for the Postscaler
+                    'Set the Bits for the Prescaler
                     'Setup Timerx by clearing the Prescaler bits - it is set next....
                     #ifdef bit(T6CKPS6)
                         SET T6CKPS0 OFF
                         SET T6CKPS1 OFF
                         SET T6CKPS6 OFF
-                        'Set Prescaler bits
+                        'Set Prescaler bits T6CON @1
                         if Tx_PR = 4  then SET T6CKPS1 ON
                         if Tx_PR = 16 then SET T6CKPS6 ON
                         if Tx_PR = 64 then SET T6CKPS6 ON: SET T6CKPS1 ON
@@ -2900,7 +2943,7 @@ CCPPWMSetupClockSource:
                       #ifdef bit(T6CKPS0)
                         SET T6CKPS0 OFF
                         SET T6CKPS1 OFF
-                        'Set Prescaler bits
+                        'Set Prescaler bits T6CON @2
                         if Tx_PR = 4  then SET T6CKPS0 ON
                         if Tx_PR = 16 then SET T6CKPS1 ON
                         'Overflowed - this chip cannot handle the desired PWMFrequency. Lower clock speed.
@@ -2911,11 +2954,21 @@ CCPPWMSetupClockSource:
 
                     'Set Clock Source, if required
                     #ifdef var(T6CLKCON)
-                        'Set to FOSC/4 for backward compatibility
-                        T6CLKCON.T6CS0 = 1
-                        T6CLKCON.T6CS1 = 0
-                        T6CLKCON.T6CS2 = 0
-                        T6CLKCON.T6CS3 = 0
+                      #ifndef  CHIPTIMERXCLOCKSOURCESVariant
+                          'Set to FOSC/4 for backward compatibility@6a where CS<3:0> = 0001 = Fosc/4
+                          T6CLKCON.T6CS0 = 1
+                          T6CLKCON.T6CS1 = 0
+                          T6CLKCON.T6CS2 = 0
+                          T6CLKCON.T6CS3 = 0
+                      #else
+                        #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                          'Set to FOSC/4 for backward compatibility@6b where CS<3:0> = 0000 = Fosc/4
+                          T6CLKCON.T6CS0 = 0
+                          T6CLKCON.T6CS1 = 0
+                          T6CLKCON.T6CS2 = 0
+                          T6CLKCON.T6CS3 = 0
+                        #endif
+                      #endif
                     #endif
                 #endif
               #endif
@@ -2959,7 +3012,7 @@ SetupCCPPWMRegisters:
   #ifdef USE_HPWMCCP1 TRUE
 
     #ifdef VAR(CCP1CON)
-      //~Only process this section when CCP1CON exists
+      //Only process this section when CCP1CON exists
       
       #ifdef AddHPWMCCPSetup1
         AddHPWMCCPSetup1
@@ -3334,7 +3387,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
 
 
     ' Commence calculations of PMW parameters
-    ' This figures out Postscaler required.  We can set to 1, 4 or 16 to set Tx_PR
+    ' This figures out Prescaler required.  We can set to 1, 4 or 16 to set Tx_PR
     ' So, start with 1 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 4
     ' So, using 4 - check the remainder. If the remainder in the high byte is greater then zero then do same with a prescaler value of 16
     ' So, using 16
@@ -3378,9 +3431,24 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
             'Set PR2
             PR2 = PRx_Temp  'This is required in the next sction of code, and as will not know which timer has been selected
 
-            'Set Clock Source
-            'Set to FOSC/4 for backward compatibility
-            #ifdef var(T2CLKCON): T2CLKCON = 0x01: #ENDIF
+            'Set Clock Source, if required
+            #ifdef var(T2CLKCON)
+              #ifndef  CHIPTIMERXCLOCKSOURCESVariant
+                  'Set to FOSC/4 for backward compatibility@2c where CS<3:0> = 0001 = Fosc/4
+                  T2CLKCON.T2CS0 = 1
+                  T2CLKCON.T2CS1 = 0
+                  T2CLKCON.T2CS2 = 0
+                  T2CLKCON.T2CS3 = 0
+              #else
+                #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                  'Set to FOSC/4 for backward compatibility@2d where CS<3:0> = 0000 = Fosc/4
+                  T2CLKCON.T2CS0 = 0
+                  T2CLKCON.T2CS1 = 0
+                  T2CLKCON.T2CS2 = 0
+                  T2CLKCON.T2CS3 = 0
+                #endif
+              #endif
+            #endif
 
             'T2PSYNC Not Synchronized; T2MODE Software control; T2CKPOL Rising Edge; T2CKSYNC Not Synchronized
             'T2HLT = 0x00
@@ -3399,7 +3467,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                 SET T2CKPS0 OFF
                 SET T2CKPS1 OFF
                 SET T2CKPS2 OFF
-                'Set Prescaler bits
+                'Set Prescaler bits T2CON @3
                 if Tx_PR = 4  then SET T2CKPS1 ON
                 if Tx_PR = 16 then SET T2CKPS2 ON
                 if Tx_PR = 64 then SET T2CKPS2 ON: SET T2CKPS1 ON
@@ -3408,7 +3476,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
             #ifndef bit(T2CKPS2)
                 SET T2CKPS0 OFF
                 SET T2CKPS1 OFF
-                'Set Prescaler bits
+                'Set Prescaler bits T2CON @4
                 if Tx_PR = 4  then SET T2CKPS0 ON
                 if Tx_PR = 16 then SET T2CKPS1 ON
                 if Tx_PR = 64 then SET T2CKPS0 ON: SET T2CKPS1 ON
@@ -3427,12 +3495,27 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                 'Set PR4
                 PR4 = PRx_Temp  'This is required in the next sction of code, and as will not know which timer has been selected
 
-              'Set Clock Source
-              'Set to FOSC/4 for backward compatibility
-              #ifdef var(T4CLKCON): T4CLKCON = 0x01: #ENDIF
+                'Set Clock Source, if required
+                #ifdef var(T4CLKCON)
+                  #ifndef  CHIPTIMERXCLOCKSOURCESVariant
+                      'Set to FOSC/4 for backward compatibility@4c where CS<3:0> = 0001 = Fosc/4
+                      T4CLKCON.T4CS0 = 1
+                      T4CLKCON.T4CS1 = 0
+                      T4CLKCON.T4CS2 = 0
+                      T4CLKCON.T4CS3 = 0
+                  #else
+                    #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                      'Set to FOSC/4 for backward compatibility@4d where CS<3:0> = 0000 = Fosc/4
+                      T4CLKCON.T4CS0 = 0
+                      T4CLKCON.T4CS1 = 0
+                      T4CLKCON.T4CS2 = 0
+                      T4CLKCON.T4CS3 = 0
+                    #endif
+                  #endif
+                #endif
 
-              'T4PSYNC Not Synchronized; T4MODE Software control; T4CKPOL Rising Edge; T4CKSYNC Not Synchronized
-              'T4HLT = 0x00
+                'T4PSYNC Not Synchronized; T4MODE Software control; T4CKPOL Rising Edge; T4CKSYNC Not Synchronized
+                'T4HLT = 0x00
               #ifdef var(T4HLT): T4HLT = 0x00: #ENDIF
 
               'T4RSEL T4CKIPPS pin
@@ -3447,7 +3530,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                     SET T4CKPS0 OFF
                     SET T4CKPS1 OFF
                     SET T4CKPS2 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T4CON @3
                     if Tx_PR = 4  then SET T4CKPS1 ON
                     if Tx_PR = 16 then SET T4CKPS2 ON
                     if Tx_PR = 64 then SET T4CKPS2 ON: SET T4CKPS1 ON
@@ -3456,7 +3539,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                 #ifndef bit(T4CKPS2)
                     SET T4CKPS0 OFF
                     SET T4CKPS1 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T4CON@4
                     if Tx_PR = 4  then SET T4CKPS0 ON
                     if Tx_PR = 16 then SET T4CKPS1 ON
                     if Tx_PR = 64 then SET T4CKPS0 ON: SET T4CKPS1 ON
@@ -3477,9 +3560,24 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
               'Set PR6
                 PR6 = PRx_Temp  'This is required in the next sction of code, and will not know which timer has been selected
 
-                'Set Clock Source
-                'Set to FOSC/4 for backward compatibility
-                #ifdef var(T6CLKCON): T6CLKCON = 0x01: #ENDIF
+                'Set Clock Source, if required
+                #ifdef var(T6CLKCON)
+                  #ifndef  CHIPTIMERXCLOCKSOURCESVariant
+                      'Set to FOSC/4 for backward compatibility@6c where CS<3:0> = 0001 = Fosc/4
+                      T6CLKCON.T6CS0 = 1
+                      T6CLKCON.T6CS1 = 0
+                      T6CLKCON.T6CS2 = 0
+                      T6CLKCON.T6CS3 = 0
+                  #else
+                    #if CHIPTIMERxCLOCKSOURCESVariant = 1
+                      'Set to FOSC/4 for backward compatibility@6d where CS<3:0> = 0000 = Fosc/4
+                      T6CLKCON.T6CS0 = 0
+                      T6CLKCON.T6CS1 = 0
+                      T6CLKCON.T6CS2 = 0
+                      T6CLKCON.T6CS3 = 0
+                    #endif
+                  #endif
+                #endif
 
                 'T6PSYNC Not Synchronized; T6MODE Software control; T6CKPOL Rising Edge; T6CKSYNC Not Synchronized
                 'T6HLT = 0x00
@@ -3497,7 +3595,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                     SET T6CKPS0 OFF
                     SET T6CKPS1 OFF
                     SET T6CKPS2 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T6CON @3
                     if Tx_PR = 4  then SET T6CKPS1 ON
                     if Tx_PR = 16 then SET T6CKPS2 ON
                     if Tx_PR = 64 then SET T6CKPS2 ON: SET T6CKPS1 ON
@@ -3506,7 +3604,7 @@ sub HPWM (In PWMChannel, In PWMFreq as WORD, in PWMDuty as WORD , in _PWMTimerSe
                 #ifndef bit(T6CKPS2)
                     SET T6CKPS0 OFF
                     SET T6CKPS1 OFF
-                    'Set Prescaler bits
+                    'Set Prescaler bits T6CON@4
                     if Tx_PR = 4  then SET T6CKPS0 ON
                     if Tx_PR = 16 then SET T6CKPS1 ON
                     if Tx_PR = 64 then SET T6CKPS0 ON: SET T6CKPS1 ON

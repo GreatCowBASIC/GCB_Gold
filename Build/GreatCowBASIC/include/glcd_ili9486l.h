@@ -28,6 +28,7 @@
 '  11/04/2019       Revised to clean up position and therefore the bleeding of constants into ASM
 '  27/08/2019       Add GLCDfntDefaultHeight = 7  used by GLCDPrintString and GLCDPrintStringLn
 '  10/10/2020       Revised to correct 1 pixel error in rotate and deprecate BIGPRINT() and DrayBigChar
+'  21/03/2022       Revised to FastHWSPITransfer in GLCD for chip with new SPI module.
 
 '
 'Hardware settings
@@ -565,39 +566,39 @@ Sub GLCDCLS_ILI9486L ( Optional In  GLCDBackground as word = GLCDBackground )
            Repeat 32
         #ifndef UNO_8bit_Shield
             #ifdef ILI9486L_HardwareSPI
-    '         Could use these as an alternative
-    '         FastHWSPITransfer  ILI9486LSendWord_h
-    '         FastHWSPITransfer  ILI9486LSendWord
-
               #ifdef PIC
                 #ifndef Var(SSPCON1)
                   #ifdef Var(SSPCON)
                     Dim SSPCON1 Alias SSPCON
                   #endif
                 #endif
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9486LSendWord_h
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9486LTempOut = SSPBUF
+                #ifdef Var(SPI1TCNTL)
+                   FastHWSPITransfer  ILI9486LSendWord_h
+                   FastHWSPITransfer  ILI9486LSendWord
+                #else
+                  'Clear WCOL
+                  Set SSPCON1.WCOL Off
+                  'Put byte to send into buffer
+                  'Will start transfer
+                  SSPBUF = ILI9486LSendWord_h
+                  Wait While SSPSTAT.BF = Off
+                  Set SSPSTAT.BF Off
+                  #if ChipFamily 16
+                    ILI9486LTempOut = SSPBUF
+                  #endif
+
+
+                  'Clear WCOL
+                  Set SSPCON1.WCOL Off
+                  'Put byte to send into buffer
+                  'Will start transfer
+                  SSPBUF = ILI9486LSendWord
+                  Wait While SSPSTAT.BF = Off
+                  Set SSPSTAT.BF Off
+                  #if ChipFamily 16
+                    ILI9486LTempOut = SSPBUF
+                  #endif
                 #endif
-
-
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9486LSendWord
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9486LTempOut = SSPBUF
-                #endif
-
               #endif
               #ifdef AVR
 '                 was thjs slower code

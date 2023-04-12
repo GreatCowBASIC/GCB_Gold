@@ -812,3 +812,32 @@ Macro HWSPI_Fast_Write_Word_Macro
             #ENDIF
 
 End Macro
+
+
+Dim HWSPI_Send_24bits as Long
+
+'requires word data to be in HWSPI_Send_24bits as Long but actually only sends 24bits
+Macro HWSPI_Fast_Write_24bits_Macro
+
+  #ifdef Var(SPI1CON0)
+
+    'One byte transfer count
+    SPI1TCNTL = 1
+    SPI1TXB = HWSPI_Send_24bits_U
+    wait while SPI1RXIF = SPI_RX_IN_PROGRESS
+    SPIRxData = SPI1RXB
+
+    SPI1TCNTL = 1
+    SPI1TXB = HWSPI_Send_24bits_H
+    wait while SPI1RXIF = SPI_RX_IN_PROGRESS
+    SPIRxData = SPI1RXB
+
+    SPI1TCNTL = 1
+    SPI1TXB = HWSPI_Send_24bits
+    wait while SPI1RXIF = SPI_RX_IN_PROGRESS
+    SPIRxData = SPI1RXB
+
+  #endif
+
+End Macro
+

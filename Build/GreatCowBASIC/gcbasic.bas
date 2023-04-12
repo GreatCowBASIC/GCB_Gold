@@ -26,9 +26,9 @@
 
 #Define RESERVED_WORDS 1024
 
+#Define MAXTABLEITEMS 65536
 
 'PIC-Types and arrays
-
 #Define PICASDEBUG FALSE
 Type PICASInc
   Value as String
@@ -117,6 +117,7 @@ Type SourceFileType
   InitSub As String
   InitSubUsed As Integer
   InitSubPriority As Integer = 100
+  InitSubFound As Integer = 0
 
   IncludeOrigin As String
 
@@ -241,7 +242,7 @@ Type DataTableType
   CurrItem As LinkedListElement Pointer
 
   Items As Integer
-  Item(65536) As LongInt
+  Item(MAXTABLEITEMS) As LongInt
 End Type
 
 Type ProgString
@@ -689,7 +690,7 @@ Dim Shared EqConfigSettings As LinkedListElement Pointer
 Dim Shared ChipConfigCode As CodeSection Pointer
 DIM SHARED DefCONFIG(700) As String: DCOC = 0
 DIM SHARED ConfigMask(20) As Integer
-DIM SHARED DataTable(100) As DataTableType: DataTables = 0
+DIM SHARED DataTable(500) As DataTableType: DataTables = 0
 DIM SHARED Messages(1 TO 2, 500) As String: MSGC = 0
 DIM SHARED ASMCommands As HashMap Pointer
 DIM SHARED ASMSymbols As HashMap Pointer
@@ -795,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-03-21"
-buildVersion = "1226"
+Version = "1.00.00 2023-04-11"
+buildVersion = "1236"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -926,6 +927,31 @@ If Not ErrorsFound Then
   If VBS = 1 THEN PRINT : PRINT SPC(5); Message("WritingASM")
   WriteAssembly
   CompEndTime = Timer
+
+  'error check.. has program exceeded avialable progmem
+  If StatsUsedProgram + ReserveHighProg > ChipProg Then
+    Dim Temp As String
+
+    PRINT
+    PRINT Message("Summary")
+    PRINT SPC(5); Message("DataRead")
+    PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
+    PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
+    PRINT SPC(5); Message("ChipUsage")
+    Temp = Message("UsedProgram")
+    Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
+    Replace Temp, "%total%", Str(ChipProg)
+    If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
+    PRINT SPC(10); Temp
+    Temp = Message("UsedRAM")
+    Replace Temp, "%used%", Str(StatsUsedRam)
+    Replace Temp, "%total%", Str(ChipRAM)
+    If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
+    PRINT SPC(10); Temp
+
+
+    LogError Message ("OutOfProgMemExceeded")
+  End if
 
   'If no errors, show success message and assemble
   IF Not ErrorsFound THEN
@@ -1165,9 +1191,8 @@ SUB Add18FBanks(CompSub As SubType Pointer)
         IF INSTR(VarName, ",") <> 0 THEN VarName = Left(VarName, INSTR(VarName, ",") - 1)
         VarName = Trim(VarName)
 
-        'permit raw ASM through the ASM source when is leading with #DEFINE and UserCodeOnlyEnabled, all other cases should be treated as-was
-'        IF ( INSTR( trim(CurrLine->Value), "#DEFINE" ) = 0 and ( UserCodeOnlyEnabled = 0 ) ) then
-        IF ( INSTR( trim(CurrLine->Value), "#DEFINE" ) <> 1 ) then
+        'permit raw ASM through the ASM source when is leading with #DEFINE.  All other cases should be treated as-was
+        IF ( INSTR( trim(CurrLine->Value), "#DEFINE" ) <> 1  and Left( ucase(trim( GetMetaData(CurrLine)->OrgLine)), 4 ) <> "ASM " ) then
             'Check if the variable being accessed is a SFR, and add banking mode
             If IsInAccessBank(VarName) Then
               CurrLine->Value = CurrLine->Value + ",ACCESS"
@@ -17710,7 +17735,7 @@ Sub WriteAssembly
 
 
   If ModePIC Then
-      'Initial vector for PICAS
+      'Add the  Initial vector for PICAS
       if AFISupport = 1 then
         ' PIC10/12/16 devices use a delta of 2 and PIC18 devices use a delta of 1.
         Select Case ChipFamily
@@ -17747,6 +17772,7 @@ Sub WriteAssembly
 
     end if
 
+    'If REPROCES line then do not geneate / process for ASM
     IF instr( UCase(CurrLine->Value), "REPROCES") <> 0 then
       CurrLine = CurrLine->Next
       Continue Do
@@ -17756,13 +17782,15 @@ Sub WriteAssembly
       PRINT #1, AsmTidy(CurrLine->Value, -1 )
     end if
 
-    'PRINTPICAS code
+    'Output and transform ASM to PICAS code
+    'This essentially transforms to ensure all registers are correct, and all register.bit(s) are numeric constants
     if AFISupport = 1 then
-
       if left(CurrLine->Value,1) <> ";" then
 
-          'implies just PIC
+          'the now implies just PIC 
+          'If NOT a label, adapt the register and the register.bit to ensure compilation by PIC-AS
 
+          'Define vars and init vars
           dim outline as string
           dim ASMInstruction as string
           dim Param1 as string
@@ -17774,23 +17802,23 @@ Sub WriteAssembly
           dim showonceflag as Byte = 0
           outline = CurrLine->Value
           preservedline = 0
-          if GetMetaData(Currline)->IsLabel = 0 then
-            'Not a label so adapt the register and the register.bit
 
+          if GetMetaData(Currline)->IsLabel = 0 then
+            
             Select Case ChipFamily
 
-            Case 16
+            Case 16 'therefore 18Fs
 
                   'Tested on 18f16q41
 
-                  'Using these examples
-                  'Clear NDIV3:0
-                  'NDIV3 = 0
-                  'BCF OSCCON1,NDIV3,BANKED  transformed to BCF OSCCON1,3,BANKED where the register is validated and the bit a constant
+                    'Using these examples
+                    'Clear NDIV3:0
+                    'NDIV3 = 0
+                    'BCF OSCCON1,NDIV3,BANKED  transformed to BCF OSCCON1,3,BANKED where the register is validated and the bit a constant
 
-                  ' where ;OSCFRQ = 0b00001000  '64mhz is validaed for registry only
-                  ' MOVLW 8
-                  ' MOVWF OSCFRQ,BANKED
+                    ' where ;OSCFRQ = 0b00001000  '64mhz is validaed for registry only
+                    ' MOVLW 8
+                    ' MOVWF OSCFRQ,BANKED
 
                   'This section reverse lookups into the PICAS INC file in there is comma....
                   If instr( outline, "," ) > 0 then
@@ -17827,6 +17855,7 @@ Sub WriteAssembly
                                 if PICASDEBUG then Print #2, ";A2: ASM Source was: "+CurrLine->Value + "  Param1 = " + trim(Param1) + " - target = "+outstring + " now " + outline
                                 CurrLine->Value = outline
                               end if
+
                               'assign here so we can see the debug
                               Param1 = outstring
 
@@ -17869,10 +17898,7 @@ Sub WriteAssembly
                       end if
 
                       'Second test for register.bit  transforms the BITs to a constant to resolve the reverse lookup
-                      'Section can be improved to replace the constant witht he targtet bit - tested on 16/18f
                       if HasSFRBit ( Param2 )  then
-                          'replace this with an explict look up into the .h file at a later date
-                          'meanwhile use a constant
                           Param2 = GetSFRBitValue(trim( Param2 ))
                           if Param3 = "" then
                             outline = ASMInstruction+" "+Param1+","+Param2
@@ -17890,6 +17916,7 @@ Sub WriteAssembly
                   else
                       'lots of code looks like this... "BANKSEL ADCON0"  where there is register.. check the register is valid and reverse
                       erase currentLineElements
+                      'Inspect for a space - must be more that one paramater
                       if instr(trim(outline), " ") <> 0 then
                           StringSplit ( trim(outline), " ",-1,currentLineElements() )
                           Param1 = currentLineElements(0)
@@ -17912,8 +17939,9 @@ Sub WriteAssembly
 
             Case Else
                   If instr( outline, "," ) > 0 then
+                      'Assumes that any ASM that has a command requires analysis and transformation for PIC-AS
 
-                      'Take the initial line of code and split into the array
+                      'Take the initial line of code and split into the array into the array currentLineElements()
                       erase currentLineElements
                       StringSplit ( trim(outline), ",",-1,currentLineElements() )
                       Param2 = currentLineElements(1)
@@ -17923,16 +17951,15 @@ Sub WriteAssembly
                         Param3 = trim(currentLineElements(2))
                       end if
 
-
-                      'So, becomes
+                      'So, split the first element into elements0()
                       erase elements0
                       StringSplit( trim(currentLineElements(0)), " " ,3, elements0() )
                       ASMInstruction = " "+elements0(0)
                       Param1 = elements0(1)
 
-                      'print ASMInstruction+" "+Param1+","+Param2+","+Param3+"           ;B1"
+                      'print outline, "=",ASMInstruction+" "+Param1+","+Param2+","+Param3+"           ;B1"
 
-                      'First test: Does the SECOND element exist as SYSVAR? and therefore a register   like  BCF 'OSCCON1',NDIV3,BANKED
+                      'First test: Does the SECOND element exist as getSYSVAR and therefore a register   like  BCF 'OSCCON1',NDIV3,BANKED
                       if GetSysVar(Param1) <> 0 then
                         outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Param1)->location )
                         if outstring <> "" then
@@ -17986,9 +18013,9 @@ Sub WriteAssembly
                       end if
 
                       'Second test for register.bit  transforms the BITs to a constant to resolve the reverse lookup
-                      'Section can be improved to replace the constant witht he targtet bit - tested on 16/18f
+                      'Section can be improved to replace the constant with he targtet bit - tested on 16/18f
                       if HasSFRBit ( Param2 )  then
-                          'replace this with an explict look up into the .h file at a later date
+                          'replace this with an explict look up into the .h file 
                           'meanwhile use a constant
                           Param2 = GetSFRBitValue(trim( Param2 ))
                           if Param3 = "" then
@@ -18006,6 +18033,7 @@ Sub WriteAssembly
 
                   else
                       'lots of code looks like this... "BANKSEL ADCON0"  where there is register.. check the register is valid and reverse
+                      'code could be ( 1 << BIT ) like ( 1 << WR )
                       erase currentLineElements
 
                       'Some #RAWASM is actually hidden in PRESERVE lines, so, we need to extract and tranform
@@ -18045,22 +18073,14 @@ Sub WriteAssembly
 
                                         replace( outline, currentLineElements(elementcounter), registerbitlocation )
 
-                                    
                                     end if
 
                                 end if
 
-                                
-                                if HasSFR ( currentLineElements(elementcounter) ) Then
-                                    'walk the elements replacing BIT constant will value using the reverse lookups
-                                    ' not implemented - awaiting Microchips explaination of how Indirect Addresssing works
-                                    ' show SFRs
-                                    ' print currentLineElements(elementcounter), Val(HashMapGetStr(Constants, UCase(currentLineElements(elementcounter)))) 
-                                end if
                             Next
 
                           else
-
+                            ' reverse lookup Param2. Things like BANKSEL NVMCON1. This transformation is to ensure the register is the same name
                             Param1 = currentLineElements(0)
                             Param2 = currentLineElements(1)
 
@@ -18078,15 +18098,8 @@ Sub WriteAssembly
                           
                       end if
 
-
                   end if
-
-
-
             End Select
-            'print CurrLine->Value, outline
-            'CurrLine->Value = outline
-
 
           else
             'must be a label
