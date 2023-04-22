@@ -107,6 +107,7 @@
 '  27/08/19  Add GLCDfntDefaultHeight = 7  used by GLCDPrintString and GLCDPrintStringLn
 '  21/04/20  Updated InitGLCD to correctly handle GLCD_TYPE
 '  26/03/21  Revised Write_Transaction_Data_SSD1306 to correct SPI command/data settings
+'  12/04/23  Revised to ERROR() when family14 and less than 225 byes of RAM. The array needs 128 bytes and these chips only support 95 bytes of contiguous RAM 
 
 #define SSD1306_vccstate 0
 
@@ -170,12 +171,20 @@
        If ChipRAM < 1024  Then
            GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY = TRUE
            GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE = TRUE
-           if IGNORE_SPECIFIED_GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY = 0 then
+
+          If ChipRAM < 225  Then
+            If ChipFamily = 14 Then
+              Error "Selected MCU has insufficient contiguous RAM to support GLCD operations"
+            End if
+          End if
+          If ChipRAM > 225  Then
+            if NODEF(IGNORE_SPECIFIED_GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY) then
               Warning "Memory < 1024 bytes."
               Warning "Selected MCU requires use of GLCD Open&Close Page Transaction."
               Warning "See Help for usage."
               Warning "Define a constant IGNORE_GLCD_TYPE_SSD1306_LOW_MEMORY_WARNINGS to remove this message."
-           end if
+            end if
+          End if
        End If
      end if
 

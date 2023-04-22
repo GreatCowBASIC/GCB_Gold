@@ -114,8 +114,14 @@
 #DEFINE  ChipFamily18FxxQ83 = 16108
 #DEFINE  ChipFamily18FxxQ71 = 16109
 
+//  Set RESERVEHIGHPROG values
+  //  1024 words for Optiboot non USB, 2048 for OptiBoot with USB support and 128 for TBL.
 
-
+  #DEFINE OPTIBOOT        = 1024
+  #DEFINE OPTIBOOTUSB     = 2048
+  #DEFINE ARDUINONANO     = 1024
+  #DEFINE ARDUINOMEGA2560 = 1024
+  #DEFINE TINYBOOTLOADER  = 128
 
 #startup InitSys, 80
 
@@ -124,6 +130,7 @@
 
 'Calculate intosc division (needed to sort between 18F2620 and 18F26K20, possibly others)
 #script
+
   SYS_CLOCK_DIV_NEEDED = ChipIntOsc / ChipMHz
   SYS_CLOCK_INT_PLL_USED = False
   If ChipMHz > 16 And ChipIntOsc > 16 Then

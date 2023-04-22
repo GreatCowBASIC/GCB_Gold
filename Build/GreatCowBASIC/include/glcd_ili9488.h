@@ -22,6 +22,7 @@
 '  25/03/2023:      Initial release
 '  25/03/2023:      Edited  release for testing
 '  06/04/2023:      Revised with hardware tested - Only 18bit Color, SPI, PIC tested. AVR or PIC with UNO 8 bit shield not tested. 
+'  14/04/2023:      Revised color scheme
 
 '
 'Hardware settings
@@ -175,29 +176,6 @@
     #define ILI9488_CMD_ADJUST_CONTROL_6                0xFC
     #define ILI9488_CMD_ADJUST_CONTROL_7                0xFF
 
-
-
-    #define ILI9488_WHITE          TFT_WHITE
-    #define ILI9488_BLACK          TFT_BLACK
-    #define ILI9488_RED            TFT_RED
-    #define ILI9488_GREEN          TFT_GREEN
-    #define ILI9488_BLUE           TFT_BLUE
-    #define ILI9488_YELLOW         TFT_YELLOW
-    #define ILI9488_CYAN           TFT_CYAN
-    #define ILI9488_MAGENTA        TFT_MAGENTA
-    #define ILI9488_NAVY           TFT_NAVY
-    #define ILI9488_DARKGREEN      TFT_DARKGREEN
-    #define ILI9488_DARKCYAN       TFT_DARKCYAN
-    #define ILI9488_MAROON         TFT_MAROO
-    #define ILI9488_PURPLE         TFT_PURPLE
-    #define ILI9488_OLIVE          TFT_OLIVE
-    #define ILI9488_LIGHTGREY      TFT_LIGHTGREY
-    #define ILI9488_DARKGREY       TFT_DARKGREY
-    #define ILI9488_ORANGE         TFT_ORANGE
-    #define ILI9488_GREENYELLOW    TFT_GREENYELLOW
-    #define ILI9488_PINK           TFT_PINK
-
-
 #script
   ' For the UNO_8bit_Shield you can use GLCD_RS or GLCD_DC.  They are mapped automatically
   GLCD_DC_Defined = 0
@@ -216,25 +194,47 @@
     //~ Use this script to set the TFT_colors as this script will execute late in the pre-processing process and will only change the colors for this GLCD
     //~ 				
 
-    TFT_BLACK       = [LONG]0x000000
-    TFT_NAVY        = 0x0F0000
-    TFT_DARKGREEN   = 0x006400  
-    TFT_DARKCYAN    = 0x828200
-    TFT_MAROON      = 0x000085
-    TFT_PURPLE      = 0xF01F9E
-    TFT_OLIVE       = 0x2B5E3A
-    TFT_LIGHTGREY   = 0x8EED8E
-    TFT_DARKGREY    = 0xAAAAAA
-    TFT_BLUE        = 0x3F0000
-    TFT_GREEN       = 0x003F00  
-    TFT_CYAN        = 0xCCCCB5
-    TFT_RED         = 0x0000FF
-    TFT_MAGENTA     = 0xCC00CC
-    TFT_YELLOW      = 0x00FFFF
-    TFT_WHITE       = 0xFFFFFF
-    TFT_ORANGE      = 0x007FFF
-    TFT_GREENYELLOW = 0x0070F0
-    TFT_PINK        = 0xB5B5FF
+    ILI9488_TFT_BLACK       = [LONG]0x000000
+    ILI9488_TFT_RED         = 0xFC0000
+    ILI9488_TFT_GREEN       = 0x00FC00 
+    ILI9488_TFT_BLUE        = 0x0000FC
+    ILI9488_TFT_WHITE       = 0xFFFFFF    
+
+    ILI9488_TFT_CYAN        = 0x003F3F
+    ILI9488_TFT_DARKCYAN    = 0x00AFAF
+    ILI9488_TFT_DARKGREEN   = 0x002100
+    ILI9488_TFT_DARKGREY    = 0xAAAAAA
+    ILI9488_TFT_GREENYELLOW = 0x93FC33  
+    ILI9488_TFT_LIGHTGREY   = 0xC9C9C9
+    ILI9488_TFT_MAGENTA     = 0xCC00CC
+    ILI9488_TFT_MAROON      = 0x7E007E
+    ILI9488_TFT_NAVY        = 0x00003E
+    ILI9488_TFT_OLIVE       = 0x783E00
+    ILI9488_TFT_ORANGE      = 0xFC2900
+    ILI9488_TFT_PINK        = 0xFC000F
+    ILI9488_TFT_PURPLE      = 0xF01F9E
+    ILI9488_TFT_YELLOW      = 0xFC7E00
+
+    TFT_BLACK               = ILI9488_TFT_BLACK       
+    TFT_RED                 = ILI9488_TFT_RED         
+    TFT_GREEN               = ILI9488_TFT_GREEN       
+    TFT_BLUE                = ILI9488_TFT_BLUE        
+    TFT_WHITE               = ILI9488_TFT_WHITE       
+    TFT_CYAN                = ILI9488_TFT_CYAN
+    TFT_CYAN                = ILI9488_TFT_CYAN    
+    TFT_DARKGREEN           = ILI9488_TFT_DARKGREEN  
+    TFT_DARKGREY            = ILI9488_TFT_DARKGREY    
+    TFT_GREENYELLOW         = ILI9488_TFT_GREENYELLOW  
+    TFT_LIGHTGREY           =  ILI9488_TFT_LIGHTGREY    
+    TFT_MAGENTA             = ILI9488_TFT_MAGENTA      
+    TFT_MAROON              = ILI9488_TFT_MAROON       
+    TFT_NAVY                = ILI9488_TFT_NAVY         
+    TFT_OLIVE               = ILI9488_TFT_OLIVE        
+    TFT_ORANGE              = ILI9488_TFT_ORANGE      
+    TFT_PINK                = ILI9488_TFT_PINK        
+    TFT_PURPLE              = ILI9488_TFT_PURPLE      
+    TFT_YELLOW              = ILI9488_TFT_YELLOW       
+
 
     if UNO_8bit_Shield then
       'is there a GLCD_DC defined?
@@ -630,14 +630,17 @@ End Sub
 '''Clears the GLCD screen
 Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
 
-    'Alias this variable to the optimised SPI send variable. It is faster to ali
-    dim ILI9488SendLong as Long alias HWSPI_Send_24bits_E, HWSPI_Send_24bits_U, HWSPI_Send_24bits_H, HWSPI_Send_24bits
-    
     ' initialise global variable. Required variable for Circle in all DEVICE DRIVERS- DO NOT DELETE
     GLCD_yordinate = 0
 
+    Dim ILI9488SendLong as Long
+
     SetAddressWindow_ILI9488 ( 0, 0, GLCD_WIDTH  , GLCD_HEIGHT )
-    ILI9488SendLong = GLCDbackground
+    ILI9488SendLong = [LONG]GLCDbackground
+
+    #ifdef Var(SPI1TCNTL)
+      HWSPI_Send_24bits =  ILI9488SendLong
+    #endif
 
     set ILI9488_CS OFF
     set ILI9488_DC ON
@@ -652,10 +655,9 @@ Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
               #endif
               #ifdef Var(SPI1TCNTL)
                 //~ Tested and validated
-                // FastHWSPITransfer  ILI9488SendLong_u
-                // FastHWSPITransfer  ILI9488SendLong_h
                 // FastHWSPITransfer  ILI9488SendLong
-                HWSPI_Send_24bits =  ILI9488SendLong
+                // FastHWSPITransfer  ILI9488SendLong_H
+                // FastHWSPITransfer  ILI9488SendLong_U
                 HWSPI_Fast_Write_24bits_Macro
 
               #else
@@ -1188,9 +1190,9 @@ End Sub
 
 
 '''Send data (18 color bits) in 3 bytes to the ILI9488 GLCD
-'''@param ILI9488SendWord  Long to send
+'''@param ILI9488SendLong to send
 '''@hide
-Sub Send24bits_ILI9488(In ILI9488SendWord As Long)
+Sub Send24bits_ILI9488(ILI9488SendLong As Long)
 
   #ifndef UNO_8bit_Shield
       set ILI9488_CS OFF;
@@ -1198,9 +1200,9 @@ Sub Send24bits_ILI9488(In ILI9488SendWord As Long)
 
       #ifdef ILI9488_HardwareSPI
         'Hardware SPI ****************************************
-         SPITransfer  ILI9488SendWord_U,  ILI9488TempOut
-         SPITransfer  ILI9488SendWord_H,  ILI9488TempOut
-         SPITransfer  ILI9488SendWord,  ILI9488TempOut
+         SPITransfer  ILI9488SendLong,  ILI9488TempOut
+         SPITransfer  ILI9488SendLong_H,  ILI9488TempOut
+         SPITransfer  ILI9488SendLong_U,  ILI9488TempOut
          set ILI9488_CS ON;
          exit sub
       #endif
@@ -1209,13 +1211,13 @@ Sub Send24bits_ILI9488(In ILI9488SendWord As Long)
       'Software SPI ****************************************
       repeat 24
 
-        if ILI9488SendWord.23 = ON then
+        if ILI9488SendLong.23 = ON then
           set ILI9488_DO ON;
         else
           set ILI9488_DO OFF;
         end if
         SET GLCD_SCK On;
-        rotate ILI9488SendWord left
+        rotate ILI9488SendLong left
         set GLCD_SCK Off;
 
       end repeat

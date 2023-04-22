@@ -796,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-04-11"
-buildVersion = "1236"
+Version = "1.00.00 2023-04-13"
+buildVersion = "1237"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -16811,6 +16811,7 @@ Sub ReadOptions(OptionsIn As String)
     'Reserve memory at the end of flash for HEF/bootloader?
     ElseIf CurrElement->Value = "RESERVEHIGHPROG" Then
       If CurrElement->Next <> 0 Then
+        CurrElement->Next->Value = ReplaceConstantsLine(CurrElement->Next->Value, 0)
         If IsConst(CurrElement->Next->Value) Then
           TempVal = MakeDec(CurrElement->Next->Value)
           If TempVal > ReserveHighProg Then
@@ -16887,7 +16888,7 @@ Sub ReadOptions(OptionsIn As String)
       LogError (OutMessage, "")
     End If
 
-    CurrElement = CurrElement->Next
+    CurrElement= CurrElement->Next
   Loop
 
 End Sub

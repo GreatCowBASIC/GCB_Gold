@@ -823,7 +823,7 @@ Macro HWSPI_Fast_Write_24bits_Macro
 
     'One byte transfer count
     SPI1TCNTL = 1
-    SPI1TXB = HWSPI_Send_24bits_U
+    SPI1TXB = HWSPI_Send_24bits
     wait while SPI1RXIF = SPI_RX_IN_PROGRESS
     SPIRxData = SPI1RXB
 
@@ -833,7 +833,7 @@ Macro HWSPI_Fast_Write_24bits_Macro
     SPIRxData = SPI1RXB
 
     SPI1TCNTL = 1
-    SPI1TXB = HWSPI_Send_24bits
+    SPI1TXB = HWSPI_Send_24bits_U
     wait while SPI1RXIF = SPI_RX_IN_PROGRESS
     SPIRxData = SPI1RXB
 
