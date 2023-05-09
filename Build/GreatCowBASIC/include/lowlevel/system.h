@@ -1,5 +1,5 @@
 '    System routines for Great Cow BASIC
-'    Copyright (C) 2006-2021 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
+'    Copyright (C) 2006-2023 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -81,6 +81,7 @@
 '    28022022 - Revised PFMread and added PFMWrite to support Q43 chips
 '    19082022 - Revised to add ChipSubFamily 15002/3/4 support in initsys for new clock type
 '    28022023 - Added support fort 18FxxQ71
+'    30042023 - Add deviceconfigurationRead to read Device Configuration ( additive to ProgramRead as this limited to PFM )
 
 ' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
 
@@ -4041,6 +4042,75 @@ sub ProgramWrite(In EEAddress, In EEDataWord)
   'Enable Interrupt
   IntOn
 #ENDIF
+
+end sub
+
+sub  deviceconfigurationRead(In EEAddress, Out EEDataWord)
+
+    EEDataWord = 0x00
+
+    #IF BIT(NVMCMD0)
+        'Supports memory 18fxxQ43 family
+        Dim EEAddress As Word
+        Dim EEDataWord As Word
+        NVMCON1 = 0; Read operations
+
+        TBLPTRU = 0
+        TBLPTRH = EEAddress_H
+        TBLPTRL = EEAddress
+
+        TBLRD*+
+        EEDataWord   = TABLAT
+        TBLRD*
+        EEDataWord_H = TABLAT
+
+    #ENDIF
+
+
+    #IF NOBIT(NVMCMD0)
+        #IF VAR(EEADRH)
+          Dim EEAddress As Word Alias EEADRH, EEADR
+          Dim EEDataWord As Word Alias EEDATH, EEDATL_REF
+        #ENDIF
+        #IF VAR(PMADRH)
+          Dim EEAddress As Word Alias PMADRH, PMADRL
+          Dim EEDataWord As Word Alias PMDATH, PMDATL
+        #ENDIF
+
+
+        Dim NVMREGSState as Bit
+
+        'Disable Interrupt
+        IntOff
+
+        'Select program memory
+        #IFDEF Bit(EEPGD)
+          Set EEPGD ON
+        #ENDIF
+
+        #IFDEF Bit(NVMREGS)
+          NVMREGSState = NVMREGS
+          NVMREGS = 0
+        #ENDIF
+
+
+        #IFDEF Bit(CFGS)
+          Set CFGS ON
+        #ENDIF
+
+        'Start read, wait for it to finish
+        #ifdef bit(RD)
+          SET RD ON
+        #endif
+        NOP
+        NOP
+        #IFDEF Bit(NVMREGS)
+          NVMREGS = NVMREGSState
+        #ENDIF
+
+        'Enable interrupt
+        IntOn
+    #ENDIF
 
 end sub
 

@@ -639,7 +639,7 @@ Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
     ILI9488SendLong = [LONG]GLCDbackground
 
     #ifdef Var(SPI1TCNTL)
-      HWSPI_Send_24bits =  ILI9488SendLong
+      HWSPI_Send_18bits =  ILI9488SendLong
     #endif
 
     set ILI9488_CS OFF
@@ -658,7 +658,7 @@ Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
                 // FastHWSPITransfer  ILI9488SendLong
                 // FastHWSPITransfer  ILI9488SendLong_H
                 // FastHWSPITransfer  ILI9488SendLong_U
-                HWSPI_Fast_Write_24bits_Macro
+                HWSPI_Fast_Write_18bits_Macro
 
               #else
                 'Clear WCOL
@@ -728,7 +728,7 @@ Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
           #endif
 
           #ifndef ILI9488_HardwareSPI
-            Send24bits_ILI9488 ( GLCDbackground )
+            Send_18bits_ILI9488 ( GLCDbackground )
           #endif
 
       #endif
@@ -981,31 +981,31 @@ Sub PSet_ILI9488(In GLCDX as word, In GLCDY as word, In GLCDColour As Long)
   select case GLCDRotateState
         case PORTRAIT  '0 degree
               SetAddressWindow_ILI9488 ( GLCDX, GLCDY, GLCDX, GLCDY )
-              Send24bits_ILI9488 GLCDColour
+              Send_18bits_ILI9488 GLCDColour
               GLCDDeviceWidth = GLCD_WIDTH
               GLCDDeviceHeight = GLCD_HEIGHT
 
         case LANDSCAPE
               SetAddressWindow_ILI9488 ( GLCDy, GLCDDeviceWidth -GLCDx -1, GLCDy, GLCDDeviceWidth -GLCDx -1 )
-              Send24bits_ILI9488 GLCDColour
+              Send_18bits_ILI9488 GLCDColour
               GLCDDeviceWidth = GLCD_HEIGHT
               GLCDDeviceHeight = GLCD_WIDTH            
 
         case PORTRAIT_REV
               SetAddressWindow_ILI9488 ( GLCDDeviceWidth - GLCDX-1, GLCDDeviceHeight - GLCDY-1, GLCDDeviceWidth - GLCDX-1, GLCDDeviceHeight - GLCDY-1 )
-              Send24bits_ILI9488 GLCDColour
+              Send_18bits_ILI9488 GLCDColour
               GLCDDeviceWidth = GLCD_WIDTH
               GLCDDeviceHeight = GLCD_HEIGHT
 
         case LANDSCAPE_REV
               SetAddressWindow_ILI9488 ( GLCDDeviceHeight - GLCDy-1, GLCDx, GLCDDeviceHeight - GLCDy-1, GLCDx )
-              Send24bits_ILI9488 GLCDColour
+              Send_18bits_ILI9488 GLCDColour
               GLCDDeviceWidth = GLCD_HEIGHT
               GLCDDeviceHeight = GLCD_WIDTH            
 
         case else
               SetAddressWindow_ILI9488 ( GLCDX, GLCDY, GLCDX, GLCDY )
-              Send24bits_ILI9488 GLCDColour
+              Send_18bits_ILI9488 GLCDColour
               GLCDDeviceWidth = GLCD_WIDTH
               GLCDDeviceHeight = GLCD_HEIGHT
 
@@ -1192,7 +1192,7 @@ End Sub
 '''Send data (18 color bits) in 3 bytes to the ILI9488 GLCD
 '''@param ILI9488SendLong to send
 '''@hide
-Sub Send24bits_ILI9488(ILI9488SendLong As Long)
+Sub Send_18bits_ILI9488(ILI9488SendLong As Long)
 
   #ifndef UNO_8bit_Shield
       set ILI9488_CS OFF;
