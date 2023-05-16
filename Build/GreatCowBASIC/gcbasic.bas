@@ -28,8 +28,6 @@
 
 #Define MAXTABLEITEMS 65536
 
-'PIC-Types and arrays
-#Define PICASDEBUG FALSE
 Type PICASInc
   Value as String
   NumVal as Integer
@@ -641,7 +639,7 @@ DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, C
 DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC
+Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
@@ -796,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-05-08"
-buildVersion = "1242"
+Version = "1.00.00 2023-05-14"
+buildVersion = "1247"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -842,6 +840,9 @@ StatsUsedProgram = 0
 UseChipOutLatches = -1
 AutoContextSave = -1
 LaxSyntax = 0
+PICASdebug = false
+PICASDEBUGmessageShown = false
+DATfileinspection = true
 NoSummary = 0
 ReserveHighProg = 0
 ConfigDisabled = 0
@@ -2546,9 +2547,11 @@ SUB BuildMemoryMap
     Max = VAL("&h" + Mid(TempData, INSTR(TempData, ":") + 1))
 
     For L = Min To Max
-      If L > MemSize then
-          LogError "DAT file error - probable `MaxAddress = "+ str(MemSize)+"` is incorrect/too small. Check DAT with DATASHEET to correct error"
-          exit sub
+      If DATfileinspection = True Then
+        If L > MemSize then
+            LogError "DAT file error - probable `MaxAddress = "+ str(MemSize)+"` is incorrect/too small. Check DAT with DATASHEET to correct error"
+            exit sub
+        End if
       End if
       'On 16F1 chips, keep non-banked locations at end of list to make allocation of linear memory simpler
       If ChipFamily = 15 Then
@@ -14227,6 +14230,18 @@ SUB InitCompiler
                     laxsyntax = -1
                   End if
 
+                Case "picasdebug"
+                  if PrefIsYes(MsgVal, 1 ) = 1   Then
+                    PICASdebug = true
+                  End if
+
+                Case "datfileinspection"
+                  if PrefIsYes(MsgVal, 1 ) = 1   Then
+                    DATfileinspection = true
+                  else
+                    DATfileinspection = false
+                  End if                
+
                 Case "nosummary"
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
                     NoSummary = -1
@@ -16814,14 +16829,18 @@ Sub ReadOptions(OptionsIn As String)
 
     'Reserve memory at the end of flash for HEF/bootloader?
     ElseIf CurrElement->Value = "RESERVEHIGHPROG" Then
+
       If CurrElement->Next <> 0 Then
         If IsConst(CurrElement->Next->Value) Then
-          TempVal = MakeDec(CurrElement->Next->Value)
-          If TempVal > ReserveHighProg Then
-            ReserveHighProg = TempVal
-          End If
-          CurrElement = CurrElement->Next
+          TempVal = Val(CurrElement->Next->Value)
+        Else 
+          TempVal = Val(HashMapGetStr(Constants, UCase(CurrElement->Next->Value)))
+        End if
+        If TempVal > ReserveHighProg Then
+          ReserveHighProg = TempVal
         End If
+
+        CurrElement = CurrElement->Next
       End If
 
     'Disable automatic use of output latches?
@@ -17788,7 +17807,14 @@ Sub WriteAssembly
 
     'Output and transform ASM to PICAS code
     'This essentially transforms to ensure all registers are correct, and all register.bit(s) are numeric constants
-    if AFISupport = 1 then
+
+    If AFISupport = 1 then
+
+      If PICASDEBUG AND NOT PICASDEBUGmessageShown Then 
+        Print "PICASDEBUG enabled - see .S output file"
+        PICASDEBUGmessageShown = True  'this ensure the message is shown only once.
+      End If
+
       if left(CurrLine->Value,1) <> ";" then
 
           'the now implies just PIC 
@@ -17796,6 +17822,7 @@ Sub WriteAssembly
 
           'Define vars and init vars
           dim outline as string
+          
           dim ASMInstruction as string
           dim Param1 as string
           dim Param2 as string
@@ -17812,17 +17839,13 @@ Sub WriteAssembly
             Select Case ChipFamily
 
             Case 16 'therefore 18Fs
-
-                  'Tested on 18f16q41
-
-                    'Using these examples
-                    'Clear NDIV3:0
-                    'NDIV3 = 0
-                    'BCF OSCCON1,NDIV3,BANKED  transformed to BCF OSCCON1,3,BANKED where the register is validated and the bit a constant
-
-                    ' where ;OSCFRQ = 0b00001000  '64mhz is validaed for registry only
-                    ' MOVLW 8
-                    ' MOVWF OSCFRQ,BANKED
+                  'Some #RAWASM is actually hidden in PRESERVE lines, so, we need to extract and tranform
+                  If Left(outline, 8) = "PRESERVE" Then
+                      preservedline = -1
+                      Dim as Integer PresPos
+                      PresPos = VAL(Mid(outline, 10))                    
+                      outline  = PreserveCode(PresPos)
+                  End if
 
                   'This section reverse lookups into the PICAS INC file in there is comma....
                   If instr( outline, "," ) > 0 then
@@ -17831,22 +17854,57 @@ Sub WriteAssembly
                       ' but MOVFF TMRVALUE,TMR2 is....
                       ' but BCF OSCCON1,NDIV3,BANKED
                       erase currentLineElements
-                      StringSplit ( trim(outline), ",",-1,currentLineElements() )
-                      Param2 = currentLineElements(1)
 
-                      Param3 = ""
-                      if ubound(currentLineElements) > 1  then
-                        Param3 = trim(currentLineElements(2))
-                      end if
+                      ' count the number of commas'.  This will identify the format of the outline
+                      dim as integer charCount = 0
+                      dim i as integer
+                      for i = 0 to len(outline)-1
+                          if outline[i] = ASC(",") then
+                            charCount = charCount + 1
+                          end if
+                      next 
+
+                      Select Case charCount 
+                        Case 1
+                          ' example "bsf      NVMCON1,WR"  | "MOVWF	OSCCON1,BANKED"
+
+                          replaceall ( OutLine, "  ", " " )
+                          StringSplit ( trim(outline), ",",-1,currentLineElements() )
+                          Param3 = currentLineElements(1)
+
+                          erase elements0
+                          StringSplit( trim(currentLineElements(0)), " " ,3, elements0() )
+
+                          ASMInstruction = " "+elements0(0)
+                          Param2 = elements0(1)
+
+                        Case 2
+
+                          StringSplit ( trim(outline), ",",-1,currentLineElements() )
+                          Param2 = currentLineElements(1)
+
+                          Param3 = ""
+                          if ubound(currentLineElements) > 1  then
+                            Param3 = trim(currentLineElements(2))
+                          end if
+                      
+                          'So, (BCF OSCCON1) becomes ((BCF) (OSCCON1)
+                          erase elements0
+                          StringSplit( trim(currentLineElements(0)), " " ,3, elements0() )
+
+                          ASMInstruction = " "+elements0(0)
+                          Param1 = elements0(1)
+
+                        Case Else
+                          If Left(outline,1) <> ";" Then
+                            Print "unhandled conversion for "+outline
+                          End If
+                      End Select
 
 
-                      'So, (BCF OSCCON1) becomes ((BCF) (OSCCON1)
-                      erase elements0
-                      StringSplit( trim(currentLineElements(0)), " " ,3, elements0() )
-                      ASMInstruction = " "+elements0(0)
-                      Param1 = elements0(1)
+                      
 
-                      'print ASMInstruction+" "+Param1+","+Param2+","+Param3+"           ;A1"
+                      
 
                       'First test: Does the SECOND element exist as SYSVAR? and therefore a register   like  BCF 'OSCCON1',NDIV3,BANKED
                       if GetSysVar(Param1) <> 0 then
@@ -17890,11 +17948,18 @@ Sub WriteAssembly
                           if GetSysVar(Param2) <> 0 then
                               outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Param2)->location )
                               if outstring <> "" then
+                                  If Instr(Ucase(Param3), "BANKED") <> 0 or Instr(Ucase(Param3), "ACCESS") <> 0  Then                                 
+                                    outline = ASMInstruction+" "+OutString+","+Param3
+                                    if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
+                                      if PICASDEBUG then Print #2, ";A6a: ASM Source was: "+CurrLine->Value
+                                    end if
+                                  Else
+                                    outline = ASMInstruction+" "+Param2 + "," + GetSFRBitValue(Param3)
+                                    if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
+                                      if PICASDEBUG then Print #2, ";A6b: ASM Source was: "+CurrLine->Value
+                                    end if
 
-                                  outline = ASMInstruction+" "+Param1+","+OutString
-                                  if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
-                                    if PICASDEBUG then Print #2, ";A6: ASM Source was: "+CurrLine->Value
-                                  end if
+                                  End if
 
                               end if
                           end if
@@ -17920,8 +17985,43 @@ Sub WriteAssembly
                   else
                       'lots of code looks like this... "BANKSEL ADCON0"  where there is register.. check the register is valid and reverse
                       erase currentLineElements
-                      'Inspect for a space - must be more that one paramater
+
+                      'Inspect for a space - threfore, must be more that one paramater
                       if instr(trim(outline), " ") <> 0 then
+                        Dim tmpOutLine as String = outline
+                        replaceall ( tmpOutLine, "(", " " )
+                        replaceall ( tmpOutLine, ")", " " )
+                        replaceall ( tmpOutLine, "[", " " )
+                        replaceall ( tmpOutLine, "]", " " )
+                        replaceall ( tmpOutLine, ">>", " " )
+                        replaceall ( tmpOutLine, "<<", " " )
+                        replaceall ( tmpOutLine, "  ", " " )
+                        
+                        StringSplit ( trim(tmpOutLine), " ",-1,currentLineElements() )                          
+                        If UserCodeOnlyEnabled = -1 then
+                          Dim elementcounter as Byte
+                          Dim registerbitlocation as String
+                          'walk the elements replacing BIT constant will value using the reverse lookups
+                          For elementcounter = 0 to ubound(currentLineElements)
+                          
+                              if GetSFRBitValue(currentLineElements(elementcounter)) <> "" then
+                                  registerbitlocation = GetSFRBitValue(currentLineElements(elementcounter))
+                                  
+                                  if registerbitlocation <> "" then           
+                            
+                                      If showonceflag = 0 and Instr(Ucase(outline), "#ASMRAW") = 0  and  Left(outline, 8) <> "PRESERVE" and trim(ucase(registerbitlocation)) <> trim(ucase(currentLineElements(elementcounter))) then
+                                        Print #2, ";"+trim(outline)
+                                        showonceflag = -1
+                                      end if
+
+                                      replace( outline, currentLineElements(elementcounter), registerbitlocation )
+
+                                  end if
+
+                              end if
+
+                          Next
+                        else
                           StringSplit ( trim(outline), " ",-1,currentLineElements() )
                           Param1 = currentLineElements(0)
                           Param2 = currentLineElements(1)
@@ -17936,12 +18036,12 @@ Sub WriteAssembly
                                   end if
                             end if
                           end if
-
+                        end if
                       end if
                   end if
 
 
-            Case Else
+            Case Else  '16F etc
                   If instr( outline, "," ) > 0 then
                       'Assumes that any ASM that has a command requires analysis and transformation for PIC-AS
 
@@ -18035,9 +18135,9 @@ Sub WriteAssembly
                           end if
                       end if
 
-                  else
+                  else                  
                       'lots of code looks like this... "BANKSEL ADCON0"  where there is register.. check the register is valid and reverse
-                      'code could be ( 1 << BIT ) like ( 1 << WR )
+                      'code could be ( 1 << BIT ) or ( 1 << WR ) etc
                       erase currentLineElements
 
                       'Some #RAWASM is actually hidden in PRESERVE lines, so, we need to extract and tranform
