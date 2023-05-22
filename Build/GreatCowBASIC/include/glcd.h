@@ -618,6 +618,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
       Pset = Pset_ili9488
       FilledBox = FilledBox_ili9488
       GLCDRotate = GLCDRotate_ili9488
+      LINE = LINE_LongColor
       glcd_type_string = "ili9488"
       GLCD_WIDTH = 320
       GLCD_HEIGHT = 480
@@ -1009,6 +1010,36 @@ Sub GLCDCLS
        GLCD_yordinate = 0
 
 End Sub
+
+          
+
+  '''@hide
+Sub GLCDPrint(In PrintLocX as word, In PrintLocY as word, in LCDPrintData as string, In LineColour as Long )
+  Dim GLCDPrintLoc as word
+  Dim GLCDPrintLen, GLCDPrint_String_Counter as Byte
+  GLCDPrintLen = LCDPrintData(0)
+  If GLCDPrintLen = 0 Then Exit Sub
+
+  #ifdef GLCD_OLED_FONT
+      dim OldGLCDFontWidth as Byte
+      OldGLCDFontWidth = GLCDFontWidth
+  #endif
+
+  GLCDPrintLoc = PrintLocX
+  'Write Data
+  For GLCDPrint_String_Counter = 1 To GLCDPrintLen
+    GLCDDrawChar GLCDPrintLoc, PrintLocY, LCDPrintData(GLCDPrint_String_Counter), LineColour
+    GLCDPrintIncrementPixelPositionMacro
+  Next
+ 'Update the current X position for GLCDPrintString
+  PrintLocX = GLCDPrintLoc
+
+  #ifdef GLCD_OLED_FONT
+      GLCDFontWidth = OldGLCDFontWidth
+  #endif
+
+End Sub
+
 
   '''Displays a message
   '''@param PrintLocX X coordinate for message
@@ -1743,6 +1774,84 @@ end sub
   '''@param LineY2 Ending Y point of line
   '''@param LineColour Colour of line (0 = blank, 1 = show, default is 1)
 #define GLCDLine Line
+Sub LINE_LongColor(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour as Long = GLCDForeground)
+
+      dim LineStepX as integer
+      dim LineStepY as integer
+      dim LineDiffX, LineDiffY as integer
+      dim LineDiffX_x2, LineDiffY_x2 as integer
+      dim LineErr as integer
+
+
+
+      LineDiffX = 0
+      LineDiffY = 0
+      LineStepX = 0
+      LineStepY = 0
+      LineDiffX_x2 = 0
+      LineDiffY_x2 = 0
+      LineErr = 0
+
+
+      LineDiffX =  LineX2 -   LineX1
+      LineDiffY =  LineY2 -   LineY1
+
+      if (LineDiffX > 0) then
+              LineStepX = 1
+      else
+              LineStepX = -1
+      end if
+
+      if (LineDiffY > 0) then
+          LineStepY = 1
+       else
+          LineStepY = -1
+      end if
+
+      LineDiffX = LineStepX * LineDiffX
+      LineDiffY = LineStepY * LineDiffY
+
+      LineDiffX_x2 = LineDiffX*2
+      LineDiffY_x2 = LineDiffY*2
+
+      if ( LineDiffX >= LineDiffY) then
+
+          LineErr = LineDiffY_x2 - LineDiffX
+
+          do while (   LineX1 <>  LineX2 )
+
+              PSet (   LineX1,   LineY1, LineColour )
+              LineX1 += LineStepX
+              if ( LineErr < 0) then
+                  LineErr += LineDiffY_x2
+              else
+                  LineErr += ( LineDiffY_x2 - LineDiffX_x2 )
+                  LineY1 += LineStepY
+              end if
+          loop
+
+          PSet (   LineX1,   LineY1, LineColour )
+      else
+
+          LineErr = LineDiffX_x2 - LineDiffY
+          do while (   LineY1 <>  LineY2)
+              PSet (   LineX1,   LineY1, LineColour )
+              LineY1 += LineStepY
+              if ( LineErr < 0) then
+                  LineErr += LineDiffX_x2
+               else
+                  LineErr += ( LineDiffX_x2 - LineDiffY_x2 )
+                  LineX1 += LineStepX
+              end if
+          loop
+          PSet (   LineX1,   LineY1, LineColour )
+
+      end if
+
+
+
+end sub
+
 Sub Line(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour as word = GLCDForeground)
 
       dim LineStepX as integer
@@ -1821,83 +1930,9 @@ Sub Line(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as w
 
 end sub
 
-Sub Line(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour as Long = GLCDForeground)
-
-      dim LineStepX as integer
-      dim LineStepY as integer
-      dim LineDiffX, LineDiffY as integer
-      dim LineDiffX_x2, LineDiffY_x2 as integer
-      dim LineErr as integer
 
 
 
-      LineDiffX = 0
-      LineDiffY = 0
-      LineStepX = 0
-      LineStepY = 0
-      LineDiffX_x2 = 0
-      LineDiffY_x2 = 0
-      LineErr = 0
-
-
-      LineDiffX =  LineX2 -   LineX1
-      LineDiffY =  LineY2 -   LineY1
-
-      if (LineDiffX > 0) then
-              LineStepX = 1
-      else
-              LineStepX = -1
-      end if
-
-      if (LineDiffY > 0) then
-          LineStepY = 1
-       else
-          LineStepY = -1
-      end if
-
-      LineDiffX = LineStepX * LineDiffX
-      LineDiffY = LineStepY * LineDiffY
-
-      LineDiffX_x2 = LineDiffX*2
-      LineDiffY_x2 = LineDiffY*2
-
-      if ( LineDiffX >= LineDiffY) then
-
-          LineErr = LineDiffY_x2 - LineDiffX
-
-          do while (   LineX1 <>  LineX2 )
-
-              PSet (   LineX1,   LineY1, LineColour )
-              LineX1 += LineStepX
-              if ( LineErr < 0) then
-                  LineErr += LineDiffY_x2
-              else
-                  LineErr += ( LineDiffY_x2 - LineDiffX_x2 )
-                  LineY1 += LineStepY
-              end if
-          loop
-
-          PSet (   LineX1,   LineY1, LineColour )
-      else
-
-          LineErr = LineDiffX_x2 - LineDiffY
-          do while (   LineY1 <>  LineY2)
-              PSet (   LineX1,   LineY1, LineColour )
-              LineY1 += LineStepY
-              if ( LineErr < 0) then
-                  LineErr += LineDiffX_x2
-               else
-                  LineErr += ( LineDiffX_x2 - LineDiffY_x2 )
-                  LineX1 += LineStepX
-              end if
-          loop
-          PSet (   LineX1,   LineY1, LineColour )
-
-      end if
-
-
-
-end sub
 
 
   '''Draws a pixel on the GLCD
