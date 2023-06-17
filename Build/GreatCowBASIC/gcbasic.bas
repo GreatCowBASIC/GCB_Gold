@@ -794,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.00.00 2023-05-14"
-buildVersion = "1247"
+Version = "1.00.00 2023-05-31"
+buildVersion = "1249"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -17954,7 +17954,12 @@ Sub WriteAssembly
                                       if PICASDEBUG then Print #2, ";A6a: ASM Source was: "+CurrLine->Value
                                     end if
                                   Else
-                                    outline = ASMInstruction+" "+Param2 + "," + GetSFRBitValue(Param3)
+                                    'Test if Param3 is a Bit, if is convert, else, it is register.
+                                    if trim(GetSFRBitValue(Param3)) <> "" then
+                                      outline = ASMInstruction+" "+Param2 + "," + GetSFRBitValue(Param3)
+                                    else
+                                      outline = ASMInstruction+" "+Param2 + "," + Param3
+                                    end if
                                     if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
                                       if PICASDEBUG then Print #2, ";A6b: ASM Source was: "+CurrLine->Value
                                     end if
