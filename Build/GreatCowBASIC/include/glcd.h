@@ -107,6 +107,8 @@
   #define GLCD_TYPE_SSD1306_TWIN 30
   #define GLCD_TYPE_ST7789_240_240 31
   #define GLCD_TYPE_ILI9488 32
+  #define GLCD_TYPE_ST7567  33
+  
 
 
 dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as byte
@@ -178,17 +180,8 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
     GLCDLINEWIDTH=1
   END IF
 
-  IF NODEF(GLCD_WIDTH) THEN
-    GLCD_WIDTH=128
-  END IF
 
-  IF NODEF(GLCD_HEIGHT) THEN
-    GLCD_HEIGHT=64
-  END IF
-
-
-
-  GLCDVERSION=8
+  GLCDVERSION=9
   ' add new type here!
 
   If GLCD_TYPE = GLCD_TYPE_ST7789_240_240 Then
@@ -990,6 +983,28 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
        GLCDCharCol7 = GLCDCharCol7Extended1
 
     End If
+  End If
+
+
+
+  If GLCD_TYPE = GLCD_TYPE_ST7567 Then
+     'Support I2C 
+     #include <glcd_st7567.h>
+     InitGLCD = InitGLCD_st7567
+     GLCDCLS = GLCDCLS_st7567
+     GLCDDrawChar = GLCDDrawChar_st7567
+     FilledBox = FilledBox_st7567
+     Pset = Pset_st7567
+     GLCD_Open_PageTransaction = GLCD_Open_PageTransaction_st7567
+     GLCD_Close_PageTransaction = GLCD_Close_PageTransaction_st7567
+     GLCDSetContrast = SetContrast_st7567
+     glcd_type_string = "ST7567"
+     GLCD_WIDTH = 128
+     GLCD_HEIGHT = 64
+     st7567_GLCD_HEIGHT = GLCDDeviceHeight
+     st7567_GLCD_WIDTH = GLCDDeviceWidth
+     ST7567_XOFFSET = 0
+
   End If
 
 #endscript
