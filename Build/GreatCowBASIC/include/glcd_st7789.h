@@ -21,18 +21,21 @@
 'Changes
 ' 25/02/21  Initial release
 ' 03/03/21  Added HWSPIClockMode constant
+' 21/06/23  Added 320x240 support
+' 22/06/23  Revised PSET to isolate 240x240 support
 
 ' Hardware settings
 ' Type
 '''@hardware All; Controller Type; GLCD_TYPE; "GLCD_TYPE_ST7789_240_240"
+'''@hardware All; Controller Type; GLCD_TYPE; "GLCD_TYPE_ST7789_320_240"
 
 'Serial lines (ST7789 only)
-'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_240_240; Data/Command; GLCD_DC; IO_Pin
+'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_xx0_240; Data/Command; GLCD_DC; IO_Pin
 
-''@hardware GLCD_TYPE GLCD_TYPE_ST7789_240_240; Data In (LCD Out) GLCD_DI; IO_Pin
-'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_240_240; Clock; GLCD_SCK; IO_Pin
-'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_240_240; Reset; GLCD_RESET; IO_Pin
-'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_240_240; Chip Select; GLCD_CS; IO_Pin Optional
+''@hardware GLCD_TYPE GLCD_TYPE_ST7789_xx0_240; Data In (LCD Out) GLCD_DI; IO_Pin
+'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_xx0_240; Clock; GLCD_SCK; IO_Pin
+'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_xx0_240; Reset; GLCD_RESET; IO_Pin
+'''@hardware GLCD_TYPE GLCD_TYPE_ST7789_xx0_240; Chip Select; GLCD_CS; IO_Pin Optional
 
 'Pin mappings for ST7789
 #define ST7789_DC GLCD_DC
@@ -50,6 +53,14 @@
     If GLCD_CS then
         ST7789_CS = GLCD_CS
     End if
+
+    If NODEF(ST7789_XSTART) Then
+      ST7789_XSTART = 0
+    End if
+    If NODEF(ST7789_YSTART) Then
+      ST7789_YSTART = 0
+    End if
+
 #ENDSCRIPT
 
 'Functional constants
@@ -94,8 +105,7 @@
 #define ST7789_MADCTL_ML  0x10
 #define ST7789_MADCTL_RGB 0x00
 
-#define ST7789_240x240_XSTART 0
-#define ST7789_240x240_YSTART 0
+
 
 
 
@@ -106,7 +116,7 @@
 '''Initialise the GLCD device
 Sub InitGLCD_ST7789
 
-  #if GLCD_TYPE = GLCD_TYPE_ST7789_240_240
+  #if GLCD_TYPE = GLCD_TYPE_ST7789_240_240 or GLCD_TYPE = GLCD_TYPE_ST7789_320_240
 
     'Setup code for ST7789 controllers
     'SPI mode!!!
@@ -161,13 +171,13 @@ Sub InitGLCD_ST7789
 
     SendCommand_ST7789(ST7789_CASET)
     SendData_ST7789(0x00)
-    SendData_ST7789(ST7789_240x240_XSTART)
-    SendWord_ST7789 ( ST7789_240x240_XSTART + GLCD_WIDTH )
+    SendData_ST7789(ST7789_XSTART)
+    SendWord_ST7789 ( ST7789_XSTART + GLCD_WIDTH )
 
     SendCommand_ST7789(ST7789_RASET)
     SendData_ST7789(0x00)
-    SendData_ST7789(ST7789_240x240_YSTART)
-    SendWord_ST7789 ( ST7789_240x240_YSTART + GLCD_HEIGHT )
+    SendData_ST7789(ST7789_YSTART)
+    SendWord_ST7789 ( ST7789_YSTART + GLCD_HEIGHT )
 
     SendCommand_ST7789(ST7789_INVON)
     Wait 10 ms
@@ -236,7 +246,6 @@ Sub GLCDCLS_ST7789 ( Optional In  GLCDBACKGROUND as word = GLCDBACKGROUND )
 
     'SPI mode
     set ST7789_DC ON
-
 
     repeat 320
 
@@ -530,22 +539,18 @@ End Sub
 '''@param GLCDColour State of pixel
 Sub PSet_ST7789(In GLCDX as word, In GLCDY as word, In GLCDColour As Word)
 
-
-   select case GLCDRotateState
-
-   case PORTRAIT_REV
-
-        GLCDY = GLCDY + 80
-
-   case LANDSCAPE_REV
-
-        GLCDX = GLCDX + 80
-
-   end select
+  #if GLCD_TYPE = GLCD_TYPE_ST7789_240_240
+    Select case GLCDRotateState
+    case PORTRAIT_REV
+      GLCDY = GLCDY + 80
+    case LANDSCAPE_REV
+      GLCDX = GLCDX + 80  
+    end select
+  #endif
 
 
-    SetAddressWindow_ST7789 ( GLCDX, GLCDY, GLCDX, GLCDY )
-    SendWord_ST7789 GLCDColour
+  SetAddressWindow_ST7789 ( GLCDX, GLCDY, GLCDX, GLCDY )
+  SendWord_ST7789 GLCDColour
 
 End Sub
 

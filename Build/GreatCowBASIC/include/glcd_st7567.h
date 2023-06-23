@@ -26,6 +26,8 @@
 '  #define S4Wire_Data
 
 ' 1.00 Initial release - based on ST7567 library
+' 1.01 Changed HWI2C error message in script.  HW IC2 does work... just not on the K-Mode I2C modules.
+'      Add ST7567_BIAS controls
 
 // 
 #DEFINE ST7567_DISPLAY_ON          0xAF
@@ -51,15 +53,19 @@
 #DEFINE ST7567_SET_RESISTOR_RATIO  0x20
 #DEFINE ST7567_SET_CONTRAST        0x81
 
+
+
+
+
 #startup InitGLCD_ST7567, 100
 
 'Setup code for ST7567 controllers
   #script     ' This script set the capabilities based upon the amount of RAM
 
-     IGNORE_SPECIFIED_GLCD_TYPE_ST7567_CHARACTER_MODE_ONLY = 0
-     if IGNORE_GLCD_TYPE_ST7567_LOW_MEMORY_WARNINGS then
-        IGNORE_SPECIFIED_GLCD_TYPE_ST7567_CHARACTER_MODE_ONLY = 1
-     end if
+    IGNORE_SPECIFIED_GLCD_TYPE_ST7567_CHARACTER_MODE_ONLY = 0
+    if IGNORE_GLCD_TYPE_ST7567_LOW_MEMORY_WARNINGS then
+      IGNORE_SPECIFIED_GLCD_TYPE_ST7567_CHARACTER_MODE_ONLY = 1
+    end if
 
      if GLCD_TYPE = GLCD_TYPE_ST7567 then
        If ChipRAM < 1024  Then
@@ -96,11 +102,17 @@
         GLCD_I2C_Address = 0x7E
     End If
 
+    if NODEF(ST7567_BIAS) Then
+      ST7567_BIAS = ST7567_SET_BIAS_7
+    end if
+
     If GLCD_TYPE = GLCD_TYPE_ST7567 Then
-        If DEF(HI2C_DATA) Then
-        Error "Hardware I2C not supported for GLCD_TYPE_ST7567"
-        Error "  Only software I2C supported"
-        End If
+      IF DEF(HI2C_DATA) Then
+          If BIT(I2C1CON0_EN) Then
+            Error "Hardware I2C not supported for GLCD_TYPE_ST7567 when using this specific chip"
+            Error "  Only software I2C supported"
+          End If
+      End If
     End if
 
 
@@ -271,7 +283,7 @@ Sub InitGLCD_ST7567
         
 
         Write_Command_ST7567(0xa6)		                // display normal, bit val 0: LCD pixel off.
-        Write_Command_ST7567(0xa2)		                // LCD bias 1/9
+        Write_Command_ST7567(ST7567_BIAS)		                
         Write_Command_ST7567(0x28|4)		                // all power  control circuits on
         Wait 50 ms
         Write_Command_ST7567(0x28|6)		                // all power  control circuits on

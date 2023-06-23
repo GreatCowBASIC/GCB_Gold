@@ -62,6 +62,7 @@
     25/02/21 Added GLCD_TYPE_ST7789_240_240 support
     19/12/22 Revised GLCDPrintLoc to correct Xpos value.
     25/03/23 Added ILI9488 support
+    26/03/23 Added GLCD_TYPE_ST7789_320_240 support
 
 
 */
@@ -108,7 +109,7 @@
   #define GLCD_TYPE_ST7789_240_240 31
   #define GLCD_TYPE_ILI9488 32
   #define GLCD_TYPE_ST7567  33
-  
+  #define GLCD_TYPE_ST7789_320_240 34
 
 
 dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as byte
@@ -182,7 +183,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
 
   GLCDVERSION=9
-  ' add new type here!
+  
 
   If GLCD_TYPE = GLCD_TYPE_ST7789_240_240 Then
      #include <GLCD_ST7789.h>
@@ -988,7 +989,8 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
 
   If GLCD_TYPE = GLCD_TYPE_ST7567 Then
-     'Support I2C 
+    // Supports I2C and 4wire SPI
+    // Based on SSD1306 - the only difference was the INIT 
      #include <glcd_st7567.h>
      InitGLCD = InitGLCD_st7567
      GLCDCLS = GLCDCLS_st7567
@@ -1006,6 +1008,23 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
      ST7567_XOFFSET = 0
 
   End If
+
+If GLCD_TYPE = GLCD_TYPE_ST7789_320_240 Then
+     #include <GLCD_ST7789.h>
+     InitGLCD = InitGLCD_ST7789
+     GLCDCLS = GLCDCLS_ST7789
+     GLCDDrawChar = GLCDDrawChar_ST7789
+     GLCDDrawString = GLCDDrawString_ST7789
+     FilledBox = FilledBox_ST7789
+     Pset = Pset_ST7789
+     GLCDRotate = GLCDRotate_ST7789
+     glcd_type_string = "ST7789"
+     GLCD_WIDTH = 320
+     GLCD_HEIGHT = 240
+     ST7789_GLCD_HEIGHT = GLCDDeviceHeight
+     ST7789_GLCD_WIDTH = GLCDDeviceWidth
+  End If
+
 
 #endscript
 

@@ -54,6 +54,7 @@
 '    Updated Sep 2021 - Revised SI2CDiscovery adding #IFDEF var(I2C1CNTL) and #IFDEF var(I2C1CNT) to isolate Q43 that only supports I2C1CNT
 '            14/08/22 - Updated user changeable constants only - no functional change
 '            28/02/23 - Added support fort 18FxxQ71 and resolved constant isolation
+'    Updated Jun 2023 - Revised to make I2C1I2C1CONxDefaults optional
 
 'User changeable constants
 
@@ -749,14 +750,6 @@ end sub
     #DEFINE I2C1CLOCK_FOSC           0X01
     #DEFINE I2C1CLOCK_FOSC4          0X00
 
-    
-
-
-    #define I2C1I2C1CON0Default     0x04
-    #define I2C1I2C1CON1Default     0x80
-    #define I2C1I2C1CON2Default     0x21
-
-
 #script
 
   IF NODEF(HI2CITSCLWaitPeriod) THEN
@@ -765,7 +758,20 @@ end sub
 
   IF NODEF(I2C1CLOCKSOURCE) THEN
       I2C1CLOCKSOURCE = I2C1CLOCK_MFINTOSC
-  END IF 
+  END IF
+
+  IF NODEF(I2C1I2C1CON0Default) THEN
+      I2C1I2C1CON0Default = 0x84
+  END IF
+
+  IF NODEF(I2C1I2C1CON1Default) THEN
+      I2C1I2C1CON1Default = 0x80
+  END IF
+
+  IF NODEF(I2C1I2C1CON2Default) THEN
+      I2C1I2C1CON2Default = 0x21
+  END IF
+
 
 #endscript
 
