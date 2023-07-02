@@ -18,8 +18,8 @@ Dim Shared As Double T1
 Title = "CallCHM    V20160211    www.FrankSteinberg.de    >>fst'16<<"
 
 '*** Get full path and filenames:
-PathCHM = ExePath + "\..\GreatCowBasic\gcbasic.chm"
-PathACP = ExePath + "\..\SynWrite\Data\autocomplete\GreatCowBasic.acp"
+PathCHM = ExePath + "\..\GCBasic\gcbasic.chm"
+PathACP = ExePath + "\..\SynWrite\Data\autocomplete\GCBasic.acp"
 PathHH =  Environ("windir") + "\HH.exe"
 
 '*** Errorhandling for missing files:
@@ -93,7 +93,7 @@ T1 = Timer                                               'start timeout
 
 '** Close older help-windows:
 Do 
-	hWnd = FindWindow("HH Parent", "Great Cow BASIC Help")  'search help-window
+	hWnd = FindWindow("HH Parent", "GCBASIC Help")  'search help-window
  postMessage(hWnd, WM_SYSCOMMAND, SC_CLOSE, 0)           'close old help-window
  If Timer - T1 > 2 Then Exit Do                          'end CallCHM after 2 Sec. timeout
  Sleep(10)                                     
@@ -103,12 +103,12 @@ Loop While hWnd                                          'contiue, when help-win
 Sub mythread(param As Any Ptr) 
  Exec(PathHH, "-MyID " + PathCHM + "::" + HTMfile)
 End Sub
-If HTMfile = "" Then HTMfile = "_introducing_great_cow_basic.html"  'standard html-file when nothing else found:
+If HTMfile = "" Then HTMfile = "_introducing_gcbasic.html"  'standard html-file when nothing else found:
 ThreadCreate(@mythread, 0)                               'start help-window in separate thread
 
 '** Wait for window and maximize it:
 Do 
-	hWnd = FindWindow("HH Parent", "Great Cow BASIC Help")  'search help-window
+	hWnd = FindWindow("HH Parent", "GCBASIC Help")  'search help-window
  If Timer - T1 > 2 Then end                              'end CallCHM after 2 Sec. timeout
  Sleep(10)                                     
 Loop Until hWnd                                          'continue, when help-window found

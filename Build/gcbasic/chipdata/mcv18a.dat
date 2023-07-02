@@ -1,0 +1,162 @@
+'GCBASIC/GCGB Chip Data File
+'Chip: MCV18A
+'Main Format last revised:   14/07/2017
+'Header Format last revised: 28/03/2019
+
+[ChipData]
+';All items in the ChipData section of this DAT file are available to user programs as constants.
+';The constants have the prefix of CHIP. See the examples below.
+
+'This constant is exposed as CHIPWORDS.
+Prog=65536
+
+'This constant is exposed as CHIPEEPROM.
+EEPROM=1024
+
+'This constant is exposed as CHIPRAM.
+RAM=3936
+
+'This constant is exposed as CHIPIO.
+I/O=70
+
+'This constant is exposed as CHIPADC.
+ADC=16
+
+'This constant is exposed as CHIPMHZ.
+MaxMHz=40
+
+'This constant is exposed with only the first parameter (if more than one parameter) exposed
+IntOsc=32
+
+'This constant is exposed as CHIPPINS.
+Pins=80
+
+'This constant is exposed as CHIPFAMILY.
+Family=14
+
+'This constant is exposed as CHIPCONFIGWORDS.
+ConfigWords=1
+
+'This constant is exposed as CHIPPSP
+PSP=0
+
+'This constant is exposed as CHIPMAXADDRESS
+MaxAddress=31
+
+';Microcontroller specific configuration. Constants used within specific libraries, the compiler or user programs. All sourced from chip data database.
+';This section of constants is specific to a microcontroller.  Therefore, the constants may not be present for a specific microcontroller.
+
+'CHIPSTACKS csn be used within  user programs.  This constant provides information with respect to the number of stacks avaiable
+Stacks=31
+
+'CHIPUSERIDADDRESS  is used within user programs.  This constant provides information with respect to the address of the UserID.
+UserIDAddress=2097152
+
+'CHIPUSERIDLENGTH is used within user programs.  This constant provides information with respect to the length of the UserID (in words).
+UserIDLength=8
+
+[Interrupts]
+'For specific details of the interrupts see the microcontrollers datasheet.
+'The first parameter is the GCBASIC identifier used within user code to expose the specific interrupt.
+
+[Registers]
+'For specific details of the registers see the microcontrollers datasheet.
+'The first parameter is the GCBASIC register name that can be used within user code to expose the specific register.
+INDF,0
+TMR0,1
+PCL,2
+STATUS,3
+FSR,4
+PORTA,5
+PORTB,6
+
+[Bits]
+'For specific details of the bits (all bits are relative to a register in terms of register.bits) see the microcontrollers datasheet.
+'The first parameter is the GCBASIC bit name that can be used within user code to expose the specific register.bit.
+C,STATUS,0
+DC,STATUS,1
+Z,STATUS,2
+NOT_PD,STATUS,3
+NOT_TO,STATUS,4
+PA0,STATUS,5
+PA1,STATUS,6
+PA2,STATUS,7
+RA0,PORTA,0
+RA1,PORTA,1
+RA2,PORTA,2
+RA3,PORTA,3
+T0CKI,PORTA,4
+RB0,PORTB,0
+RB1,PORTB,1
+RB2,PORTB,2
+RB3,PORTB,3
+RB4,PORTB,4
+RB5,PORTB,5
+RB6,PORTB,6
+RB7,PORTB,7
+PSA,OPTION_REG,3
+T0SE,OPTION_REG,4
+T0CS,OPTION_REG,5
+PS0,OPTION_REG,0
+PS1,OPTION_REG,1
+PS2,OPTION_REG,2
+TRISB0,TRISB,0
+TRISB1,TRISB,1
+TRISB2,TRISB,2
+TRISB3,TRISB,3
+TRISB4,TRISB,4
+TRISB5,TRISB,5
+TRISB6,TRISB,6
+TRISB7,TRISB,7
+TRISA0,TRISA,0
+TRISA1,TRISA,1
+TRISA2,TRISA,2
+TRISA3,TRISA,3
+TRISA4,TRISA,4
+
+[FreeRAM]
+
+[NoBankRAM]
+
+[Pins-TQFP]
+9,MCLR
+49,OSC1
+50,OSC2
+11,Vss
+12,Vdd
+25,AVdd
+26,AVss
+31,Vss
+32,Vdd
+48,Vdd
+51,Vss
+70,Vss
+71,Vdd
+
+[ConfigOps]
+'For specific details of the config options see the microcontrollers datasheet.
+'The first parameter is the configuration field that can be used to expose the specific configuration bits.
+'The others parameter are the options the configuration field that can be set.
+OSC=LP,XT,HS,RC
+WDT=OFF,ON
+CP=ON,OFF
+
+[Config]
+'For specific details of the config addresses see the microcontrollers datasheet.
+OSC_LP,1,4092
+LP_OSC,1,4092
+OSC_XT,1,4093
+XT_OSC,1,4093
+OSC_HS,1,4094
+HS_OSC,1,4094
+OSC_RC,1,4095
+RC_OSC,1,4095
+WDT_OFF,1,4091
+WDT_ON,1,4095
+CP_ON,1,4087
+CP_OFF,1,4095
+IDLOC0,1,512
+IDLOC1,1,513
+IDLOC2,1,514
+IDLOC3,1,515
+

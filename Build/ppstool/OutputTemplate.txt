@@ -1,6 +1,4 @@
-﻿    #Header
-    #ToolVersion
-    #XMLVersion
+﻿    #ToolVersion
     // Generated for #PPSToolPart
     //
     // Template comment at the start of the config file

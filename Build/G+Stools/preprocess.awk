@@ -1,6 +1,6 @@
 BEGIN{
     if( NoHeaderMessage == 0 ) {
-      print "Great Cow BASIC preprocessor (2007..2022)"
+      print "GCBASIC preprocessor (2007..2023)"
       #24.09.2016   'revised to correct detection error
       #29.05.2017   'Remove ExamineElseError. Removed this check at v0.98.01 as we now support if-then-else-if-end_if
       #29.01.2019   'Remove ExamineElse. Reverted this check at v0.98.05 as we now newed to a smart ELSE IF check

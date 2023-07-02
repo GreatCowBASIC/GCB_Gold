@@ -5,7 +5,7 @@
 ' - restores configuration after external modification (i.e. update)
 ' - compiled with FreeBasic 0.24 (parameter -s gui)
 '-- V 20180429 ------------------------------- http://www.FrankSteinberg.de -
-' - added underscore to \GreatCowBasic\Release_ List.txt @ 02122018
+' - added underscore to \GCBasic\Release_ List.txt @ 02122018
 
 
 #include once "file.bi"
@@ -18,7 +18,7 @@ Dim FirstStart As String
 
 'check, if SynWrite.exe can be found:
 If Not FileExists(ExePath + "\SynWrite\syn.exe") Then
-   MessageBox NULL, ExePath + "\SynWrite\syn.exe  not found!", "IDE-Starter for SynWrite and GreatCowBASIC", 16
+   MessageBox NULL, ExePath + "\SynWrite\syn.exe  not found!", "IDE-Starter for SynWrite and GCBasic", 16
   End
 End If
 
@@ -30,11 +30,11 @@ If Not MkDir(ExePath + "\CfgBackup") Then   'MkDir returns -1 if dir "CfgBackup"
    If FileExists(ExePath + "\history.txt") Then
       FirstStart = FirstStart + Chr(34) + ExePath + "\history.txt" + Chr(34) + " "
    End If
-   If FileExists(ExePath + "\GreatCowBasic\release_list.txt") Then
-      FirstStart = FirstStart + Chr(34) + ExePath + "\GreatCowBasic\release_list.txt" + Chr(34) + " "
+   If FileExists(ExePath + "\GCBasic\release_list.txt") Then
+      FirstStart = FirstStart + Chr(34) + ExePath + "\GCBasic\release_list.txt" + Chr(34) + " "
    End If
-   If FileExists(ExePath + "\GreatCowBasic\Demos\first-start-sample.gcb") Then
-      FirstStart = FirstStart + Chr(34) + ExePath + "\GreatCowBasic\Demos\first-start-sample.gcb" + Chr(34) + " "
+   If FileExists(ExePath + "\GCBasic\Demos\first-start-sample.gcb") Then
+      FirstStart = FirstStart + Chr(34) + ExePath + "\GCBasic\Demos\first-start-sample.gcb" + Chr(34) + " "
    End If
 End If
 
@@ -55,7 +55,7 @@ MkDir(ExePath + "\CfgBackup")
 MkDir(ExePath + "\CfgBackup\G+Stools")
 MkDir(ExePath + "\CfgBackup\SynWrite")
 MkDir(ExePath + "\CfgBackup\SynWrite\Settings")
-MkDir(ExePath + "\CfgBackup\GreatCowBasic")
+MkDir(ExePath + "\CfgBackup\GCBasic")
 
 'Copy config-files
 FileBackup("SynWrite\Settings\syn.ini")
@@ -72,7 +72,7 @@ FileBackup("G+Stools\makeASM.bat")
 FileBackup("G+Stools\makeHEX.bat")
 FileBackup("G+Stools\useINI.bat")
 FileBackup("G+Stools\foINI.bat")
-FileBackup("GreatCowBasic\use.ini")
+FileBackup("GCBasic\use.ini")
 
 End
 
@@ -101,7 +101,7 @@ Sub RestoreCfg()
  Dim iAnswer As Integer
  iAnswer = MessageBox(NULL, "Configuration changed outside!" + Chr(10) + Chr(10) + _
                             "Restore your last used configuration?", _
-                            "GCB+Syn IDE for Great Cow Basic", MB_ICONQUESTION Or MB_YESNO)
+                            "GCB+Syn IDE for GCBasic", MB_ICONQUESTION Or MB_YESNO)
  If iAnswer = IDNO  Then Exit Sub  'do nothing, if restore not wanted
 
   'Restore Files from backup-folder:
@@ -117,6 +117,6 @@ Sub RestoreCfg()
  FileCopy(ExePath + "\CfgBackup\G+Stools\flashPIC.bat", ExePath + "\G+Stools\flashPIC.bat")
  FileCopy(ExePath + "\CfgBackup\G+Stools\makeASM.bat", ExePath + "\G+Stools\makeASM.bat")
  FileCopy(ExePath + "\CfgBackup\G+Stools\makeHEX.bat", ExePath + "\G+Stools\makeHEX.bat")
- FileCopy(ExePath + "\CfgBackup\GreatCowBasic\use.ini", ExePath + "\GreatCowBasic\use.ini")
+ FileCopy(ExePath + "\CfgBackup\GCBasic\use.ini", ExePath + "\GCBasic\use.ini")
 
 End Sub
