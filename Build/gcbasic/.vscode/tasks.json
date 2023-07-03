@@ -9,7 +9,7 @@
             "command": "${env:GCBASIC_INSTALL_PATH}\\FBASIC\\x86\\fbc.exe gcbasic.bas -arch 586 -exx -x gcbasic.exe",
                // "args": ["gcbasic.bas","-arch 586","-exx","-x","gcbasic.exe"],
                     "options": {
-                        "cwd": "${env:GCBASIC_INSTALL_PATH}\\GreatCowBasic\\",
+                        "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\",
                         
 
                         // "label": "Build GCB Compiler",
