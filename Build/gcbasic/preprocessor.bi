@@ -49,7 +49,8 @@ Function CheckSysVarDef(ConditionIn As String) As String
   Dim As String Condition, Temp, Original
   Dim As Integer FV, FC, ConstFound
 
-  Condition = ConditionIn
+  ' Added trim() to remove leading and trailing spaces @ 1256
+  Condition = Trim(ConditionIn)
 
   'Test for SFR bit?
   Do While INSTR(Condition, "BIT(") <> 0
@@ -57,6 +58,13 @@ Function CheckSysVarDef(ConditionIn As String) As String
     FV = 0: If INSTR(Condition, "NOBIT(") = INSTR(Condition, "BIT(") - 2 Then FV = 1
     Temp = Mid(Condition, INSTR(Condition, "BIT(") + 4)
     Temp = Left(Temp, INSTR(Temp, ")") - 1)
+    
+    If Instr(Temp," ") > 0 Then 
+      Replace ( Condition, Temp, Trim(Temp)  )
+      Temp = Trim ( Temp )
+      If Instr(Temp," ") > 0 Then LogError ( "Invalid Constant = '" + temp + "'" )
+    End If
+
     If FV = 0 Then
       Original = "BIT(" + Temp + ")"
     Else
@@ -87,6 +95,13 @@ Function CheckSysVarDef(ConditionIn As String) As String
     FV = 0: IF INSTR(Condition, "NOVAR(") = INSTR(Condition, "VAR(") - 2 THEN FV = 1
     Temp = Mid(Condition, INSTR(Condition, "VAR(") + 4)
     Temp = Left(Temp, INSTR(Temp, ")") - 1)
+    
+    If Instr(Temp," ") > 0 Then 
+      Replace ( Condition, Temp, Trim(Temp)  )
+      Temp = Trim ( Temp )
+      If Instr(Temp," ") > 0 Then LogError ( "Invalid Constant = '" + temp + "'" )
+    End If
+
     If FV = 0 Then
       Original = "VAR(" + Temp + ")"
     Else
@@ -116,6 +131,13 @@ Function CheckSysVarDef(ConditionIn As String) As String
     FV = 0: IF INSTR(Condition, "NODEF(") = INSTR(Condition, "DEF(") - 2 THEN FV = 1
     Temp = Mid(Condition, INSTR(Condition, "DEF(") + 4)
     Temp = Left(Temp, INSTR(Temp, ")") - 1)
+    
+    If Instr(Temp," ") > 0 Then 
+      Replace ( Condition, Temp, Trim(Temp)  )
+      Temp = Trim ( Temp )
+      If Instr(Temp," ") > 0 Then LogError ( "Invalid Constant = '" + temp + "'" )
+    End If
+    
     If FV = 0 Then
       Original = "DEF(" + Temp + ")"
     Else
@@ -151,6 +173,24 @@ Function CheckSysVarDef(ConditionIn As String) As String
     End If
 
     Replace Condition, Original, Str(ConstFound) + "=1"
+
+    'Revised to add some basic syntax checking to DEF()
+    If CountOccur ( Condition, "=") > 1 Then
+      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional EQUALS condition"
+    End if
+    If CountOccur ( Condition, " ") > 1 Then
+      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional condition not supported"  
+    End if
+    If CountOccur ( Condition, "~") > 0 Then
+      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional NOT EQUALS condition"
+    End if
+    If CountOccur ( Condition, ">") > 0 Then
+      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional GREATERTHAN condition"
+    End if
+    If CountOccur ( Condition, "<") > 0 Then
+            LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional LESSTHAN condition"
+    End if
+
   Loop
 
   Return Condition
@@ -578,7 +618,7 @@ END SUB
 SUB PreProcessor
 
   Dim As String Origin, Temp, DataSource, PreserveIn, CurrentSub, StringTemp, SubName, TF
-  Dim As String Value, RTemp, LTemp, Ty, SubInType, ParamType, RestOfLine, VarName, FName, ConstName
+  Dim As String Value, RTemp, LTemp, Ty, SubInType, ParamType, RestOfLine, VarName, FName, ConstName, LineNumberStr
   Dim As String TempFile, LastTableOrigin, NewFNType, CodeTemp, OtherChar, BinHexTemp
   Dim As String DataSourceOld, TranslatedFile, HFI, DataSourceRaw, TrapMultipleElse, TempMessage
   Dim As LinkedListElement Pointer CurrPos, MainCurrPos, SearchPos
@@ -1971,8 +2011,10 @@ SUB PreProcessor
 
       IF Left(Temp, 7) = "#DEFINE" and ConditionalStatus = 0 THEN
         Origin = ""
-        IF INSTR(Temp, ";?F") <> 0 THEN
+        LineNumberStr = ""
+        IF INSTR(Temp, ";?F") <> 0 THEN 
           Origin = Mid(Temp, INSTR(Temp, ";?F"))
+          LineNumberStr = Str(VAL(Mid(Origin, InStr(Origin, "L")+1)))
           Temp = RTrim(Left(Temp, INSTR(Temp, ";?F") - 1))
         END IF
 
@@ -2007,34 +2049,35 @@ SUB PreProcessor
         'Check to see if #define CONSTANT exists
         IF HashMapGet(Constants, ConstName) = 0 THEN
 
-         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "CODE/AddSymbol:     "+ Left(ConstName+Space(40),40)+ CHR(9) + Left(Value+Space(32),32)+ CHR(9) + TempFile
+         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "SCRIPT/Constant:     Line "+LineNumberStr+ " "+ Left(ConstName+Space(40),40)+ CHR(9) + Left(Value+Space(32),32)+ CHR(9) + SourceFile(Val(TempFile)).FileName
           AddConstant(ConstName, Value, TempFile)
           CheckConstName ConstName, Origin
         ELse
 
           Dim As ConstMeta Pointer ExistingConstant
           ExistingConstant = HashMapGet(Constants, ConstName )
-         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "CODE/CurrentValues: " + Left(ConstName+Space(40),40) + CHR(9) + Left(ExistingConstant->Value+Space(32),32) + CHR(9) + ExistingConstant->Startup
+          
+         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "SCRIPT/CurrentValue: Line "+LineNumberStr+ " "+ Left(ConstName+Space(40),40) + CHR(9) + Left(ExistingConstant->Value+Space(32),32) + CHR(9) + SourceFile(Val(ExistingConstant->Startup)).FileName 
         'ConstName, ExistingConstant->Value, ExistingConstant->Startup
           If SourceFile( Val(ExistingConstant->Startup) ).UserInclude = 0 Then
             If ExistingConstant->Value <> Value Then
 
               If Len(ExistingConstant->Value) <> 0 and  Len(Value)  <> 0 Then
         'If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "1 Constant: "  + ConstName + " equates to " + ExistingConstant->Value + " cannot reassigned to equate to " + Value + CHR(9) +  Origin
-                TempMessage = "CODE/"+Message ( "ConstantExists" )
+                TempMessage = "SCRIPT/"+Message ( "ConstantExists" )
                 Replace TempMessage, "%constname%", ConstName
                 Replace TempMessage, "%existingconstant_value%", ExistingConstant->Value
                 Replace TempMessage, "%value%", Value
                 LogError TempMessage, Origin
               ElseIf Len(ExistingConstant->Value) = 0 Then
         'If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "2 Constant: "  + ConstName + " cannot reassigned to " + Value, Origin
-                TempMessage = "CODE/"+Message ( "ConstantReAssignemnt" )
+                TempMessage = "SCRIPT/"+Message ( "ConstantReAssignemnt" )
                 Replace TempMessage, "%constname%", ConstName
                 Replace TempMessage, "%value%", Value
                 LogError TempMessage, Origin
               ElseIf Len(Value) = 0 Then
         'If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "3 Constant: "  + ConstName + " exists with " + ExistingConstant->Value  + " value cannot be assigned with " + Value, Origin
-                TempMessage = "CODE/"+Message ( "ConstantValueReAssignement" )
+                TempMessage = "SCRIPT/"+Message ( "ConstantValueReAssignement" )
                 Replace TempMessage, "%constname%", ConstName
                 Replace TempMessage, "%existingconstant_value%", ExistingConstant->Value
                 Replace TempMessage, "%value%", Value
@@ -2045,7 +2088,7 @@ SUB PreProcessor
         'If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "4 Constant: "  + ConstName + " now '" + ExistingConstant->Value + "' tobe '" + Value+"'", Origin
             If ExistingConstant->Value <> Value Then
               If HashMapGet(Constants, "IGNORECONSTANTASSIGNMENTWARNINGS" ) = 0 then
-                TempMessage = "CODE/"+Message ( "ConstantExists" )
+                TempMessage = "SCRIPT/"+Message ( "ConstantExists" )
                 Replace TempMessage, "%constname%", ConstName
                 Replace TempMessage, "%existingconstant_value%", ExistingConstant->Value
                 Replace TempMessage, "%value%", Value
@@ -2369,7 +2412,7 @@ End Sub
 
 SUB RemIfDefs
   'Remove IFDEFs for which the condition is false
-  Dim As String Temp, TVar, Value, Cmd, OldCmd, TempMessage
+  Dim As String Temp, TVar, Value, Cmd, OldCmd, TempMessage, LineNumberStr
   Dim As Integer ForceMain, IL, DelMode, PMode, SV, FV, ConstFound, RecDetect, dumpfile
   Dim As Integer FC, DC, VF, SD, CheckValue, VC, TV, CD, EV, CurrSub, PresPos
   Dim As ConstMeta Pointer FoundConst
@@ -2658,9 +2701,10 @@ SUB RemIfDefs
                   Dim Temp  as String = Cmd
                   Dim as String ConstName, Tempfile, Origin
 
+                  LineNumberStr = Str(VAL(Mid(Temp, InStr(Temp, "L")+1)))
                   Origin = Mid(Temp, INSTR(Temp, ";?F"))
                   Temp = RTrim(Left(Temp, INSTR(Temp, ";?F") - 1))
-
+                  
                   ConstName = Trim(Mid(Temp, INSTR(Temp, " ") + 1))
 
                   Temp = RTrim(Left(ConstName, INSTR(ConstName, "'") - 1))
@@ -2693,7 +2737,7 @@ SUB RemIfDefs
 
                   'Check to see if #define CONSTANT exists
                   IF HashMapGet(Constants, ConstName) = 0 THEN
-              If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "IFDEF/AddSymbol:    "+ Left(ConstName+Space(40),40), Left(Value+Space(32),32), TempFile
+              If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,,"IFDEF/AddConstant:    Line "+LineNumberStr + "  " + Left(ConstName+Space(40),40), Left(Value+Space(32),32), SourceFile(val(TempFile)).FileName
                     AddConstant(ConstName, Value, TempFile)
                     CheckConstName ConstName, Origin
                   ELse
@@ -2898,7 +2942,7 @@ End Function
 SUB RunScripts
 
   Dim As String V1, Act, V2, Condition
-  Dim As String CO, COCR, OCO, TempData, OtherData, MoreData
+  Dim As String CO, COCR, OCO, TempData, OtherData, MoreData, LineNumberStr, TempFile
   Dim As String OutVar, Value, Origin
   Dim As Integer PD, ReadScript, CondFalse, TL, FC, CD
   Dim As Integer CurrSub, IsError
@@ -2957,6 +3001,8 @@ SUB RunScripts
     Origin = ""
     IF InStr(CO, ";?F") <> 0 Then
       Origin = Trim(Mid(CO, InStr(CO, ";?F")))
+      LineNumberStr = Str(VAL(Mid(Origin, InStr(Origin, "L")+1)))
+      TempFile = Str(VAL(Mid(Origin, InStr(Origin, "F")+1)))
       CO = Trim(Left(CO, INSTR(CO, ";?F") - 1))
     End If
 
@@ -3060,7 +3106,7 @@ SUB RunScripts
       Loop
 
       'Write the data to the output
-    If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle, "SCRIPT/AddSymbol:   "+ Left(OutVar+Space(40),40), Left(Value+Space(32),32), "-1"
+    If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "SCRIPT/AddConstant:   Line "+LineNumberStr+ " "+ Left(OutVar+Space(40),40)+Left(Value+Space(40),40)+SourceFile(Val(TempFile)).FileName
     ' + OutVar, Trim(Value), "", "-1"
       AddConstant(OutVar, Trim(Value), , -1)
     End If
