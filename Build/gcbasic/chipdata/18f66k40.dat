@@ -14,7 +14,7 @@ Prog=32768
 EEPROM=1024
 
 'This constant is exposed as ChipRAM
-RAM=2048
+RAM=3562
 
 'This constant is exposed as ChipIO
 I/O=53
@@ -56,7 +56,7 @@ MaxAddress=4095
 ';This section of constants is specific to a microcontroller, so the constants may not be present for all microcontrollers
 
 'ChipPWMTimerVariant constant is used in pwmh and provides information for the timer register used for PWM
-PWMTimerVariant=2
+PWMTimerVariant=1
 
 'ChipSMTClockSourceVariant constant is used in smth and provides information for the register used for SMT
 SMTClockSourceVariant=3
@@ -4801,7 +4801,7 @@ SP4,STKPTR,4
 SP5,STKPTR,5
 
 [FreeRAM]
-0:7FF
+0:DE9
 
 [NoBankRAM]
 'NoBankRAM is somewhat misnamed - it is used for the defintion of (any) access bank locations

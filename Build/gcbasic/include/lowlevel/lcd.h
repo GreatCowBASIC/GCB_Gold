@@ -1,5 +1,5 @@
 '     Liquid Crystal Display routines for GCBASIC
-'     Copyright (C) 2006-xxxx Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Evan Venn, Theo Loermans and Wiliam Roth
+'     Copyright (C) 2006-2023 Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Theo Loermans, Wiliam Roth and Evan Venn
 '
 '     This library is free software; you can redistribute it and/or
 '     modify it under the terms of the GNU Lesser General Public
@@ -24,7 +24,7 @@
 '     Credits:
 '     Hugh Considine:   4 and 8 bit routines
 '     Stefano Bonomi:   2 bit routines
-'     Evan Venn:        Revised 4 bit routines, K107  and 404 Support
+'     Evan Venn:        Revised 4 bit routines, K107  and 404 Support, SPI/14 support
 '     William Roth:     Revised to improve performance and improved functionality
 '     Theo Loermans:    LCD_IO 1, LCD_IO 2m LCD_IO 2_74XX174 and LCD_IO 2_74XX164 for 1 and 2-wire modes
 '   ***********************************************************************
@@ -32,6 +32,7 @@
 ' Supports
 ' Set LCD_10 to 10 for the YwRobot LCD1602 IIC V1 or the Sainsmart LCD_PIC I2C adapter
 ' Set LCD_10 to 12 for the Ywmjkdz I2C adapter with pot bent over top of chip
+' Set LCD_14 for SPI Expanders
 
 '   #define LCD_I2C_Address_1 0x4e
 '   #define LCD_I2C_Address_2 0x4c
@@ -58,12 +59,13 @@
 ' 26/09/2020   Revised InitLCD(LCD_IO 4 and LCD_IO 8 only)
 '***********************************************************************
 ' 14/08/22 Updated user changeable constants only - no functional change
+' 14/08/23 Revisws to add SPI/LCD_IO 14 support
 
 
 #startup InitLCD
 
 'Version
-#define LCD_Version 26092020
+#define LCD_Version 14082023
 
 'Compatibility with older programs
 #define LCDInt Print
@@ -181,24 +183,41 @@
 Dim SysLCDTemp as Byte
 
 'Defaults for LCDCURSOR Sub
-#define DisplayON 12
-#define LCDON 12
+    #define DisplayON 12
+    #define LCDON 12
 
-#define FLASHON 9
-#define FLASH 9
-#define CursorON 10
+    #define FLASHON 9
+    #define FLASH 9
+    #define CursorON 10
 
-#define FLASHOFF 14
-#define CursorOFF 13
+    #define FLASHOFF 14
+    #define CursorOFF 13
 
-#define DisplayOFF 11
-#define LCDOFF 11
+    #define DisplayOFF 11
+    #define LCDOFF 11
 
-'Default lines for bar graph
-#define LCD_BAR_EMPTY b'00010001'
-#define LCD_BAR_FULL 255
+    'Default lines for bar graph
+    #define LCD_BAR_EMPTY b'00010001'
+    #define LCD_BAR_FULL 255
 
 
+//~SPI_Expander Support
+
+    // #define LCD_SPI_EXPD_ADDRESS     0x40            Define in the script to enable user to change
+    #define GPIO_A_ADDRESS      0x12
+    #define GPIO_B_ADDRESS      0x13
+    #define IO_DIR_A_ADDRESS    0x00
+    #define IO_DIR_B_ADDRESS    0x01
+
+    //lcd COMMANDS
+    #define LCD_CLEAR               0x01
+    #define LCD_VDD_EN              0x20        
+    #define LCD_FUNCTION_SET        0x3C
+    #define LCD_SET_DISPLAY         0x0C
+    #define LCD_SET_DDRAM_ADDRESS   0x80
+    #define LINE1_START_ADDRESS     0x80
+    #define LINE2_START_ADDRESS     0xC0
+    #define OUTPUT_DIR              0x00
 
 
 
@@ -417,6 +436,43 @@ Dim SysLCDTemp as Byte
         LCDHOME = V1601aLCDHOME
 
     END IF
+
+    IF LCD_IO = 14 THEN
+
+        LCDNormalWriteByte = LCD_SPI_Expander_NormalWriteByte
+
+        /*
+        The MCP23S17 is a slave SPI device. The slave
+        address contains four fixed bits and three user-defined
+        hardware address bits MCP23S17 pins A2, A1 and A0
+        with the read/write bit filling out
+        the control byte. Figure 3-5 in the datasheet shows the control byte.
+        */
+        IF NoDef(LCD_SPI_EXPD_ADDRESS) Then
+            LCD_SPI_EXPD_ADDRESS = 0x40
+        END IF
+        //These are phyiscal connections from the expander to the LCD.
+        
+        IF NoDef(LCD_SPI_EXPANDER_E_ADDRESS) Then
+            LCD_SPI_EXPANDER_E_ADDRESS = 0x40
+        END IF
+        IF NoDef(LCD_SPI_EXPANDER_RS_ADDRESS) Then
+            LCD_SPI_EXPANDER_RS_ADDRESS = 0x80
+        END IF
+        IF NoDef(LCD_SPI_EXPANDER_ENABLED) Then
+            LCD_SPI_EXPANDER_ENABLED = 0x20
+        END IF
+        IF NoDef(LCD_SPI_DO) Then
+            Error LCD_SPI_DO constant to define port required, and PPS if required
+        END IF
+        IF NoDef(LCD_SPI_SCK) Then
+            Error LCD_SPI_SCK constant to define port required, and PPS if required
+        END IF
+        IF NoDef(LCD_SPI_CS) Then
+            Error LCD_SPI_CD constant to define port required
+        END IF
+
+    END IF  
 
 
 #ENDSCRIPT
@@ -852,6 +908,10 @@ sub InitLCD
 
     #ENDIF
 
+    #IFDEF LCD_IO 14
+        LCD_SPI_Expander_Initialize
+    #ENDIF
+
     LCD_State = 12
 
 end sub
@@ -1094,12 +1154,12 @@ End Sub
 
 
 sub LCDNormalWriteByte(In LCDByte )
-'Sub to write a byte to the LCD
+    'Sub to write a byte to the LCD
 
- #IFNDEF LCD_NO_RW
+    #IFNDEF LCD_NO_RW
         #IFDEF LCD_IO 4,8
-             CheckBusyFlag         'WaitForReady
-             set LCD_RW OFF
+            CheckBusyFlag         'WaitForReady
+            set LCD_RW OFF
         #ENDIF
     #ENDIF
 
@@ -1147,18 +1207,18 @@ sub LCDNormalWriteByte(In LCDByte )
         DIR LCD_DB7 OUT
 
        'Write upper nibble to output pins
-'        set LCD_DB4 OFF
-'        set LCD_DB5 OFF
-'        set LCD_DB6 OFF
-'        set LCD_DB7 OFF
-'        if LCDByte.7 ON THEN SET LCD_DB7 ON
-'        if LCDByte.6 ON THEN SET LCD_DB6 ON
-'        if LCDByte.5 ON THEN SET LCD_DB5 ON
-'        if LCDByte.4 ON THEN SET LCD_DB4 ON
-        LCD_DB7 = LCDByte.7
-        LCD_DB6 = LCDByte.6
-        LCD_DB5 = LCDByte.5
-        LCD_DB4 = LCDByte.4
+    '        set LCD_DB4 OFF
+    '        set LCD_DB5 OFF
+    '        set LCD_DB6 OFF
+    '        set LCD_DB7 OFF
+    '        if LCDByte.7 ON THEN SET LCD_DB7 ON
+    '        if LCDByte.6 ON THEN SET LCD_DB6 ON
+    '        if LCDByte.5 ON THEN SET LCD_DB5 ON
+    '        if LCDByte.4 ON THEN SET LCD_DB4 ON
+            LCD_DB7 = LCDByte.7
+            LCD_DB6 = LCDByte.6
+            LCD_DB5 = LCDByte.5
+            LCD_DB4 = LCDByte.4
 
 
         #IFDEF LCD_VFD_DELAY
@@ -1169,20 +1229,20 @@ sub LCDNormalWriteByte(In LCDByte )
         PulseOut LCD_enable, 1 us
 
         'All data pins low
-'        set LCD_DB4 OFF
-'        set LCD_DB5 OFF
-'        set LCD_DB6 OFF
-        set LCD_DB7 OFF
-'
-'       'Write lower nibble to output pins
-        if LCDByte.3 ON THEN SET LCD_DB7 ON
-'        if LCDByte.2 ON THEN SET LCD_DB6 ON
-'        if LCDByte.1 ON THEN SET LCD_DB5 ON
-'        if LCDByte.0 ON THEN SET LCD_DB4 ON
-'        LCD_DB7 = LCDByte.3
-        LCD_DB6 = LCDByte.2
-        LCD_DB5 = LCDByte.1
-        LCD_DB4 = LCDByte.0
+    '        set LCD_DB4 OFF
+    '        set LCD_DB5 OFF
+    '        set LCD_DB6 OFF
+            set LCD_DB7 OFF
+    '
+    '       'Write lower nibble to output pins
+            if LCDByte.3 ON THEN SET LCD_DB7 ON
+    '        if LCDByte.2 ON THEN SET LCD_DB6 ON
+    '        if LCDByte.1 ON THEN SET LCD_DB5 ON
+    '        if LCDByte.0 ON THEN SET LCD_DB4 ON
+    '        LCD_DB7 = LCDByte.3
+            LCD_DB6 = LCDByte.2
+            LCD_DB5 = LCDByte.1
+            LCD_DB4 = LCDByte.0
 
 
         Wait 1 us
@@ -2146,209 +2206,337 @@ sub LCDDisplaysOn404
 End Sub
 
 
-'K107 Section
+//~K107 Section
+
+    sub K107SendData ( in SendString as string)
+
+        'Send data
+        #if USART_BAUD_RATE
+            HSerPrint SendString
+        #endif
+        wait 10 ms
+
+    end sub
+
+    sub K107SendRaw ( in SendValue as byte)
+
+        'Send data
+        #if USART_BAUD_RATE
+            HSerSend SendValue
+        #endif
 
 
+    end sub
+
+    '#define CLS K107CLS
+    sub K107CLS
+        K107SendData ( "?f" )
+    end sub
 
 
+    '#define LOCATE K107LOCATE
+    sub K107LOCATE (In LCDLine, In LCDColumn)
+        if LCDColumn < 10 then
+            K107SendData ( "?x0"+str(LCDColumn) )
+        else
+            K107SendData ( "?x"+str(LCDColumn) )
+        end if
+        K107SendData ( "?y"+str(LCDLine  ) )
+    end sub
 
-sub K107SendData ( in SendString as string)
+    '#define LCDHOME K107LCDHOME
+    Sub K107LCDHOME
+    'Sub to set the cursor to the home position
+        K107SendData ( "?h" )
+    End Sub
 
-    'Send data
-    #if USART_BAUD_RATE
-        HSerPrint SendString
-    #endif
-    wait 10 ms
+    '#define LCDcmd K107LCDcmd
+    Sub K107LCDcmd ( In PrintData )
+    'Sub to send specified command direct to the LCD
+        K107SendData ( PrintData  )
+    End Sub
 
-end sub
-
-sub K107SendRaw ( in SendValue as byte)
-
-    'Send data
-    #if USART_BAUD_RATE
-        HSerSend SendValue
-    #endif
-
-
-end sub
-
-'#define CLS K107CLS
-sub K107CLS
-    K107SendData ( "?f" )
-end sub
-
-
-'#define LOCATE K107LOCATE
-sub K107LOCATE (In LCDLine, In LCDColumn)
-    if LCDColumn < 10 then
-        K107SendData ( "?x0"+str(LCDColumn) )
-    else
-        K107SendData ( "?x"+str(LCDColumn) )
-    end if
-    K107SendData ( "?y"+str(LCDLine  ) )
-end sub
-
-'#define LCDHOME K107LCDHOME
-Sub K107LCDHOME
-'Sub to set the cursor to the home position
-    K107SendData ( "?h" )
-End Sub
-
-'#define LCDcmd K107LCDcmd
-Sub K107LCDcmd ( In PrintData )
-'Sub to send specified command direct to the LCD
-    K107SendData ( PrintData  )
-End Sub
-
-'#DEFINE Print K107Print
-sub K107Print (In PrintData As String)
-'Sub to print a string variable on the LCD
-    K107SendData ( PrintData  )
-End Sub
+    '#DEFINE Print K107Print
+    sub K107Print (In PrintData As String)
+    'Sub to print a string variable on the LCD
+        K107SendData ( PrintData  )
+    End Sub
 
 
-Sub K107Print (In LCDValue)
-'Sub to print a byte variable on the LCD
-    Dim LCDValueTemp as Byte
-    LCDValueTemp = 0
+    Sub K107Print (In LCDValue)
+    'Sub to print a byte variable on the LCD
+        Dim LCDValueTemp as Byte
+        LCDValueTemp = 0
 
-    IF LCDValue >= 100 Then
-        LCDValueTemp = LCDValue / 100
-        LCDValue = SysCalcTempX
-        K107SendData chr((LCDValueTemp + 48))
-    End If
+        IF LCDValue >= 100 Then
+            LCDValueTemp = LCDValue / 100
+            LCDValue = SysCalcTempX
+            K107SendData chr((LCDValueTemp + 48))
+        End If
 
-    If LCDValueTemp > 0 Or LCDValue >= 10 Then
-        LCDValueTemp = LCDValue / 10
-        LCDValue = SysCalcTempX
-        K107SendData chr(LCDValueTemp + 48)
-    End If
-    K107SendData chr(LCDValue + 48)
-End Sub
+        If LCDValueTemp > 0 Or LCDValue >= 10 Then
+            LCDValueTemp = LCDValue / 10
+            LCDValue = SysCalcTempX
+            K107SendData chr(LCDValueTemp + 48)
+        End If
+        K107SendData chr(LCDValue + 48)
+    End Sub
 
-Sub K107Print (In LCDValue As Word)
-'Sub to print a word variable on the LCD
-    Dim LCDValueTemp as Byte
-    Dim SysCalcTempX As Word
+    Sub K107Print (In LCDValue As Word)
+    'Sub to print a word variable on the LCD
+        Dim LCDValueTemp as Byte
+        Dim SysCalcTempX As Word
 
-    LCDValueTemp = 0
+        LCDValueTemp = 0
 
-    If LCDValue >= 10000 then
-        LCDValueTemp = LCDValue / 10000 [word]
-        LCDValue = SysCalcTempX
-        K107SendData( chr(LCDValueTemp + 48))
-        Goto LCDPrintWord1000
-    End If
+        If LCDValue >= 10000 then
+            LCDValueTemp = LCDValue / 10000 [word]
+            LCDValue = SysCalcTempX
+            K107SendData( chr(LCDValueTemp + 48))
+            Goto LCDPrintWord1000
+        End If
 
-    If LCDValue >= 1000 then
-        LCDPrintWord1000:
-        LCDValueTemp = LCDValue / 1000 [word]
-        LCDValue = SysCalcTempX
-        K107SendData(chr(LCDValueTemp + 48))
-        Goto LCDPrintWord100
-    End If
+        If LCDValue >= 1000 then
+            LCDPrintWord1000:
+            LCDValueTemp = LCDValue / 1000 [word]
+            LCDValue = SysCalcTempX
+            K107SendData(chr(LCDValueTemp + 48))
+            Goto LCDPrintWord100
+        End If
 
-    If LCDValue >= 100 then
-        LCDPrintWord100:
-        LCDValueTemp = LCDValue / 100 [word]
-        LCDValue = SysCalcTempX
-        K107SendData(chr(LCDValueTemp + 48))
-        Goto LCDPrintWord10
-    End If
+        If LCDValue >= 100 then
+            LCDPrintWord100:
+            LCDValueTemp = LCDValue / 100 [word]
+            LCDValue = SysCalcTempX
+            K107SendData(chr(LCDValueTemp + 48))
+            Goto LCDPrintWord10
+        End If
 
-    If LCDValue >= 10 then
-        LCDPrintWord10:
-        LCDValueTemp = LCDValue / 10 [word]
-        LCDValue = SysCalcTempX
-        K107SendData(chr(LCDValueTemp + 48))
-    End If
+        If LCDValue >= 10 then
+            LCDPrintWord10:
+            LCDValueTemp = LCDValue / 10 [word]
+            LCDValue = SysCalcTempX
+            K107SendData(chr(LCDValueTemp + 48))
+        End If
 
-    K107SendData (chr(LCDValue + 48))
-End Sub
+        K107SendData (chr(LCDValue + 48))
+    End Sub
 
-Sub K107Print (In LCDValueInt As Integer)
-'Sub to print an integer variable on the LCD
+    Sub K107Print (In LCDValueInt As Integer)
+    'Sub to print an integer variable on the LCD
 
-    Dim LCDValue As Word
+        Dim LCDValue As Word
 
-    'If sign bit is on, print - sign and then negate
-    If LCDValueInt.15 = On Then
-              LCDWriteChar("-")
-              LCDValue = -LCDValueInt
+        'If sign bit is on, print - sign and then negate
+        If LCDValueInt.15 = On Then
+                LCDWriteChar("-")
+                LCDValue = -LCDValueInt
 
-    'Sign bit off, so just copy value
-    Else
-              LCDValue = LCDValueInt
-    End If
+        'Sign bit off, so just copy value
+        Else
+                LCDValue = LCDValueInt
+        End If
 
-    'Use Print(word) to display value
-    Print LCDValue
-End Sub
+        'Use Print(word) to display value
+        Print LCDValue
+    End Sub
 
-Sub K107Print (In LCDValue As Long)
-'Sub to print a long variable on the LCD
-    Dim SysPrintBuffLen, SysPrintTemp as byte
-    Dim SysCalcTempA As Long
-    Dim SysPrintBuffer(10)
-    SysPrintBuffLen = 0
+    Sub K107Print (In LCDValue As Long)
+    'Sub to print a long variable on the LCD
+        Dim SysPrintBuffLen, SysPrintTemp as byte
+        Dim SysCalcTempA As Long
+        Dim SysPrintBuffer(10)
+        SysPrintBuffLen = 0
 
-    Do
-        'Divide number by 10, remainder into buffer
-        SysPrintBuffLen += 1
-        SysPrintBuffer(SysPrintBuffLen) = LCDValue % 10
-        LCDValue = SysCalcTempA
-    Loop While LCDValue <> 0
+        Do
+            'Divide number by 10, remainder into buffer
+            SysPrintBuffLen += 1
+            SysPrintBuffer(SysPrintBuffLen) = LCDValue % 10
+            LCDValue = SysCalcTempA
+        Loop While LCDValue <> 0
 
-    'Display
-    For SysPrintTemp = SysPrintBuffLen To 1 Step -1
-      LCDValue = SysPrintBuffer(SysPrintTemp) + 48
-      K107SendRaw LCDValue
-    Next
+        'Display
+        For SysPrintTemp = SysPrintBuffLen To 1 Step -1
+        LCDValue = SysPrintBuffer(SysPrintTemp) + 48
+        K107SendRaw LCDValue
+        Next
 
-End Sub
+    End Sub
 
-'#define LCDBacklight K107LCDBacklight
-sub K107LCDBacklight(IN LCDValue)
-    K107SendData( "?B" )
+    '#define LCDBacklight K107LCDBacklight
+    sub K107LCDBacklight(IN LCDValue)
+        K107SendData( "?B" )
 
-    K107LCDHEX ( LCDValue ,2 )
+        K107LCDHEX ( LCDValue ,2 )
 
-End Sub
+    End Sub
 
-'#define LCDCursor K107LCDCursor
-sub K107LCDCursor(In LCDCRSR)
-    K107SendData( "?c"+str(LCDCRSR) )
-End Sub
+    '#define LCDCursor K107LCDCursor
+    sub K107LCDCursor(In LCDCRSR)
+        K107SendData( "?c"+str(LCDCRSR) )
+    End Sub
 
-'#define LCDHex K107LCDHex
-sub K107LCDHex  (In LCDValue, optional in LCDChar = 1)
-'Sub to print a hex string from the specified byte variable on the LCD
+    '#define LCDHex K107LCDHex
+    sub K107LCDHex  (In LCDValue, optional in LCDChar = 1)
+    'Sub to print a hex string from the specified byte variable on the LCD
 
-    dim myK107LCDHexString as string * 3
-    myK107LCDHexString = Hex ( LCDValue )
-    K107SendData myK107LCDHexString
+        dim myK107LCDHexString as string * 3
+        myK107LCDHexString = Hex ( LCDValue )
+        K107SendData myK107LCDHexString
 
-end sub
+    end sub
 
-sub K107LCDSpace(in LCDValue)
-'Sub to print a number of spaces - upto 40
+    sub K107LCDSpace(in LCDValue)
+    'Sub to print a number of spaces - upto 40
 
-    if LCDValue > 40 then LCDValue = 40
-    do until LCDValue = 0
-        K107SendData " "
-        LCDValue --
-    loop
-end sub
+        if LCDValue > 40 then LCDValue = 40
+        do until LCDValue = 0
+            K107SendData " "
+            LCDValue --
+        loop
+    end sub
 
-;LCD_VARIANT 1601a
-;
-;The variant assummes 8chars by 1row.
-;Memory maps as follows - columne to memory
-;0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
-;0  1  2  3  4  5  6  7 40 41  42 43 44 45 46 47
-;
-;So, by locating to the first row on a twenty row display, the default LCD width, the additional locatates address the memory correctly.
-;
+//~SPI_Expander Support
+
+    //  RS = 0x20
+    //  E  = 0x40
+
+    sub LCD_SPI_Expander_NormalWriteByte(In LCDByte )
+        'Sub to write a byte to the LCD
+
+        #IFDEF LCD_IO 14
+
+            /* Default values - these are the address on the expander
+                LCD_SPI_EXPANDER_ENABLED = 0x20
+                LCD_SPI_EXPANDER_E_ADDRESS = 0x40
+                LCD_SPI_EXPANDER_RS_ADDRESS = 0x80
+                */
+
+            Dim LCD_State as Byte
+
+            If LCD_RS = 0 Then
+                                                                                                                                        //                  R  
+                                                                                                                                        //                  SE
+                LCD_SPI_WriteIOExpander(GPIO_A_ADDRESS, LCD_SPI_EXPANDER_ENABLED + LCD_SPI_EXPANDER_E_ADDRESS);     //RS LOW -- E HIGH -- LCD Enabled       01100000
+                LCD_SPI_WriteIOExpander(GPIO_B_ADDRESS, LCDByte);   //Write the command on PORT B        E   
+                LCD_SPI_WriteIOExpander(GPIO_A_ADDRESS, LCD_SPI_EXPANDER_ENABLED);                                  //RS LOW -- E LOW -- LCD Enabled        00100000   
+            Else
+                                                                                                                                        //                  R
+                                                                                                                                        //                  SE
+                                                                                                                                        //                  11100000
+                LCD_SPI_WriteIOExpander(GPIO_A_ADDRESS, LCD_SPI_EXPANDER_ENABLED + LCD_SPI_EXPANDER_E_ADDRESS + LCD_SPI_EXPANDER_RS_ADDRESS );       //RS HIGH -- E HIGH -- LCD Enabled --> This is to choose the data register on the LCD
+                LCD_SPI_WriteIOExpander(GPIO_B_ADDRESS, LCDByte);  //Write the byte on PORT B
+                                                                                                                                        //                  R
+                                                                                                                                        //                  SE                
+                                                                                                                                        //                  10100000
+                LCD_SPI_WriteIOExpander(GPIO_A_ADDRESS, LCD_SPI_EXPANDER_ENABLED + LCD_SPI_EXPANDER_RS_ADDRESS );                       //RS HIGH -- E LOW -- LCD enabled --> This is to latch the data on the LCD
+            End IF
+
+            LCD_State = 12
+
+            WAIT LCD_SPEED us
+
+        #ENDIF
+
+        'If Register Select is low
+        IF LCD_RS = 0 then
+            IF LCDByte < 16 then
+                if LCDByte > 7 then
+                    LCD_State = LCDByte
+                end if
+            END IF
+        END IF
+
+    end sub
+
+    sub LCD_SPI_Expander_Initialize
+        
+        #ifdef LCD_SPI_RESET_IN
+            Dir LCD_SPI_RESET_IN In
+            // 'Reset the expander
+            'Reset sequence (lower line for at least 1 us)
+            wait 10 ms
+            LCD_SPI_RESET_IN = 0
+            Wait 5 us
+            LCD_SPI_RESET_IN = 1        
+        #endif        
+        #ifdef LCD_SPI_RESET_OUT
+            Dir LCD_SPI_RESET_OUT Out
+            // 'Reset the expander
+            'Reset sequence (lower line for at least 1 us)
+            wait 10 ms
+            LCD_SPI_RESET_OUT = 0
+            Wait 5 us
+            LCD_SPI_RESET_OUT = 1
+        #endif        
+
+        Dir LCD_SPI_CS      Out
+        Dir LCD_SPI_DO      Out
+        Dir LCD_SPI_SCK     Out
+
+        // asm showdebug SPI constant used equates to HWSPIMODESCRIPT
+        SPIMode HWSPIMODESCRIPT, 0
+
+        LCD_SPI_WriteIOExpander(IO_DIR_A_ADDRESS, OUTPUT_DIR)
+        wait 10 ms
+        LCD_SPI_WriteIOExpander(IO_DIR_B_ADDRESS, OUTPUT_DIR)
+        wait 10 ms
+        LCD_SPI_WriteIOExpander(GPIO_A_ADDRESS, LCD_VDD_EN)
+        wait 10 ms
+        LCDCmd(LCD_FUNCTION_SET)
+        wait 10 ms;
+        LCDCmd(LCD_SET_DISPLAY)
+        wait 10 ms;
+        LCDCmd(LCD_CLEAR)
+        wait 10 ms;
+        LCDCmd(LCD_SET_DISPLAY)
+        wait 130 ms
+        LCDCmd(LCD_SET_DDRAM_ADDRESS)
+        wait 1 ms
+    end sub 
+
+    sub LCD_SPI_WriteIOExpander( __LCDreg, __LCDbyte ) 
+        LCD_SPI_CS = 0
+        #ifdef LCD_HARDWARESPI
+            // Send via Hardware SPI
+            FastHWSPITransfer(LCD_SPI_EXPD_ADDRESS)
+            FastHWSPITransfer(__LCDreg)
+            FastHWSPITransfer(__LCDbyte)
+        #else
+            // Set the three parameters using Bit Banging
+            dim __LCD_outbuffer, __LCD_outbuffercount
+            For __LCD_outbuffercount = 0 to 2
+                Select Case __LCD_outbuffercount
+                    Case 0: __LCD_outbuffer = LCD_SPI_EXPD_ADDRESS
+                    Case 1: __LCD_outbuffer = __LCDreg
+                    Case 2: __LCD_outbuffer = __LCDbyte
+                End Select
+
+                repeat 8
+                    if __LCD_outbuffer.7 = ON  then
+                    set LCD_SPI_DO ON;
+                    else
+                    set LCD_SPI_DO OFF;
+                    end if
+                    SET LCD_SPI_SCK On;
+                    rotate __LCD_outbuffer left
+                    set LCD_SPI_SCK Off;
+                end repeat
+            Next
+        #endif
+        LCD_SPI_CS = 1
+    End Sub
+
+
+//~LCD_VARIANT 1601a
+    ;
+    ;The variant assummes 8chars by 1row.
+    ;Memory maps as follows - columne to memory
+    ;0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
+    ;0  1  2  3  4  5  6  7 40 41  42 43 44 45 46 47
+    ;
+    ;So, by locating to the first row on a twenty row display, the default LCD width, the additional locatates address the memory correctly.
+    ;
 
 
 

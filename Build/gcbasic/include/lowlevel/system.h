@@ -178,7 +178,7 @@ Sub InitSys
         asm showdebug _For_selected_frequency_-_the_external_oscillator_has_been_selected_by_compiler ChipMHz
       #ENDIF
 
-       #IFDEF Oneof(CHIP_18F24K40,CHIP_18F25K40,CHIP_18F26K40,CHIP_18F27K40,CHIP_18F45K40,CHIP_18F46K40,CHIP_18F47K40,CHIP_18F65K40,CHIP_18F66K40,CHIP_18LF24K40, CHIP_18LF25K40, CHIP_18LF26K40, CHIP_18LF27K40, CHIP_18LF45K40, CHIP_18LF46K40, CHIP_18LF47K40, CHIP_18LF65K40, CHIP_18LF66K40)
+       #IFDEF Oneof(CHIP_18F24K40,CHIP_18F25K40,CHIP_18F26K40,CHIP_18F27K40,CHIP_18F45K40,CHIP_18F46K40,CHIP_18F47K40,CHIP_18F65K40,CHIP_18F66K40,CHIP_18LF24K40, CHIP_18LF25K40, CHIP_18LF26K40, CHIP_18LF27K40, CHIP_18LF45K40, CHIP_18LF46K40, CHIP_18LF47K40, CHIP_18F65K40, CHIP_18LF65K40, CHIP_18F66K40, CHIP_18LF66K40, CHIP_18F67K40, CHIP_18LF67K40 )
            ' Added (Per  Chip Errata Sheets) to correctly support table reads on specific chips)
            ' Sets NVRAM pointer to Static RAM as default location.
             #Ifdef Var(NVMCON1)
@@ -188,6 +188,13 @@ Sub InitSys
        #ENDIF
 
    #ENDIF
+
+  #IFDEF ChipFamily 16
+    #IFDEF Var(BSR)
+      'Clear BSR on ChipFamily16 MCUs
+      MOVLB 0
+    #ENDIF
+  #ENDIF
 
     #ifdef PIC
         #ifdef Var(OSCCAL)
@@ -982,14 +989,9 @@ Sub InitSys
       #ENDIF
 
       #IFDEF PIC
-          asm showdebug _Complete_the_chip_setup_of_BSR,ADCs,ANSEL_and_other_key_setup_registers_or_register_bits
+          asm showdebug _Complete_the_chip_setup_of_BSR_ADCs_ANSEL_and_other_key_setup_registers_or_register_bits
       #ENDIF
-      #IFDEF ChipFamily 16
-        'Clear BSR on ChipFamily16 MCUs
-        BSR = 0
-
-      #ENDIF
-
+      
       #IFDEF Var(TBLPTRU)
         'Clear TBLPTRU on MCUs with this bit as this must be zero
         TBLPTRU = 0
@@ -1044,9 +1046,6 @@ Sub InitSys
       #IFDEF Var(ANSEL)
         ANSEL = 0
       #ENDIF
-      #IFDEF Var(ANSELH)
-        ANSELH = 0
-      #ENDIF
       #IFDEF Var(ANSEL0)
         ANSEL0 = 0
       #ENDIF
@@ -1068,6 +1067,16 @@ Sub InitSys
       #IFDEF Var(ANSELE)
         ANSELE = 0
       #ENDIF
+      #IFDEF Var(ANSELF)
+        ANSELF = 0
+      #ENDIF
+      #IFDEF Var(ANSELG)
+        ANSELG = 0
+      #ENDIF
+      #IFDEF Var(ANSELH)
+        ANSELH = 0
+      #ENDIF
+
 
 
       #IFDEF VAR(ANCON0)

@@ -2056,7 +2056,7 @@ Sub LinkedListPrint2(StartNode As LinkedListElement Pointer, EndNode As LinkedLi
   Dim as Integer LastLineNumber, CurrentLineNumber = 0
 
   'CDF output file
-  print #CDFFileHandle, ""
+  'print #CDFFileHandle, ""
 
   'Check for null pointer
   If StartNode = 0 Then Exit Sub

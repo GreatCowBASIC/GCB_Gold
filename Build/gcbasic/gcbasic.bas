@@ -794,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-07-06"
-buildVersion = "1258"
+Version = "1.01.00 2023-08-16"
+buildVersion = "1261"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -7585,7 +7585,12 @@ SUB CompileReadTable (CompSub As SubType Pointer)
                 'Change SysEPRead to read the CONSTANT as this may have been redefined to an alternative method() ie K42, Q43 to NVMADR_EPREAD
 
                 RequestSub(CompSub, ReplaceConstantsLine ( "SysEPRead", 0 ))
-                CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@Table" + TableName)
+				'This ensures chip that require NVMADRH:NVMADRL use the WORD address
+                If HasSFR("NVMADRL") Then
+                  CurrLine = LinkedListInsert(CurrLine, "[WORD]SysEEAddress=" + TableLoc + "+@TABLE" + TableName)
+                Else
+                  CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@TABLE" + TableName)
+                End if
                 CurrLine = LinkedListInsert(CurrLine, " call " + ReplaceConstantsLine ( "SysEPRead", 0 ))
                 CurrLine = LinkedListInsert(CurrLine, OutVar + "=EEDataValue")
               End If
@@ -7634,7 +7639,7 @@ SUB CompileReadTable (CompSub As SubType Pointer)
               ElseIf DataTable(TableID).StoreLoc = 1 Then
                 'Store in EEPROM
                 RequestSub(CompSub, "SysEPRead")
-                CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@Table" + TableName)
+                CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@TABLE" + TableName)
                 CurrLine = LinkedListInsert(CurrLine, " call SysEPRead")
                 CurrLine = LinkedListInsert(CurrLine, OutVar + "=EEDataValue")
               End If
@@ -10819,7 +10824,10 @@ SUB CompileVars (CompSub As SubType Pointer)
             Temp = FindLine->Prev->Value
             IF WholeINSTR(Temp, DelType(DestVar)) = 2 AND INSTR(Temp, "wf") <> 0 And INSTR(Temp, " movwf ") = 0 And INSTR(Temp, " mulwf ") = 0 Then
               FindLine = LinkedListDelete(FindLine)
-              Replace FindLine->Value, ",W", ",F"
+              'The test below was added to protect the incorrection replacement operation 1260
+              If INSTR( FindLine->Value, ",W") Then
+                Replace FindLine->Value, ",W", ",F"
+              End If
             END If
           End If
         End If
@@ -17898,8 +17906,8 @@ Sub WriteAssembly
                           Param1 = elements0(1)
 
                         Case Else
-                          If Left(outline,1) <> ";" Then
-                            Print "unhandled conversion for "+outline
+                          If Left(outline,1) <> ";" and Left(trim(outline),2) <> "DB" Then
+                            LogWarning "GCBASIC compiler: PIC-AS conversion unhandled for "+outline
                           End If
                       End Select
 
@@ -17957,15 +17965,14 @@ Sub WriteAssembly
                                     end if
                                   Else
                                     'Test if Param3 is a Bit, if is convert, else, it is register.
-                                    if trim(GetSFRBitValue(Param3)) <> "" then
-                                      outline = ASMInstruction+" "+Param2 + "," + GetSFRBitValue(Param3)
+                                    if trim(GetSFRBitValue(trim(Param3))) <> "" then
+                                      outline = ASMInstruction+" "+Param2 + "," + GetSFRBitValue(trim(Param3))
                                     else
-                                      outline = ASMInstruction+" "+Param2 + "," + Param3
+                                      outline = ASMInstruction+" "+Param2 + "," + trim(Param3)
                                     end if
                                     if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
                                       if PICASDEBUG then Print #2, ";A6b: ASM Source was: "+CurrLine->Value
                                     end if
-
                                   End if
 
                               end if
@@ -18011,8 +18018,8 @@ Sub WriteAssembly
                           'walk the elements replacing BIT constant will value using the reverse lookups
                           For elementcounter = 0 to ubound(currentLineElements)
                           
-                              if GetSFRBitValue(currentLineElements(elementcounter)) <> "" then
-                                  registerbitlocation = GetSFRBitValue(currentLineElements(elementcounter))
+                              if GetSFRBitValue(trim(currentLineElements(elementcounter))) <> "" then
+                                  registerbitlocation = GetSFRBitValue(trim(currentLineElements(elementcounter)))
                                   
                                   if registerbitlocation <> "" then           
                             
@@ -18172,8 +18179,8 @@ Sub WriteAssembly
                             'walk the elements replacing BIT constant will value using the reverse lookups
                             For elementcounter = 0 to ubound(currentLineElements)
                             
-                                if GetSFRBitValue(currentLineElements(elementcounter)) <> "" then
-                                    registerbitlocation = GetSFRBitValue(currentLineElements(elementcounter))
+                                if GetSFRBitValue(trim(currentLineElements(elementcounter))) <> "" then
+                                    registerbitlocation = GetSFRBitValue(trim(currentLineElements(elementcounter)))
                                     
                                     if registerbitlocation <> "" then           
                               
@@ -19266,6 +19273,9 @@ Sub MergeSubroutines
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ71 )  then
               CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
               CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+            ElseIf ( ChipSubFamily = ChipFamily18FxxQ83 )  then
+              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
+              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")              
             ElseIf ChipFamilyVariant = 1 then
               CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamilyVariant EEPROM Address 0x310000)")
               CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
@@ -19287,16 +19297,20 @@ Sub MergeSubroutines
 
           'Add table
           ToAsmSymbols += 1
-          ToAsmSymbol(ToAsmSymbols, 1) = "Table" + Trim(.Name)
+          ToAsmSymbol(ToAsmSymbols, 1) = "TABLE" + Trim(.Name)
+
+          'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
+          If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
+              EPDataLoc = EPDataLoc + 1
+          End If
           ToAsmSymbol(ToAsmSymbols, 2) = Str(EPDataLoc)
 
-
           if instr(UCase(AsmExe),"PIC-AS") = 0 then
-            CurrLine = LinkedListInsert(CurrLine, "Table" + Trim(.Name) + " equ " + Str(EPDataLoc))
+            CurrLine = LinkedListInsert(CurrLine, "TABLE" + Trim(.Name) + " equ " + Str(EPDataLoc))
             GetMetaData(Currline)->IsLabel = -1
             CurrLine = LinkedListInsert(CurrLine, " de " + EPTempData)
           else
-            CurrLine = LinkedListInsert(CurrLine, "Table" + Trim(.Name))
+            CurrLine = LinkedListInsert(CurrLine, "TABLE" + Trim(.Name))
             GetMetaData(Currline)->IsLabel = -1
             CurrLine = LinkedListInsert(CurrLine, " db " + EPTempData)
           end if

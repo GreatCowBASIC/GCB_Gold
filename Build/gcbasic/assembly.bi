@@ -1680,15 +1680,21 @@ Sub BuildAsmSymbolTable
         Loop
 
         AsmLine->Value = Str(CurrentLocation) + ":RAW " + Mid(NewData, 2)
-        CurrentLocation += DataSize
+        ' Add this check as the current location was being incorrect incremented.  This is used when TABLE name STORE DATA.  The eeprom was ok in the ASM but the GCASM hex was incorrect.
+        ' This may impact other chipfamiles - tested on 14 only
+        IF (ChipFamily = 14 Or ChipFamily = 15) THEN
+          CurrentLocation += ( DataSize / 2 )
+        ELSE
+          CurrentLocation += DataSize
+        END IF
         FoundDirective = -1
       END IF
 
       'EQU directive
       IF INSTR(AsmLine->Value, " EQU ") <> 0 THEN FoundDirective = -1: AsmLine->Value = ""
 
-'ERV'PSECT at PAGE boundary
-IF INSTR(AsmLine->Value, "__PROGMEMPAGE") <> 0 THEN FoundDirective = -1: AsmLine->Value = ""
+      'ERV'PSECT at PAGE boundary
+      IF INSTR(AsmLine->Value, "__PROGMEMPAGE") <> 0 THEN FoundDirective = -1: AsmLine->Value = ""
 
       'If nothing else, then line is label
       If CurrCmd = 0 And FoundDirective = 0 THEN

@@ -1,5 +1,5 @@
 '    USART routines for GCBASIC
-'    Copyright (C) 2009-2022 Hugh Considine, Mike Otte, William Roth and Evan Venn
+'    Copyright (C) 2009-2023 Hugh Considine, Mike Otte, William Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -92,6 +92,8 @@
 '             Added RAISECOMPILERERROR where appropiate
 '             Improved handling of variable comport and Defaultusartreturnvalue variable to only set when more than one USART
 ' 14/12/2022  Correct InitUSART for K22 ( missing register update )
+' 06/08/2023  Improved handling of registers for USART2
+
 
 
 
@@ -256,6 +258,12 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     end if
 
     if ChipSubFamily = 15004 then
+          TXREG = TX1REG
+          RCREG = RC1REG
+    end if
+
+    // All 161xx chips
+    if INT(ChipSubFamily/100)=161 then
           TXREG = TX1REG
           RCREG = RC1REG
     end if
@@ -1588,7 +1596,11 @@ sub HSerSend (In SerData, optional In comport = 1)
           #ifdef Var(TXREG2)
              //~WRITE THE DATA BYTE TO THE USART
              //~ Sets register to value of SerData - where register could be TX2REG, TXREG2  or U2TXB  via the #samevar
-             TXREG2 = SerData
+             #IF VAR(TX2REG)
+              TX2REG = SerData
+             #ELSE
+              TXREG2 = SerData
+            #ENDIF
 
              #IF USART2_DELAY <> OFF
                 //~ The USART_DELAY After all bits are shifted out
@@ -2020,7 +2032,11 @@ Sub HSerReceive(Out SerData)
         #ifdef Var(RCREG2)
           'Get a byte from register, if interrupt flag is valid
           If USART2HasData Then
-            SerData = RCREG2
+            #IF VAR(RCREG2) Then
+              SerData = RCREG2
+            #ELSE
+              SerData = RC2REG
+            #ENDIF
           End if
         #endif
 

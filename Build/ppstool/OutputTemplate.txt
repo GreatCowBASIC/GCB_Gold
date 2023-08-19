@@ -1,18 +1,17 @@
 ﻿    #ToolVersion
     // Generated for #PPSToolPart
-    //
-    // Template comment at the start of the config file
-    //
+    
     #startup InitPPS, 85
     #define PPSToolPart #PPSToolPart
 
     Sub InitPPS
-      #UNLOCKPPS
+    #UNLOCKPPS
         [PPS]
             #ModuleName
             #PPSSetting    #Comment
         [PPSEnd]
-      #LOCKPPS
-
+    #LOCKPPS
     End Sub
-    // Template comment at the end of the config file
+    // Add this code segment to your GCBASIC source program
+
+
