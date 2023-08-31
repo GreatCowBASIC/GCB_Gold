@@ -108,6 +108,7 @@
 '  21/04/20  Updated InitGLCD to correctly handle GLCD_TYPE
 '  26/03/21  Revised Write_Transaction_Data_SSD1306 to correct SPI command/data settings
 '  12/04/23  Revised to ERROR() when family14 and less than 225 byes of RAM. The array needs 128 bytes and these chips only support 95 bytes of contiguous RAM 
+'  21/08/23  AddGLCDYFLIP, GLCDXFLIP and GLCDXYFLIP to rotate the GLCD
 
 #define SSD1306_vccstate 0
 
@@ -156,6 +157,11 @@
 #define SSD1306_LEFT_HORIZONTAL_SCROLL 0x27
 #define SSD1306_VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL 0x29
 #define SSD1306_VERTICAL_AND_LEFT_HORIZONTAL_SCROLL 0x2A
+
+#define GLCDYFLIP   1
+#define GLCDXFLIP   2
+#define GLCDXYFLIP  3
+
 
 #startup InitGLCD_SSD1306, 100
 
@@ -895,8 +901,16 @@ Sub PSet_SSD1306(In GLCDX, In GLCDY, In GLCDColour As Word)
     'X is 0 to 127
     'Y is 0 to 63
     'Origin in top left
-
-
+    #if GLCDDirection = GLCDYFLIP
+      GLCDY = GLCD_HEIGHT - 1 -GLCDY
+    #endif
+    #if GLCDDirection = GLCDXFLIP
+      GLCDX = GLCD_WIDTH - 1 -GLCDX
+    #endif
+    #if GLCDDirection = GLCDXYFLIP
+      GLCDY = GLCD_HEIGHT - 1 -GLCDY
+      GLCDX = GLCD_WIDTH - 1 -GLCDX      
+    #endif
     #if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32
 
         #IFDEF GLCD_PROTECTOVERRUN

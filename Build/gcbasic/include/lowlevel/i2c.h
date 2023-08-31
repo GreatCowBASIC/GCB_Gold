@@ -51,7 +51,8 @@
 '    Updated Oct 2016  - for Option Explicit
 '    28/92/2020   Updated to add LEFT to rotate I2CByte left on line 412 and removed I2C_DATA_LOW in I2CSend SLAVE method (caused SDA line glitch)
 ' 14/08/22 Updated user changeable constants only - no functional change
-
+' 22/08/23 Added I2CPreSendMacro and I2CPostSendMacro and I2CPostSendMacroLabel to support greater control of I2CSend
+' 23/08/23 Revised INTERRUPT caching to ensure state is preserved by I2C routines
 
 '    - With the default constants, communication can be as high as 75 kHz.
 
@@ -201,9 +202,11 @@ end sub
 '             ---
 
 sub I2CStart()
+  Dim I2CINTSTATESAVE as BIT
   #if I2C_MODE = Master           'send a Start in Master mode
     #IFNDEF I2C_DISABLE_INTERRUPTS
-        intOff                        'don't interrupt now we've started
+        I2CINTSTATESAVE = GIE
+        GIE = 0 'don't interrupt now we've started
     #endif
     I2C_DATA_HIGH                 'SDA and SCL idle high
     I2C_CLOCK_HIGH
@@ -249,6 +252,7 @@ end sub
 '             ---
 
 sub I2CStop()
+  Dim I2CINTSTATESAVE as BIT
   #if I2C_MODE = Master           'send a Stop in Master mode
     I2C_CLOCK_LOW                 'begin with SCL=0 and SDA=0
     I2C_DATA_LOW
@@ -263,7 +267,7 @@ sub I2CStop()
 
 
     #IFNDEF I2C_DISABLE_INTERRUPTS
-        intOn                         'done, so re-enable interrupts
+        GIE = I2CINTSTATESAVE                         'done, so re-enable interrupts
     #endif
 
   #endif
@@ -271,7 +275,7 @@ sub I2CStop()
   #if I2C_MODE = Slave            'in Slave mode we are
     I2CMatch = FALSE              'no longer addressing this device
     #IFNDEF I2C_DISABLE_INTERRUPTS
-        intOn                     'so re-enable interrupts
+        GIE = I2CINTSTATESAVE                     'so re-enable interrupts
     #endif
   #endif
 end sub
@@ -336,6 +340,10 @@ End Function
 
 '             ---
 sub I2CSend(in I2CByte )
+
+  #ifdef I2CPreSendMacro
+    I2CPreSendMacro
+  #endif
 
   #if I2C_MODE = Master           'send byte from Master to Slave
      I2C_CLOCK_LOW                 'begin with SCL=0
@@ -477,6 +485,13 @@ sub I2CSend(in I2CByte )
         end if
       loop
     #endif
+  #endif
+
+  #ifdef I2CPreSendMacro
+    I2CPostSendMacroLabel:
+  #endif
+  #ifdef I2CPostSendMacro
+    I2CPostSendMacro
   #endif
 end sub
 

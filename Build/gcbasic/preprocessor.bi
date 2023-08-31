@@ -174,22 +174,32 @@ Function CheckSysVarDef(ConditionIn As String) As String
 
     Replace Condition, Original, Str(ConstFound) + "=1"
 
-    'Revised to add some basic syntax checking to DEF()
-    If CountOccur ( Condition, "=") > 1 Then
-      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional EQUALS condition"
-    End if
-    If CountOccur ( Condition, " ") > 1 Then
-      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional condition not supported"  
-    End if
-    If CountOccur ( Condition, "~") > 0 Then
-      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional NOT EQUALS condition"
-    End if
-    If CountOccur ( Condition, ">") > 0 Then
-      LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional GREATERTHAN condition"
-    End if
-    If CountOccur ( Condition, "<") > 0 Then
-            LogError "In correct use of DEF()/NODEF()/BIT()/NOBIT/()/VAR()/NOVAR() - additional LESSTHAN condition"
-    End if
+    'Revised to add some basic syntax checking to DEF() - backed out at change 1275 as this causes issues in the PROGRAMMER with 'DEF(AVR) AND CHIPFAMILY=122'
+    If Conditionaldebugfile <> "" Then
+      Dim ConditionaldebugfileMessage as String = ""
+      If CountOccur ( Condition, "=") > 1 Then
+        ConditionaldebugfileMessage = ConditionIn + ": Additional EQUAL condition: " + Condition
+      End if
+      If CountOccur ( Condition, "( ") > 1 OR CountOccur ( Condition, " )") > 1 Then
+        ConditionaldebugfileMessage = ConditionIn + ": Untrimmed inspection: " + Condition
+      End if
+      If CountOccur ( Condition, "~") > 0 Then
+        ConditionaldebugfileMessage = ConditionIn + ": NOT EQUAL condition: " + Condition
+      End if
+      If CountOccur ( Condition, ">") > 0 Then
+        ConditionaldebugfileMessage = ConditionIn + ": > condition: " + Condition
+      End if
+      If CountOccur ( Condition, "<") > 0 Then
+        ConditionaldebugfileMessage = ConditionIn + ": < condition: " + Condition
+      End if
+      'Open CDF file
+      If CDFSupport = 1 and ConditionaldebugfileMessage<> "" Then
+        CDFFileHandle = 4
+        Dim e as Integer
+        e = Open(CDF For Append As #CDFFileHandle)
+        Print #CDFFileHandle,"              CHECKSYSVARDEF:       " + ConditionaldebugfileMessage
+      End if
+End if
 
   Loop
 
@@ -1988,8 +1998,19 @@ SUB PreProcessor
   'Open CDF file
     'Create CDF output file
   If CDFSupport = 1 Then
+    Dim e as Integer
     CDFFileHandle = 4
-    Open CDF For Output As #CDFFileHandle
+    e = Open(CDF For Output As #CDFFileHandle)
+    Print #CDFFileHandle, "CDF Report "
+    Print #CDFFileHandle, ""
+    Print #CDFFileHandle, "HELP:  "
+    Print #CDFFileHandle, "     CODE/Constant - constants defined in a user program or library"
+    Print #CDFFileHandle, "     SCRIPT/AddConstant constants defined in a #script/#endscript construct"
+    Print #CDFFileHandle, "     SCRIPT/CurrentValue - constants already defined then redefined in another #script/#endscript construct"
+    Print #CDFFileHandle, "     CHECKSYSVARDEF - expansion of a mutli-condition conditional test.  "
+    Print #CDFFileHandle, "     Remainder of report us the user program or libaries code remaining post conditional processing"
+    Print #CDFFileHandle, "*********************************************************************************************************************************"
+    Print #CDFFileHandle, ""
   End if
 
 
@@ -2049,7 +2070,7 @@ SUB PreProcessor
         'Check to see if #define CONSTANT exists
         IF HashMapGet(Constants, ConstName) = 0 THEN
 
-         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "SCRIPT/Constant:     Line "+LineNumberStr+ " "+ Left(ConstName+Space(40),40)+ CHR(9) + Left(Value+Space(32),32)+ CHR(9) + SourceFile(Val(TempFile)).FileName
+         If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "CODE/Constant:     Line "+LineNumberStr+ " "+ Left(ConstName+Space(40),40)+ CHR(9) + Left(Value+Space(32),32)+ CHR(9) + SourceFile(Val(TempFile)).FileName
           AddConstant(ConstName, Value, TempFile)
           CheckConstName ConstName, Origin
         ELse
@@ -2954,7 +2975,8 @@ SUB RunScripts
     'Create CDF output file
   If CDFSupport = 1 Then
     CDFFileHandle = 4
-    Open CDF For Append As #CDFFileHandle
+    Dim e as Integer
+    e = Open(CDF For Append As #CDFFileHandle)
   End if
 
   'Read Scripts

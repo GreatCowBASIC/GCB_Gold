@@ -179,6 +179,7 @@
 #script
   ' For the UNO_8bit_Shield you can use GLCD_RS or GLCD_DC.  They are mapped automatically
   GLCD_DC_Defined = 0
+
   if GLCD_TYPE = GLCD_TYPE_ILI9488 then
 
     //~ See https://johndecember.com/html/spec/colorper.html
@@ -194,89 +195,91 @@
     //~ Use this script to set the TFT_colors as this script will execute late in the pre-processing process and will only change the colors for this GLCD
     //~ 				
 
-    ILI9488_TFT_BLACK       = [LONG]0x000000
-    ILI9488_TFT_RED         = [LONG]0xFC0000
-    ILI9488_TFT_GREEN       = [LONG]0x00FC00 
-    ILI9488_TFT_BLUE        = [LONG]0x0000FC
-    ILI9488_TFT_WHITE       = [LONG]0xFFFFFF    
+      ILI9488_TFT_BLACK       = [LONG]0x000000
+      ILI9488_TFT_RED         = [LONG]0xFC0000
+      ILI9488_TFT_GREEN       = [LONG]0x00FC00 
+      ILI9488_TFT_BLUE        = [LONG]0x0000FC
+      ILI9488_TFT_WHITE       = [LONG]0xFFFFFF    
 
-    ILI9488_TFT_CYAN        = [LONG]0x003F3F
-    ILI9488_TFT_DARKCYAN    = [LONG]0x00AFAF
-    ILI9488_TFT_DARKGREEN   = [LONG]0x002100
-    ILI9488_TFT_DARKGREY    = [LONG]0xAAAAAA
-    ILI9488_TFT_GREENYELLOW = [LONG]0x93FC33  
-    ILI9488_TFT_LIGHTGREY   = [LONG]0xC9C9C9
-    ILI9488_TFT_MAGENTA     = [LONG]0xCC00CC
-    ILI9488_TFT_MAROON      = [LONG]0x7E007E
-    ILI9488_TFT_NAVY        = [LONG]0x00003E
-    ILI9488_TFT_OLIVE       = [LONG]0x783E00
-    ILI9488_TFT_ORANGE      = [LONG]0xFC2900
-    ILI9488_TFT_PINK        = [LONG]0xFC000F
-    ILI9488_TFT_PURPLE      = [LONG]0xF01F9E
-    ILI9488_TFT_YELLOW      = [LONG]0xFFFF00
+      ILI9488_TFT_CYAN        = [LONG]0x003F3F
+      ILI9488_TFT_DARKCYAN    = [LONG]0x00AFAF
+      ILI9488_TFT_DARKGREEN   = [LONG]0x002100
+      ILI9488_TFT_DARKGREY    = [LONG]0xAAAAAA
+      ILI9488_TFT_GREENYELLOW = [LONG]0x93FC33  
+      ILI9488_TFT_LIGHTGREY   = [LONG]0xC9C9C9
+      ILI9488_TFT_MAGENTA     = [LONG]0xCC00CC
+      ILI9488_TFT_MAROON      = [LONG]0x7E007E
+      ILI9488_TFT_NAVY        = [LONG]0x00003E
+      ILI9488_TFT_OLIVE       = [LONG]0x783E00
+      ILI9488_TFT_ORANGE      = [LONG]0xFC2900
+      ILI9488_TFT_PINK        = [LONG]0xFC000F
+      ILI9488_TFT_PURPLE      = [LONG]0xF01F9E
+      ILI9488_TFT_YELLOW      = [LONG]0xFFFF00
 
-    TFT_BLACK       = [LONG]0x000000
-    TFT_RED         = [LONG]0xFC0000
-    TFT_GREEN       = [LONG]0x00FC00 
-    TFT_BLUE        = [LONG]0x0000FC
-    TFT_WHITE       = [LONG]0xFFFFFF    
+      TFT_BLACK       = [LONG]0x000000
+      TFT_RED         = [LONG]0xFC0000
+      TFT_GREEN       = [LONG]0x00FC00 
+      TFT_BLUE        = [LONG]0x0000FC
+      TFT_WHITE       = [LONG]0xFFFFFF    
 
-    TFT_CYAN        = [LONG]0x003F3F
-    TFT_DARKCYAN    = [LONG]0x00AFAF
-    TFT_DARKGREEN   = [LONG]0x002100
-    TFT_DARKGREY    = [LONG]0xAAAAAA
-    TFT_GREENYELLOW = [LONG]0x93FC33  
-    TFT_LIGHTGREY   = [LONG]0xC9C9C9
-    TFT_MAGENTA     = [LONG]0xCC00CC
-    TFT_MAROON      = [LONG]0x7E007E
-    TFT_NAVY        = [LONG]0x00003E
-    TFT_OLIVE       = [LONG]0x783E00
-    TFT_ORANGE      = [LONG]0xFC2900
-    TFT_PINK        = [LONG]0xFC000F
-    TFT_PURPLE      = [LONG]0xF01F9E
-    TFT_YELLOW      = [LONG]0xFFFF00  
+      TFT_CYAN        = [LONG]0x003F3F
+      TFT_DARKCYAN    = [LONG]0x00AFAF
+      TFT_DARKGREEN   = [LONG]0x002100
+      TFT_DARKGREY    = [LONG]0xAAAAAA
+      TFT_GREENYELLOW = [LONG]0x93FC33  
+      TFT_LIGHTGREY   = [LONG]0xC9C9C9
+      TFT_MAGENTA     = [LONG]0xCC00CC
+      TFT_MAROON      = [LONG]0x7E007E
+      TFT_NAVY        = [LONG]0x00003E
+      TFT_OLIVE       = [LONG]0x783E00
+      TFT_ORANGE      = [LONG]0xFC2900
+      TFT_PINK        = [LONG]0xFC000F
+      TFT_PURPLE      = [LONG]0xF01F9E
+      TFT_YELLOW      = [LONG]0xFFFF00  
 
-    if UNO_8bit_Shield then
+
+    if def(UNO_8bit_Shield) then
+
       'is there a GLCD_DC defined?
-      if GLCD_DC then
+      if def(GLCD_DC) then
           GLCD_DC_Defined = 1
       end if
 
       'if no GLCD_DC then is there is an GLCD_RS
       if GLCD_DC_Defined = 0 Then
           if GLCD_RS then
-             'map
-             GLCD_DC = GLCD_RS
-             GLCD_DC_Defined = 1
+            'map
+            GLCD_DC = GLCD_RS
+            GLCD_DC_Defined = 1
           end if
           'so, if there one defined?
           if GLCD_DC_Defined = 0 Then
               warning "No GLCD_DC defined"
           end if
       end if
+
     end if
 
-      GLCD_RST_Defined = 0
-      'is there a GLCD_DC defined?
-      if GLCD_RST then
-          GLCD_RST_Defined = 1
-      end if
-
-
-      'if no GLCD_RST then is there is an GLCD_RESET
-      if GLCD_RST_Defined = 0 Then
-          if GLCD_RESET then
-             'map
-             GLCD_RST = GLCD_RESET
-             GLCD_RST_Defined = 1
-          end if
-          'so, if there one defined?
-          if GLCD_RST_Defined = 0 Then
-              warning "No GLCD_RST defined"
-          end if
-      end if
+    GLCD_RST_Defined = 0
+    'is there a GLCD_DC defined?
+    if def(GLCD_RST) then
+        GLCD_RST_Defined = 1
     end if
 
+
+    'if no GLCD_RST then is there is an GLCD_RESET
+    if GLCD_RST_Defined = 0 Then
+        if def(GLCD_RESET) then
+            'map
+            GLCD_RST = GLCD_RESET
+            GLCD_RST_Defined = 1
+        end if
+        'so, if there one defined?
+        if GLCD_RST_Defined = 0 Then
+            warning "No GLCD_RST defined"
+        end if
+    end if
+    
     if UNO_8bit_Shield then
       error "UNO_8bit_Shield not supported"
     end if

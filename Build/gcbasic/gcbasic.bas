@@ -794,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-08-16"
-buildVersion = "1261"
+Version = "1.01.00 2023-08-26"
+buildVersion = "1275"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -17877,8 +17877,9 @@ Sub WriteAssembly
                       Select Case charCount 
                         Case 1
                           ' example "bsf      NVMCON1,WR"  | "MOVWF	OSCCON1,BANKED"
-
+                          ' MOVFF TMRVALUE,TMR2
                           replaceall ( OutLine, "  ", " " )
+
                           StringSplit ( trim(outline), ",",-1,currentLineElements() )
                           Param3 = currentLineElements(1)
 
@@ -17911,16 +17912,11 @@ Sub WriteAssembly
                           End If
                       End Select
 
-
-                      
-
-                      
-
                       'First test: Does the SECOND element exist as SYSVAR? and therefore a register   like  BCF 'OSCCON1',NDIV3,BANKED
                       if GetSysVar(Param1) <> 0 then
                         outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Param1)->location )
                         if outstring <> "" then
-
+                    
                               replace ( outline , trim(Param1) , outstring )
                               outline = outline
                               if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
@@ -17955,8 +17951,8 @@ Sub WriteAssembly
 
                       else
 
-                          if GetSysVar(Param2) <> 0 then
-                              outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Param2)->location )
+                          if GetSysVar(Trim(Param2)) <> 0 then
+                              outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Trim(Param2))->location )
                               if outstring <> "" then
                                   If Instr(Ucase(Param3), "BANKED") <> 0 or Instr(Ucase(Param3), "ACCESS") <> 0  Then                                 
                                     outline = ASMInstruction+" "+OutString+","+Param3
@@ -17972,6 +17968,32 @@ Sub WriteAssembly
                                     end if
                                     if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
                                       if PICASDEBUG then Print #2, ";A6b: ASM Source was: "+CurrLine->Value
+                                    end if
+                                  End if
+
+                              end if
+                          end if
+
+                          if GetSysVar(trim(Param3)) <> 0 then
+                              outstring = GetReversePICASIncFileLookupValue ( GetSysVar(Trim(Param3))->location )
+                         
+
+
+                              if outstring <> "" then
+                                  If Instr(Ucase(Param3), "BANKED") <> 0 or Instr(Ucase(Param3), "ACCESS") <> 0  Then                                 
+                                    outline = ASMInstruction+" "+Param2 + ","+OutString
+                                    if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
+                                      if PICASDEBUG then Print #2, ";A6c: ASM Source was: "+CurrLine->Value
+                                    end if
+                                  Else
+                                    'Test if Param2 is a Bit, if is convert, else, it is register.
+                                    if trim(GetSFRBitValue(trim(Param2))) <> "" then
+                                      outline = ASMInstruction+" "+GetSFRBitValue(trim(Param2)) + "," + trim(outstring)
+                                    else
+                                      outline = ASMInstruction+" "+Param2 + "," + trim(outstring)
+                                    end if
+                                    if trim(CurrLine->Value) <> trim(outline)  and PreserveMode = 2 then
+                                      if PICASDEBUG then Print #2, ";A6d: ASM Source was: "+CurrLine->Value
                                     end if
                                   End if
 

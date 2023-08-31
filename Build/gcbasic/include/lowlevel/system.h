@@ -80,8 +80,9 @@
 '    28082021 - Add SysMultSub64, SysDivSub64, SysCompEqual64 and SysCompLessThan64
 '    28022022 - Revised PFMread and added PFMWrite to support Q43 chips
 '    19082022 - Revised to add ChipSubFamily 15002/3/4 support in initsys for new clock type
-'    28022023 - Added support fort 18FxxQ71
+'    28022023 - Added support for 18FxxQ71
 '    30042023 - Add deviceconfigurationRead to read Device Configuration ( additive to ProgramRead as this limited to PFM )
+'    23082023 - Added support for 18FxxK40 for PFM ops
 
 ' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
 
@@ -4293,7 +4294,7 @@ End Sub
 
 
 Sub PFMWrite (in _PFM_ADDR as long , in _PFM_DataByte as Byte)
-    ; Tested on 18F16Q41;q43
+    //~  Tested on 18F16Q41;q43
 
     Dim _PFM_BlockNum, _PFM_Offset as long
 
@@ -4324,16 +4325,16 @@ End sub
 
 
 Sub PFMWrite (in _PFM_ADDR as long , in _PFM_DataWord as Word )
-    ; Tested on 18F16Q41;q43
+    //~ Tested on 18F16Q41;q43
 
     Dim _PFM_BlockNum, _PFM_Offset as long
 
     Dim _PFM_Buffer(SAF_ROWSIZE_BYTES)
 
-     ; Writes a Word of data [_PFM_PFM_DataOut]
-     ; at relative location [_PFM_Address] between 0 and extent of page
-     ;
-     ; The existing data in the row of [_PFM_Address] is preserved
+    //~  Writes a Word of data [_PFM_PFM_DataOut]
+    //~ at relative location [_PFM_Address] between 0 and extent of page
+    //~ 
+    //~  The existing data in the row of [_PFM_Address] is preserved
 
       ; Calculate block number
       _PFM_BlockNum = _PFM_ADDR / SAF_ROWSIZE_BYTES
@@ -4355,8 +4356,8 @@ Sub PFMWrite (in _PFM_ADDR as long , in _PFM_DataWord as Word )
 End sub
 
 
-Sub _PFMReadBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PFM_Count = HEF_ROWSIZE_BYTES )
-    ; Tested on 18F16Q41;q43
+Sub _PFMReadBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PFM_Count = SAF_ROWSIZE_BYTES )
+    //~  Tested on 18F16Q41;q43
 
       Dim _PFM_Count as word
       Dim _PFM_LoopCounter as word
@@ -4367,7 +4368,7 @@ Sub _PFMReadBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PF
 
       ; Set memory address
       _PFM_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
-      _TBL_ABS_ADDR = _PFM_ABS_ADDR
+      _TBL_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
 
       ; Read memory to buffer
       For _PFM_LoopCounter = 1 to _PFM_Count
@@ -4377,8 +4378,23 @@ Sub _PFMReadBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PF
 
 End Sub
 
-Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PFM_Count = HEF_ROWSIZE_BYTES )
-    ; Tested on 18F16Q41, Q43
+Sub _PFMdumptoSerial
+    // Dim _PFM_LoopCounter as word
+    // Dim _PFM_Buffer(SAF_ROWSIZE_BYTES)
+    // HserPrintCRLF
+    // ; Read memory to buffer
+    // For _PFM_LoopCounter = 1 to _PFM_Count step 2
+    // if (_PFM_LoopCounter - 1) % 16 = 0 then HserPrintCRLF
+    // HserPrint hex(_PFM_Buffer( _PFM_LoopCounter +1  ))
+    // HserPrint hex(_PFM_Buffer( _PFM_LoopCounter  ))
+    // HserPrint " "
+    // next
+    // HserPrintCRLF
+
+End Sub
+
+Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PFM_Count = SAF_ROWSIZE_BYTES )
+    //~  Tested on 18F16Q41, Q43
 
       Dim _PFM_Count as word
       Dim _PFM_LoopCounter as word
@@ -4389,15 +4405,25 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
 
       ; Set memory address for erase operation
       _PFM_ABS_ADDR =  _PFM_BlockNum * SAF_ROWSIZE_BYTES
+      _TBL_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
 
-      ' Set the NVMCMD control bits for Erase operation
-      NVMCON1 = NVMCON1 and 0XF8 or 0x06
+      ' Set the register control bits for Erase operation
+      #IF ChipSubFamily=16104
+        // Explicitly set for the 18FxxK40 family
+        NVMCON1 = 0x94
+      #ELSE
+        NVMCON1 = NVMCON1 and 0XF8 or 0x06
+      #ENDIF
 
       _GIE_SAVE = GIE    'Save interrupt
       GIE = 0           'disable INTERRUPTS
 
       ChipMemorylock = 0x55
       ChipMemorylock = 0xAA
+
+      #IF ChipSubFamily=16104
+        NVMCON1.WR = 1
+      #ENDIF
 
       #IF BIT(GO_NVMCON0)
         ;BIT(GO_NVMCON0)
@@ -4411,22 +4437,31 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
         wait while NVMGO = 1
       #ENDIF
 
-
-      ; Set memory address
-      _TBL_ABS_ADDR = _PFM_ABS_ADDR
+      ; Set memory address for write operations
+      _TBL_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
       For _PFM_LoopCounter = 1 to _PFM_Count
           TABLAT = _PFM_Buffer( _PFM_LoopCounter  )
           TBLWT*+
       next
 
-      ' Set the NVMCMD control bits for Write Page operation
-      NVMCON1 = NVMCON1 and 0XF8 or 0x05
-
-      _GIE_SAVE = GIE    'Save interrupt
-      GIE = 0           'disable interrupts
+      ' Set the control bits for Write Page operation
+      #IF ChipSubFamily=16104
+        // Explicitly set for the 18FxxK40 family, again
+        _TBL_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
+        NVMCON1 = 0
+        NVMREG1 = 1
+        NVMREG0 = 0
+        WREN = 1    
+      #ELSE
+        NVMCON1 = NVMCON1 and 0XF8 or 0x05
+      #ENDIF
 
       ChipMemorylock = 0x55
       ChipMemorylock = 0xAA
+
+      #IF ChipSubFamily=16104
+        NVMCON1.WR = 1
+      #ENDIF
 
       #IF BIT(GO_NVMCON0)
         GO_NVMCON0 = 1

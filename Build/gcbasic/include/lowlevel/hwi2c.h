@@ -523,7 +523,13 @@ sub HI2CWaitMSSP
     if HI2CWaitMSSPTimeout < 255 then
         #ifdef bit(SSP1IF)
             ''Support for SSP1IF
-            if SSP1IF = 0 then goto HI2CWaitMSSPWait
+            if SSP1IF = 0 then 
+                #ifdef ChipFamily18FxxK40 16104
+                  wait 2 us
+                #endif
+              goto HI2CWaitMSSPWait
+            end if
+            // Clear the flag and exit sub with HI2CWaitMSSPTimeout NOT set to 255
             SSP1IF = 0
 
         #else
@@ -531,6 +537,7 @@ sub HI2CWaitMSSP
             #ifdef bit(SSPIF)
                 ''Support for SSPIF
                 if SSPIF = 0 then goto HI2CWaitMSSPWait
+                // Clear the flag and exit sub with HI2CWaitMSSPTimeout NOT set to 255
                 SSPIF = 0
             #endif
 
@@ -540,7 +547,10 @@ sub HI2CWaitMSSP
         #endif
 
     end if
-
+    #ifdef bit(BCL1IF)
+      // Clear the flag
+      if HI2CWaitMSSPTimeout = 255 Then BCL1IF = 0
+    #endif
 end sub
 
 

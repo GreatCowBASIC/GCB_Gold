@@ -93,7 +93,7 @@
 '             Improved handling of variable comport and Defaultusartreturnvalue variable to only set when more than one USART
 ' 14/12/2022  Correct InitUSART for K22 ( missing register update )
 ' 06/08/2023  Improved handling of registers for USART2
-
+' 27/08/2023  Added support for K40 USART3, 4 and 5
 
 
 
@@ -289,7 +289,7 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRGL = SP1BRGL
     end if
 
-    if bit(RC1STA_OERR) then
+    if bt(RC1STA_OERR) then
         OERR1 = RC1STA_OERR
     end if
 
@@ -311,6 +311,61 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         TXEN2 = TX2STA_TXEN
       end if
     end if
+
+    if Var(RC3STA) then
+        SPEN3 = RC3STA_SPEN
+        CREN3 = RC3STA_CREN
+        OERR3 = RC3STA_OERR
+    end if
+
+    if Var(TX3STA) then
+      if Nobit(TXSTA3_SYNC) then
+        TXSTA3_SYNC = SYNC_TX3STA
+      end if
+      if Nobit(TX3STA_SYNC) then
+        TX3STA_SYNC = SYNC_TX3STA
+      end if
+      if NoBit(TXEN3) then
+        TXEN3 = TX3STA_TXEN
+      end if
+    end if
+
+    if Var(RC4STA) then
+        SPEN4 = RC4STA_SPEN
+        CREN4 = RC4STA_CREN
+        OERR4 = RC4STA_OERR
+    end if
+
+    if Var(TX4STA) then
+      if Nobit(TXSTA4_SYNC) then
+        TXSTA4_SYNC = SYNC_TX4STA
+      end if
+      if Nobit(TX4STA_SYNC) then
+        TX4STA_SYNC = SYNC_TX4STA
+      end if
+      if NoBit(TXEN4) then
+        TXEN4 = TX4STA_TXEN
+      end if
+    end if
+
+    if Var(RC5STA) then
+        SPEN5 = RC5STA_SPEN
+        CREN5 = RC5STA_CREN
+        OERR5 = RC5STA_OERR
+    end if
+
+    if Var(TX5STA) then
+      if Nobit(TXSTA5_SYNC) then
+        TXSTA5_SYNC = SYNC_TX5STA
+      end if
+      if Nobit(TX5STA_SYNC) then
+        TX5STA_SYNC = SYNC_TX5STA
+      end if
+      if NoBit(TXEN5) then
+        TXEN5 = TX5STA_TXEN
+      end if
+    end if
+
 
    '---------------------------------------
 

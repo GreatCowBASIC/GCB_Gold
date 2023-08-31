@@ -25,6 +25,7 @@
 
 '    29.01.2019.   Updated to prevent _HEF_ABS_ADDR creating variables when no HEFM for ChipFamily 15
 '    05.02.2019.   Further revised  to prevent _HEF_ABS_ADDR creating variables when no HEFM for ChipFamily 15
+'    23.08.2023    Revised to ensure  NVM operations in SYSTEM.H work by adding `SAF_ROWSIZE_BYTES = CHIPWRITEFLASHBLOCKSIZE` in script
 
 #option REQUIRED PIC ChipHEFMemWords %NoHEFRAM%
 #option REQUIRED AVR ChipHEFMemWords "HEF. HEF not supported by AVR chips"
@@ -113,6 +114,16 @@
             End if
         END IF
     End IF
+
+    If HAS_HEFSAF = FALSE Then
+        // Needed to support NVM operations in SYSTEM.H
+        If NODEF(ChipEraseRowSizeWords) Then
+            If DEF(CHIPWRITEFLASHBLOCKSIZE) Then     
+                ChipEraseRowSizeWords = CHIPWRITEFLASHBLOCKSIZE
+                SAF_ROWSIZE_BYTES = CHIPWRITEFLASHBLOCKSIZE
+            End If
+        End If
+    End If
 
  #ENDSCRIPT
 
