@@ -1,0 +1,44 @@
+Start
+Processing 16c557
+Error: GCASM: Symbol [SFR]PA0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,PA0` Hexfile address(see lst file): 000000
+Error: GCASM: Symbol [SFR]PA1 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,PA1` Hexfile address(see lst file): 000000
+Processing 16c558
+Error: GCASM: Symbol [SFR]PA0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,PA0` Hexfile address(see lst file): 000000
+Error: GCASM: Symbol [SFR]PA1 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,PA1` Hexfile address(see lst file): 000000
+Processing 16c64
+Error: DAT file error - probable `MaxAddress = 191` is incorrect/too small. Check DAT with DATASHEET to correct error
+Processing 16c74
+Error: DAT file error - probable `MaxAddress = 255` is incorrect/too small. Check DAT with DATASHEET to correct error
+Processing 16cr926
+Error: First page of program memory is full, please reduce size of Main and Interrupt routines
+Error: Program is too large, cannot fit into available program memory
+Processing 18macro
+Error: First page of program memory is full, please reduce size of Main and Interrupt routines
+Error: Program is too large, cannot fit into available program memory
+Processing 12f520
+Error: Excessive RAM usage! Delete some variables, reduce the size of arrays, or upgrade to a more powerful chip
+Error: First page of program memory is full, please reduce size of Main and Interrupt routines
+Error: Program is too large, cannot fit into available program memory
+Processing 16f527
+Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
+Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
+Processing 16f570
+Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
+Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
+Processing 18f06q20
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f16q20
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f66j99
+Error: Program is too large, cannot fit into available program memory
+Processing 18f86j99
+Error: Program is too large, cannot fit into available program memory
+Processing 18f96j72
+Error: Program is too large, cannot fit into available program memory
+Processing 18f96j99
+Error: Program is too large, cannot fit into available program memory
+Processing 18f97j72
+Error: Program is too large, cannot fit into available program memory
+Completed

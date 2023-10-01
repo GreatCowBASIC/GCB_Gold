@@ -1300,7 +1300,7 @@
                 </setting>
             </register>
             <register alias="CCPCAP" name="CCP1CAP" type="R,W" width="8">
-                <setting alias="CTS" default="CCP1 pin" name="CCP1CTS0" mask="0x1" type="R,W" porDefault="0x0">
+                <setting alias="CTS" default="CCP1 pin" name="CCP1CTS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="CCP1 pin" alias="CCP1 pin" value="0x0"/>
                     <option name="C1_OUT_SYNC" alias="C1_OUT_SYNC" value="0x1"/>
                     <option name="C2_OUT_SYNC" alias="C2_OUT_SYNC" value="0x2"/>
@@ -1360,7 +1360,7 @@
                 </setting>
             </register>
             <register alias="CCPCAP" name="CCP2CAP" type="R,W" width="8">
-                <setting alias="CTS" default="CCP2 pin" name="CCP2CTS0" mask="0x1" type="R,W" porDefault="0x0">
+                <setting alias="CTS" default="CCP2 pin" name="CCP2CTS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="CCP2 pin" alias="CCP2 pin" value="0x0"/>
                     <option name="C1_OUT_SYNC" alias="C1_OUT_SYNC" value="0x1"/>
                     <option name="C2_OUT_SYNC" alias="C2_OUT_SYNC" value="0x2"/>
@@ -1420,7 +1420,7 @@
                 </setting>
             </register>
             <register alias="CCPCAP" name="CCP3CAP" type="R,W" width="8">
-                <setting alias="CTS" default="CCP3 pin" name="CCAP0" mask="0x1" type="R,W" porDefault="0x0">
+                <setting alias="CTS" default="CCP3 pin" name="CCP3CTS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="CCP3 pin" alias="CCP3 pin" value="0x0"/>
                     <option name="C1_OUT_SYNC" alias="C1_OUT_SYNC" value="0x1"/>
                     <option name="C2_OUT_SYNC" alias="C2_OUT_SYNC" value="0x2"/>
@@ -1480,7 +1480,7 @@
                 </setting>
             </register>
             <register alias="CCPCAP" name="CCP4CAP" type="R,W" width="8">
-                <setting alias="CTS" default="CCP4 pin" name="CCP4CTS0" mask="0x1" type="R,W" porDefault="0x0">
+                <setting alias="CTS" default="CCP4 pin" name="CCP4CTS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="CCP4 pin" alias="CCP4 pin" value="0x0"/>
                     <option name="C1_OUT_SYNC" alias="C1_OUT_SYNC" value="0x1"/>
                     <option name="C2_OUT_SYNC" alias="C2_OUT_SYNC" value="0x2"/>
@@ -3691,9 +3691,9 @@
                     <option name="SOSC" alias="SOSC" value="0x6"/>
                     <option name="CLC1_OUT" alias="CLC1_OUT" value="0x7"/>
                 </setting>
-                <setting alias="T0ASYNC" default="synchronised" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
-                    <option name="synchronised" alias="synchronised" value="0x0"/>
-                    <option name="not_synchronised" alias="not_synchronised" value="0x1"/>
+                <setting alias="T0ASYNC" default="synchronized" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="synchronized" alias="synchronized" value="0x0"/>
+                    <option name="not_synchronized" alias="not_synchronized" value="0x1"/>
                 </setting>
                 <setting alias="T0CKPS" default="1:1" name="T0CKPS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="1:1" alias="1:1" value="0x0"/>

@@ -149,7 +149,7 @@
             </setting>
             <setting alias="WDTCCS" default="SC" name="WDTCCS" description="WDT input clock selector">
                 <option description="WDT reference clock is the 31.0 kHz LFINTOSC" name="LFINTOSC" alias="LFINTOSC" value="0x0"/>
-                <option description="WDT reference clock is the 32kHz MFINTOSC output" name="MFINTOSC" alias="MFINTOSC" value="0x8"/>
+                <option description="WDT reference clock is the 31.25kHz MFINTOSC output" name="MFINTOSC" alias="MFINTOSC" value="0x8"/>
                 <option description="WDT reference clock is SOSC" name="SOSC" alias="SOSC" value="0x10"/>
                 <option description="Software Control" name="SC" alias="SC" value="0x38"/>
             </setting>
@@ -2857,7 +2857,7 @@
     <modules>
         <module group="ADCC" name="ADCC" type="adc_sarcore_12bit_pdiff" version="v1" sub_version="" instance="">
             <interrupt name="ADI" flag="PIR1bits.ADIF" enable="PIE1bits.ADIE" vector="10" handler_name="_AD" priority="IPR1bits.ADIP" description="ADC Interrupt"/>
-            <interrupt name="ADTI" flag="PIR2bits.ADTIF" enable="PIE2bits.ADTIE" vector="16" handler_name="_ADT" priority="IPR2bits.ADTIP" description="ADC Treshold Interrupt"/>
+            <interrupt name="ADTI" flag="PIR2bits.ADTIF" enable="PIE2bits.ADTIE" vector="16" handler_name="_ADT" priority="IPR2bits.ADTIP" description="ADC Threshold Interrupt"/>
             <property name="minimumTad" value="1E-6"/>
             <property name="maximumTad" value="6E-6"/>
             <register alias="ADLTHL" name="ADLTHL" type="R,W" width="8">
@@ -3667,7 +3667,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -4082,7 +4082,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -4497,7 +4497,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -4912,7 +4912,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -5395,7 +5395,7 @@
                     <option name="disabled" alias="disabled" value="0x0"/>
                     <option name="enabled" alias="enabled" value="0x1"/>
                 </setting>
-                <setting alias="CWGLSBD" default="tri-stated" name="CWG1LSDB" mask="0x30" type="R,W" porDefault="0x1">
+                <setting alias="CWGLSBD" default="tri-stated" name="CWG1LSBD" mask="0x30" type="R,W" porDefault="0x1">
                     <option name="inactive" alias="inactive" value="0x0"/>
                     <option name="tri-stated" alias="tri-stated" value="0x1"/>
                     <option name="logic 0" alias="logic 0" value="0x2"/>
@@ -6100,8 +6100,8 @@
             <register alias="TABLAT" name="TABLAT" type="R,W" width="8">
                 <setting alias="TABLAT" default="0x0" name="TABLAT" mask="0xff" type="R,W" porDefault="0x0"/>
             </register>
-            <property name="WRITE_FLASH_BLOCKSIZE" value="1"/>
-            <property name="ERASE_FLASH_BLOCKSIZE" value="128"/>
+            <property name="WRITE_FLASH_BLOCKSIZE" value="256"/>
+            <property name="ERASE_FLASH_BLOCKSIZE" value="256"/>
             <property name="END_FLASH" value="0x010000"/>
             <property name="EEPROM_START_ADDRESS" value="0x380000"/>
             <property name="EEPROM_END_ADDRESS" value="0x380200"/>
@@ -6128,7 +6128,6 @@
             <property name="TYPE:BANK:BEGIN:END:REGID:19" value="GPR:18:0x1200:0x1300:gpr18"/>
             <property name="TYPE:BANK:BEGIN:END:REGID:20" value="GPR:19:0x1300:0x1400:gpr19"/>
             <property name="TYPE:BANK:BEGIN:END:REGID:21" value="GPR:20:0x1400:0x1500:gpr20"/>
-            <property name="TYPE:BANK:BEGIN:END:REGID:22" value="GPR:21:0x1500:0x1600:gpr21"/>
         </module>
         <module group="NCO" name="NCO1" type="tmr_dds" version="v2" sub_version="" instance="1">
             <interrupt name="NCOI" flag="PIR6bits.NCO1IF" enable="PIE6bits.NCO1IE" vector="50" handler_name="_NCO1" priority="IPR6bits.NCO1IP" description="NCO1 Interrupt"/>
@@ -8728,9 +8727,9 @@
                     <option name="SOSC" alias="SOSC" value="0x6"/>
                     <option name="CLC1_OUT" alias="CLC1_OUT" value="0x7"/>
                 </setting>
-                <setting alias="T0ASYNC" default="synchronised" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
-                    <option name="synchronised" alias="synchronised" value="0x0"/>
-                    <option name="not_synchronised" alias="not_synchronised" value="0x1"/>
+                <setting alias="T0ASYNC" default="synchronized" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="synchronized" alias="synchronized" value="0x0"/>
+                    <option name="not_synchronized" alias="not_synchronized" value="0x1"/>
                 </setting>
                 <setting alias="T0CKPS" default="1:1" name="T0CKPS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="1:1" alias="1:1" value="0x0"/>

@@ -94,6 +94,7 @@
 ' 14/12/2022  Correct InitUSART for K22 ( missing register update )
 ' 06/08/2023  Improved handling of registers for USART2
 ' 27/08/2023  Added support for K40 USART3, 4 and 5
+' 07/09/2023  Added ORR handling for PIC 3,4 and 5
 
 
 
@@ -175,7 +176,7 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samevar TXSTA5, TX5STA
 #samebit TX5IF, U5TXIF
 #samebit TXSTA5_TRMT, TX5STA_TRMT, U5ERRIR_TXMTIF
-
+#samevar RCREG5, RC5REG
 
 'Script to calculate baud rate generator values
 'Also sets constants to check if byte received
@@ -2067,6 +2068,14 @@ Sub HSerReceive(Out SerData)
 
         #ifdef Var(RC2REG)
 
+          #ifdef Bit(RC2STA_OERR)
+              if  RC2STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC2STA_CREN = 0
+                  RC2STA_CREN = 1 
+              End IF
+          #endif
+
          'Get a byte from register, if interrupt flag is valid
           If USART2HasData Then
              SerData = RC2REG
@@ -2115,14 +2124,7 @@ Sub HSerReceive(Out SerData)
         #ifdef USART3_BLOCKING
            Wait Until USART3HasData
         #endif
-
-        #ifdef Var(RC3REG)
-         'Get a byte from register, if interrupt flag is valid
-          If USART3HasData Then
-             SerData = RC3REG
-          End if
-        #endif
-
+        
         #ifdef var(U3RXB)
             U3RXEN = 1
             'If UART3 has an error - clear the error
@@ -2134,6 +2136,15 @@ Sub HSerReceive(Out SerData)
         #endif
 
         #ifdef Var(RCREG3)
+
+          #ifdef Bit(RC3STA_OERR)
+              if  RC3STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC3STA_CREN = 0
+                  RC3STA_CREN = 1 
+              End IF
+          #endif
+
           'Get a byte from register, if interrupt flag is valid
           If USART3HasData Then
             SerData = RCREG3
@@ -2154,13 +2165,6 @@ Sub HSerReceive(Out SerData)
            Wait Until USART4HasData
         #endif
 
-        #ifdef Var(RC4REG)
-         'Get a byte from register, if interrupt flag is valid
-          If USART4HasData Then
-             SerData = RC4REG
-          End if
-        #endif
-
         #ifdef var(U4RXB)
             U4RXEN = 1
             'If UART4 has an error - clear the error
@@ -2171,10 +2175,19 @@ Sub HSerReceive(Out SerData)
             SerData = U4RXB
         #endif
 
-        #ifdef Var(RCREG4)
+        #ifdef Var(RC4REG)
+
+          #ifdef Bit(RC4STA_OERR)
+              if  RC4STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC4STA_CREN = 0
+                  RC4STA_CREN = 1 
+              End IF
+          #endif
+
           'Get a byte from register, if interrupt flag is valid
           If USART4HasData Then
-            SerData = RCREG4
+            SerData = RC4REG
           End if
         #endif
 
@@ -2193,9 +2206,18 @@ Sub HSerReceive(Out SerData)
         #endif
 
         #ifdef Var(RC5REG)
-         'Get a byte from register, if interrupt flag is valid
+
+          #ifdef Bit(RC5STA_OERR)
+              if  RC5STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC5STA_CREN = 0
+                  RC5STA_CREN = 1 
+              End IF
+          #endif
+
+          'Get a byte from register, if interrupt flag is valid
           If USART5HasData Then
-             SerData = RC5REG
+              SerData = RC5REG
           End if
         #endif
 
@@ -2207,13 +2229,6 @@ Sub HSerReceive(Out SerData)
                 ON_U5CON1 = 1
             end if
             SerData = U5RXB
-        #endif
-
-        #ifdef Var(RCREG5)
-          'Get a byte from register, if interrupt flag is valid
-          If USART5HasData Then
-            SerData = RCREG5
-          End if
         #endif
 
     #endif

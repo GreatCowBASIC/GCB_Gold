@@ -794,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-08-26"
-buildVersion = "1275"
+Version = "1.01.00 2023-09-23"
+buildVersion = "1288"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -2688,7 +2688,7 @@ SUB CalcConfig
     UserSettingLoc = UserSettingLoc->Next
   Loop
 
-  'Add default options
+  'Add default CONFIG options
   'Find settings with nothing specified
   Dim As String DesiredSetting
   'Check here as I could not find better place for it!
@@ -2741,8 +2741,8 @@ SUB CalcConfig
           DesiredSetting = "OFF"
         ElseIf ConfigNameMatch(.Name, "WRTB") Then     'this was generating a config error in non PICAS implementations
           DesiredSetting = "OFF"
-
-
+        ElseIf ConfigNameMatch(.Name, "VDDIO2MD") Then     'new for Q20 chips
+          DesiredSetting = "STANDARD_RANGE"
 
 
         ElseIf ConfigNameMatch(.Name, "OSC") Then
@@ -2790,7 +2790,7 @@ SUB CalcConfig
         'If there is a default, use it
         If DesiredSetting <> "" Then
           CurrSettingOptLoc = .Options
-          Do While CurrSettingOptLoc <> 0
+          Do While CurrSettingOptLoc <> 0      
             'Select correct LFINT.. if this chip is LFINTOSC
             'print CurrSettingOptLoc->Value, WholeINSTR(CurrSettingOptLoc->Value, "LFINTOSC" )
             If WholeINSTR(CurrSettingOptLoc->Value, "LFINTOSC" ) = 2 Then
@@ -8816,8 +8816,8 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
           SendOrigin = ";?F" + Str(F) + "L" + Str(L) + "S" + Str(S) + "D" + Str(.CalledID) + "?"
           ReceiveOrigin = ";?F" + Str(F) + "L" + Str(L) + "S" + Str(.CalledID) + "D" + Str(S) + "?"
 
-          If (*.Called.Params(CD).Dir And 1) <> 0 Then
-            BeforePos = LinkedListInsert(BeforePos, *.Called.Params(CD).Name + " = " + .Param(CD, 1) + SendOrigin)
+          If ((*.Called).Params(CD).Dir And 1) <> 0 Then
+            BeforePos = LinkedListInsert(BeforePos, (*.Called).Params(CD).Name + " = " + .Param(CD, 1) + SendOrigin)
           End If
           'Detect parameters that are functions, don't try returning values in them
           '(Unless parameter is the current function, in which case treat it as a variable)
@@ -8826,13 +8826,13 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
           If LocOfFn <> 0 And LocOfFn <> S Then
             If Subroutine(LocOfFn)->IsFunction Then ParamIsFn = -1
           End If
-          IF C = 0 AND (*.Called.Params(CD).Dir And 2) <> 0 And Not ParamIsFn THEN
-            AfterPos = LinkedListInsert(AfterPos, .Param(CD, 1) + " = " + *.Called.Params(CD).Name + ReceiveOrigin)
-          ElseIf *.Called.Params(CD).Dir = 2 And C <> 0 Then
+          IF C = 0 AND ((*.Called).Params(CD).Dir And 2) <> 0 And Not ParamIsFn THEN
+            AfterPos = LinkedListInsert(AfterPos, .Param(CD, 1) + " = " + (*.Called).Params(CD).Name + ReceiveOrigin)
+          ElseIf (*.Called).Params(CD).Dir = 2 And C <> 0 Then
             'Error, need to supply output
             Temp = Message("SubParamNotVar")
             Replace Temp, "%value%", .Param(CD, 1)
-            Replace Temp, "%param%", *.Called.Name
+            Replace Temp, "%param%", (*.Called).Name
             LogError Temp, .Origin
           End IF
         END IF
@@ -8840,10 +8840,10 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
         'Pass string using SYSTEMPARRAY
         IF C = 4 Or C = 5 THEN
           'On 16F1, should pass reference to string location if sub will not be changing it
-          If C = 4 And ChipFamily = 15 And *.Called.Params(CD).Dir = 1 Then
+          If C = 4 And ChipFamily = 15 And (*.Called).Params(CD).Dir = 1 Then
             'Print "Opportunity for optimisation: "; *.Called.Params(CD).Name; " = "; .Param(CD, 1)
             'Destination array
-            DestArray = *.Called.Params(CD).Name
+            DestArray = (*.Called).Params(CD).Name
             IF INSTR(DestArray, "()") <> 0 THEN DestArray = Left(DestArray, INSTR(DestArray, "()") - 1)
             IF INSTR(DestArray, "$") <> 0 THEN DestArray = Left(DestArray, INSTR(DestArray, "$") - 1)
             'Create destination array if necessary
@@ -8961,7 +8961,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
           End If
 
           'Destination
-          DestArray = *.Called.Params(CD).Name
+          DestArray = (*.Called).Params(CD).Name
           'IF INSTR(DestArray, "(") <> 0 THEN DestArray = Left(DestArray, INSTR(DestArray, "(") - 1)
           IF INSTR(DestArray, "()") <> 0 THEN DestArray = Left(DestArray, INSTR(DestArray, "()") - 1)
           IF INSTR(DestArray, "$") <> 0 THEN DestArray = Left(DestArray, INSTR(DestArray, "$") - 1)
@@ -11267,7 +11267,8 @@ Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny 
       If MatchAny Then Return -1
       'This option doesn't have IO, return false if one with IO is found
       For CurrOption = 1 To COC
-        If InStr(ConfigOps(CurrOption).OP, "IO") <> 0 Then
+        ' Build 1285.  The Q20 chips have a CONFIG that has a substring of `IO` so added additional check to isolate  
+        If InStr(ConfigOps(CurrOption).OP, "IO") <> 0 and  InStr(ConfigOps(CurrOption).OP, "VDDIO") = 0 Then
           Return 0
         End If
       Next
@@ -17509,7 +17510,7 @@ Sub WriteAssembly
 
     Do While CurrLine <> 0
 
-      'Purge duplicate configs
+      'Purge duplicate configs for .S only
       dim as Integer CD
       dim ConfName as string
       FOR CD = 1 TO DCOC

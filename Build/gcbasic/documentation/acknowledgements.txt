@@ -1,11 +1,10 @@
 This release is brought to you by, in no specific order:
 
 This release is brought to you by, in no specific order:
-     Hugh Considine, Evan R. Venn, Chris Roper, William Roth, Jim Giordano,
-     Bernd Dau, Trevor Roydhouse, Pete Everett, Theo Loermans, 
+     Hugh Considine, Evan R. Venn, Angel Mier, Edward A Soard, ToniG,
+     William Roth, Jim Giordano, Kent Schafer, Bernd Dau, Trevor Roydhouse, Pete Everett, Theo Loermans, 
      Giuseppe D'Elia, Mark Stevenson, Derek Gore,  Ian Smith, Bernd Dau, 
-     Theo Loermans, Stuart Bury, Chris Hayden, Basil Hatzilaios, Urs Hopp, 
-     Kent Schafer, Angel Mier, ToniG,
+     Theo Loermans, Stuart Bury, Chris Roper, Chris Hayden, Basil Hatzilaios, Urs Hopp, 
      and, of course, Frank Steinberg.
 
 

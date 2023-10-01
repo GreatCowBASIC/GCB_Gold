@@ -538,8 +538,8 @@
             <pinNumber package="PDIP18" value="12"/>
             <pinNumber package="SOIC18" value="12"/>
             <pinNumber package="SSOP20" value="13"/>
-            <pinNumber package="QFN28" value="14"/>
-            <pinNumber package="UQFN28" value="14"/>
+            <pinNumber package="QFN28" value="15"/>
+            <pinNumber package="UQFN28" value="15"/>
             <pinAlias alias="RB6" module="GPIO"/>
             <pinAlias alias="AN5" module="ADC"/>
             <pinAlias alias="CPS5" module="CAP SENSE"/>

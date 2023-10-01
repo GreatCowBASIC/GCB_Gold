@@ -1,5 +1,4 @@
 ﻿    #ToolVersion
-    // Generated for #PPSToolPart
     
     #startup InitPPS, 85
     #define PPSToolPart #PPSToolPart
@@ -13,5 +12,3 @@
     #LOCKPPS
     End Sub
     // Add this code segment to your GCBASIC source program
-
-

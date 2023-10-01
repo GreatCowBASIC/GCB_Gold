@@ -18,6 +18,14 @@ along with PPS Tool.  If Not, see < http:  //www.gnu.org/licenses/>.
 
 Changelog
 
+v0.0.6.4
+Changed 'Great Cow' to 'GC'
+Changed template to reflect best practices
+Updated to pic10-pic12-pic16-pic18-1.82.1 manually
+Removed autoupdate from application
+
+
+
 v0.0.6.3
 Fixed problem with auto updater due to changes on Microchip's website
 Handles problem where xml files refer to pins which don't exist on the chip

@@ -4832,9 +4832,9 @@
                     <option name="SOSC" alias="SOSC" value="0x6"/>
                     <option name="CLC1_OUT" alias="CLC1_OUT" value="0x7"/>
                 </setting>
-                <setting alias="T0ASYNC" default="synchronised" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
-                    <option name="synchronised" alias="synchronised" value="0x0"/>
-                    <option name="not_synchronised" alias="not_synchronised" value="0x1"/>
+                <setting alias="T0ASYNC" default="synchronized" name="T0ASYNC" mask="0x10" type="R,W" porDefault="0x0">
+                    <option name="synchronized" alias="synchronized" value="0x0"/>
+                    <option name="not_synchronized" alias="not_synchronized" value="0x1"/>
                 </setting>
                 <setting alias="T0CKPS" default="1:1" name="T0CKPS" mask="0xf" type="R,W" porDefault="0x0">
                     <option name="1:1" alias="1:1" value="0x0"/>
@@ -6306,6 +6306,14 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                 </setting>
                 <setting alias="SE45" default="disabled" name="SE45" mask="0x20" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SE46" default="disabled" name="SE46" mask="0x40" type="R,W" porDefault="0x0">
+                    <option name="disabled" alias="disabled" value="0x0"/>
+                    <option name="enabled" alias="enabled" value="0x1"/>
+                </setting>
+                <setting alias="SE47" default="disabled" name="SE47" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="disabled" alias="disabled" value="0x0"/>
                     <option name="enabled" alias="enabled" value="0x1"/>
                 </setting>

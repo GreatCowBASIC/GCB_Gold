@@ -5591,7 +5591,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -6086,7 +6086,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -6581,7 +6581,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -7076,7 +7076,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -7571,7 +7571,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -8066,7 +8066,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -8561,7 +8561,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
@@ -9056,7 +9056,7 @@
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>
-                <setting alias="LCG4D4T" default="disabled" name="G4D4N" mask="0x40" type="R,W" porDefault="0x0">
+                <setting alias="LCG4D4T" default="disabled" name="G4D4T" mask="0x80" type="R,W" porDefault="0x0">
                     <option name="enabled" alias="enabled" value="0x1"/>
                     <option name="disabled" alias="disabled" value="0x0"/>
                 </setting>

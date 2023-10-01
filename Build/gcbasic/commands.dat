@@ -508,7 +508,8 @@ All; Data Bits; LCD_IO; CGR_LCDIO
 LCD_IO 0; Send subroutine; LCDWriteByte; Subroutine
 LCD_IO 2; Clock Pin; LCD_CB; IO_pin
 LCD_IO 2; Data Pin; LCD_DB; IO_pin
-LCD_IO 4,8; R/W Pin; LCD_RW; IO_pin
+LCD_IO 4,8; R/W Pin; LCD_NO_RW ; CGR_LCDIO2
+LCD_IO 4,8; R/W Pin; LCD_RW ; IO_pin
 LCD_IO 4,8; RS Pin; LCD_RS; IO_pin
 LCD_IO 4,8; Enable Pin; LCD_Enable; IO_Pin
 LCD_IO 8; Data Port; LCD_DATA_PORT; IO_Port
@@ -517,11 +518,15 @@ LCD_IO 4; DB5 Pin; LCD_DB5; IO_pin
 LCD_IO 4; DB6 Pin; LCD_DB6; IO_pin
 LCD_IO 4; DB7 Pin; LCD_DB7; IO_pin
 
+
 [CGR_LCDIO]
 0
 2
 4
 8
+
+[CGR_LCDIO2]
+// RW Connected to 0v0 
 
 [CONF_7SEG]
 Name=7 Segment

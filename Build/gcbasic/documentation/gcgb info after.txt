@@ -1,8 +1,8 @@
-Thank you for installing Great Cow Graphical BASIC. Hopefully using it will be a pleasant experience for you! If you have any problems, suggestions or compliments, please post on the GCBASIC forum - feedback is always welcome.
+Thank you for installing Graphical GCBASIC. Hopefully using it will be a pleasant experience for you! If you have any problems, suggestions or compliments, please post on the GCBASIC forum - feedback is always welcome.
 
 You will need to have the Microsoft .NET Framework installed to run Great Cow Graphical BASIC. GCGB requires .NET version 2.0 or above. If you're using Windows Vista, 7 or newer, you don't need to worry - you will already have .NET 3.0 or higher installed. If you don't have .NET, version 2.0 is a 22.4 MB free download from Microsoft and runs on Windows 98 and later.
 
-Great Cow Graphical BASIC comes set up to work with three programming applications - the Microchip PK2CMD software and IC-Prog for PIC microcontrollers, and avrdude for AVR microcontrollers.
+Graphical GCBASIC comes set up to work with three programming applications - the Microchip PK2CMD software and IC-Prog for PIC microcontrollers, and avrdude for AVR microcontrollers.
 
 For PICkit 2 support, pk2cmd is included. It can be freely distributed and the source code is available, but it is not completely open source. You should familiarise yourself with the license terms if you're going to be using a PICkit 2.
 
