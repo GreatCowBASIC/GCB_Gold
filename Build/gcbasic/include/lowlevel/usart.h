@@ -95,6 +95,8 @@
 ' 06/08/2023  Improved handling of registers for USART2
 ' 27/08/2023  Added support for K40 USART3, 4 and 5
 ' 07/09/2023  Added ORR handling for PIC 3,4 and 5
+' 26/10/2023  Correct #IF Var() where is shoul have need #IFDEF Var() in USART2Receive
+
 
 
 
@@ -1652,7 +1654,7 @@ sub HSerSend (In SerData, optional In comport = 1)
           #ifdef Var(TXREG2)
              //~WRITE THE DATA BYTE TO THE USART
              //~ Sets register to value of SerData - where register could be TX2REG, TXREG2  or U2TXB  via the #samevar
-             #IF VAR(TX2REG)
+             #IFDEF VAR(TX2REG)
               TX2REG = SerData
              #ELSE
               TXREG2 = SerData
@@ -2096,7 +2098,7 @@ Sub HSerReceive(Out SerData)
         #ifdef Var(RCREG2)
           'Get a byte from register, if interrupt flag is valid
           If USART2HasData Then
-            #IF VAR(RCREG2) Then
+            #IFDEF var(RCREG2) Then
               SerData = RCREG2
             #ELSE
               SerData = RC2REG

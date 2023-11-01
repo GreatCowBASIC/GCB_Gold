@@ -1,7 +1,9 @@
 ﻿PPS Tool
 Copyright Peter Everett 2022
+Copyright Evan R. Venn 2023
 
-This file Is part Of PPS Tool.
+
+This file Is part of PPS Tool.
 
 PPS Tool Is free software: you can redistribute it And/Or modify
 it under the terms Of the GNU General Public License As published by
@@ -18,12 +20,12 @@ along with PPS Tool.  If Not, see < http:  //www.gnu.org/licenses/>.
 
 Changelog
 
-v0.0.6.4
-Changed 'Great Cow' to 'GC'
-Changed template to reflect best practices
-Updated to pic10-pic12-pic16-pic18-1.82.1 manually
-Removed autoupdate from application
+v0.0.6.5
+Fixed problem with case sensitive parts list
 
+v0.0.6.4
+Changed default template
+Removed auto updated capability - PPS XML is now part of GCBASIC distribution
 
 
 v0.0.6.3

@@ -1,7 +1,7 @@
 '
 '    millis() function for Great Cow BASIC
 '
-'  Copyright (C) 2018-2020 Chris Roper
+'  Copyright (C) 2018-2020, 2023 Chris Roper, Evan Venn
 '  This library is free software; you can redistribute it and/or
 '  modify it under the terms of the GNU Lesser General Public
 '  License as published by the Free Software Foundation; either
@@ -18,7 +18,6 @@
 '  MA 02110-1301  USA
 
 'Changes:
-'Changes:
 ' 30/12/2018: Initial test release - 8 Bit TIMER0, 16Mhz Clock - ChrisR
 ' 02/01/2019: 8 Bit TIMER0, 1Mhz - 32Mhz Clock support - ChrisR
 ' 04/01/2019: Add PIC support for 16Bit Timer0 - EvanV / ChrisR
@@ -26,6 +25,8 @@
 ' 04/04/2019: Add AVR support - 16mhz only
 ' 09/10/2020: Add AVR support - 32..1 mhz
 ' 10/08/2021: Add Fix for errata bug in DS40001816F in 18fX6K40 chips
+' 21/10/2023: Add Fix for legacy 18F chips where T0CON1 does not exist.
+
 
 '***********************************************************
 
@@ -34,8 +35,8 @@
 ' Init_MsCtr_Int
 ' Millis(void)
 '
-' A constant is used to  set Tmr0InitVal. When folks have issues we can tell people to change this in the user program when the oscillator is not correctly setup.
-#define Millis_Default_Timer0_value 6
+' A constant is used to  set SCRIPT_TMR0INITVAL. When folks have issues we can tell people to change this in the user program when the oscillator is not correctly setup.
+#define MILLIS_DEFAULT_TIMER0_VALUE 6
 
 '**************  Timer 0 Notes ***********************
 ' PIC Timer0 is a free running timer on midrange and
@@ -56,54 +57,62 @@
 
 #script
 
-  Tmr0InitVal = Millis_Default_Timer0_value
-  16BITTimer0 = 0
+  SCRIPT_TMR0INITVAL = MILLIS_DEFAULT_TIMER0_VALUE
+  SCRIPT_16BITTIMER0 = 0
+  
   if bit(T016BIT) then
-      16BITTimer0 = 1
+      SCRIPT_16BITTIMER0 = 1
+      // added to Fix for legacy 18F chips where T0CON1 does not exist.
+      // These chips are 18Fs where there is only POSTscaler exists, and, not POST and PRE scaler for Timer0.
+      if novar(T0CON1) then
+        // some 18Fs have T0CON and not T0CON1. So, assume this are 8 bit initialisation of the timer0
+        SCRIPT_16BITTIMER0 = 0
+      end if
   end if
+
 ;check Frequency
-  MillisErrorHandler = 0
+  SCRIPT_MILLISERRORHANDLER = 0
 
   if ChipMHz=64 then
-    MillisErrorHandler=1
-    Tmr0InitVal = 6
+    SCRIPT_MILLISERRORHANDLER=1
+    SCRIPT_TMR0INITVAL = 6
   end if
   if ChipMHz=48 then
-    MillisErrorHandler=1
-    Tmr0InitVal = 68
+    SCRIPT_MILLISERRORHANDLER=1
+    SCRIPT_TMR0INITVAL = 68
   end if
   if ChipMHz=32 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
     if AVR then
-        Tmr0InitVal = 131
+        SCRIPT_TMR0INITVAL = 131
     end if
   end if
   if ChipMHz=16 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipMHz=8 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
     if AVR then
-        Tmr0InitVal = 131
+        SCRIPT_TMR0INITVAL = 131
     end if
   end if
   if ChipMHz=4 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
     if AVR then
-        Tmr0InitVal = 193
+        SCRIPT_TMR0INITVAL = 193
     end if
   end if
   if ChipMHz=2 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipMHz=1 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
     if AVR then
-        Tmr0InitVal = 131
+        SCRIPT_TMR0INITVAL = 131
     end if
   end if
 
-  if MillisErrorHandler = 0 Then
+  if SCRIPT_MILLISERRORHANDLER = 0 Then
       Warning ChipMHz
       Warning "Millis() does not support the selected Chip Frequency"
       Warning "Contact us on the Great Cow BASIC forum for more information"
@@ -111,36 +120,36 @@
 
 ;Check family
   'This check could be removed
-  MillisErrorHandler = 0
+  SCRIPT_MILLISERRORHANDLER = 0
   if ChipFamily=100 then  'AVR core version V0E class microcontrollers
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   End if
   if ChipFamily=110 then    'AVR core version V1E class microcontrollers
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   End if
   if ChipFamily=120 then   'AVR core version V2E class microcontrollers
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=122 then   'AVR core version V2E class microcontrollers
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=130 then   'AVR core version V3E class microcontrollers but essentially the mega32u6 only
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=12 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=14 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=15 then
-    MillisErrorHandler=1
+    SCRIPT_MILLISERRORHANDLER=1
   end if
   if ChipFamily=16 then
-      MillisErrorHandler=1
+      SCRIPT_MILLISERRORHANDLER=1
   end if
 
-  if MillisErrorHandler = 0 Then
+  if SCRIPT_MILLISERRORHANDLER = 0 Then
       Warning ChipFamily
       Warning "Millis() does not support the selected Chip Family"
   End if
@@ -156,7 +165,7 @@ Sub MsCtr_Int_Hdlr
   dim MsCtr_ as Long
 
   asm ShowDebug Call_SetTimer_Millis_macro
-  SetTimer_Millis  Tmr0InitVal   ' Reset Inital Counter valueue
+  SetTimer_Millis  SCRIPT_TMR0INITVAL   ' Reset Inital Counter valueue
 
   MsCtr_ = MsCtr_ + 1
 End Sub
@@ -168,13 +177,13 @@ Sub Init_MsCtr_Int
   MsCtr_ = 0
   Millis = 0
 
-'
-'  #define PS_0_0 0        ' no clock source
-'  #define PS_0_1 1
-'  #define PS_0_8 2
-'  #define PS_0_64 3
-'  #define PS_0_256 4
-'  #define PS_0_1024 5
+//~ 
+//~ #define PS_0_0 0        ' no clock source
+//~ #define PS_0_1 1
+//~ #define PS_0_8 2
+//~ #define PS_0_64 3
+//~ #define PS_0_256 4
+//~ #define PS_0_1024 5
 
   #ifdef AVR
 
@@ -239,12 +248,12 @@ Sub Init_MsCtr_Int
 
        #IFDEF ChipMHz 64
 
-          #if 16BITTimer0 = 0
+          #if SCRIPT_16BITTIMER0 = 0
             asm ShowDebug 8bit / 16bit No Postscaler @ 48
             InitTimer0 Osc, PS0_64
           #endif
 
-          #if 16BITTimer0 = 1
+          #if SCRIPT_16BITTIMER0 = 1
             asm ShowDebug 16bit capable, but running in 8bit mode
             InitTimer0 Osc, PRE0_64 + TMR0_FOSC4 ,  POST0_1
           #endif
@@ -253,12 +262,12 @@ Sub Init_MsCtr_Int
 
        #IFDEF ChipMHz 48
 
-          #if 16BITTimer0 = 0
+          #if SCRIPT_16BITTIMER0 = 0
             asm ShowDebug 8bit / 16bit No Postscaler @ 48
             InitTimer0 Osc, PS0_64
           #endif
 
-          #if 16BITTimer0 = 1
+          #if SCRIPT_16BITTIMER0 = 1
             asm ShowDebug 16bit capable, but running in 8bit mode
             InitTimer0 Osc, PRE0_64 + TMR0_FOSC4 ,  POST0_1
           #endif
@@ -266,12 +275,12 @@ Sub Init_MsCtr_Int
 
       #IFDEF ChipMHz 32
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_32
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_32 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -279,12 +288,12 @@ Sub Init_MsCtr_Int
 
       #IFDEF ChipMHz 16
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_16
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_16 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -292,12 +301,12 @@ Sub Init_MsCtr_Int
 
       #IFDEF ChipMHz 8
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_8
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_8 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -305,12 +314,12 @@ Sub Init_MsCtr_Int
 
        #IFDEF ChipMHz 4
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_4
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_4 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -318,12 +327,12 @@ Sub Init_MsCtr_Int
 
       #IFDEF ChipMHz 2
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_2
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_2 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -331,12 +340,12 @@ Sub Init_MsCtr_Int
 
       #IFDEF ChipMHz 1
 
-        #if 16BITTimer0 = 0
+        #if SCRIPT_16BITTIMER0 = 0
           asm ShowDebug 8bit / 16bit No Postscaler
           InitTimer0 Osc, PS0_1
         #endif
 
-        #if 16BITTimer0 = 1
+        #if SCRIPT_16BITTIMER0 = 1
           asm ShowDebug 16bit capable, but running in 8bit mode
           InitTimer0 Osc, PRE0_1 + TMR0_FOSC4 ,  POST0_1
         #endif
@@ -351,7 +360,7 @@ Sub Init_MsCtr_Int
   #ENDIF
 
   asm ShowDebug  Call_SetTimer_Millis_macro
-  SetTimer_Millis Tmr0InitVal
+  SetTimer_Millis SCRIPT_TMR0INITVAL
 
   asm ShowDebug Call_StartTimer_Millis_macro
   StartTimer_Millis

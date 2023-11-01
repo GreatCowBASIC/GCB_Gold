@@ -640,7 +640,7 @@ DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, S
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
 Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC
-Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram
+Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
 Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages
@@ -794,8 +794,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-09-23"
-buildVersion = "1288"
+Version = "1.01.00 2023-09-30"
+buildVersion = "1289"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -945,7 +945,7 @@ If Not ErrorsFound Then
     If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
     PRINT SPC(10); Temp
     Temp = Message("UsedRAM")
-    Replace Temp, "%used%", Str(StatsUsedRam)
+    Replace Temp, "%used%", Str(StatsUsedRam+RegBytesUsed)
     Replace Temp, "%total%", Str(ChipRAM)
     If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
     PRINT SPC(10); Temp
@@ -980,9 +980,15 @@ If Not ErrorsFound Then
         If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
         PRINT SPC(10); Temp
         Temp = Message("UsedRAM")
-        Replace Temp, "%used%", Str(StatsUsedRam)
+        Replace Temp, "%used%",  Str(StatsUsedRam+RegBytesUsed)
         Replace Temp, "%total%", Str(ChipRAM)
-        If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
+        If ChipRAM <> 0 Then 
+          If StatsUsedRam+RegBytesUsed = 0 Then
+            Temp += " (0%)"
+          Else
+            Temp += Format( (StatsUsedRAM+RegBytesUsed) / ChipRAM, " (###.##%)")
+          End If
+        End If
 
 
         PRINT SPC(10); Temp
@@ -18423,7 +18429,7 @@ Sub WriteCompilationReport
   Replace UsedProgram, "%total%", Str(ChipProg)
   If ChipProg <> 0 Then UsedProgram += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
   UsedRAM = Message("UsedRAM")
-  Replace UsedRAM, "%used%", Str(StatsUsedRam)
+  Replace UsedRAM, "%used%", Str(StatsUsedRam+RegBytesUsed)
   Replace UsedRAM, "%total%", Str(ChipRAM)
   If ChipRAM <> 0 Then UsedRAM += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
 

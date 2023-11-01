@@ -1,5 +1,5 @@
 '    Timer control routines for GCBASIC
-'    Copyright (C) 2006-2020 Hugh Considine, Evan R. Venn and  William Roth
+'    Copyright (C) 2006-2023 Hugh Considine, Evan R. Venn and  William Roth
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation; either
@@ -98,6 +98,7 @@
 ' 02/01/2021: Corrected TCNT1 value for PS_1_8192
 ' 10/08/2021: Added fix for K40 Chips that require T0CON1 ASYNC bit to be set On
 ' 14/08/22 Updated user changeable constants only - no functional change
+' 25/10/23 Updated to restore FOSC4 constant
 '***********************************************************
 
 'Subroutines:
@@ -280,6 +281,7 @@
 
  'Generic Clock Sources
   #define Osc 1
+  #define FOSC4 = 1
   #define Ext 2
   #define ExtOsc 3
   #define sosc ExtOsc

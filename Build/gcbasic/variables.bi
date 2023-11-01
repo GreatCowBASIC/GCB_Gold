@@ -652,7 +652,7 @@ SUB AllocateRAM
                 .Location = FinalRegLoc
               End If
               RegBytesLocated += 1
-
+              RegBytesUsed  += 1
               'Then mark that shared bank location as off limits to other variables
               For SR = 1 To FreeRAM
                 If VarLoc(SR) = FinalRegLoc Then
