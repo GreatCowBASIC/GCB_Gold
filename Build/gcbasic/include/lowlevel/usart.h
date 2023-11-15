@@ -95,7 +95,8 @@
 ' 06/08/2023  Improved handling of registers for USART2
 ' 27/08/2023  Added support for K40 USART3, 4 and 5
 ' 07/09/2023  Added ORR handling for PIC 3,4 and 5
-' 26/10/2023  Correct #IF Var() where is shoul have need #IFDEF Var() in USART2Receive
+' 26/10/2023  Correct #IF Var() where is shoul have need #IFDEF Var() in USART2Receive. 2nd revision
+' 13/11/2023  Resolve 18F1220 digital port setting
 
 
 
@@ -1454,6 +1455,17 @@ sub HSerSend (In SerData)
 
  #ifdef PIC
     #If USART_BAUD_RATE Then
+
+      //~Ensure specific 18F are set to digital port prior to USART usage
+      #Ifdef ChipFamily 16 
+        #ifdef bit(PCFG6) 
+          PCFG6 = 1
+        #endif
+        #ifdef bit(PCFG5) 
+          PCFG5 = 1
+        #endif                
+      #Endif
+
       //~Registers/Bits determined by #samevar at top of library
 
           #ifdef USART_TX_BLOCKING
@@ -1563,6 +1575,17 @@ sub HSerSend (In SerData, optional In comport = 1)
 
     #If USART_BAUD_RATE Then
       HSerSendUSART1Handler:
+
+      //~Ensure specific 18F are set to digital port prior to USART usage
+      #Ifdef ChipFamily 16 
+        #ifdef bit(PCFG6) 
+          PCFG6 = 1
+        #endif
+        #ifdef bit(PCFG5) 
+          PCFG5 = 1
+        #endif                
+      #Endif
+
       //~Registers/Bits determined by #samevar at top of library
        #if SCRIPT_USART_USAGE_CHECK > 1 Then
        Case 1
@@ -1940,6 +1963,16 @@ Sub HSerReceive(Out SerData)
 
     HSerReceive1Handler:
 
+      //~Ensure specific 18F are set to digital port prior to USART usage
+      #Ifdef ChipFamily 16 
+        #ifdef bit(PCFG6) 
+          PCFG6 = 1
+        #endif
+        #ifdef bit(PCFG5) 
+          PCFG5 = 1
+        #endif                
+      #Endif
+
     //~Only set the Serdata to DefaultUsartReturnValue if needed. See the script for the examimation criteria
     //~It has to check all 5 usarts as any or all could need the value setting.
     #IF SCRIPT_SET_DEFAULTUSART1RETURNVALUE = 1
@@ -2098,11 +2131,7 @@ Sub HSerReceive(Out SerData)
         #ifdef Var(RCREG2)
           'Get a byte from register, if interrupt flag is valid
           If USART2HasData Then
-            #IFDEF var(RCREG2) Then
               SerData = RCREG2
-            #ELSE
-              SerData = RC2REG
-            #ENDIF
           End if
         #endif
 

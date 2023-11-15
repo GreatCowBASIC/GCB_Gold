@@ -83,6 +83,7 @@
 '    28022023 - Added support for 18FxxQ71
 '    30042023 - Add deviceconfigurationRead to read Device Configuration ( additive to ProgramRead as this limited to PFM )
 '    23082023 - Added support for 18FxxK40 for PFM ops
+'    13112023 - Resolve 18F1220 digital port setting
 
 ' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
 
@@ -1037,7 +1038,7 @@ Sub InitSys
 
             #IFDEF Bit(PCFG4)
               'For 18F1320, which uses ADCON1 as an ANSEL register
-              ADCON1 = 0
+              ADCON1 = 255
             #ENDIF
           #ENDIF
         #ENDIF

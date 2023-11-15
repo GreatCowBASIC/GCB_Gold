@@ -1633,6 +1633,7 @@ SUB PreProcessor
             .RawItems = LinkedListCreate
             .CurrItem = .RawItems
             .Items = 0
+            .IsEEPromData = 0
             For T = 2 To LineTokens
               'Get store location
               If LineToken(T) = "STORE" Then
@@ -1661,6 +1662,50 @@ SUB PreProcessor
 
         'End of table
         ElseIF Left(DataSource, 9) = "END TABLE" THEN
+          S = 0
+          GOTO LoadNextLine
+        END IF
+
+        'Handle EEPROM data directly via table methods
+        IF Left(DataSource, 7) = "EEPROM " THEN
+          'New EEPROM data
+          S = 2
+
+          'Get data from line
+          GetTokens DataSource, LineToken(), LineTokens
+
+          'Create table
+          DataTables += 1
+          With DataTable(DataTables)
+            .Name = LineToken(2)
+            .FixedLoc = 0
+            
+            IF LineTokens > 2 Then
+              'Is a calculation needed to get location?
+              If IsCalc(LineToken(3)) Then
+                Calculate LineToken(3)
+              End If
+
+              'Is fixed location given as a constant?./
+              If IsConst(LineToken(3)) Then
+                .FixedLoc = MakeDec(LineToken(3))
+              End If
+            End If
+
+            .Used = -1
+            .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+            .Type = "BYTE"
+            .RawItems = LinkedListCreate
+            .CurrItem = .RawItems
+            .Items = 0
+            .StoreLoc = 1
+            .IsEEPromData = -1
+          End With
+
+          GOTO LoadNextLine
+
+        'End of table
+        ElseIF Left(DataSource, 10) = "END EEPROM" THEN
           S = 0
           GOTO LoadNextLine
         END IF
@@ -3262,7 +3307,10 @@ Sub TableString (DataSource As String, TF As String )  '( TF must persist!)
 
     'Only between "Table " --> "End Table"
     If UCase(Left(TempDS, 6)) = "TABLE " Then TF = "1"
+    If UCase(Left(TempDS, 7)) = "EEPROM " Then TF = "1"
+    
     If UCase(Left(TempDS, 9)) = "END TABLE" THEN TF = "0"
+    If UCase(Left(TempDS, 10)) = "END EEPROM" THEN TF = "0"
 
      If TF = "1" Then
 
@@ -3457,3 +3505,4 @@ Sub TableString (DataSource As String, TF As String )  '( TF must persist!)
 
      End If
 End Sub
+

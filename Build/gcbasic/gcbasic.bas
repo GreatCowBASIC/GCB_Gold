@@ -241,6 +241,8 @@ Type DataTableType
 
   Items As Integer
   Item(MAXTABLEITEMS) As LongInt
+  IsEEPromData As Integer
+  FixedLoc As Integer
 End Type
 
 Type ProgString
@@ -794,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-09-30"
-buildVersion = "1289"
+Version = "1.01.00 2023-11-15"
+buildVersion = "1300"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -5833,7 +5835,7 @@ Sub CompileDim (CurrSub As SubType Pointer)
           Calculate VarFixedLocIn
         End If
 
-        'Is fixed location given as a constant?
+        'Is fixed location given as a constant?.
         If IsConst(VarFixedLocIn) Then
           VarFixedLoc = MakeDec(VarFixedLocIn)
         'Is fixed location given as a reference to an SFR?
@@ -7503,19 +7505,32 @@ SUB CompileReadTable (CompSub As SubType Pointer)
         'Check that table exists
         TableID = 0
         FOR CD = 1 to DataTables
-        IF DataTable(CD).Name = UCase(Trim(TableName)) Then
-          TableID = CD
-          Exit For
-        End If
+		' Improved isolation for EEPROM datasets
+          IF DataTable(CD).Name = UCase(Trim(TableName)) Then
+            IF DataTable(CD).IsEEPromData = 0 Then
+              TableID =CD
+            Else
+              'Must be EEPROM dataset
+              TableID = 0                   
+            End If
+            Exit For
+          End If
         NEXT
 
         'Table not found, show error
         IF TableID = 0 THEN
-          Temp = Message("TableNotFound")
-          Replace Temp, "%Table%", TableName
-          LogError Temp, Origin
-          CurrLine = LinkedListDelete(CurrLine)
-
+          IF DataTable(CD).IsEEPromData = 0 Then
+            Temp = Message("TableNotFound")
+            Replace Temp, "%Table%", TableName
+            LogError Temp, Origin
+            CurrLine = LinkedListDelete(CurrLine)
+          Else
+            Temp = Message("DataFound")
+            Replace Temp, "%Table%", TableName
+            LogError Temp, Origin
+            CurrLine = LinkedListDelete(CurrLine)
+          End If
+          CurrLine = LinkedListInsert(CurrLine, origin)
         'Table found, continue compile
         Else
           'Get size of data in table
@@ -10904,20 +10919,21 @@ SUB CompileWait (CompSub As SubType Pointer)
 
   'Time Intervals: us, 10us, ms, 10ms, s, m, h
   Dim As String InLine, Origin, Temp, Value, Unit, Condition
-  Dim As Integer UP, T, Cycles, DS, ExpandedValueLen
+  Dim As Integer UP, T, Cycles, DS, ExpandedValueLen, lUSDelaysInaccurate, overrideUSDelaysInaccurateWarning
   Dim as Integer lValueASC, LessOneCycle
   Dim As LinkedListElement Pointer CurrLine, NewCode
   Dim ExpandedValue as String
   Dim minDelay as String
 
   FoundCount = 0
-
-
+  
   CurrLine = CompSub->CodeStart->Next
   Do While CurrLine <> 0
     InLine = UCase(CurrLine->Value)
 
     IF Left(InLine, 5) = "WAIT " or Left(InLine, 7) = "WAITL1 " THEN
+
+      overrideUSDelaysInaccurateWarning = 0
 
       IF Left(InLine, 7) = "WAITL1 " Then
         Replace Inline, "WAITL1", "WAIT"
@@ -10925,6 +10941,11 @@ SUB CompileWait (CompSub As SubType Pointer)
       Else
         LessOneCycle = 0
       End if
+
+      If INSTR( Inline, "#OVERRIDEWARNING") > 0 Then
+        overrideUSDelaysInaccurateWarning = -1
+        Replace ( Inline, "#OVERRIDEWARNING", "" )
+      End If
 
       Origin = ""
       IF INSTR(InLine, ";?F") <> 0 THEN
@@ -11026,7 +11047,7 @@ SUB CompileWait (CompSub As SubType Pointer)
           RequestSub(CompSub, Unit)
 
           'Generate error when using US delay on slow chips
-          IF Unit = "Delay_US" AND gUSDelaysInaccurate THEN
+          IF Unit = "Delay_US" AND gUSDelaysInaccurate  AND overrideUSDelaysInaccurateWarning = 0 THEN
             LogWarning Message("WarningUSDelay"), Origin
           END If
 
@@ -19267,8 +19288,25 @@ Sub MergeSubroutines
   'Add EEPROM data tables
   Dim As Integer EPDataHeader, EPDataLoc, CurrEPTable, CurrEPItem
   Dim As String EPTempData
+  Dim As Integer EPAddress, DataTableSwapped
+  Dim As DataTableType Temp_DataTableType
   EPDataHeader = 0
   IF DataTables > 0 Then
+
+    'Sort table so GCASM handles TABLE and EEPROM Datasets ORG correctly.
+    Do
+      DataTableSwapped = 0 
+      For CurrEPTable = 1 TO DataTables - 1
+        If DataTable(CurrEPTable).Used And DataTable(CurrEPTable).StoreLoc = 1 Then
+            If DataTable(CurrEPTable).FixedLoc > DataTable(CurrEPTable+1).FixedLoc Then
+              Swap   DataTable(CurrEPTable) , DataTable(CurrEPTable+1)
+              DataTableSwapped = -1
+            End If
+        End IF
+      Next
+    Loop While DataTableSwapped = -1
+
+
     For CurrEPTable = 1 TO DataTables
       If DataTable(CurrEPTable).Used And DataTable(CurrEPTable).StoreLoc = 1 Then
 
@@ -19278,73 +19316,120 @@ Sub MergeSubroutines
           CurrLine = LinkedListInsert(CurrLine, "")
 
           If ChipFamily = 12 Or ChipFamily = 14 Then
-            CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (data memory)")
-            CurrLine = LinkedListInsert(CurrLine, " ORG 0x2100")
+            CurrLine = LinkedListInsert(CurrLine, "; Data Tables (data memory)")
+            'CurrLine = LinkedListInsert(CurrLine, " ORG 0x2100")
+            EPAddress = &h2100
+
           ElseIf ChipFamily = 15 Then
-            CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (data memory)")
-            CurrLine = LinkedListInsert(CurrLine, " ORG 0xF000")
+            CurrLine = LinkedListInsert(CurrLine, "; Data Tables (data memory)")
+            'CurrLine = LinkedListInsert(CurrLine, " ORG 0xF000")
+            EPAddress = &hF000
           ElseIf ChipFamily = 16 Then
             If ( ChipSubFamily = ChipFamily18FxxQ43  )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ43 EEPROM Address 0x380000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ43 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ41 )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ41 EEPROM Address 0x380000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ41 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000
             ElseIf ( ChipSubFamily = ChipFamily18FxxK40  )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxK40 EEPROM Address 0x310000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxK40 EEPROM Address 0x310000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              EPAddress = &h310000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ10  )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ10 EEPROM Address 0x310000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ10 EEPROM Address 0x310000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              EPAddress = &h310000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ40  )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ40 EEPROM Address 0x380000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ40 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ71 )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ83 )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")              
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000             
             ElseIf ChipFamilyVariant = 1 then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (ChipFamilyVariant EEPROM Address 0x310000)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamilyVariant EEPROM Address 0x310000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
+              EPAddress = &h380000
             Else
-              CurrLine = LinkedListInsert(CurrLine, "; Data Lookup Tables (Default EEPROM address)")
-              CurrLine = LinkedListInsert(CurrLine, " ORG 0xF00000")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (Default EEPROM address)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0xF00000")
+              EPAddress = &hF00000
             End if
+            
           End If
           EPDataHeader = -1
           EPDataLoc = 0
         End If
 
         With DataTable(CurrEPTable)
-          'Get data
-          EPTempData = Str(.Items)
-          For CurrEPItem = 1 To .Items
-            EPTempData = EPTempData + ", " + Str(.Item(CurrEPItem))
-          Next
 
-          'Add table
-          ToAsmSymbols += 1
-          ToAsmSymbol(ToAsmSymbols, 1) = "TABLE" + Trim(.Name)
+          If .Items > 0 OR .IsEEPromData = 0 Then
 
-          'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
-          If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
-              EPDataLoc = EPDataLoc + 1
-          End If
-          ToAsmSymbol(ToAsmSymbols, 2) = Str(EPDataLoc)
+          'Construct string using a variable
+          Dim EETempVal as integer
+          EETempVal = EPAddress+.FixedLoc
+          CurrLine = LinkedListInsert(CurrLine, "ORG 0x"+HEX(EETempVal))
 
-          if instr(UCase(AsmExe),"PIC-AS") = 0 then
-            CurrLine = LinkedListInsert(CurrLine, "TABLE" + Trim(.Name) + " equ " + Str(EPDataLoc))
-            GetMetaData(Currline)->IsLabel = -1
-            CurrLine = LinkedListInsert(CurrLine, " de " + EPTempData)
-          else
-            CurrLine = LinkedListInsert(CurrLine, "TABLE" + Trim(.Name))
-            GetMetaData(Currline)->IsLabel = -1
-            CurrLine = LinkedListInsert(CurrLine, " db " + EPTempData)
-          end if
+            'Get data
+            
+            If .IsEEPromData = 0 Then 
+              'Output the size of the table, not, required for EEData
+              EPTempData = Str(.Items)
+            Else
+              EPTempData = ""
+            End If
+            
+            For CurrEPItem = 1 To .Items
+              EPTempData = EPTempData + ", " + Str(.Item(CurrEPItem))
+            Next
+            If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
+            'Add table
+            ToAsmSymbols += 1
+            If .IsEEPromData = 0 then
+              ToAsmSymbol(ToAsmSymbols, 1) = " TABLE" + Trim(.Name)
+            Else
+              ToAsmSymbol(ToAsmSymbols, 1) = " DATA" + Trim(.Name)
+            End If
+            'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
+            If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
+                EPDataLoc = EPDataLoc + 1
+            End If
+            ToAsmSymbol(ToAsmSymbols, 2) = Str(EPDataLoc)
 
-          EPDataLoc += (.Items + 1)
+            if instr(UCase(AsmExe),"PIC-AS") = 0 then
+              If .IsEEPromData = 0 then
+                CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name) + " equ " + Str(EPDataLoc))
+              Else
+                CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name) + " equ " + Str(EPDataLoc))
+              End If
+              GetMetaData(Currline)->IsLabel = -1
+              If trim(EPTempData) <> "" Then 
+                'Do not push out empty structure, as this will cause an error in MPASM etc
+                CurrLine = LinkedListInsert(CurrLine, "  de " + EPTempData)
+              End If
+            else
+              If .IsEEPromData = 0 then
+                CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name))
+              Else
+                CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name))
+              End If
+
+              GetMetaData(Currline)->IsLabel = -1
+              CurrLine = LinkedListInsert(CurrLine, "  db " + EPTempData)
+            end if
+
+            EPDataLoc += (.Items + 1)
+          Else
+            'Delete the comment line
+            LinkedListDelete(CurrLine)
+          End IF
         End With
         'move down as we dont need to align on every table
         IF AFISupport = 1  and ModePIC and ChipFamily = 16 Then
@@ -19363,6 +19448,29 @@ Sub MergeSubroutines
     End if
 
   End If
+
+  'Check for overlapping tables and datasets
+  'Iterate through tables, if EE ( .StoreLoc = 1 ), take the base address add the items if less than the next valid address then all is good, else error message
+  Dim as Integer EETempVal, EENextLocation
+  For CurrEPTable = 1 TO DataTables - 1
+    If DataTable(CurrEPTable).Used And DataTable(CurrEPTable).StoreLoc = 1 Then
+      ' Extract next valid table that is EEdata
+      EETempVal = CurrEPTable + 1
+      EENextLocation = 0
+      Do While DataTable(EETempVal).StoreLoc = 0 and EETempVal < DataTables
+        EETempVal = EETempVal + 1
+      Loop 
+      'This is the next EE address
+      EENextLocation = DataTable(EETempVal).FixedLoc
+        'show the calcs
+        'print DataTable(CurrEPTable).FixedLoc,  DataTable(CurrEPTable).Items, EENextLocation, ( DataTable(CurrEPTable).FixedLoc + DataTable(CurrEPTable).Items )  <= EENextLocation 
+      If ( NOT ( DataTable(CurrEPTable).FixedLoc + DataTable(CurrEPTable).Items )  <= EENextLocation ) AND EENextLocation <> 0 Then
+          ErrTemp = Message("EEBadORG")
+          Replace ErrTemp, "%loc%", "0x"+hex( EPAddress + DataTable(CurrEPTable+1).FixedLoc)
+          LogError("GCASM:" + ErrTemp, "")
+      End iF
+    End If
+  Next
 
   CompilerOutput->CodeEnd = CurrLine
 
