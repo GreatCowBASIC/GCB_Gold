@@ -1,5 +1,5 @@
 echo off
-REM  Version 0.98.* or greater
+REM  Version 1.0.* or greater
 REM  Adapted to test for compiler crash
 REM  added AVR check
 
@@ -25,7 +25,9 @@ REM  echo "%%F">>test.log
 
   ..\G+Stools\gawk.exe -f ..\G+Stools\preprocess.awk "%%F"
   if exist errors.txt (
-    copy /b test.log+errors.txt test.log
+
+	for /f "tokens=* delims=" %%a in (errors.txt) do echo.    %%a>>test.log
+    	rem copy /b test.log+errors.txt test.log
   )
   del compiled.* /Q
 
@@ -36,12 +38,14 @@ REM  echo "%%F">>test.log
     echo Ignored from test >compiled.asm
     echo Ignored from test >compiled.hex
     echo "%%F">>skipped.log
+    del errors.txt	
 
   )
 
   if exist errors.txt (
     echo "%%F">>test.log
-    copy /b test.log+errors.txt test.log
+    REM copy /b test.log+errors.txt test.log
+    for /f "tokens=* delims=" %%a in (errors.txt) do echo.    %%a>>test.log
 
   ) else (
 

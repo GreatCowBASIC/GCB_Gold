@@ -646,7 +646,7 @@ SUB PreProcessor
   Dim ConditionalStatus as Integer
   Dim As Single StartOfCommentBlock, EndOfCommentBlock
   Dim LibraryInclude as Integer = 0
-  Dim as Integer functionCounter, subCounter, endfunctionCounter, endsubCounter = 0
+  Dim as Integer functionCounter, subCounter, endfunctionCounter, endsubCounter = 0, InlineRAWASM
   Dim as String firstSubEncountered = ""
 
   Dim As String CachedCmd( 20 )
@@ -866,6 +866,8 @@ SUB PreProcessor
 
     HandlingInsert = 0
     InsertLineNo = 0
+
+    InlineRAWASM = 0
 
     DO WHILE NOT EOF(1)
      LoadFileData:
@@ -1248,6 +1250,34 @@ SUB PreProcessor
         IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
 
         T = 1
+
+      'Process #asmraw directive, anything after this goes straight to asm with no processing
+      ElseIf Left(DataSource, 8) = "#ASMRAW[" Then
+        InlineRAWASM = -1
+        PCC += 1: PreserveCode(PCC) = " " + Trim(Mid(DataSourceRaw, InStr(UCase(DataSourceRaw), "#ASMRAW[") + 8))
+        IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+        IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+
+        T = 1
+
+      'Stop #asmraw directive, anything after this goes straight to asm with no processing
+      ElseIf Left(DataSource, 8) = "#ASMRAW]" Then
+        InlineRAWASM = 0
+        PCC += 1: PreserveCode(PCC) = " " + Trim(Mid(DataSourceRaw, InStr(UCase(DataSourceRaw), "#ASMRAW") + 8))
+        IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+        IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+
+        T = 1
+
+      'treat as rawasm
+      ElseIf InlineRAWASM = -1 Then
+
+        PCC += 1: PreserveCode(PCC) = " " + DataSourceRaw
+        IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+        IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+
+        T = 1
+ 
 
       ElseIf Left(DataSource, 4) = "ASM " and  instr(DataSource, "SHOWDEBUG") <> 0 Then
         PCC += 1: PreserveCode(PCC) = ";" + trim(DataSourceRaw)

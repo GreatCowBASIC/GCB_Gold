@@ -645,7 +645,7 @@ Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, P
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
-Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages
+Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages, MuteDonate
 DIM SHARED As Integer SubSizeCount, PCUpper, Bootloader, HighFSR, NoBankLocs
 DIM SHARED As Integer RegCount, IntCount, AllowOverflow, SysInt, HMult, AllowInterrupt
 Dim Shared As Integer ToolCount, ChipEEPROM, DataTables, ProgMemPages, PauseAfterCompile
@@ -727,7 +727,7 @@ Dim Shared As String ChipOscSource
 Dim Shared As String CDF, AFI, FI, OFI, HFI, ID, Version, buildVersion, ProgDir, CLD, LabelEnd
 Dim Shared As String PrgExe, PrgParams, PrgDir, AsmExe, AsmParams, PrgName, HexAppend
 Dim Shared As ExternalTool Pointer AsmTool, PrgTool
-Dim Shared As String CompReportFormat
+Dim Shared As String CompReportFormat, globalSettingsFile
 
 Dim Shared As Integer CDFSupport = 0
 Dim Shared As Integer CDFFileHandle
@@ -796,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-11-15"
-buildVersion = "1300"
+Version = "1.01.00 2023-11-23"
+buildVersion = "1308"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -1116,34 +1116,45 @@ If Not ErrorsFound Then
 
   'Issue message
 End If
+If MuteDonate = -1 then
+  IF Not ErrorsFound and MuteBanners = -1 THEN
+      Randomize timer
+      Select Case  int(Rnd * (10 - 1) + 1)
+        Case 1:
+      Print
+      Print "Enjoying GCBASIC ?"
+      Print
+      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
 
-IF Not ErrorsFound and MuteBanners = -1 THEN
-    Randomize timer
-    Select Case  int(Rnd * (10 - 1) + 1)
-      Case 1:
-    Print
-    Print "Enjoying GCBASIC ?"
-    Print
-    Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
+        Case 2:
+      Print
+      Print "Finding GCBASIC useful ?"
+      Print
+      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
 
-      Case 2:
-    Print
-    Print "Finding GCBASIC useful ?"
-    Print
-    Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
+        Case 3:
+      Print
+      Print "Spreading the word about using GCBASIC ?"
+      Print
+      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
 
-      Case 3:
+        Case Else
+
+      'Nothing
+
+      End Select
+  End if
+Else  
+  beep
     Print
-    Print "Spreading the word about using GCBASIC ?"
+    Print "Please support GCBASIC - donate to the operational costs of providing GCBASIC."
     Print
-    Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
-
-      Case Else
-
-    'Nothing
-
-    End Select
-End if
+    Print "Goto to http://paypal.me/gcbasic and donate. $25 is the typical donation, but, donate what you can."
+    sleep 2000
+    Print
+    Print
+  Beep
+End If
 'Write compilation report
 WriteCompilationReport
 
@@ -9349,6 +9360,14 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
           'Write back code
           'Print DS, BeforeFn, FunctionName, FunctionParams, AfterFn
           If Subroutine(CurrSub)->IsFunction Then
+
+            'If vars are empty we can assume the function as no assignment.
+            If Len(Trim(BeforeFn)) = 0 and Len(Trim(AfterFn)) = 0 and Len(Trim(FunctionParams)) = 0 Then
+              Dim Temp as String
+              Temp = Message("MissingFunctionAssignment")
+              LogError Temp, Origin
+            End If
+
             If NewSubCall.Called->Overloaded Then
               CurrLine->Value = ";FNSTART," + CHR(31) + Str(CurrSub) + CHR(31) + Str(CurrSub)
             Else
@@ -13905,6 +13924,7 @@ SUB InitCompiler
   PauseOnErr = 1
   WarningsAsErrors = 0
   MuteBanners = -1
+  MuteDonate = 0
   ExtendedVerboseMessages= 0
   PreserveMode = 0
   PauseAfterCompile = 0
@@ -14121,6 +14141,7 @@ SUB InitCompiler
       If VBS = 1 And IniNotSet = 0 Then Print "Cannot find settings file " + SettingsFile(CurrSettingsFile)
     Else
       Open SettingsFile(CurrSettingsFile) For Input As #1
+      globalSettingsFile = SettingsFile(CurrSettingsFile)
       'Decide mode to read file in
       SettingsFileMode = 0
       Do While Not Eof(1)
@@ -14257,6 +14278,9 @@ SUB InitCompiler
 
                 Case "mutebanners"
                   MuteBanners = NOT PrefIsYes(MsgVal)
+
+                Case "mutedonateplyx"
+                  MuteDonate = PrefIsYes(MsgVal)
 
                 Case "evbs"
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
@@ -17429,10 +17453,7 @@ Sub WriteAssembly
   Print #1, ";or, email us:"
   Print #1, ";   w_cholmondeley at users dot sourceforge dot net"
   Print #1, ";   evanvennn at users dot sourceforge dot net"
-
-  Print #1, ""
   PRINT #1, Star80
-  PRINT #1, ""
 
   if AFISupport = 1 then
       ' AS file
@@ -17446,6 +17467,15 @@ Sub WriteAssembly
       PRINT #2, ""
   End if
 
+  
+  Print #1, ";   Source file    : " + SourceFile(1).FileName
+  Print #1, ";   Setting file   : " + globalSettingsFile
+  Print #1, ";   Preserve mode  : " + str(PreserveMode)
+  Print #1, ";   Assembler      : " + ASMEXE
+  Print #1, ";   Programmer     : " + PrgExe
+  Print #1, ";   Output file    : " + OFI
+  Print #1, Star80
+  Print #1, ""
   If ModePIC Then
     'asm
     PRINT #1, ";Set up the assembler options (Chip type, clock source, other bits and pieces)"
@@ -17527,7 +17557,7 @@ Sub WriteAssembly
 
 
       'Publish CONFIG for PIC
-      if AFISupport = 1 then
+      if AFISupport = 1 and ConfigDisabled =0 then
         Print #2, Star80
         Print #2, ";Explicit CONFIG"
       end if
@@ -17616,7 +17646,7 @@ Sub WriteAssembly
     Loop
 
     'Output the other default configs - these are used to the the HEX config, so, we need them for PIC-AS to create the same HEX
-    if AFISupport = 1 then
+    if AFISupport = 1 and ConfigDisabled = 0 then
       Print #2, ";Inferred CONFIG"
       dim as Integer CD
       FOR CD = 1 TO DCOC
@@ -19286,11 +19316,13 @@ Sub MergeSubroutines
   Next
 
   'Add EEPROM data tables
-  Dim As Integer EPDataHeader, EPDataLoc, CurrEPTable, CurrEPItem
+  Dim As Integer EPDataHeader, EPDataLoc, CurrEPTable, CurrEPItem, TableAddressState, AVRAddressState
   Dim As String EPTempData
   Dim As Integer EPAddress, DataTableSwapped
   Dim As DataTableType Temp_DataTableType
   EPDataHeader = 0
+  TableAddressState = 0
+  AVRAddressState = 0
   IF DataTables > 0 Then
 
     'Sort table so GCASM handles TABLE and EEPROM Datasets ORG correctly.
@@ -19358,6 +19390,7 @@ Sub MergeSubroutines
               'CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")
               EPAddress = &h380000
             Else
+              ' this does not support AVR, see https://microchip.my.site.com/s/article/EEPROM-Segment-Preloading-in-Assembly-code for correct format
               CurrLine = LinkedListInsert(CurrLine, "; Data Tables (Default EEPROM address)")
               'CurrLine = LinkedListInsert(CurrLine, " ORG 0xF00000")
               EPAddress = &hF00000
@@ -19367,7 +19400,7 @@ Sub MergeSubroutines
           EPDataHeader = -1
           EPDataLoc = 0
         End If
-
+        
         With DataTable(CurrEPTable)
 
           If .Items > 0 OR .IsEEPromData = 0 Then
@@ -19375,19 +19408,33 @@ Sub MergeSubroutines
           'Construct string using a variable
           Dim EETempVal as integer
           EETempVal = EPAddress+.FixedLoc
-          CurrLine = LinkedListInsert(CurrLine, "ORG 0x"+HEX(EETempVal))
+          If ModePIC Then
+            If TableAddressState = 0 or .IsEEPromData Then
+              'only show the ORG for table address once.
+              TableAddressState = - 1
+              CurrLine = LinkedListInsert(CurrLine, "ORG 0x"+HEX(EETempVal))
+            End If
+          Else
+            If AVRAddressState = 0 or .IsEEPromData Then
+              'only show the ORG for table address once.
+              AVRAddressState = - 1
+              CurrLine = LinkedListInsert(CurrLine, ".ESEG")
+              CurrLine = LinkedListInsert(CurrLine, ".ORG 0x"+Right("0"+HEX(EETempVal),2))
+            End If
+          End If
+
 
             'Get data
             
             If .IsEEPromData = 0 Then 
               'Output the size of the table, not, required for EEData
-              EPTempData = Str(.Items)
+              EPTempData = "0x"+Right("0"+Hex(.Items),2)
             Else
               EPTempData = ""
             End If
             
             For CurrEPItem = 1 To .Items
-              EPTempData = EPTempData + ", " + Str(.Item(CurrEPItem))
+              EPTempData = EPTempData + ", 0x" + Right("0"+HEX(.Item(CurrEPItem)),2)
             Next
             If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
             'Add table
@@ -19405,14 +19452,36 @@ Sub MergeSubroutines
 
             if instr(UCase(AsmExe),"PIC-AS") = 0 then
               If .IsEEPromData = 0 then
-                CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name) + " equ " + Str(EPDataLoc))
+                If MODEPIC Then CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name) + " equ " + Str(EPDataLoc))
+                If MODEAVR Then CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name) + ":")
               Else
-                CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name) + " equ " + Str(EPDataLoc))
+                If MODEPIC Then CurrLine = LinkedListInsert(CurrLine, "DATA" + Trim(.Name) + " equ " + Str(EPDataLoc))
+                If MODEAVR Then CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name) + ":")
               End If
               GetMetaData(Currline)->IsLabel = -1
               If trim(EPTempData) <> "" Then 
                 'Do not push out empty structure, as this will cause an error in MPASM etc
-                CurrLine = LinkedListInsert(CurrLine, "  de " + EPTempData)
+                If Instr(UCase(AsmExe), "MPASM") > 0 Then
+                  If Len(EPTempData) < 129 Then
+                    CurrLine = LinkedListInsert(CurrLine, "  de " + EPTempData)
+                  Else
+                    ' Only output width that MPASM can cope with
+                    EPTempData = EPTempData +","  'add additional delimter to make this routine work
+
+                    Dim as Integer EEStringCut, EELastDelimiter 
+                    For EEStringCut = 1 to Len(EPTempData) step 86
+                      EELastDelimiter = InStrRev( Mid ( EPTempData, EEStringCut, 85 ), "," ) - 1
+                      'Found EELastDelimiter so adjust loop
+                      if EELastDelimiter <> -1 Then 
+                        CurrLine = LinkedListInsert(CurrLine, "  de " + Mid ( EPTempData, EEStringCut, EELastDelimiter ) )
+                        EEStringCut =  EEStringCut - ( 86 - EELastDelimiter) + 2
+                      End If
+                    Next
+                  End if
+                Else
+                  If ModePIC Then CurrLine = LinkedListInsert(CurrLine, "  de " + EPTempData)
+                  If ModeAVR Then CurrLine = LinkedListInsert(CurrLine, "  .DB " + EPTempData)
+                End If
               End If
             else
               If .IsEEPromData = 0 then
@@ -19463,7 +19532,7 @@ Sub MergeSubroutines
       'This is the next EE address
       EENextLocation = DataTable(EETempVal).FixedLoc
         'show the calcs
-        'print DataTable(CurrEPTable).FixedLoc,  DataTable(CurrEPTable).Items, EENextLocation, ( DataTable(CurrEPTable).FixedLoc + DataTable(CurrEPTable).Items )  <= EENextLocation 
+        ' print DataTable(CurrEPTable).FixedLoc,  DataTable(CurrEPTable).Items, EENextLocation, ( DataTable(CurrEPTable).FixedLoc + DataTable(CurrEPTable).Items )  <= EENextLocation 
       If ( NOT ( DataTable(CurrEPTable).FixedLoc + DataTable(CurrEPTable).Items )  <= EENextLocation ) AND EENextLocation <> 0 Then
           ErrTemp = Message("EEBadORG")
           Replace ErrTemp, "%loc%", "0x"+hex( EPAddress + DataTable(CurrEPTable+1).FixedLoc)
