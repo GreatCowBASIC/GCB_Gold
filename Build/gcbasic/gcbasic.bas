@@ -1,5 +1,5 @@
 ' GCBASIC - A BASIC Compiler for microcontrollers
-' Copyright (C) 2006 - 2023 Hugh Considine, Evan R. Venn and the GCBASIC team
+' Copyright (C) 2006 - 2024 Hugh Considine, Evan R. Venn and the GCBASIC team
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -796,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2023-11-23"
-buildVersion = "1308"
+Version = "1.01.00 2024-01-03"
+buildVersion = "1323"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -10892,7 +10892,8 @@ SUB CompileVars (CompSub As SubType Pointer)
           If HashMapGet(Constants, "DISABLE1094" ) = 0 then
             If ModePic  and ChipFamily=14 THEN
               If PreserveMode <> 0 Then
-                CurrLine = LinkedListInsert(CurrLine, ";Using temp var method implemented at #1094. Use a constant DISABLE1094 to disable")
+                ' Commented out to remove clutter from ASM.. no one has complained so change 1094 must work ok
+                ' CurrLine = LinkedListInsert(CurrLine, ";Using temp var method implemented at #1094. Use a constant DISABLE1094 to disable")
               End If
             End if
           End if
@@ -15132,13 +15133,19 @@ Sub LogError(InMessage As String, Origin As String = "")
   If InStr(ucase( SourceFile(F).FileName ), "LCD.H") > 0  Then
       If instr(InMessage, "SYSLCDTEMP") > 0  or _
         instr(UCASE(InMessage), "LCD_ENABLE") > 0 or _
-        instr(UCASE(InMessage), Ucase("Incorrect parameters in Set, expected: Set variable.bit")) > 0 or _
-        instr(UCASE(InMessage), Ucase("LCD_EB is not a valid I/O pin or port")) > 0  _
+        instr(UCASE(InMessage), Ucase(Message("BadParamsSet"))) > 0 or _
+        ( instr(UCASE(InMessage), Ucase(Message("NotIONOTVALID"))) > 0 and instr(UCASE(InMessage), Ucase("LCD_EB")) )   _
         Then
-          InMessage = Message( "LCD_Not_Setup" ) + InMessage  '"LCD Parameters not setup correctly - please correct the LCD setup"
+          print Subroutine(GetSubID(Origin))->Name
+          If Instr(Subroutine(GetSubID(Origin))->Name, "BACKLIGHT") > 0 Then
+            InMessage = Message( "LCD_Not_Setup" ) + " " + Message("LCD_NO_BACKLITECONSTANT") 
+          Else
+            InMessage = Message( "LCD_Not_Setup" ) + " Calling " + Subroutine(GetSubID(Origin))->Name + "(). " + InMessage  '"LCD Parameters not setup correctly - please correct the LCD setup. " + Subroutine(GetSubID(Origin))->Name
+          End If
           Origin = ""
       End if
   End if
+
 
   ErrorsFound = -1
   LogOutputMessage Origin + InMessage + "E"

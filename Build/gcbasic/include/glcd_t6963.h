@@ -1,5 +1,5 @@
 '''    Graphical LCD routines for the GCBASIC compiler
-'''    Copyright (C) 2018-2020 Evan Venn
+'''    Copyright (C) 2018-2024 Evan Venn
 ''
 '''    This library is free software; you can redistribute it and/or
 '''    modify it under the terms of the GNU Lesser General Public
@@ -47,7 +47,7 @@
 '''  #define GLCD_RD        PORTA.1           'LCD Read control line  pin number
 '''  #define GLCD_WR        PORTA.2           'LCD Write control line pin number
 '''  #define GLCD_RESET     PORTA.3
-'''  #define GLCD_FS        PORTA.5            'FS1 I Font Select 6x8 font: FS1=“High”=1 8x8 font FS1=“Low”=1 for GLCD_FS_SELECT
+'''  #define GLCD_FS        PORTA.5            'FS1 I Font Select 6x8 font: FS1=ï¿½Highï¿½=1 8x8 font FS1=ï¿½Lowï¿½=1 for GLCD_FS_SELECT
 '''  #define GLCD_FS_SELECT 1
 '''
 '''  '***********************************************************************************************

@@ -1,5 +1,5 @@
 '    DS18b20 temperature sensor routines for the GCBASIC compiler
-'    Copyright (C) 2018-2020 Evan Venn
+'    Copyright (C) 2018-2024 Evan Venn
 '    Based on the works of Kent Schafer and R. White.
 
 '    This library is free software; you can redistribute it and/or

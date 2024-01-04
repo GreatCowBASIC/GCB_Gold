@@ -1,5 +1,5 @@
 '    Maths outines for the GCBASIC compiler
-'    Copyright (C) 2017-2020 Thomas Henry and Evan Venn
+'    Copyright (C) 2017-2024 Thomas Henry and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
 '    07/11/2015     - Added ATan
 ;-----
 
-;Square root function for Great Cow Basic.
+;Square root function for GCBASIC.
 ;Thomas Henry --- 4/18/2014
 
 ;This uses a binary approach involving only bit-shifting,
@@ -63,7 +63,7 @@ end function
 
 ;-----
 
-;Logarithmic Functions for Great Cow Basic
+;Logarithmic Functions for GCBASIC
 ;Thomas Henry --- 5/1/2014
 ;Evan R. Venn ---- 27/9/2014
 
@@ -179,7 +179,7 @@ end function
 
 ;-----
 
-;The power function for Great Cow Basic
+;The power function for GCBASIC
 ;Thomas Henry -- 5/2/2014
 
 ;This function raises a base to a power. Remember, powers
@@ -210,7 +210,7 @@ end function
 
 ;-----
 
-;The right-shift function for Great Cow Basic
+;The right-shift function for GCBASIC
 ;Thomas Henry -- 5/9/2014
 
 ;This function accepts a Word value to be shifted and

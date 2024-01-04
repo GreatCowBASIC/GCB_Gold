@@ -1,4 +1,4 @@
-''' Copyright 2015-2020 Immo
+''' Copyright 2015-2024 Immo
 '''----------------------------------------------
 ''' This program is a includefile for ALPS rotary Encoder EC11
 ''' ALPS-EC11.h

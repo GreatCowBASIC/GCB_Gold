@@ -1,4 +1,4 @@
-;    Copyright 2012 - -2020 Evan R.Venn
+;    Copyright 2012 - -2024 Evan R.Venn
 ;    A redirector for LCD to a Serial Terminal
 ;
 ;    This code is free software; you can redistribute it and/or

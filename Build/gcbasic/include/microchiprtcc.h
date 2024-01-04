@@ -1,5 +1,5 @@
 ;    Library for reading/writing to Microchip DS1337 RTC for the GCBASIC compiler
-;    Copyright (C) 2017-2020 Evan Venn
+;    Copyright (C) 2017-2024 Evan Venn
 ;;
 ;    This code is free software; you can redistribute it and/or
 ;    modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
 '''
 '''******************************************************************
 ''' LCD demonstration for the board. We have added the LCD section to specific the ports.
-''' All the LCD commands are standard Great Cow BASIC LCD commands.
+''' All the LCD commands are standard GCBASIC LCD commands.
 '''
 ''' The methods used in this demonstration are shown below.
 '''

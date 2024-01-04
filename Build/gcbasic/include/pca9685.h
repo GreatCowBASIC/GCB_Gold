@@ -1,5 +1,5 @@
 '    PCA9685 routines for the GCBASIC compiler
-'    Copyright (C) 2018-2020 Evan R. Venn
+'    Copyright (C) 2018-2024 Evan R. Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
 '
 '
 '
-'    # Great Cow BASIC PCA9685 PWM Driver Library
+'    # GCBASIC PCA9685 PWM Driver Library
 '
 '    PCA9685_Library` is a library  for talking to the PCA9685 I<sup>2</sup>C PWM driver by NXP
 '
@@ -32,13 +32,13 @@
 '    * **Operating power supply voltage range of 2.3 V to 5.5 V**
 '    * **Six hardware address pins allow up to 62 devices on the same bus**
 '
-'    This is a library for the 16-channel PWM & Servo driver for Great Cow BASIC
+'    This is a library for the 16-channel PWM & Servo driver for GCBASIC
 '
 '    Looks something like this
 '
 '    <img src="https://cdn-shop.adafruit.com/970x728/815-04.jpg" height="300"/>
 '
-'    We invest time and resources providing this open source code, please support Great Cow BASIC!!!!
+'    We invest time and resources providing this open source code, please support GCBASIC!!!!
 '
 '
 'Notes:

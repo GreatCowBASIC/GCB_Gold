@@ -1,6 +1,6 @@
-;DHT Humidity/Temperature Sensor Library for Great Cow Basic
+;DHT Humidity/Temperature Sensor Library for GCBASIC
 
-;Copyright 2017 - -2020 Thomas Henry
+;Copyright 2017 - -2024 Thomas Henry
 ;
 ;Version 2.0 -- 4/21/2014 - 2017
 
@@ -14,13 +14,13 @@
 
 ;DHT11: senses to the nearest whole number
 ;RH:        20% to 90%,   +/- 5%
-;Temp (C):  0° to 50°,    +/- 2°
-;Temp (F):  32° to 122°,  +/- 3.6°
+;Temp (C):  0ï¿½ to 50ï¿½,    +/- 2ï¿½
+;Temp (F):  32ï¿½ to 122ï¿½,  +/- 3.6ï¿½
 
 ;DHT22: senses to the nearest tenth
 ;RH:        0% to 100%,   +/- 2% (5% worst case)
-;Temp (C):  -40° to 125°, +/- 0.1°
-;Temp (F):  -40° to 176°, +/- 3.3°
+;Temp (C):  -40ï¿½ to 125ï¿½, +/- 0.1ï¿½
+;Temp (F):  -40ï¿½ to 176ï¿½, +/- 3.3ï¿½
 
 ;Two constants are required in the main calling program.
 ;The first sets the device type, i.e.:

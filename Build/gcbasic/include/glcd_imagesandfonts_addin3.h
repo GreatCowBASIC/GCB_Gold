@@ -1,5 +1,5 @@
 '    Graphical LCD Image and addtional Fonts routines for the GCBASIC compiler
-'    Copyright (C) 2014-2020  Evan Venn
+'    Copyright (C) 2014-2024  Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

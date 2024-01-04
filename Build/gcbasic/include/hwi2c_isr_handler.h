@@ -1,4 +1,4 @@
-'';Copyrght 2017-2020 Evan R. Venn
+'';Copyrght 2017-2024 Evan R. Venn
 '''
 '''A Hardware I2C ISR Handler for GCGB and GCB.
 '''------------------------------------------------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@
               end if
 
               if nobit(SSP1IF) then
-                  Warning "SSPIF not mapped to SSP1IF ….library is likely to fail"
+                  Warning "SSPIF not mapped to SSP1IF ï¿½.library is likely to fail"
               End if
 
           End if

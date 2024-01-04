@@ -1,5 +1,5 @@
-'    Subroutines to allow the Polulu 3pi robot to work with Great Cow BASIC
-'    Copyright (C) 2009-2020 Hugh Considine
+'    Subroutines to allow the Polulu 3pi robot to work with GCBASIC
+'    Copyright (C) 2009-2024 Hugh Considine
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

@@ -1,5 +1,5 @@
 '    Graphical Max7219 GLCD routines for the GCBASIC compiler
-'    Copyright (C) 2018--2020 Hugh Considine, Evan Venn and Theo Loermans
+'    Copyright (C) 2018--2024 Hugh Considine, Evan Venn and Theo Loermans
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

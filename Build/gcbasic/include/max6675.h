@@ -1,5 +1,5 @@
   '
-  '    Copyright Dimitris Katsaounis <katsjim@users.sf.net> - 2014-2020
+  '    Copyright Dimitris Katsaounis <katsjim@users.sf.net> - 2014-2024
   '    Initial release
   '    Support MAX6675 - tested by Dimitris Katsaounis
   '    Max6675.h       - created by Evan R Venn

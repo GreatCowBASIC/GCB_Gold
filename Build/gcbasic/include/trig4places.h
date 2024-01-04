@@ -1,7 +1,7 @@
-;Copyright 2014-2020 Thomas Henry
+;Copyright 2014-2024 Thomas Henry
 ;
 ;Include File: Trig4Places.h
-;Trigonometric Functions for Great Cow Basic
+;Trigonometric Functions for GCBASIC
 ;Thomas Henry --- 4/17/2014 - 2017
 
 ;Sine and Cosine, accurate to 4 decimal places.
@@ -12,7 +12,7 @@
 
 ;The tangent is not available at this precision since it
 ;grows large and exceeds what the Integer data type is
-;capable of expressing in Great Cow Basic.
+;capable of expressing in GCBASIC.
 
 ;Input parameters and function values are integers:
 ;trig_arg1, trig_arg2, trig_sign, sin, cos, tan

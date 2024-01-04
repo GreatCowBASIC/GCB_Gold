@@ -1,5 +1,5 @@
 '    Timer control routines for GCBASIC
-'    Copyright (C) 2006-2023 Hugh Considine, Evan R. Venn and  William Roth
+'    Copyright (C) 2006-2024 Hugh Considine, Evan R. Venn and  William Roth
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation; either
@@ -99,6 +99,7 @@
 ' 10/08/2021: Added fix for K40 Chips that require T0CON1 ASYNC bit to be set On
 ' 14/08/22 Updated user changeable constants only - no functional change
 ' 25/10/23 Updated to restore FOSC4 constant
+' 27/11/23 Updated to isolate AVR and PIC constants
 '***********************************************************
 
 'Subroutines:
@@ -389,50 +390,51 @@
 
 #ENDSCRIPT
 
-' timer for AVR - ERV
-  'timer 0
-  #define PS_0 0         ' no clock source
-  #define PS_1 1
-  #define PS_8 2
-  #define PS_64 3
-  #define PS_256 4
-  #define PS_1024 5
+ #ifdef AVR
+      //~ timer for AVR - ERV
+      //~ timer 0
+      #define PS_0 0         ' no clock source
+      #define PS_1 1
+      #define PS_8 2
+      #define PS_64 3
+      #define PS_256 4
+      #define PS_1024 5
 
-  #define PS_0_0 0        ' no clock source
-  #define PS_0_1 1
-  #define PS_0_8 2
-  #define PS_0_64 3
-  #define PS_0_256 4
-  #define PS_0_1024 5
+      #define PS_0_0 0        ' no clock source
+      #define PS_0_1 1
+      #define PS_0_8 2
+      #define PS_0_64 3
+      #define PS_0_256 4
+      #define PS_0_1024 5
 
-  #define PS_1_0 0         ' no clock source
-  #define PS_1_1 1
-  #define PS_1_8 2
-  #define PS_1_64 3
-  #define PS_1_256 4
-  #define PS_1_1024 5
+      #define PS_1_0 0         ' no clock source
+      #define PS_1_1 1
+      #define PS_1_8 2
+      #define PS_1_64 3
+      #define PS_1_256 4
+      #define PS_1_1024 5
 
-  #define PS_3_0 0         ' no clock source
-  #define PS_3_1 1
-  #define PS_3_8 2
-  #define PS_3_64 3
-  #define PS_3_256 4
-  #define PS_3_1024 5
+      #define PS_3_0 0         ' no clock source
+      #define PS_3_1 1
+      #define PS_3_8 2
+      #define PS_3_64 3
+      #define PS_3_256 4
+      #define PS_3_1024 5
 
-  #define PS_4_0 0         ' no clock source
-  #define PS_4_1 1
-  #define PS_4_8 2
-  #define PS_4_64 3
-  #define PS_4_256 4
-  #define PS_4_1024 5
+      #define PS_4_0 0         ' no clock source
+      #define PS_4_1 1
+      #define PS_4_8 2
+      #define PS_4_64 3
+      #define PS_4_256 4
+      #define PS_4_1024 5
 
-  #define PS_5_0 0         ' no clock source
-  #define PS_5_1 1
-  #define PS_5_8 2
-  #define PS_5_64 3
-  #define PS_5_256 4
-  #define PS_5_1024 5
-
+      #define PS_5_0 0         ' no clock source
+      #define PS_5_1 1
+      #define PS_5_8 2
+      #define PS_5_64 3
+      #define PS_5_256 4
+      #define PS_5_1024 5
+#endif
 
   'support 16f188xx series (and others) 8/16 bit timers
   '
@@ -588,41 +590,43 @@
 ''Also worth noting here,
 ''0: stop timer
 
-'Timer 0 prescales (PIC)
-#define PS0_2 0
-#define PS0_4 1
-#define PS0_8 2
-#define PS0_16 3
-#define PS0_32 4
-#define PS0_64 5
-#define PS0_128 6
-#define PS0_256 7
+   #ifdef PIC
+      'Timer 0 prescales (PIC)
+      #define PS0_2 0
+      #define PS0_4 1
+      #define PS0_8 2
+      #define PS0_16 3
+      #define PS0_32 4
+      #define PS0_64 5
+      #define PS0_128 6
+      #define PS0_256 7
 
-'PIC Timer 1 prescales
-#define PS1_1 0
-#define PS1_2 16
-#define PS1_4 32
-#define PS1_8 48
+      'PIC Timer 1 prescales
+      #define PS1_1 0
+      #define PS1_2 16
+      #define PS1_4 32
+      #define PS1_8 48
 
-'Timer 3 prescales
-#define PS3_1 0
-#define PS3_2 16
-#define PS3_4 32
-#define PS3_8 48
+      'Timer 3 prescales
+      #define PS3_1 0
+      #define PS3_2 16
+      #define PS3_4 32
+      #define PS3_8 48
 
-'Timer 5 prescales
-#define PS5_1 0
-#define PS5_2 16
-#define PS5_4 32
-#define PS5_8 48
+      'Timer 5 prescales
+      #define PS5_1 0
+      #define PS5_2 16
+      #define PS5_4 32
+      #define PS5_8 48
 
-'Timer 7 prescales -wmr
-#define PS7_1 0
-#define PS7_2 16
-#define PS7_4 32
-#define PS7_8 48
+      'Timer 7 prescales -wmr
+      #define PS7_1 0
+      #define PS7_2 16
+      #define PS7_4 32
+      #define PS7_8 48
 
-'Timer 2 prescales for PIC - added Dec 2016
+      'Timer 2 prescales for PIC - added Dec 2016
+   #endif
 
 #script
 

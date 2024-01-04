@@ -1,5 +1,5 @@
 '    USB routines for the GCBASIC compiler
-'    Copyright (C) 2014-2020 Hugh Considine and Evan R. Venn
+'    Copyright (C) 2014-2024 Hugh Considine and Evan R. Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -81,7 +81,7 @@
 
 ' User changeable constants
   #IFNDEF USB_VENDOR_NAME
-    #DEFINE USB_VENDOR_NAME "GREAT COW BASIC"
+    #DEFINE USB_VENDOR_NAME "GCBASIC"
   #ENDIF
   #IFNDEF USB_PRODUCT_NAME
     #DEFINE USB_PRODUCT_NAME "GCBASIC USB TEST"

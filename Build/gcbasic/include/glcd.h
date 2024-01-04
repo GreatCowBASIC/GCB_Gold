@@ -1,5 +1,5 @@
 /*    Graphical LCD routines for the GCBASIC compiler
-    Copyright (C) 2012-2022 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
+    Copyright (C) 2012-2024 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -110,6 +110,11 @@
   #define GLCD_TYPE_ILI9488 32
   #define GLCD_TYPE_ST7567  33
   #define GLCD_TYPE_ST7789_320_240 34
+  #define LT7686_800_480_BLUE          35
+  #define LT7686_1024_600_BLUE         36
+  #define LT7686_1024_600_BLACK        37
+
+  
 
 
 dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as byte
@@ -141,7 +146,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   #define TFT_DARKGREY    0x7BEF
   #define TFT_BLUE        0x001F
   #define TFT_GREEN       0x07E0
-  #define TFT_CYAN        0x07FF
+  #define TFT_CYAN        0x77FF
   #define TFT_RED         0xF800
   #define TFT_MAGENTA     0xF81F
   #define TFT_YELLOW      0xFFE0
@@ -152,6 +157,46 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   #define EPD_WHITE       0x33
   #define EPD_BLACK       0x00
+
+  #define color65k_black   0x0000
+  #define color65k_white   0xffff
+  #define color65k_red     0xf800
+  #define color65k_green   0x07e0
+  #define color65k_blue    0x001f
+  #define color65k_yellow  color65k_red|color65k_green
+  #define color65k_cyan    color65k_green|color65k_blue
+  #define color65k_purple  color65k_red|color65k_blue
+
+  #define color65k_grayscale1    2113
+  #define color65k_grayscale2    2113*2
+  #define color65k_grayscale3    2113*3
+  #define color65k_grayscale4    2113*4
+  #define color65k_grayscale5    2113*5
+  #define color65k_grayscale6    2113*6
+  #define color65k_grayscale7    2113*7
+  #define color65k_grayscale8    2113*8
+  #define color65k_grayscale9    2113*9
+  #define color65k_grayscale10   2113*10
+  #define color65k_grayscale11   2113*11
+  #define color65k_grayscale12   2113*12
+  #define color65k_grayscale13   2113*13
+  #define color65k_grayscale14   2113*14
+  #define color65k_grayscale15   2113*15
+  #define color65k_grayscale16   2113*16
+  #define color65k_grayscale17   2113*17
+  #define color65k_grayscale18   2113*18
+  #define color65k_grayscale19   2113*19
+  #define color65k_grayscale20   2113*20
+  #define color65k_grayscale21   2113*21
+  #define color65k_grayscale22   2113*22
+  #define color65k_grayscale23   2113*23
+  #define color65k_grayscale24   2113*24
+  #define color65k_grayscale25   2113*25
+  #define color65k_grayscale26   2113*26
+  #define color65k_grayscale27   2113*27
+  #define color65k_grayscale28   2113*28
+  #define color65k_grayscale29   2113*29
+  #define color65k_grayscale30   2113*30
 
 ' Dimension variables for global variable required for Circles.
   dim GLCD_yordinate as integer
@@ -1025,6 +1070,104 @@ If GLCD_TYPE = GLCD_TYPE_ST7789_320_240 Then
      ST7789_GLCD_WIDTH = GLCDDeviceWidth
   End If
 
+    // script code for LT7686 library
+  If GLCD_TYPE = LT7686_800_480_BLUE or GLCD_TYPE = LT7686_1024_600_BLUE or GLCD_TYPE = LT7686_1024_600_BLACK Then
+
+      #include <glcd_lt7686.h>
+      InitGLCD = InitGLCD_LT7686
+      GLCDCLS = GLCDCLS_LT7686
+      FilledBox = FilledBox_LT7686
+      Box = Box_LT7686
+      If DEF(PICAS) Then
+          _Line = LINE_LT7686
+      End If
+      If NODEF(PICAS) Then
+          Line = LINE_LT7686
+      End if
+      LineWidth = Line_Width_LT7686
+      Circle = Circle_LT7686
+      FilledCircle = FilledCircle_LT7686
+      FramedFilledbox = FramedFilledbox_LT7686
+      FramedFilledCircle = FramedFilledCircle_LT7686
+      Ellipse = Ellipse_LT7686
+      FilledEllipse = FilledEllipse_LT7686
+      RoundRect = RoundRect_LT7686
+      FilledRoundRect = FilledRoundRect_LT7686
+      FramedFilledRoundRect = FramedFilledRoundRect_LT7686
+      Triangle = Triangle_LT7686
+      FilledTriangle = FilledTriangle_LT7686
+      FramedFilledTriangle = FramedFilledTriangle_LT7686
+      Pset = Pset_LT7686
+      Cylinder = Cylinder_LT7686
+      LeftUpCurve = LeftUpCurve_LT7686
+      LeftDownCurve = LeftDownCurve_LT7686
+      RightUpCurve = RightUpCurve_LT7686
+      RightDownCurve = RightDownCurve_LT7686
+      FilledLeftUpCurve = FilledLeftUpCurve_LT7686
+      FilledLeftDownCurve = FilledLeftDownCurve_LT7686
+      FilledRightUpCurve = FilledRightUpCurve_LT7686
+      FilledRightDownCurve = FilledRightDownCurve_LT7686
+      Quadrilateral = Quadrilateral_LT7686
+      FilledQuadrilateral = FilledQuadrilateral_LT7686
+      Pentagon = Pentagon_LT7686
+      FilledPentagon = FilledPentagon_LT7686
+      FilledCube = FilledCube_LT7686
+
+
+      GLCDDrawChar = GLCDDrawChar_ILI9341
+      GLCDDrawString = GLCDDrawString_ILI9341
+      GLCDSelect_Internal_Font_Init = LT7686_Select_Internal_Font_Init
+      GLCDPrint_Internal_Font = LT7686_Print_Internal_Font
+
+      GLCDSetBackgroundColor = LT7686_SetBackgroundColor
+      GLCDMakeTable = MakeTable_LT7686
+      
+      GLCDRotate = GLCDRotate_LT7686
+      glcd_type_string = "LT7686"
+      LT7686_GLCD_HEIGHT = GLCDDeviceHeight
+      LT7686_GLCD_WIDTH = GLCDDeviceWidth
+
+      IF NODEF(LT7686_STATE1_DELAY) THEN
+          LT7686_STATE1_DELAY = 20
+      END IF
+      IF NODEF(LT7686_STATE2_DELAY) THEN
+          LT7686_STATE2_DELAY = 20
+      END IF
+
+      IF NODEF(LT7686_PWM_PRESCALER_MAX) THEN
+        LT7686_PWM_PRESCALER_MAX = 200
+      END IF
+      IF DEF(LT7686_PWM_PRESCALER_MAX) THEN
+        IF LT7686_PWM_PRESCALER_MAX > 255 THEN
+          Error "LT7686_PWM_PRESCALER_MAX constant cannot exceed 255"
+        END IF
+      END IF      
+      SCRIPT_SDRAM_ITV = INT(((64000000 / 8192) / (1000 / LT7686_DRAM_FREQ))-2)
+      SCRIPT_SDRAM_ITV_H = INT(INT(((64000000 / 8192) / (1000 / LT7686_DRAM_FREQ))-2) / 256)
+      SCRIPT_SDRAM_ITV_L = (INT(((64000000 / 8192) / (1000 / LT7686_DRAM_FREQ))-2) AND 255)
+      IF DEF(SCRIPTDEBUG) THEN
+          warning SCRIPT_SDRAM_ITV
+      END IF
+
+
+  End If
+  
+  If GLCD_TYPE = LT7686_800_480_BLUE Then
+      GLCD_WIDTH = 800
+      GLCD_HEIGHT = 480
+      LT7686_INITTFT_DATASET = LT7686_INITTFT_DATASET_800_480
+  End If
+
+  If GLCD_TYPE = LT7686_1024_600_BLUE Then
+      GLCD_WIDTH = 1024
+      GLCD_HEIGHT = 600
+      LT7686_INITTFT_DATASET = LT7686_INITTFT_DATASET_1024_600
+  End If
+
+  If GLCD_TYPE = LT7686_1024_600_BLACK Then
+      GLCD_WIDTH = 1024
+      GLCD_HEIGHT = 600
+  End If
 
 #endscript
 
@@ -4281,7 +4424,7 @@ sub Hyperbole(x_0, y_0, a_axis, b_axis, type, ModeStop, optional LineColour=GLCD
     Dim x_coord, y_coord, x_max, y_max as Word
     Dim x_plus, x_minus, y_plus, y_minus as Word
     Dim type, ModeStop as byte
-    Dim Linecolour as word
+    Dim LineColour as word
     Dim HyperboleCondition, intersect as byte
 
     if Type=1 then
@@ -4405,12 +4548,12 @@ sub HyperboleDisplayPixel(LineColour)
   if Type = 1 then
     if x_plus<=x_max  then
       if y_plus<=y_max then
-        Pset(x_plus, y_plus, Linecolour)
+        Pset(x_plus, y_plus, LineColour)
       else
         intersect.0=1
       end if
       if y_minus.15=0 then
-        Pset(x_plus, y_minus, Linecolour)
+        Pset(x_plus, y_minus, LineColour)
       else
         intersect.1=1
       end if
@@ -4425,7 +4568,7 @@ sub HyperboleDisplayPixel(LineColour)
         intersect.2=1
       end if
       if y_minus.15=0 then
-        Pset(x_minus, y_minus, Linecolour)
+        Pset(x_minus, y_minus, LineColour)
       else
         intersect.3=1
       end if
@@ -4436,12 +4579,12 @@ sub HyperboleDisplayPixel(LineColour)
   else '---------------------------------------------------
     if x_plus<=x_max then
       if y_plus<=y_max then
-        Pset(y_plus, x_plus, Linecolour)
+        Pset(y_plus, x_plus, LineColour)
       else
         intersect.0=1
       end if
       if y_minus.15=0 then
-        Pset(y_minus, x_plus, Linecolour)
+        Pset(y_minus, x_plus, LineColour)
       else
         intersect.1=1
       end if
@@ -4451,12 +4594,12 @@ sub HyperboleDisplayPixel(LineColour)
     end if
     if x_minus.15=0 then
       if y_plus<=y_max then
-        Pset(y_plus, x_minus, Linecolour)
+        Pset(y_plus, x_minus, LineColour)
       else
         intersect.2=1
       end if
       if y_minus.15=0 then
-        Pset(y_minus, x_minus, Linecolour)
+        Pset(y_minus, x_minus, LineColour)
       else
         intersect.3=1
       end if
@@ -4526,7 +4669,7 @@ sub Parabola(x_0, y_0, p_factor, type, ModeStop, optional LineColour=GLCDForegro
     Dim x_coord, y_coord, x_max, y_max as Word
     Dim x_plus, x_minus, y_plus, y_minus as Word
     Dim type, ModeStop as byte
-    Dim Linecolour as word
+    Dim LineColour as word
     Dim ParabolaCondition, intersect as byte
 
     if Type=1 then
@@ -4633,12 +4776,12 @@ sub ParabolaDisplayPixel(LineColour)
   if Type = 1 then
     if x_plus<=x_max  then
       if y_plus<=y_max then
-        Pset(x_plus, y_plus, Linecolour)
+        Pset(x_plus, y_plus, LineColour)
       else
         intersect.0=1
       end if
       if y_minus.15=0 then
-        Pset(x_plus, y_minus, Linecolour)
+        Pset(x_plus, y_minus, LineColour)
       else
         intersect.1=1
       end if
@@ -4649,12 +4792,12 @@ sub ParabolaDisplayPixel(LineColour)
   else '---------------------------------------------------
     if x_plus<=x_max then
       if y_plus<=y_max then
-        Pset(y_plus, x_plus, Linecolour)
+        Pset(y_plus, x_plus, LineColour)
       else
         intersect.0=1
       end if
       if y_minus.15=0 then
-        Pset(y_minus, x_plus, Linecolour)
+        Pset(y_minus, x_plus, LineColour)
       else
         intersect.1=1
       end if

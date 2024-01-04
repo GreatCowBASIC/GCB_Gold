@@ -1,5 +1,5 @@
 '    Pulse Width Modulation routines for GCBASIC
-'    Copyright (C) 2006-2023 Hugh Considine, William Roth, Kent Schafer and Evan R. Venn
+'    Copyright (C) 2006-2024 Hugh Considine, William Roth, Kent Schafer and Evan R. Venn
 '
 '
 '    This library is free software; you can redistribute it and/or
@@ -134,6 +134,9 @@
 '''            Update to remove ASM comments but retaining the comments in this library
 ''' 19/03/2023 Updated to isolate CCP1/PWM setup when CCP1/PWM does not exist using #opion required not a script
 ''' 05/04/2024 Revised to add CHIPTIMERXCLOCKSOURCESVARIANT to support chip that FOSC/4 clock source in T2CLKCON, T4CLKCON or T6CLKCON equate to 0b0000000 - the standard is 0b00000001
+''' 05/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCPSetDuty() to support 9bit and 10Bit operations.
+''' 06/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCP_MAXDUTYVALUE() to support 9bit and 10Bit operations.
+
 
 
 'user changeable constants
@@ -314,6 +317,13 @@ Sub InitPWM
 
         'T2PR was used in these routines, but, that is now a register, so, Changed to TxPR
           PR2_CPP_PWM_Temp = int((1/PWM_Freq)/(4*(1/(ChipMHz*1000))))
+        'Global constant for users to use
+          PWMCCP1MAXDUTYVALUE = PR2_CPP_PWM_Temp
+
+          PR2_CPP_PWM_Temp_10BIT_POTENTIALLY = int((1/PWM_Freq)/((1/(ChipMHz*1000))))
+          If PR2_CPP_PWM_Temp_10BIT_POTENTIALLY > 255 and PR2_CPP_PWM_Temp_10BIT_POTENTIALLY < 1024 Then
+            PWMCCP1MAXDUTYVALUE = PR2_CPP_PWM_Temp_10BIT_POTENTIALLY
+          End If
 
           TxPR = 1
           if PR2_CPP_PWM_Temp > 255 then
@@ -322,6 +332,7 @@ Sub InitPWM
               if PR2_CPP_PWM_Temp > 255 then
                 PR2_CPP_PWM_Temp = int((1/PWM_Freq)/(64*(1/(ChipMHz*1000))))
                 TxPR = 16
+                PWMCCP1MAXDUTYVALUE = INT(PWMCCP1MAXDUTYVALUE / 4)
               if PR2_CPP_PWM_Temp > 255 then
                 'error TxPR, PR2_CPP_PWM_Temp
                 error msg(BadPWMFreq)
@@ -331,8 +342,25 @@ Sub InitPWM
 
         'Global constant for users to use
         PRxPeriodRegister = PR2_CPP_PWM_Temp
-        TimerXprescaleselectValue = TxPR
+        TIMERXPRESCALESELECTVALUE = TxPR
 
+        IF DEF(SHOWPWMCCPCALCULATIONRESULTS) THEN
+          If PWMCCP1MAXDUTYVALUE < 256 Then
+            warning "8Bit PWMCCP"
+            //~ Shift value to left to aling to CCPR1L<8>:DC1B1<1>:DC1B0<1> bits
+            PWMCCP1MAXDUTYVALUE = INT(PWMCCP1MAXDUTYVALUE*4)
+          END IF
+          If PWMCCP1MAXDUTYVALUE > 255 Then
+            warning "9Bit or 10Bit PWMCCP"
+          END IF  
+          warning "PWMCCP1MAXDUTYVALUE: " PWMCCP1MAXDUTYVALUE
+          warning "PRxPeriodRegister  : " PRxPeriodRegister
+          warning "PreScaler is       : " TIMERXPRESCALESELECTVALUE
+        END IF
+
+        If PWMCCP1MAXDUTYVALUE > 1023 Then
+          Error "Duty Cycles exceeds 10bit value. Change frequency and or duty cycle"
+        End If
         'Code from Early days
         'DutyCycle = (PWM_Duty*10.24)*PR2_CPP_PWM_Temp/1024
         DutyCycle = (PWM_Duty / 25) * (PR2_CPP_PWM_Temp + 1)
@@ -345,7 +373,7 @@ Sub InitPWM
         PWMOsc16 = int(60000/(3840/ChipMHz))  '*** Unused constant ***
         ' End of CCP/PWM script - see end of section for code
 
-    #endscript
+      #endscript
 
 Legacy_StartofFixedCCPPWMModeCode:
 
@@ -405,8 +433,17 @@ Legacy_StartofFixedCCPPWMModeCode:
 
                 'Set Duty cycle
                 #ifndef Bit(CCP1FMT)
-                  'This is the legacy code to support only one CCPPWM channel
-                  CCPR1L = DutyCycleH
+                  
+                  #if PWMCCP1MAXDUTYVALUE < 256
+                    'This is the legacy code to support only one CCPPWM channel 8bit
+                    CCPR1L =  DutyCycleH
+                  #else
+                      'This is the legacy code to support only one CCPPWM channel 9bit or 10bit
+                      DC1B1  = DutyCycleL.7
+                      DC1B0  = DutyCycleL.6
+                      CCPR1L = DutyCycleH
+                  #endif
+
                 #endif
 
                 #IFNDEF Oneof(PWM_Timer2_Freq,PWM_Timer2_Freq,PWM_Timer2_Freq)
@@ -470,12 +507,12 @@ Legacy_StartofFixedCCPPWMModeCode:
 
                     #endif
 
-                    'legacy code, replaced by canskip
-                                    'Finish preparing CCP*CON
-                        '            SET CCPCONCache.CCP1M3 ON
-                        '            SET CCPCONCache.CCP1M2 ON
-                        '            SET CCPCONCache.CCP1M1 OFF
-                        '            SET CCPCONCache.CCP1M0 OFF'
+                    //~ legacy code, replaced by canskip
+                        //~         Finish preparing CCP*CON
+                        //~         SET CCPCONCache.CCP1M3 ON
+                        //~         SET CCPCONCache.CCP1M2 ON
+                        //~         SET CCPCONCache.CCP1M1 OFF
+                        //~         SET CCPCONCache.CCP1M0 OFF
                      CCPCONCache.CCP1M3, CCPCONCache.CCP1M2, CCPCONCache.CCP1M1, CCPCONCache.CCP1M0 = b'1100'
 
                     'Enable Timer 2
@@ -2754,7 +2791,7 @@ end Sub
 'Supports CCPx [1-5] the clock souce is always Timer2, however, if the part can support timerselection bits this will try to set, else, it will default to timer 2
 'This is an 8bit resolution
 #define HPWM_CCPTimer2 HPWM
-sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8 bit resolution on timer 2
+sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8bit resolution on timer 2
 
   Dim PRx_Temp as LONG
   Dim PRx_Temp_Cache as Long
@@ -2777,15 +2814,22 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8 bit resolution on timer 2
           //~ This simply set Tx_PR to 1,4 or 16
 
           Tx_PR = 1
-// wait 1 s
-// HserPrintCRLF 2
-// HserPrint "PWMFreq " + str(PWMFreq)
-// HserPrintCRLF
-// HserPrint "PWMOsc1 " + str(PWMOsc1)
-// HserPrintCRLF
+          /*
+          wait 1 s
+          HserPrintCRLF 2
+          HserPrint "PWMFreq " + str(PWMFreq)
+          HserPrintCRLF
+          HserPrint "PWMOsc1 " + str(PWMOsc1)
+            HserPrintCRLF
+          */
+          
           PRx_Temp = PWMOsc1 / PWMFreq
-// HserPrint "1) PRx_Temp " + str(PRx_Temp)
-// HserPrintCRLF          
+          
+          /*
+          HserPrint "1) PRx_Temp " + str(PRx_Temp)
+          HserPrintCRLF          
+          */
+
           IF PRx_Temp_H > 0 then
             Tx_PR = 4
             'Divide by 4
@@ -2812,13 +2856,15 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8 bit resolution on timer 2
             set STATUS.C off
             rotate PRx_Temp right
           end if
-// HserPrint "2) PRx_Temp " + str(PRx_Temp)
-// HserPrintCRLF
-// HserPrint "Tx_PR " + str(Tx_PR)
-// HserPrintCRLF
-          'added to handle different timer sources
-          'added to support HPWM_CCPTimerN. Makes the code longer but more flexible
-          'user optimisation to reduce code.
+          /*
+          HserPrint "2) PRx_Temp " + str(PRx_Temp)
+          HserPrintCRLF
+          HserPrint "Tx_PR " + str(Tx_PR)
+          HserPrintCRLF
+          */
+          //~added to handle different timer sources
+          //~added to support HPWM_CCPTimerN. Makes the code longer but more flexible
+          //~user optimisation to reduce code.
 CCPPWMSetupClockSource:
           //~ Tx_PR is either 1, 4, 16 or 64.  This is controlled by the maths section.  
           //~ So, other values are NOT ever going to be selected.
@@ -4584,6 +4630,89 @@ sub calculateDuty
 
     'exits with PRx_Temp calculated
 end sub
+
+//~ Method to cater for users calling the HPWM_CCPSetDuty() with a byte when it should be word
+//~ This method ensure that if a user calls HPWM_CCPSetDuty() with __CCPDutyVar as a byte they get 8bit control of the duty
+Sub HPWM_CCPSetDuty ( In PWMChannel, in __CCPDutyVar as Byte )
+
+    Select Case PWMChannel
+        #ifdef USE_HPWMCCP1 TRUE and VAR(CCP1CON)
+            Case 1:
+                //~ Ensure duty value does not exceed maximum value
+                If __CCPDutyVar > PWMCCP1MAXDUTYVALUE Then 
+                  Exit Sub
+                End If
+                HPWM_CCPSetDuty ( PWMChannel, [WORD]Scale(__CCPDutyVar,0, 255,0,PWMCCP1MaximumDutyValue) )
+        #endif
+        #ifdef USE_HPWMCCP2 TRUE and VAR(CCP2CON)
+            Case 2:
+                //~ Ensure duty value does not exceed maximum value
+                If __CCPDutyVar > PWMCCP2MAXDUTYVALUE Then 
+                  Exit Sub
+                End If
+                HPWM_CCPSetDuty ( PWMChannel, [WORD]Scale(__CCPDutyVar,0, 255,0,PWMCCP2MaximumDutyValue) )                
+        #endif
+        #ifdef USE_HPWMCCP3 TRUE and VAR(CCP3CON)   
+            Case 3:
+                //~ Ensure duty value does not exceed maximum value
+                If __CCPDutyVar > PWMCCP3MAXDUTYVALUE Then 
+                  Exit Sub
+                End If
+                HPWM_CCPSetDuty ( PWMChannel, [WORD]Scale(__CCPDutyVar,0, 255,0,PWMCCP3MaximumDutyValue) )                
+        #endif
+        #ifdef USE_HPWMCCP4 TRUE and VAR(CCP4CON)   
+            Case 4:
+                //~ Ensure duty value does not exceed maximum value
+                If __CCPDutyVar > PWMCCP4MAXDUTYVALUE Then 
+                  Exit Sub
+                End If
+                HPWM_CCPSetDuty ( PWMChannel, [WORD]Scale(__CCPDutyVar,0, 255,0,PWMCCP4MaximumDutyValue) )
+        #endif
+        #ifdef USE_HPWMCCP5 TRUE and VAR(CCP5CON)                  
+            Case 5:
+                //~ Ensure duty value does not exceed maximum value
+                If __CCPDutyVar > PWMCCP5MAXDUTYVALUE Then 
+                  Exit Sub
+                End If
+                HPWM_CCPSetDuty ( PWMChannel, [WORD]Scale(__CCPDutyVar,0, 255,0,PWMCCP5MaximumDutyValue) )                                
+        #endif
+    End Select
+
+End Sub
+
+Sub HPWM_CCPSetDuty ( In PWMChannel, in __CCPDutyVar as Word )
+
+    #ifdef USE_HPWMCCP1 TRUE
+        #ifdef VAR(CCP1CON)
+            'This is the legacy code to support only one CCCPWM channel
+            DC1B1  = __CCPDutyVar.1
+            DC1B0  = __CCPDutyVar.0
+            //~ Shift value to right, twice, and use the byte value
+            Set C off
+            Rotate __CCPDutyVar Right
+            Rotate __CCPDutyVar Right
+            CCPR1L = [Byte]__CCPDutyVar
+        #endif
+    #endif
+
+End Sub
+
+Function HPWM_CCP_MAXDUTYVALUE (  Optional In PWMChannel as Byte = 1 ) as Word
+
+  Select Case PWMChannel
+    Case 1     
+      HPWM_CCP_MAXDUTYVALUE =  PR2 + 1
+      SET C OFF
+      ROTATE  HPWM_CCP_MAXDUTYVALUE LEFT
+      ROTATE  HPWM_CCP_MAXDUTYVALUE LEFT
+                          
+  End Select
+
+end Function
+
+
+
+//~  AVR SECTION
 
 
 sub AVRHPWM (In AVRPWMChannel, In AVRPWMFreq, IN AVRPWMDuty)

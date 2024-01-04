@@ -1,6 +1,6 @@
-;Copyright 2017-2020 Thomas Henry
+;Copyright 2017-2024 Thomas Henry
 ;
-;Sony IR Remote Control Library for Great Cow Basic
+;Sony IR Remote Control Library for GCBASIC
 
 ;Thomas Henry
 ;Version 2.0 -- 4/23/2014 - 2017

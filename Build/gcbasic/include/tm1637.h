@@ -1,4 +1,4 @@
-'    Copyright 2017-2020 Mike Otte
+'    Copyright 2017-2024 Mike Otte
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation; either
@@ -21,7 +21,7 @@
 '********************************************************************************
 
 
-'    7 Segment LED display routines using the TM1637  for Great Cow BASIC
+'    7 Segment LED display routines using the TM1637  for GCBASIC
 '     The TM1637 module provide a cheap bright LED Display
 '     The ebay modules can be had for $1 to $4, somtimes less.
 '     They only need 2 pins to control : clk and dio

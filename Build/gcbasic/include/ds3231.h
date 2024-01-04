@@ -1,5 +1,5 @@
 '    Library for reading/writing to Microchip DS3231 RTC for the GCBASIC compiler
-'    Copyright (C) 2012-2020 Thomas Henry and Evan Venn
+'    Copyright (C) 2012-2024 Thomas Henry and Evan Venn
 '
 '    Version 1.1a  10/1/2015
 '    Version 1.2a  11/1/2015

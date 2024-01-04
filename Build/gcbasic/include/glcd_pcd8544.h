@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2012-2022 Hugh Considine and Evan Venn
+'    Copyright (C) 2012-2024 Hugh Considine and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -57,7 +57,7 @@
 
 
 'PCD8544 Details
-'This program was written using the Great Cow Basic IDE for use with the PIC
+'This program was written using the GCBASIC IDE for use with the PIC
 'Microchio development board and a Nokia 3310 LCD. It is a nice small graphical LCD, suitable for a lot of various projects.
 'The display is 38*35 mm, with an active display surface of 30*22 mm, and a 84*48 pixel resolution.
 'The display is easy to interface, using an SPI type of communication.

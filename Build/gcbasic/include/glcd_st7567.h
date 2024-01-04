@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2023 Evan Venn
+'    Copyright (C) 2024 Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -766,8 +766,10 @@ Sub PSet_ST7567(In GLCDX, In GLCDY, In GLCDColour As Word)
     'Origin in top left
 
     #ifndef  GLCDDIRECTION
+    'GLCDDIRECTION
         GLCDX=127-GLCDX
     #else
+    'GLCDDIRECTION
         GLCDY=63-GLCDY
     #endif
 

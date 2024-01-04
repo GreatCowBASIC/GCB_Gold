@@ -1,5 +1,5 @@
 '    Some common BASIC commands/functions for GCBASIC
-'    Copyright (C) 2006-2020 Hugh Considine, Chris Roper and Willaim Roth and Evan Venn
+'    Copyright (C) 2006-2024 Hugh Considine, Chris Roper and Willaim Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

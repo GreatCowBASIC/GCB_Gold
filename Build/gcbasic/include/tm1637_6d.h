@@ -21,7 +21,7 @@
 
 
 '     Routines for 6 digit 7 Segment LED display RobotDyne module
-'       (and clones) using the TM1637 for Great Cow BASIC
+'       (and clones) using the TM1637 for GCBASIC
 '
 '     They only need 2 pins to control : clk and dio
 '     6 digit 7 seg Display with decimal points.

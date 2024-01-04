@@ -1,6 +1,6 @@
 '    Song playing routines for the GCBASIC compiler
 '    This provides a Play subroutine that is compatible with that in QBASIC
-'    Copyright (C) 2012-2020 Hugh Considine
+'    Copyright (C) 2012-2024 Hugh Considine
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

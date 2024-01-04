@@ -1,5 +1,5 @@
 '    XPT2046 routines for the GCBASIC compiler
-'    Copyright (C) 2018-2020 Evan R. Venn
+'    Copyright (C) 2018-2024 Evan R. Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

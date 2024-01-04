@@ -13,10 +13,10 @@
 '    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 '********************************************************************************
-'    Bosch BME280/BMP280  routines for Great Cow BASIC
+'    Bosch BME280/BMP280  routines for GCBASIC
 '   This is a library for the BME280 humidity, temperature & pressure sensor. It
 '   only supports the I2C bus. It does not support the SPI bus connection.
-'    Copyright (C) 2006 -2020 Hugh Considine,  Evan R. Venn, Mike Otte,
+'    Copyright (C) 2006 -2024 Hugh Considine,  Evan R. Venn, Mike Otte,
 '   David Thomson, David Stephenson, Theo, Thomas Henry
 '
 '   24/09/2019   Change the library to I2CReceive BME280_DataBuffer( BME280_DataBuffer_Pointer) , ACK
@@ -290,7 +290,7 @@ sub BME280_SoftReset
 
 end sub
 '
-' Register 0xF4 “ctrl_meas”
+' Register 0xF4 ï¿½ctrl_measï¿½
 'Bit 7, 6, 5 osrs_t[2:0]Controls oversampling of temperature data.
 'Bit 4, 3, 2 osrs_p[2:0]Controls oversampling of pressure data.
 'Bit 1, 0 mode[1:0] Controls the sensor mode of the device.
@@ -335,10 +335,10 @@ function BME280_GetCtrlHumidity as byte
 
 end function
 '
-'Register 0xF5 “config”
+'Register 0xF5 ï¿½configï¿½
 'Bit 7, 6, 5 t_sb[2:0]Controls inactive duration tstandby in normal mode.
 'Bit 4, 3, 2 filter[2:0] Controls the time constant of the IIR filter.
-'Bit 0 spi3w_en[0]Enables 3-wire SPI interface when set to ‘1’.
+'Bit 0 spi3w_en[0]Enables 3-wire SPI interface when set to ï¿½1ï¿½.
 '
 sub BME280_SetConfig( in BME280_temp as byte)
 

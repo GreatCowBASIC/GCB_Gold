@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2018-2020 Evan Venn
+'    Copyright (C) 2018-2024 Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@
 '   Example of character mode usage
 '    #define GLCD_TYPE_UC1601_CHARACTER_MODE_ONLY    'This defined will be required on high RAM devices to activate low memory capability
 '
-'    GLCDPrint 0,1, "Great Cow BASIC"
+'    GLCDPrint 0,1, "GCBASIC"
 '    GLCDPrint 0,12, "Page 2"
 '
 '   Low memory adaptation and documentation
@@ -56,7 +56,7 @@
 '    #define GLCD_TYPE_UC1601_LOWMEMORY_GLCD_MODE
 '
 '      GLCD_Open_PageTransaction 0,7
-'        GLCDPrint 0,1, "Great Cow BASIC"
+'        GLCDPrint 0,1, "GCBASIC"
 '        GLCDPrint 0,8, "Page 2"
 '        Box 0,0,131,21
 '      GLCD_Close_PageTransaction

@@ -1,5 +1,5 @@
 '    Hardware I2C routines for GCBASIC
-'    Copyright (C) 2010-2020 Hugh Considine, Jacques Erdemaal and Evan R. Venn
+'    Copyright (C) 2010-2024 Hugh Considine, Jacques Erdemaal and Evan R. Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

@@ -1,7 +1,7 @@
 '
 '    millis() function for Great Cow BASIC
 '
-'  Copyright (C) 2018-2020, 2023 Chris Roper, Evan Venn
+'  Copyright (C) 2018-2024, 2024 Chris Roper, Evan Venn
 '  This library is free software; you can redistribute it and/or
 '  modify it under the terms of the GNU Lesser General Public
 '  License as published by the Free Software Foundation; either

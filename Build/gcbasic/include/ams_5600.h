@@ -1,6 +1,6 @@
 /*
 --------------------------------------------------------------------------------
-AMS 5600 class for Great Cow BASIC
+AMS 5600 class for GCBASIC
 
 datasheet: https://ams.com/documents/20143/36005/AS5600_DS000365_5-00.pdf
 

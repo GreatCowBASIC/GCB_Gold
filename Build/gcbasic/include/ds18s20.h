@@ -1,5 +1,5 @@
-'    DS18s20 routines for the Great Cow BASIC compiler
-'    Copyright (C) 2017-2020 Kent Schafer
+'    DS18s20 routines for the GCBASIC compiler
+'    Copyright (C) 2017-2024 Kent Schafer
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
 '    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
 'Notes:
-' This is a Dallas DS18s20 temperature device device program for Great Cow Basic.
+' This is a Dallas DS18s20 temperature device device program for GCBASIC.
 ' This is the minimal code to get a positive temperature reading in degrees
 ' Celsius.  Has not been tested in Parasitic mode or with long lengths of wire.
 ' Kent Schafer Feb 12, 2007

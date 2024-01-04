@@ -1,25 +1,29 @@
-#asmraw
-#bootloader
-#chip
-#config
+#ASMRAW
+#CHIP
+#CONFIG
 #define
-#endif
-#endscript
-#if
-#ifdef
-#ifndef
-#include
-#mem
-#option
-#samebit
-#samevar
-#script
-#startup
-_GLCDPage
-_GLCDPagesH
-_GLCDPagesL
+#ENDIF
+#ELSE
+#ENDSCRIPT
+#IF
+#IFNOT
+#IFDEF
+#IFNDEF
+#IGNORECOMPILATION
+#INCLUDE
+#INSERT
+#MEM
+#OPTION
+#SAMEBIT
+#SAMEVAR
+#SCRIPT
+#SKIPTEST
+#STARTUP
+#UNDEFINE
 10ms
 10us
+31k
+32.768k
 ABS
 ADOff
 Alias
@@ -30,6 +34,7 @@ Array
 As
 Asc
 At
+ATan
 Average
 BcdToDec_GCB
 BIT
@@ -40,13 +45,19 @@ ByteToBin
 Call
 canskip
 Case
+ChipADC
+ChipEEprom
 ChipFamily
+ChipIO
 ChipMHz
 ChipName
 ChipNameStr
+ChipOsc
+ChipPins
 ChipRAM
 ChipReserveHighProg
 ChipProgrammerNameStr
+ChipUsingIntOsc
 ChipWords
 CHR
 Circle
@@ -54,9 +65,12 @@ ClearSMT1
 ClearSMT2
 ClearTimer
 CLS
+CONFIG
+cos
 CreateButton
 CURSOROFF
 CURSORON
+DATA
 DecToBcd_GCB
 Difference
 Dim
@@ -64,8 +78,8 @@ Dir
 DisplayChar
 DisplayValue
 Do
-do until
-do while
+DS18B20SetResolution
+equ
 EERAM_AutoStore
 EERAM_Backup
 EERAM_HS
@@ -83,16 +97,23 @@ Ellipse
 Else
 Else If
 End
+End Function
 End Macro
+End Repeat
+End Select
+End Sub
 End Table
 EPRead
 EPWrite
 Exit
 Exit Do
+Exit For
+Exit Function
+Exit Repeat
 Exit Sub
 Explicit
-False
-Fast
+FALSE
+FAST
 FastHWSPITransfer
 Fill
 FilledBox
@@ -110,18 +131,14 @@ Forever
 FOSC
 FOSC4
 Function
+FVRInitialize
+FVRIsOutputReady
 FVR_1x
 FVR_2x
 FVR_4x
 FVR_off
-FVRInitialize
-FVRIsOutputReady
 Get
 GetUserID
-GLCD_Close_PageTransaction
-GLCD_NextionSerialPrint
-GLCD_NextionSerialSend
-GLCD_Open_PageTransaction
 GLCDBackground
 GLCDCLS
 GLCDDisplay
@@ -134,14 +151,14 @@ GLCDGetTouch_Nextion
 GLCDLocateString
 GLCDLocateString_Nextion
 GLCDPrint
-GLCDPrint_Nextion
 GLCDPrintDefaultFont_Nextion
 GLCDPrintLargeFont
 GLCDPrintString
-GLCDPrintString_Nextion
 GLCDPrintStringLn
 GLCDPrintStringLn_Nextion
+GLCDPrintString_Nextion
 GLCDPrintWithSize
+GLCDPrint_Nextion
 GLCDReadByte
 GLCDRotate
 GLCDSendOpInstruction_Nextion
@@ -149,6 +166,10 @@ GLCDSetContrast
 GLCDTimeDelay
 GLCDUpdateObject_Nextion
 GLCDWriteByte
+GLCD_Close_PageTransaction
+GLCD_NextionSerialPrint
+GLCD_NextionSerialSend
+GLCD_Open_PageTransaction
 Gosub
 Goto
 h
@@ -189,10 +210,18 @@ HI2CWaitMSSP
 HI2CWaitMSSPTimeout
 HLine
 HPWM
-HPWM_CCPTimerN
-HPWM_Fast
 HPWMOff
 HPWMUpdate
+HPWM_CCPTimerN
+HPWM_Fast
+HPWM16Init
+HPWM16
+HPWM16On
+HPWM16Off
+HPWM16_Log2
+HPWM16_setPRPS
+HPWM16_setDC
+HPWM16_setGoing 
 HSerGetNum
 HSerGetString
 HSerPrint
@@ -204,17 +233,17 @@ HSerReceive1
 HSerReceive2
 HSerReceiveFrom
 HSerSend
-I2C_Adr_EERAM
-I2C_Adr_EERAM
 I2CAckpoll
 I2CReceive
 I2CReset
-i2cRestart
+I2CRestart
 I2CSend
 I2CSlaveDeviceReceive
 I2CStart
 I2CStartOccurred
 I2CStop
+I2C_Adr_EERAM
+I2C_Adr_EERAM
 If
 Ignore
 In
@@ -245,13 +274,6 @@ KeypadRaw
 Landscape
 Landscape_Rev
 LCase
-LCD_I2C_Address_1
-LCD_I2C_Address_2
-LCD_I2C_Address_3
-LCD_I2C_Address_4
-LCD_I2C_Address_Current
-LCD_IO
-LCD_Speed
 LCDBacklight
 LCDCMD
 LCDCreateChar
@@ -265,8 +287,17 @@ LCDOFF
 LCDON
 LCDSpace
 LCDWriteChar
+LCD_I2C_Address_1
+LCD_I2C_Address_2
+LCD_I2C_Address_3
+LCD_I2C_Address_4
+LCD_I2C_Address_Current
+LCD_IO
+LCD_SPEED
+LCD_VARIANT
+LCD_VFD_DELAY
 Left
-leftpad
+LeftPad
 Len
 LFINTOSC
 Line
@@ -280,8 +311,7 @@ Loop
 Ltrim
 m
 Macro
-map
-Medium
+MEDIUM
 MFINTOSC
 Mid
 MOD
@@ -302,8 +332,8 @@ OR
 Out
 Pad
 Peek
-play
-playrtttl
+Play
+PlayRTTTL
 Poke
 Portrait
 Portrait_Rev
@@ -351,8 +381,7 @@ SAFReadWord
 SAFWrite
 SAFWriteBlock
 SAFWriteWord
-scale
-scroll_UC1601
+Scale
 Select
 Ser1Print
 Ser1Receive
@@ -373,9 +402,11 @@ SetSMT2
 SetSMT2Period
 SetTimer
 SetWith
+shiftR
 ShortTone
 Simple
-Slow
+sin
+SLOW
 SOSC
 SPIMode
 SPITransfer
@@ -418,6 +449,7 @@ Sub
 SWAP
 SWAP4
 Table
+tan
 TFT_BLACK
 TFT_BLUE
 TFT_CYAN
@@ -453,7 +485,7 @@ To
 Tone
 Triangle
 Trim
-True
+TRUE
 TxCKIPPS
 UCase
 UNLOCKPPS
@@ -469,3 +501,10 @@ While
 Word
 WORDTOBIN
 XOR
+_GLCDPage
+_GLCDPagesH
+_GLCDPagesL
+MasterRst
+Ppulse
+Owout
+Owin

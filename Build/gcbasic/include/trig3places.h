@@ -1,7 +1,7 @@
-;Copyright 2014-2020 Thomas Henry
+;Copyright 2014-2024 Thomas Henry
 ;
 ;Include File: Trig3Places.h
-;Trigonometric Functions for Great Cow Basic
+;Trigonometric Functions for GCBASIC
 ;Thomas Henry --- 4/17/2014 - 2017
 
 ;Sine, Cosine and Tangent, accurate to 3 decimal places.

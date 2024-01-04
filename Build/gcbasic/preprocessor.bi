@@ -1,7 +1,7 @@
 ' ============= Prototype TableString ============= 2021-03-02
 ' GCBASIC - A BASIC Compiler for microcontrollers
 '  Preprocessor
-' Copyright (C) 2006 - 2023 Hugh Considine and Evan R. Venn
+' Copyright (C) 2006 - 2024 Hugh Considine and Evan R. Venn
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -719,6 +719,17 @@ SUB PreProcessor
             loop
 
             Temp = LTrim(Temp, Any Chr(9) + " ")
+            
+            IF UCase(Left(Temp, 7)) = "#IGNORE" THEN
+              If T = 1 then
+                Dim Temp As String
+                Temp = Message("WarningIgnoreCompilation")
+                'Print
+                Print Temp
+                Close
+                End
+              End If
+            End if
             IF UCase(Left(Temp, 8)) = "#INCLUDE" THEN
               IF INSTR(Temp, Chr(34)) <> 0 THEN
                 'Double quote seen so treat as full path and filename
@@ -869,7 +880,7 @@ SUB PreProcessor
 
     InlineRAWASM = 0
 
-    DO WHILE NOT EOF(1)
+    DO WHILE NOT EOF(1) or HandlingInsert = INSERTFILEOPEN 
      LoadFileData:
 
      ProcessDataSource:
@@ -893,7 +904,14 @@ SUB PreProcessor
           DataSource = ""
           LC = INT(LC/10000)
         End If
-
+        'illegal operation
+        If Left(DataSource,1) = "#" Then
+            If Instr(trim(ucase(DataSource)), "#INCLUDE") = 1 Then
+              LogError Message("CannotUseIncludeInsideInsert") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Close
+              exit sub
+            End If
+        End If
       ElseIf HandlingInsert = INSERTFILEEOF Then
         DataSource = ""
         Close FileNo
@@ -952,7 +970,7 @@ SUB PreProcessor
         End if
       end if
 
-      If Left(Trim(DataSource), 2 ) = "*/" And StartOfCommentBlock  <> 0 Then
+      If ( Left(Trim(DataSource), 2 ) = "*/" or Right(Trim(DataSource), 2 ) = "*/" ) And StartOfCommentBlock  <> 0 Then
         StartOfCommentBlock = 0
         EndOfCommentBlock   = LC
         Replace DataSource, "*/", ""
@@ -1196,6 +1214,9 @@ SUB PreProcessor
         T = 1
       ElseIF DataSource = "REM" Then
         T = 1
+              
+      ElseIf Left(DataSource, 7) = "#IGNORE" Then
+        T = 1
 
       ElseIf Left(DataSource, 8) = "#INCLUDE" Then
         T = 1
@@ -1291,756 +1312,761 @@ SUB PreProcessor
       'Load line
       IF T = 0 Then
 
-          'Build 1144 to prevent subsequent #ELSE
-          If TrapMultipleElse = UCase(Left(DataSource,5)) and Left(DataSource,5) = "#ELSE" Then
-            LogError Message("FollowOnElse"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-          else
-            TrapMultipleElse = Ucase  (Left(DataSource,5))
-          End if
+            'Build 1144 to prevent subsequent #ELSE
+            If TrapMultipleElse = UCase(Left(DataSource,5)) and Left(DataSource,5) = "#ELSE" Then
+              LogError Message("FollowOnElse"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            else
+              TrapMultipleElse = Ucase  (Left(DataSource,5))
+            End if
 
-        IF LaxSyntax = 0 THEN
-          IF INSTR(DataSource, "DELAY_MS") <> 0 Then
-            LogError Message("SynErr"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          IF LaxSyntax = 0 THEN
+            IF INSTR(DataSource, "DELAY_MS") <> 0 Then
+              LogError Message("SynErr"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            END IF
+            IF INSTR(DataSource, "DELAY_US") <> 0 Then
+              LogError Message("SynErr"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            END IF
           END IF
-          IF INSTR(DataSource, "DELAY_US") <> 0 Then
-            LogError Message("SynErr"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-          END IF
-        END IF
 
-        'Convert single-line IFs to multiple line
-        IF INSTR(DataSource, "IF") <> 0 AND INSTR(DataSource, "THEN") <> 0 AND LEN(DataSource) > INSTR(DataSource, "THEN") + 3 THEN
-          Do While InStr(DataSource, "THEN ") <> 0: Replace DataSource, "THEN ", "THEN: ": Loop
-          Do While InStr(DataSource, " ELSE IF ") <> 0: Replace DataSource, " ELSE IF ", " :ELSE IF ": Loop
-          If INSTR(DataSource, " ELSE ") <> 0 Then Replace DataSource, " ELSE ", " :ELSE: "
-          DataSource = DataSource + ": END IF"
-        END If
-		'Convert single-line ELSE statement to multiple line
-        IF LEFT(DataSource, 4 ) = "ELSE" AND LEN(DataSource ) <> 4 Then 
-          If INSTR(DataSource, "IF") = 0 and INSTR(DataSource, "THEN") = 0 Then 
-            DataSource = "ELSE:"+MID(DataSource,5)
+          'Convert single-line IFs to multiple line
+          IF INSTR(DataSource, "IF") <> 0 AND INSTR(DataSource, "THEN") <> 0 AND LEN(DataSource) > INSTR(DataSource, "THEN") + 3 THEN
+            Do While InStr(DataSource, "THEN ") <> 0: Replace DataSource, "THEN ", "THEN: ": Loop
+            Do While InStr(DataSource, " ELSE IF ") <> 0: Replace DataSource, " ELSE IF ", " :ELSE IF ": Loop
+            If INSTR(DataSource, " ELSE ") <> 0 Then Replace DataSource, " ELSE ", " :ELSE: "
+            DataSource = DataSource + ": END IF"
+          END If
+        'Convert single-line ELSE statement to multiple line
+          IF LEFT(DataSource, 4 ) = "ELSE" AND LEN(DataSource ) <> 4 Then 
+            If INSTR(DataSource, "IF") = 0 and INSTR(DataSource, "THEN") = 0 Then 
+              DataSource = "ELSE:"+MID(DataSource,5)
+            End If
+          END IF
+
+      MultiCommand:
+
+          'Make adjustments to line if needed
+
+          'Convert If( to If (
+          If Left(DataSource, 3) = "IF(" Then
+            DataSource = "IF (" + Mid(DataSource, 4)
           End If
-        END IF
 
-     MultiCommand:
+          'Check that the IF has a THEN
+          IF Left(DataSource, 3) = "IF " AND INSTR(DataSource, "THEN") = 0 THEN
+            LogError Message("NoThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          END IF
 
-        'Make adjustments to line if needed
-
-        'Convert If( to If (
-        If Left(DataSource, 3) = "IF(" Then
-          DataSource = "IF (" + Mid(DataSource, 4)
-        End If
-
-        'Check that the IF has a THEN
-        IF Left(DataSource, 3) = "IF " AND INSTR(DataSource, "THEN") = 0 THEN
-          LogError Message("NoThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-        END IF
-
-        'This section syntax checks the source for improved syntax checking
-        'GOTO jumpEndofimprovedsyntaxchecking
-        
-        If Left( DataSource,4) = "SUB " Then
-          If endsubCounter = 0 Then
-            If subCounter = 0 Then
-              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
-            Else
+          'This section syntax checks the source for improved syntax checking
+          'GOTO jumpEndofimprovedsyntaxchecking
+          
+          If Left( DataSource,4) = "SUB " Then
+            If endsubCounter = 0 Then
+              If subCounter = 0 Then
+                firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Else
+                LogError Message("MissingEndSubDef"), firstSubEncountered
+                Close
+                exit sub  
+              End if
+              subCounter = subCounter + 1
+              endsubCounter = 0
+            else
               LogError Message("MissingEndSubDef"), firstSubEncountered
               Close
-              exit sub  
-            End if
-            subCounter = subCounter + 1
-            endsubCounter = 0
-          else
-            LogError Message("MissingEndSubDef"), firstSubEncountered
-            Close
-            exit sub
-          end if
-        End if
-        
-        If Left( DataSource,7) = "END SUB" Then
-          If subCounter = 1 Then
-            endsubCounter = 0
-            subCounter = 0
-            firstSubEncountered = ""                       
-          Else
-            LogError Message("MissingSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-            Close
-            exit sub
+              exit sub
+            end if
           End if
-        End if
           
-        If Left( DataSource,9) = "FUNCTION " Then
-          If endfunctionCounter = 0 Then
-            If functionCounter = 0 Then
-              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          If Left( DataSource,7) = "END SUB" Then
+            If subCounter = 1 Then
+              endsubCounter = 0
+              subCounter = 0
+              firstSubEncountered = ""                       
             Else
+              LogError Message("MissingSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Close
+              exit sub
+            End if
+          End if
+            
+          If Left( DataSource,9) = "FUNCTION " Then
+            If endfunctionCounter = 0 Then
+              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              If functionCounter = 0 Then
+                firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Else
+                LogError Message("MissingEndFuncDef"), firstSubEncountered
+                Close
+                exit sub  
+              End if
+              functionCounter = functionCounter + 1
+              endfunctionCounter = 0
+            else
               LogError Message("MissingEndFuncDef"), firstSubEncountered
               Close
-              exit sub  
-            End if
-            functionCounter = functionCounter + 1
-            endfunctionCounter = 0
-          else
-            LogError Message("MissingEndFuncDef"), firstSubEncountered
-            Close
-            exit sub
-          end if
-        End if
-        
-        If Left( DataSource,12) = "END FUNCTION" Then
-          If functionCounter = 1 Then
-            endfunctionCounter = 0
-            functionCounter = 0
-            firstSubEncountered = ""                       
-          Else
-            LogError Message("MissingFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-            Close
-            exit sub
+              exit sub
+            end if
           End if
-        End if
-
-        If Left( DataSource,6) = "ELSEIF" Then
-            LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-            Close
-            exit sub
-        End If
-
-        If Left( DataSource,7) = "ELSE IF" Then
-          If Instr( DataSource, " THEN" ) = 0 Then
-              LogError Message("ElseIfMissingThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          
+          If Left( DataSource,12) = "END FUNCTION" Then       
+            If functionCounter = 1 Then
+              endfunctionCounter = 0
+              functionCounter = 0
+              firstSubEncountered = ""                       
+            Else
+              LogError Message("MissingFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
               Close
-              exit Sub
+              exit sub
+            End if
+          End if
+
+          If Left( DataSource,6) = "ELSEIF" Then
+              LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              Close
+              exit sub
           End If
-        End If
 
-
-        If instr( DataSource, "(" ) + instr( DataSource, ")" ) <> 0 Then
-          If countSubstring(DataSource,"(" ) <> countSubstring(DataSource,")" ) Then
-            LogError Message("MissingParenthesesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-          End If 
-        End If
-
-        If instr( DataSource, "[" ) + instr( DataSource, "]" ) <> 0 Then        
-          If countSubstring(DataSource,"[" ) <> countSubstring(DataSource,"]" ) Then
-            LogError Message("MissingBracketsError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          If Left( DataSource,7) = "ELSE IF" Then
+            If Instr( DataSource, " THEN" ) = 0 Then
+                LogError Message("ElseIfMissingThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Close
+                exit Sub
+            End If
           End If
-        End if
-        If instr( DataSource, "{" ) + instr( DataSource, "}" ) <> 0 Then
-          If countSubstring(DataSource,"{" ) <> countSubstring(DataSource,"}" ) Then
-            LogError Message("MissingBracesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-          End If 
-        End if
 
-        jumpEndofimprovedsyntaxchecking:
 
-        'Is this the user source and readad* - needs to have ( and )
-        If RF = 1 Then
-          If instr( DataSource, "READAD" ) Then
-            If WholeINSTR( DataSource, "READAD" ) = 2 OR  WholeINSTR( DataSource, "READAD10" ) = 2  OR WholeINSTR( DataSource, "READAD12" ) = 2  Then
-              If countSubstring(DataSource,"(" ) = 0 or  countSubstring(DataSource,")" ) = 0 Then
-                LogError Message("ReadADMissingparentheses") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+          If instr( DataSource, "(" ) + instr( DataSource, ")" ) <> 0 Then
+            If countSubstring(DataSource,"(" ) <> countSubstring(DataSource,")" ) Then
+              LogError Message("MissingParenthesesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            End If 
+          End If
+
+          If instr( DataSource, "[" ) + instr( DataSource, "]" ) <> 0 Then        
+            If countSubstring(DataSource,"[" ) <> countSubstring(DataSource,"]" ) Then
+              LogError Message("MissingBracketsError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            End If
+          End if
+          If instr( DataSource, "{" ) + instr( DataSource, "}" ) <> 0 Then
+            If countSubstring(DataSource,"{" ) <> countSubstring(DataSource,"}" ) Then
+              LogError Message("MissingBracesError"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            End If 
+          End if
+
+          jumpEndofimprovedsyntaxchecking:
+
+          'Is this the user source and readad* - needs to have ( and )
+          If RF = 1 Then
+            If instr( DataSource, "READAD" ) Then
+              If WholeINSTR( DataSource, "READAD" ) = 2 OR  WholeINSTR( DataSource, "READAD10" ) = 2  OR WholeINSTR( DataSource, "READAD12" ) = 2  Then
+                If countSubstring(DataSource,"(" ) = 0 or  countSubstring(DataSource,")" ) = 0 Then
+                  LogError Message("ReadADMissingparentheses") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                End If
               End If
             End If
           End If
-        End If
-        
-        'Replace <> with ~ (not equal)
-        Do While INSTR(DataSource, "<>") <> 0: Replace DataSource, "<>", "~": Loop
-        'Replace => with } (equal or greater)
-        Do While INSTR(DataSource, "=>") <> 0: Replace DataSource, "=>", "}": Loop
-        Do While INSTR(DataSource, ">=") <> 0: Replace DataSource, ">=", "}": Loop
-        'Replace =< with { (less or equal)
-        Do While INSTR(DataSource, "=<") <> 0: Replace DataSource, "=<", "{": Loop
-        Do While INSTR(DataSource, "<=") <> 0: Replace DataSource, "<=", "{": Loop
+          
+          'Replace <> with ~ (not equal)
+          Do While INSTR(DataSource, "<>") <> 0: Replace DataSource, "<>", "~": Loop
+          'Replace => with } (equal or greater)
+          Do While INSTR(DataSource, "=>") <> 0: Replace DataSource, "=>", "}": Loop
+          Do While INSTR(DataSource, ">=") <> 0: Replace DataSource, ">=", "}": Loop
+          'Replace =< with { (less or equal)
+          Do While INSTR(DataSource, "=<") <> 0: Replace DataSource, "=<", "{": Loop
+          Do While INSTR(DataSource, "<=") <> 0: Replace DataSource, "<=", "{": Loop
 
-        'Convert DIM Value AS BIT to #define Value BitTemp.BVC
-        IF Left(DataSource, 4) = "DIM " Then
-          'DIM, bit variable
-          If INSTR(DataSource, "AS BIT") <> 0 THEN
-            Value = Mid(DataSource, INSTR(DataSource, " ") + 1)
-            Value = Trim(Left(Value, INSTR(Value, "AS BIT") - 1))
+          'Convert DIM Value AS BIT to #define Value BitTemp.BVC
+          IF Left(DataSource, 4) = "DIM " Then
+            'DIM, bit variable
+            If INSTR(DataSource, "AS BIT") <> 0 THEN
+              Value = Mid(DataSource, INSTR(DataSource, " ") + 1)
+              Value = Trim(Left(Value, INSTR(Value, "AS BIT") - 1))
 
-            'DataSource = "#DEFINE " + Value + " SYSBITVAR" + Str(INT(BVC / 8)) + "." + Str(BVC-INT(BVC/8)*8)
-            Do While Value <> ""
-              ConstName = Value
-              If Instr(ConstName, ",") <> 0 Then
-                ConstName = Trim(Left(ConstName, Instr(ConstName, ",") - 1))
-                Value = Trim(Mid(Value, Instr(Value, ",") + 1))
-              Else
-                Value = ""
+              'DataSource = "#DEFINE " + Value + " SYSBITVAR" + Str(INT(BVC / 8)) + "." + Str(BVC-INT(BVC/8)*8)
+              Do While Value <> ""
+                ConstName = Value
+                If Instr(ConstName, ",") <> 0 Then
+                  ConstName = Trim(Left(ConstName, Instr(ConstName, ",") - 1))
+                  Value = Trim(Mid(Value, Instr(Value, ",") + 1))
+                Else
+                  Value = ""
+                End If
+
+                'If constant doesn't exist, add
+                IF HashMapGet(Constants, ConstName) = 0 THEN
+                  AddConstant(ConstName, "SYSBITVAR" + Str(INT(BVC / 8)) + "." + Str(BVC MOD 8), Str(RF))
+                  CheckConstName ConstName, Origin
+                END IF
+
+                BVC = BVC + 1
+              Loop
+
+            END IF
+          End If
+
+          'Convert WORD FUNCTION x to FUNCTION x AS WORD
+          IF Left(DataSource, 14) = "WORD FUNCTION " THEN
+            FName = Trim(Mid(DataSource, 15))
+            DataSource = "FUNCTION " + FName + " AS WORD"
+          End If
+
+          'PIC timer prescaler constant workarounds
+          If InStr(DataSource, "PS") <> 0 Then
+            DataSourceOld = DataSource
+            ReplaceAll DataSource, "PS0_1/", "PS0_"
+            ReplaceAll DataSource, "PS1_1/", "PS1_"
+            ReplaceAll DataSource, "PS2_1/", "PS2_"
+            ReplaceAll DataSource, "PS3_1/", "PS3_"
+            ReplaceAll DataSource, "PS4_1/", "PS4_"
+            ReplaceAll DataSource, "PS5_1/", "PS5_"
+            ReplaceAll DataSource, "PS6_1/", "PS6_"
+            ReplaceAll DataSource, "PS7_1/", "PS7_"
+            ReplaceAll DataSource, "PS8_1/", "PS8_"
+            ReplaceAll DataSource, "PS10_1/", "PS10_"
+            ReplaceAll DataSource, "PS12_1/", "PS12_"
+
+            If DataSourceOld <> DataSource Then
+              'Code to show warning - enable later if any problems found with this workaround
+              Temp = Message("WarningTimerConst")
+              'LogWarning(Temp, ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?")
+            End If
+          End If
+
+          'Remove any tabs and double spaces (again)
+          DO WHILE INSTR(DataSource, Chr(9)) <> 0: Replace DataSource, Chr(9), " ": Loop
+          DO WHILE INSTR(DataSource, Chr(194)) <> 0: Replace DataSource, Chr(194), " ": Loop 'Odd character that sometimes shows up
+          DO WHILE INSTR(DataSource, "  ") <> 0: Replace DataSource, "  ", " ": Loop
+          DataSource = Trim(DataSource)
+
+          'Decide if the line read is part of a sub or not
+          IF Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO " Then
+            S = 1
+
+            '0 = Sub, 1 = Function, 2 = Macro
+            FoundFunction = 0
+            FoundMacro = 0
+            Do While Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO "
+              If Left(DataSource, 4) = "SUB " Then
+                DataSource = Trim(Mid(DataSource, 4))
+              ElseIf Left(DataSource, 9) = "FUNCTION " Then
+                DataSource = Trim(Mid(DataSource, 9))
+                FoundFunction = -1
+              ElseIf Left(DataSource, 6) = "MACRO " Then
+                DataSource = Trim(Mid(DataSource, 6))
+                FoundMacro = -1
               End If
 
-              'If constant doesn't exist, add
-              IF HashMapGet(Constants, ConstName) = 0 THEN
-                AddConstant(ConstName, "SYSBITVAR" + Str(INT(BVC / 8)) + "." + Str(BVC MOD 8), Str(RF))
-                CheckConstName ConstName, Origin
-              END IF
+              'Is this the user source file? and need to ensure Subs are are not started with Fn.....
+              if Left(DataSource, 2) = "FN" and RF =1  Then
+                  Temp = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+                  LogError("Reserved prefix 'Fn' identifier not permitted, rename method", Temp)
+              End if
 
-              BVC = BVC + 1
             Loop
 
-          END IF
-        End If
-
-        'Convert WORD FUNCTION x to FUNCTION x AS WORD
-        IF Left(DataSource, 14) = "WORD FUNCTION " THEN
-          FName = Trim(Mid(DataSource, 15))
-          DataSource = "FUNCTION " + FName + " AS WORD"
-        End If
-
-        'PIC timer prescaler constant workarounds
-        If InStr(DataSource, "PS") <> 0 Then
-          DataSourceOld = DataSource
-          ReplaceAll DataSource, "PS0_1/", "PS0_"
-          ReplaceAll DataSource, "PS1_1/", "PS1_"
-          ReplaceAll DataSource, "PS2_1/", "PS2_"
-          ReplaceAll DataSource, "PS3_1/", "PS3_"
-          ReplaceAll DataSource, "PS4_1/", "PS4_"
-          ReplaceAll DataSource, "PS5_1/", "PS5_"
-          ReplaceAll DataSource, "PS6_1/", "PS6_"
-          ReplaceAll DataSource, "PS7_1/", "PS7_"
-          ReplaceAll DataSource, "PS8_1/", "PS8_"
-          ReplaceAll DataSource, "PS10_1/", "PS10_"
-          ReplaceAll DataSource, "PS12_1/", "PS12_"
-
-          If DataSourceOld <> DataSource Then
-            'Code to show warning - enable later if any problems found with this workaround
-            Temp = Message("WarningTimerConst")
-            'LogWarning(Temp, ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?")
-          End If
-        End If
-
-        'Remove any tabs and double spaces (again)
-        DO WHILE INSTR(DataSource, Chr(9)) <> 0: Replace DataSource, Chr(9), " ": Loop
-        DO WHILE INSTR(DataSource, Chr(194)) <> 0: Replace DataSource, Chr(194), " ": Loop 'Odd character that sometimes shows up
-        DO WHILE INSTR(DataSource, "  ") <> 0: Replace DataSource, "  ", " ": Loop
-        DataSource = Trim(DataSource)
-
-        'Decide if the line read is part of a sub or not
-        IF Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO " Then
-          S = 1
-
-          '0 = Sub, 1 = Function, 2 = Macro
-          FoundFunction = 0
-          FoundMacro = 0
-          Do While Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO "
-            If Left(DataSource, 4) = "SUB " Then
-              DataSource = Trim(Mid(DataSource, 4))
-            ElseIf Left(DataSource, 9) = "FUNCTION " Then
-              DataSource = Trim(Mid(DataSource, 9))
-              FoundFunction = -1
-            ElseIf Left(DataSource, 6) = "MACRO " Then
-              DataSource = Trim(Mid(DataSource, 6))
-              FoundMacro = -1
-            End If
-
-            'Is this the user source file? and need to ensure Subs are are not started with Fn.....
-            if Left(DataSource, 2) = "FN" and RF =1  Then
-                Temp = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
-                LogError("Reserved prefix 'Fn' identifier not permitted, rename method", Temp)
-            End if
-
-          Loop
-
-          LCS = 0
-          'Check for function type
-          If FoundFunction Then
-            'Also need to remove type def from line
-            NewFNType = "BYTE"
-            For T = Len(DataSource) To 1 Step -1
-              'Found a ), any ASes before this will be for params
-              If Mid(DataSource, T, 1) = ")" Then Exit For
-              'Found an AS, get the type
-              If Mid(DataSource, T, 4) = " AS " Then
-                NewFNType = Trim(Mid(DataSource, T + 4))
-                DataSource = Trim(Left(DataSource, T))
-                Exit For
-              End If
-            Next
-          End If
-          'Get sub/function name
-          CurrentSub = DataSource
-          If INSTR(CurrentSub, "(") <> 0 Then CurrentSub = Trim(Left(CurrentSub, INSTR(CurrentSub, "(") - 1))
-
-          NR = 0
-          If INSTR(DataSource, "#NR") <> 0 Then
-            NR = -1
-            Replace DataSource, "#NR", ""
-          End If
-          If FoundFunction Then NR = -1
-
-          SBC += 1
-          Subroutine(SBC) = NewSubroutine(CurrentSub)
-          CurrPos = Subroutine(SBC)->CodeStart
-          With *Subroutine(SBC)
-            .SourceFile = RF  'Source file
-            .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?"
-
-            'Function or macro?
-            .IsMacro = FoundMacro
-            .IsFunction = FoundFunction
+            LCS = 0
+            'Check for function type
             If FoundFunction Then
-              .ReturnType = NewFNType
-              'If length specified in type name, remove from function type
-              '(Length is only needed when adding the variable)
-              If InStr(.ReturnType, "*") <> 0 Then
-                .ReturnType = Trim(Left(.ReturnType, InStr(.ReturnType, "*") - 1))
-              End If
-              AddVar .Name, NewFNType, 1, Subroutine(SBC), "REAL", .Origin, , -1
-            End If
-
-            'Is sub overloaded?
-            .Overloaded = 0
-            For T = 1 TO SBC - 1
-              If Subroutine(T)->Name = .Name Then
-                Subroutine(T)->Overloaded = -1
-                .Overloaded = -1
-                Exit For
-              End If
-            Next
-
-            'Get parameters
-            SubInType = ""
-            Temp = Trim(Mid(DataSource, 4))
-            IF INSTR(Temp, "(") <> 0 THEN
-              Temp = Mid(Temp, INSTR(Temp, "(") + 1)
-              FOR T = LEN(Temp) TO 1 STEP -1
-                IF Mid(Temp, T, 1) = ")" THEN Temp = Left(Temp, T - 1): EXIT FOR
+              'Also need to remove type def from line
+              NewFNType = "BYTE"
+              For T = Len(DataSource) To 1 Step -1
+                'Found a ), any ASes before this will be for params
+                If Mid(DataSource, T, 1) = ")" Then Exit For
+                'Found an AS, get the type
+                If Mid(DataSource, T, 4) = " AS " Then
+                  NewFNType = Trim(Mid(DataSource, T + 4))
+                  DataSource = Trim(Left(DataSource, T))
+                  Exit For
+                End If
               Next
-              Temp = Trim(Temp)
-
-              Do While Instr(Temp, ",") <> 0
-                .ParamCount += 1
-                .Params(.ParamCount) = GetSubParam(Left(Temp, Instr(Temp, ",") - 1), NR)
-                Temp = Mid(Temp, Instr(Temp, ",") + 1)
-              Loop
-              If Temp <> "" Then
-                .ParamCount += 1
-                .Params(.ParamCount) = GetSubParam(Temp, NR)
-              End If
             End If
+            'Get sub/function name
+            CurrentSub = DataSource
+            If INSTR(CurrentSub, "(") <> 0 Then CurrentSub = Trim(Left(CurrentSub, INSTR(CurrentSub, "(") - 1))
 
-            'Find any large vars used as parameters
-            For T = 1 To .ParamCount
-              With .Params(T)
-                If .Type = "STRING" Then
-                  AddVar .Name, .Type, 1, Subroutine(SBC), "POINTER", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
-                ElseIf Instr(.Type, "()") <> 0 Then
-                  Temp = .Type
-                  Replace Temp, "()", ""
-                  AddVar .Name, Temp, 2, Subroutine(SBC), "POINTER", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
-                Else
-                  AddVar .Name, .Type, 1, Subroutine(SBC), "REAL", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
-                End If
-              End With
-            Next
-
-          End With
-
-          GOTO LoadNextLine
-        END IF
-
-        If Left(DataSource, 7) = "END SUB" OR Left(DataSource, 9) = "END MACRO" Or Left(DataSource, 12) = "END FUNCTION" THEN
-          S = 0
-          CurrentSub = ""
-          GOTO LoadNextLine
-        END IF
-
-        'Decide if the line read is part of a data table or not
-        IF Left(DataSource, 6) = "TABLE " THEN
-          'Open new data table
-          S = 2
-
-          'Get data from line
-          GetTokens DataSource, LineToken(), LineTokens
-
-          'Create table
-          DataTables += 1
-          With DataTable(DataTables)
-            .Name = LineToken(2)
-            .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
-            .StoreLoc = 0
-            .Type = "BYTE"
-            .RawItems = LinkedListCreate
-            .CurrItem = .RawItems
-            .Items = 0
-            .IsEEPromData = 0
-            For T = 2 To LineTokens
-              'Get store location
-              If LineToken(T) = "STORE" Then
-                If LineToken(T + 1) = "PROGRAM" Then
-                  .StoreLoc = 0
-                ElseIf LineToken(T + 1) = "DATA" Then
-                  .StoreLoc = 1
-                Else
-                  Temp = Message("BadTableLocation")
-                  Replace Temp, "%loc%", LineToken(T + 1)
-                  LogError Temp, .Origin
-                End If
-              'Get type
-              ElseIf LineToken(T) = "AS" Then
-                .Type = LineToken(T + 1)
-              'Load table from file - get file and read
-              ElseIf LineToken(T) = "FROM" Then
-                .SourceFile = AddFullPath(GetString(";" + LineToken(T + 1), 0), ProgDir)
-                LoadTableFromFile @DataTable(DataTables)
-                S = 0
-              End If
-            Next
-          End With
-
-          GOTO LoadNextLine
-
-        'End of table
-        ElseIF Left(DataSource, 9) = "END TABLE" THEN
-          S = 0
-          GOTO LoadNextLine
-        END IF
-
-        'Handle EEPROM data directly via table methods
-        IF Left(DataSource, 7) = "EEPROM " THEN
-          'New EEPROM data
-          S = 2
-
-          'Get data from line
-          GetTokens DataSource, LineToken(), LineTokens
-
-          'Create table
-          DataTables += 1
-          With DataTable(DataTables)
-            .Name = LineToken(2)
-            .FixedLoc = 0
-            
-            IF LineTokens > 2 Then
-              'Is a calculation needed to get location?
-              If IsCalc(LineToken(3)) Then
-                Calculate LineToken(3)
-              End If
-
-              'Is fixed location given as a constant?./
-              If IsConst(LineToken(3)) Then
-                .FixedLoc = MakeDec(LineToken(3))
-              End If
+            NR = 0
+            If INSTR(DataSource, "#NR") <> 0 Then
+              NR = -1
+              Replace DataSource, "#NR", ""
             End If
+            If FoundFunction Then NR = -1
 
-            .Used = -1
-            .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
-            .Type = "BYTE"
-            .RawItems = LinkedListCreate
-            .CurrItem = .RawItems
-            .Items = 0
-            .StoreLoc = 1
-            .IsEEPromData = -1
-          End With
+            SBC += 1
+            Subroutine(SBC) = NewSubroutine(CurrentSub)
+            CurrPos = Subroutine(SBC)->CodeStart
+            With *Subroutine(SBC)
+              .SourceFile = RF  'Source file
+              .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?"
 
-          GOTO LoadNextLine
-
-        'End of table
-        ElseIF Left(DataSource, 10) = "END EEPROM" THEN
-          S = 0
-          GOTO LoadNextLine
-        END IF
-
-        'Does the command need to be inserted into the main routine, regardless of sub/not sub?
-        ForceMain = 0
-        Temp = ""
-
-        If Left(DataSource, 1) = "#" Then
-          'Automatic initialisation preparation
-          IF Left(DataSource, 8) = "#STARTUP" Then
-            With SourceFile(RF)
-              If .InitSubFound = 0 then
-                .InitSub = Trim(Mid(DataSource, 9))
-                .InitSubPriority = 100
-                If InStr(.InitSub, ",") <> 0 Then
-                  .InitSubPriority = Val(Mid(.InitSub, InStr(.InitSub, ",") + 1))
-                  .InitSub = Trim(Left(.InitSub, InStr(.InitSub, ",") - 1))
+              'Function or macro?
+              .IsMacro = FoundMacro
+              .IsFunction = FoundFunction
+              If FoundFunction Then
+                .ReturnType = NewFNType
+                'If length specified in type name, remove from function type
+                '(Length is only needed when adding the variable)
+                If InStr(.ReturnType, "*") <> 0 Then
+                  .ReturnType = Trim(Left(.ReturnType, InStr(.ReturnType, "*") - 1))
                 End If
-                .InitSubFound = 1
-              Else
-                Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
-                Temp = Message("TooManyStartups")
-                LogError Temp, Origin
+                AddVar .Name, NewFNType, 1, Subroutine(SBC), "REAL", .Origin, , -1
               End If
+
+              'Is sub overloaded?
+              .Overloaded = 0
+              For T = 1 TO SBC - 1
+                If Subroutine(T)->Name = .Name Then
+                  Subroutine(T)->Overloaded = -1
+                  .Overloaded = -1
+                  Exit For
+                End If
+              Next
+
+              'Get parameters
+              SubInType = ""
+              Temp = Trim(Mid(DataSource, 4))
+              IF INSTR(Temp, "(") <> 0 THEN
+                Temp = Mid(Temp, INSTR(Temp, "(") + 1)
+                FOR T = LEN(Temp) TO 1 STEP -1
+                  IF Mid(Temp, T, 1) = ")" THEN Temp = Left(Temp, T - 1): EXIT FOR
+                Next
+                Temp = Trim(Temp)
+
+                Do While Instr(Temp, ",") <> 0
+                  .ParamCount += 1
+                  .Params(.ParamCount) = GetSubParam(Left(Temp, Instr(Temp, ",") - 1), NR)
+                  Temp = Mid(Temp, Instr(Temp, ",") + 1)
+                Loop
+                If Temp <> "" Then
+                  .ParamCount += 1
+                  .Params(.ParamCount) = GetSubParam(Temp, NR)
+                End If
+              End If
+
+              'Find any large vars used as parameters
+              For T = 1 To .ParamCount
+                With .Params(T)
+                  If .Type = "STRING" Then
+                    AddVar .Name, .Type, 1, Subroutine(SBC), "POINTER", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
+                  ElseIf Instr(.Type, "()") <> 0 Then
+                    Temp = .Type
+                    Replace Temp, "()", ""
+                    AddVar .Name, Temp, 2, Subroutine(SBC), "POINTER", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
+                  Else
+                    AddVar .Name, .Type, 1, Subroutine(SBC), "REAL", ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?", , -1
+                  End If
+                End With
+              Next
+
+            End With
+
+            GOTO LoadNextLine
+          END IF
+
+          If Left(DataSource, 7) = "END SUB" OR Left(DataSource, 9) = "END MACRO" Or Left(DataSource, 12) = "END FUNCTION" THEN
+            S = 0
+            CurrentSub = ""
+            GOTO LoadNextLine
+          END IF
+
+          'Decide if the line read is part of a data table or not
+          IF Left(DataSource, 6) = "TABLE " THEN
+            'Open new data table
+            S = 2
+
+            'Get data from line
+            GetTokens DataSource, LineToken(), LineTokens
+
+            'Create table
+            DataTables += 1
+            With DataTable(DataTables)
+              .Name = LineToken(2)
+              .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+              .StoreLoc = 0
+              .Type = "BYTE"
+              .RawItems = LinkedListCreate
+              .CurrItem = .RawItems
+              .Items = 0
+              .IsEEPromData = 0
+              For T = 2 To LineTokens
+                'Get store location
+                If LineToken(T) = "STORE" Then
+                  If LineToken(T + 1) = "PROGRAM" Then
+                    .StoreLoc = 0
+                  ElseIf LineToken(T + 1) = "DATA" Then
+                    .StoreLoc = 1
+                  Else
+                    Temp = Message("BadTableLocation")
+                    Replace Temp, "%loc%", LineToken(T + 1)
+                    LogError Temp, .Origin
+                  End If
+                'Get type
+                ElseIf LineToken(T) = "AS" Then
+                  .Type = LineToken(T + 1)
+                'Load table from file - get file and read
+                ElseIf LineToken(T) = "FROM" Then
+                  .SourceFile = AddFullPath(GetString(";" + LineToken(T + 1), 0), ProgDir)
+                  LoadTableFromFile @DataTable(DataTables)
+                  S = 0
+                End If
+              Next
             End With
 
             GOTO LoadNextLine
 
-          ElseIF Left(DataSource, 7) = "#DEFINE" Then
-            DataSource = DataSource + "':" + Str(RF)
-            ForceMain = 1
+          'End of table
+          ElseIF Left(DataSource, 9) = "END TABLE" THEN
+            S = 0
+            GOTO LoadNextLine
+          END IF
 
-          ElseIf Left(DataSource, 8) = "#OPTION " Then
-            DataSource = Trim(Mid(DataSource, 8))
-            If WholeINSTR(DataSource, "EXPLICIT") = 2 Then
-              SourceFile(RF).OptionExplicit = -1
-              GoTo LoadNextLine
-            ElseIf WholeINSTR(DataSource, "USERINCLUDE") = 2 Then
-              SourceFile(RF).UserInclude = -1
-              GoTo LoadNextLine
-            ElseIf WholeINSTR(DataSource, "REQUIRED") <> 0 Then
-              With SourceFile(RF)
-                If .RequiredModules = 0 Then
-                  .RequiredModules = LinkedListCreate
+          'Handle EEPROM data directly via table methods
+          IF Left(DataSource, 7) = "EEPROM " THEN
+            'New EEPROM data
+            S = 2
+
+            'Get data from line
+            GetTokens DataSource, LineToken(), LineTokens
+
+            'Create table
+            DataTables += 1
+            With DataTable(DataTables)
+              .Name = LineToken(2)
+              .FixedLoc = 0
+              
+              IF LineTokens > 2 Then
+                'Is a calculation needed to get location?
+                If IsCalc(LineToken(3)) Then
+                  Calculate LineToken(3)
                 End If
-                LinkedListInsert(.RequiredModules, DataSource)
+
+                'Is fixed location given as a constant?./
+                If IsConst(LineToken(3)) Then
+                  .FixedLoc = MakeDec(LineToken(3))
+                End If
+              End If
+
+              .Used = -1
+              .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+              .Type = "BYTE"
+              .RawItems = LinkedListCreate
+              .CurrItem = .RawItems
+              .Items = 0
+              .StoreLoc = 1
+              .IsEEPromData = -1
+            End With
+
+            GOTO LoadNextLine
+
+          'End of table
+          ElseIF Left(DataSource, 10) = "END EEPROM" THEN
+            S = 0
+            GOTO LoadNextLine
+          END IF
+
+          'Does the command need to be inserted into the main routine, regardless of sub/not sub?
+          ForceMain = 0
+          Temp = ""
+
+          If Left(DataSource, 1) = "#" Then
+            'Automatic initialisation preparation
+            IF Left(DataSource, 8) = "#STARTUP" Then
+              With SourceFile(RF)
+                If .InitSubFound = 0 then
+                  .InitSub = Trim(Mid(DataSource, 9))
+                  .InitSubPriority = 100
+                  If InStr(.InitSub, ",") <> 0 Then
+                    .InitSubPriority = Val(Mid(.InitSub, InStr(.InitSub, ",") + 1))
+                    .InitSub = Trim(Left(.InitSub, InStr(.InitSub, ",") - 1))
+                  End If
+                  .InitSubFound = 1
+                Else
+                  Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+                  Temp = Message("TooManyStartups")
+                  LogError Temp, Origin
+                End If
               End With
 
-              GoTo LoadNextLine
-            Else
-              IF gcOPTION <> "" THEN DataSource = "," + DataSource
-              gcOPTION = gcOPTION + DataSource
-              GoTo LoadNextLine
-            End if
-          ElseIF Left(DataSource, 5) = "#OSC " Then
-            ForceMain = 1
-          ElseIF Left(DataSource, 8) = "#CONFIG " Then
-            ForceMain = 1
-          ElseIf Left(DataSource, 9) = "#SAMEVAR " Then
-            ForceMain = 1
-          ElseIf Left(DataSource, 9) = "#SAMEBIT " Then
-            ForceMain = 1
+              GOTO LoadNextLine
 
-          ElseIf Left(DataSource, 5) = "#MEM " Then
-            GoTo LoadNextLine 'Not used
-          ElseIF Left(DataSource, 5) = "#RAM " Then
-            GoTo LoadNextLine 'Not used
-          ElseIF Left(DataSource, 5) = "#INT " Then
-            GoTo LoadNextLine 'Not used
-          ElseIF (Left(DataSource, 7) = "#IFDEF " OR Left(DataSource, 8) = "#IFNDEF " Or Left(DataSource, 4) = "#IF " Or Left(DataSource, 7) = "#IFNOT " Or ( Left(Trim(DataSource), 5 ) = "#ELSE" And Len(Trim(DataSource)) = 5 )  Or Left(Trim(DataSource), 6 ) = "#ENDIF" ) Then
-            'Build1144
-            'Add extensve handler for #ELSE to support conditional statements, and, the additional of #IFNOT to support negate of #IF
-            '- Reads current source line and caches into an array.  The array handles nested condiitional statements.
-            '-   Sets the caches (and source type of condition) for sourceline and the type of condition.  #IF=2,#IFNOT=3,#IFDEF=0,#IFNDEF=1
-            '- If the current source line is #ELSE then replace the #ELSE with appropiate code to enable the compiler to handle the #ELSE, as follows:
-            '-   and #ELSE when #IF transformed to #ENDIF & #IFNOT plus the condition
-            '-   and #ELSE when #IFNOT transformed to #ENDIF & #IF plus the condition
-            '-   and #ELSE when #IFDEF transformed to #ENDIF & #IFNDEF plus the condition
-            '-   and #ELSE when #IFNDEF transformed to #ENDIF & #IFDEF plus the condition
-            '- Each #IF.. increments the cache location and each #ENDIF decrements the cache location - this how nested conditions are supported
-            '
-            '- A key principle of operation is that changing #ELSE to #ENDIF: IF... condition leaves the compiler to split the line and use the existing split line handler to the new negated condition
-            '
-            '- The compiler has been updated to handle #IFNOT in the appropiate places but another key principle of operation is the support for #IFNOT
-            '-    #IFNOT is treated as #IF within the IFDEFs handler and using the source type of condition to negate the operation
-            '-    #IFNOT is source type 3.  The command is transformed from #IFNOT to #IF and then the result of the calculation is negated - this creates #IFNOT
-            '-    Other changes in IFDEFs added to recognised #IFNOT
+            ElseIF Left(DataSource, 7) = "#DEFINE" Then
+              DataSource = DataSource + "':" + Str(RF)
+              ForceMain = 1
 
-            'Read condition
-            If Left(DataSource, 4) = "#IF " Then                     'Set cache to 2
-              CachedCmd ( CachedCmdPointer ) = DataSource
-              CachedPMode ( CachedCmdPointer ) = 2
-              CachedCmdPointer = CachedCmdPointer + 1
+            ElseIf Left(DataSource, 8) = "#OPTION " Then
+              DataSource = Trim(Mid(DataSource, 8))
+              If WholeINSTR(DataSource, "EXPLICIT") = 2 Then
+                SourceFile(RF).OptionExplicit = -1
+                GoTo LoadNextLine
+              ElseIf WholeINSTR(DataSource, "USERINCLUDE") = 2 Then
+                SourceFile(RF).UserInclude = -1
+                GoTo LoadNextLine
+              ElseIf WholeINSTR(DataSource, "REQUIRED") <> 0 Then
+                With SourceFile(RF)
+                  If .RequiredModules = 0 Then
+                    .RequiredModules = LinkedListCreate
+                  End If
+                  LinkedListInsert(.RequiredModules, DataSource)
+                End With
 
-            ElseIf Left(DataSource, 7) = "#IFNOT " Then                'Set cache to 3
-              CachedCmd ( CachedCmdPointer ) = DataSource
-              CachedPMode ( CachedCmdPointer ) = 3
-              CachedCmdPointer = CachedCmdPointer + 1
-
-            ElseIf Left(DataSource, 7) = "#IFDEF " Then             'Set cache to 0
-              CachedCmd( CachedCmdPointer ) = DataSource
-              CachedPMode ( CachedCmdPointer ) = 0
-              CachedCmdPointer = CachedCmdPointer + 1
-
-            ElseIf Left(DataSource, 8) = "#IFNDEF " Then            'Set cache to 1
-              CachedCmd( CachedCmdPointer ) = DataSource
-              CachedPMode ( CachedCmdPointer ) = 1
-              CachedCmdPointer = CachedCmdPointer + 1
-
-            ElseIf Left(DataSource, 5) = "#ELSE" Then
-
-              If CachedCmd ( CachedCmdPointer -1  ) = ""  Then
-                LogError Message("InvalidElse"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-              End if
-
-              If CachedPMode ( CachedCmdPointer -1  ) > 3 Then
-                LogError Message("InvalidConditionalStructure"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-
-              ElseIf CachedPMode ( CachedCmdPointer -1 ) = 0 Then    'set to IFNDEF
-                DataSource = CachedCmd( CachedCmdPointer - 1)
-                Replace DataSource, "#ELSE", ""
-                DataSource = "#ENDIF:" + DataSource
-                Replace DataSource, "#IFDEF", "#IFNDEF"
-                DataSourceRaw = DataSource
-                CachedCmdPointer = CachedCmdPointer - 1
-
-              ElseIf CachedPMode ( CachedCmdPointer -1 ) = 1 Then    'set to IFDEF
-                DataSource = CachedCmd( CachedCmdPointer - 1)
-                Replace DataSource, "#ELSE", ""
-                DataSource = "#ENDIF:" + DataSource
-                Replace DataSource, "#IFNDEF", "#IFDEF"
-                DataSourceRaw = DataSource
-                CachedCmdPointer = CachedCmdPointer - 1
-
-              ElseIf CachedPMode ( CachedCmdPointer -1 ) = 2 Then    'set IF to negate in IFDEFs routine as we do not know the calc value
-                DataSource = CachedCmd( CachedCmdPointer - 1)
-                Replace DataSource, "#ELSE", ""
-                DataSource = "#ENDIF:" + DataSource
-                Replace DataSource, "#IF ", "#IFNOT "
-                DataSourceRaw = DataSource
-                CachedCmdPointer = CachedCmdPointer - 1
-
-              ElseIf CachedPMode ( CachedCmdPointer -1 ) = 3 Then    'set IFNOT to negate in IFDEFs routine as we do not know the calc value
-                DataSource = CachedCmd( CachedCmdPointer - 1)
-                Replace DataSource, "#ELSE", ""
-                DataSource = "#ENDIF:" + DataSource
-                Replace DataSource, "#IFNOT", "#IF "
-                DataSourceRaw = DataSource
-                CachedCmdPointer = CachedCmdPointer - 1
-
+                GoTo LoadNextLine
               Else
-                LogError Message("InvalidElseCantHandle"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+                IF gcOPTION <> "" THEN DataSource = "," + DataSource
+                gcOPTION = gcOPTION + DataSource
+                GoTo LoadNextLine
+              End if
+            ElseIF Left(DataSource, 5) = "#OSC " Then
+              ForceMain = 1
+            ElseIF Left(DataSource, 8) = "#CONFIG " Then
+              ForceMain = 1
+            ElseIf Left(DataSource, 9) = "#SAMEVAR " Then
+              ForceMain = 1
+            ElseIf Left(DataSource, 9) = "#SAMEBIT " Then
+              ForceMain = 1
 
-              EndIf
+            ElseIf Left(DataSource, 5) = "#MEM " Then
+              GoTo LoadNextLine 'Not used
+            ElseIF Left(DataSource, 5) = "#RAM " Then
+              GoTo LoadNextLine 'Not used
+            ElseIF Left(DataSource, 5) = "#INT " Then
+              GoTo LoadNextLine 'Not used
+            ElseIF (Left(DataSource, 7) = "#IFDEF " OR Left(DataSource, 8) = "#IFNDEF " Or Left(DataSource, 4) = "#IF " Or Left(DataSource, 7) = "#IFNOT " Or ( Left(Trim(DataSource), 5 ) = "#ELSE" And Len(Trim(DataSource)) = 5 )  Or Left(Trim(DataSource), 6 ) = "#ENDIF" ) Then
+              'Build1144
+              'Add extensve handler for #ELSE to support conditional statements, and, the additional of #IFNOT to support negate of #IF
+              '- Reads current source line and caches into an array.  The array handles nested condiitional statements.
+              '-   Sets the caches (and source type of condition) for sourceline and the type of condition.  #IF=2,#IFNOT=3,#IFDEF=0,#IFNDEF=1
+              '- If the current source line is #ELSE then replace the #ELSE with appropiate code to enable the compiler to handle the #ELSE, as follows:
+              '-   and #ELSE when #IF transformed to #ENDIF & #IFNOT plus the condition
+              '-   and #ELSE when #IFNOT transformed to #ENDIF & #IF plus the condition
+              '-   and #ELSE when #IFDEF transformed to #ENDIF & #IFNDEF plus the condition
+              '-   and #ELSE when #IFNDEF transformed to #ENDIF & #IFDEF plus the condition
+              '- Each #IF.. increments the cache location and each #ENDIF decrements the cache location - this how nested conditions are supported
+              '
+              '- A key principle of operation is that changing #ELSE to #ENDIF: IF... condition leaves the compiler to split the line and use the existing split line handler to the new negated condition
+              '
+              '- The compiler has been updated to handle #IFNOT in the appropiate places but another key principle of operation is the support for #IFNOT
+              '-    #IFNOT is treated as #IF within the IFDEFs handler and using the source type of condition to negate the operation
+              '-    #IFNOT is source type 3.  The command is transformed from #IFNOT to #IF and then the result of the calculation is negated - this creates #IFNOT
+              '-    Other changes in IFDEFs added to recognised #IFNOT
 
-            ElseIf Left(Trim(DataSource), 6 ) = "#ENDIF" Then
-              '#ENDIF
-              If CachedCmdPointer > 0 then
-                CachedCmdPointer = CachedCmdPointer - 1
-              End If
-            End If
+              'Read condition
+              If Left(DataSource, 4) = "#IF " Then                     'Set cache to 2
+                CachedCmd ( CachedCmdPointer ) = DataSource
+                CachedPMode ( CachedCmdPointer ) = 2
+                CachedCmdPointer = CachedCmdPointer + 1
 
-          ElseIf Left(DataSource, 6) = "#CHIP " THEN
+              ElseIf Left(DataSource, 7) = "#IFNOT " Then                'Set cache to 3
+                CachedCmd ( CachedCmdPointer ) = DataSource
+                CachedPMode ( CachedCmdPointer ) = 3
+                CachedCmdPointer = CachedCmdPointer + 1
 
-            If ChipName = "" THEN
-              IF INSTR( DataSource, "32.768K") > 0 Then
-                  Replace DataSource, "32.768K", "0.03268"
-              End If
+              ElseIf Left(DataSource, 7) = "#IFDEF " Then             'Set cache to 0
+                CachedCmd( CachedCmdPointer ) = DataSource
+                CachedPMode ( CachedCmdPointer ) = 0
+                CachedCmdPointer = CachedCmdPointer + 1
 
-              IF INSTR( DataSource, "31K") > 0 Then
-                  Replace DataSource, "31K", "0.031"
-              End If
+              ElseIf Left(DataSource, 8) = "#IFNDEF " Then            'Set cache to 1
+                CachedCmd( CachedCmdPointer ) = DataSource
+                CachedPMode ( CachedCmdPointer ) = 1
+                CachedCmdPointer = CachedCmdPointer + 1
 
-              IF INSTR( DataSource, "500K") > 0 Then
-                  Replace DataSource, "500K", "0.5"
-              End If
+              ElseIf Left(DataSource, 5) = "#ELSE" Then
 
-              IF INSTR( DataSource, "250K") > 0 Then
-                  Replace DataSource, "250K", "0.25"
-              End If
-
-              IF INSTR( DataSource, "125K") > 0 Then
-                  Replace DataSource, "125K", "0.125"
-              End If
-
-              ChipName = Trim(Mid(DataSource, 6))
-              ChipMhz = 0
-              If InStr(ChipName, ",") <> 0 Then
-                ChipMhz = VAL(Mid(ChipName, INSTR(ChipName, ",") + 1))
-
-                'Resolve the error condition when a user specifics 32k... and other k's
-                IF INSTR( Mid(ChipName, INSTR(ChipName, ",") + 1), "K" ) <> 0 THEN
-
-                      Temp = Message("BadFreqCharacter")
-                      Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
-                      LogError Temp, ""
+                If CachedCmd ( CachedCmdPointer -1  ) = ""  Then
+                  LogError Message("InvalidElse"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
                 End if
 
-                ChipName = Trim(Left(ChipName, INSTR(ChipName, ",") - 1))
+                If CachedPMode ( CachedCmdPointer -1  ) > 3 Then
+                  LogError Message("InvalidConditionalStructure"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+
+                ElseIf CachedPMode ( CachedCmdPointer -1 ) = 0 Then    'set to IFNDEF
+                  DataSource = CachedCmd( CachedCmdPointer - 1)
+                  Replace DataSource, "#ELSE", ""
+                  DataSource = "#ENDIF:" + DataSource
+                  Replace DataSource, "#IFDEF", "#IFNDEF"
+                  DataSourceRaw = DataSource
+                  CachedCmdPointer = CachedCmdPointer - 1
+
+                ElseIf CachedPMode ( CachedCmdPointer -1 ) = 1 Then    'set to IFDEF
+                  DataSource = CachedCmd( CachedCmdPointer - 1)
+                  Replace DataSource, "#ELSE", ""
+                  DataSource = "#ENDIF:" + DataSource
+                  Replace DataSource, "#IFNDEF", "#IFDEF"
+                  DataSourceRaw = DataSource
+                  CachedCmdPointer = CachedCmdPointer - 1
+
+                ElseIf CachedPMode ( CachedCmdPointer -1 ) = 2 Then    'set IF to negate in IFDEFs routine as we do not know the calc value
+                  DataSource = CachedCmd( CachedCmdPointer - 1)
+                  Replace DataSource, "#ELSE", ""
+                  DataSource = "#ENDIF:" + DataSource
+                  Replace DataSource, "#IF ", "#IFNOT "
+                  DataSourceRaw = DataSource
+                  CachedCmdPointer = CachedCmdPointer - 1
+
+                ElseIf CachedPMode ( CachedCmdPointer -1 ) = 3 Then    'set IFNOT to negate in IFDEFs routine as we do not know the calc value
+                  DataSource = CachedCmd( CachedCmdPointer - 1)
+                  Replace DataSource, "#ELSE", ""
+                  DataSource = "#ENDIF:" + DataSource
+                  Replace DataSource, "#IFNOT", "#IF "
+                  DataSourceRaw = DataSource
+                  CachedCmdPointer = CachedCmdPointer - 1
+
+                Else
+                  LogError Message("InvalidElseCantHandle"), " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+
+                EndIf
+
+              ElseIf Left(Trim(DataSource), 6 ) = "#ENDIF" Then
+                '#ENDIF
+                If CachedCmdPointer > 0 then
+                  CachedCmdPointer = CachedCmdPointer - 1
+                End If
               End If
 
+            ElseIf Left(DataSource, 7) = "#IGNORE" Then
+              DataSource = ";" + DataSource
 
-              IF Left(UCase(ChipName), 3) = "PIC" THEN ChipName = Mid(ChipName, 4)
-              IF Left(UCase(ChipName), 1) = "P" THEN ChipName = Mid(ChipName, 2)
+            ElseIf Left(DataSource, 6) = "#CHIP " THEN
 
-              if trim(ChipProgrammerName) = "" then ChipProgrammerName = ChipName
+              If ChipName = "" THEN
+                IF INSTR( DataSource, "32.768K") > 0 Then
+                    Replace DataSource, "32.768K", "0.03268"
+                End If
 
+                IF INSTR( DataSource, "31K") > 0 Then
+                    Replace DataSource, "31K", "0.031"
+                End If
+
+                IF INSTR( DataSource, "500K") > 0 Then
+                    Replace DataSource, "500K", "0.5"
+                End If
+
+                IF INSTR( DataSource, "250K") > 0 Then
+                    Replace DataSource, "250K", "0.25"
+                End If
+
+                IF INSTR( DataSource, "125K") > 0 Then
+                    Replace DataSource, "125K", "0.125"
+                End If
+
+                ChipName = Trim(Mid(DataSource, 6))
+                ChipMhz = 0
+                If InStr(ChipName, ",") <> 0 Then
+                  ChipMhz = VAL(Mid(ChipName, INSTR(ChipName, ",") + 1))
+
+                  'Resolve the error condition when a user specifics 32k... and other k's
+                  IF INSTR( Mid(ChipName, INSTR(ChipName, ",") + 1), "K" ) <> 0 THEN
+
+                        Temp = Message("BadFreqCharacter")
+                        Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
+                        LogError Temp, ""
+                  End if
+
+                  ChipName = Trim(Left(ChipName, INSTR(ChipName, ",") - 1))
+                End If
+
+
+                IF Left(UCase(ChipName), 3) = "PIC" THEN ChipName = Mid(ChipName, 4)
+                IF Left(UCase(ChipName), 1) = "P" THEN ChipName = Mid(ChipName, 2)
+
+                if trim(ChipProgrammerName) = "" then ChipProgrammerName = ChipName
+
+              End If
+              GoTo LoadNextLine
+            Else
+
+              'Build1144 Check for Reservedword - tightnens up  when using leading #
+              Dim ReservedWordCounter as Integer
+              Dim TempData as String
+              For ReservedWordCounter = 0 to RESERVED_WORDS
+                If instr(Ucase(Trim(DataSource))+" " , Ucase(trim(ReservedWords(ReservedWordCounter)))+" ") = 1  THEN
+                    goto ValidWord
+                End if
+              Next
+
+
+        '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
+              TempData = Message("NotaValidDirective")
+              Replace TempData, "%directive%", DataSource
+              LogError TempData, " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+              GoTo LoadNextLine
+              ValidWord:
             End If
-            GoTo LoadNextLine
+
+          End If
+
+          'Split line at colons, unless line is a label or a #define
+          RestOfLine = ""
+          If InStr(DataSource, ":") <> 0 And Left(DataSource, 8) <> "#DEFINE " And _
+            Not (Right(DataSource, 1) = ":" And IsValidName(Left(DataSource, Len(DataSource) - 1))) Then
+            RestOfLine = LTrim(Mid(DataSource, INSTR(DataSource, ":") + 1))
+            DataSource = RTrim(Left(DataSource, INSTR(DataSource, ":") - 1))
+
+          END If
+
+          DontSplitLoad:
+
+          'Add tag to show origin of line, and make copy of line for preserve mode
+          'Except for directives, ASM and labels
+          IF (Left(DataSource, 1) <> "#" OR Left(DataSource, 8) = "#DEFINE " OR Left(DataSource, 9) = "#UNDEFINE") AND Left(DataSource, 1) <> " " AND Right(DataSource, 1) <> ":" THEN
+            'Add tag
+            DataSource = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+            'Always Preserve these
+            If (Left(DataSource, 8) = "#DEFINE " OR Left(DataSource, 9) = "#UNDEFINE" ) Then
+              PCC += 1
+              PreserveCode(PCC) = ";" + DataSource
+              IF S = 0 OR ForceMain = 1 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "REPROCES " + Str(PCC))
+              IF S = 1 AND ForceMain = 0 THEN CurrPos = LinkedListInsert(CurrPos, "REPROCES " + Str(PCC))
+            ElseIF PreserveIn <> ""  Then
+              PCC += 1
+              PreserveCode(PCC) = ";" + PreserveIn
+              IF S = 0 OR ForceMain = 1 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+              IF S = 1 AND ForceMain = 0 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+            End if
+          END IF
+
+          IF Left(DataSource, 3) = "#IF" Then
+            InConditionalStatementCounter = InConditionalStatementCounter + 1
+            If Instr(Trim( DataSource ), " " ) = 0 Then
+              'Conditional instruction is missing a parameter
+              DataSource = DataSource + " FALSE; Error in Source check Conditional parameter"
+              LogWarning "Invalid Conditional Statement - check for missing conditional parameter", " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?" 
+            End If
+          End IF
+          IF Left(DataSource, 6) = "#ENDIF" Then
+            InConditionalStatementCounter = InConditionalStatementCounter - 1
+          End IF
+
+          'If in sub and not forced to main, store line in sub
+          IF S = 1 AND ForceMain = 0 Then
+
+            CurrPos = LinkedListInsert(CurrPos, DataSource)
+                      'add this information  to metadata to enable debugging of code
+            GetMetaData(CurrPos)->OrgLine = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+            GetMetaData(CurrPos)->Conditional = InConditionalStatementCounter
+            Subroutine(SBC)->OriginalLOC += 1
+          'We're in a data table, so add line to it
+          ElseIf S = 2 THEN
+
+            If INSTR(DataSource, ";") <> 0 Then DataSource = Trim(Left(DataSource, INSTR(DataSource, ";") - 1))
+            With DataTable(DataTables)
+              .CurrItem = LinkedListInsert(.CurrItem, DataSource)
+              .CurrItem->MetaData = LineOrigin
+            End With
+
+          'Not in data table, not in sub or forced to main, so store in main
           Else
+            MainCurrPos = LinkedListInsert(MainCurrPos, DataSource)
 
-            'Build1144 Check for Reservedword - tightnens up  when using leading #
-            Dim ReservedWordCounter as Integer
-            Dim TempData as String
-            For ReservedWordCounter = 0 to RESERVED_WORDS
-              If instr(Ucase(Trim(DataSource))+" " , Ucase(trim(ReservedWords(ReservedWordCounter)))+" ") = 1  THEN
-                  goto ValidWord
-              End if
-            Next
+            'add this information  to metadata to enable debugging of code
+            GetMetaData(MainCurrPos)->OrgLine = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+            GetMetaData(MainCurrPos)->Conditional = InConditionalStatementCounter
+            'Only count lines in main routine of first file
+            If RF = 1 Then Subroutine(0)->OriginalLOC += 1
 
-
-       '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
-            TempData = Message("NotaValidDirective")
-            Replace TempData, "%directive%", DataSource
-            LogError TempData, " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-            GoTo LoadNextLine
-            ValidWord:
           End If
 
-        End If
-
-        'Split line at colons, unless line is a label or a #define
-        RestOfLine = ""
-        If InStr(DataSource, ":") <> 0 And Left(DataSource, 8) <> "#DEFINE " And _
-          Not (Right(DataSource, 1) = ":" And IsValidName(Left(DataSource, Len(DataSource) - 1))) Then
-          RestOfLine = LTrim(Mid(DataSource, INSTR(DataSource, ":") + 1))
-          DataSource = RTrim(Left(DataSource, INSTR(DataSource, ":") - 1))
-
-        END If
-
-        DontSplitLoad:
-
-        'Add tag to show origin of line, and make copy of line for preserve mode
-        'Except for directives, ASM and labels
-        IF (Left(DataSource, 1) <> "#" OR Left(DataSource, 8) = "#DEFINE " OR Left(DataSource, 9) = "#UNDEFINE") AND Left(DataSource, 1) <> " " AND Right(DataSource, 1) <> ":" THEN
-          'Add tag
-          DataSource = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-          'Always Preserve these
-          If (Left(DataSource, 8) = "#DEFINE " OR Left(DataSource, 9) = "#UNDEFINE" ) Then
-            PCC += 1
-            PreserveCode(PCC) = ";" + DataSource
-            IF S = 0 OR ForceMain = 1 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "REPROCES " + Str(PCC))
-            IF S = 1 AND ForceMain = 0 THEN CurrPos = LinkedListInsert(CurrPos, "REPROCES " + Str(PCC))
-          ElseIF PreserveIn <> ""  Then
-            PCC += 1
-            PreserveCode(PCC) = ";" + PreserveIn
-            IF S = 0 OR ForceMain = 1 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
-            IF S = 1 AND ForceMain = 0 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
-          End if
-        END IF
-
-        IF Left(DataSource, 3) = "#IF" Then
-          InConditionalStatementCounter = InConditionalStatementCounter + 1
-          If Instr(Trim( DataSource ), " " ) = 0 Then
-            'Conditional instruction is missing a parameter
-            DataSource = DataSource + " FALSE; Error in Source check Conditional parameter"
-            LogWarning "Invalid Conditional Statement - check for missing conditional parameter", " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?" 
-          End If
-        End IF
-        IF Left(DataSource, 6) = "#ENDIF" Then
-          InConditionalStatementCounter = InConditionalStatementCounter - 1
-        End IF
-
-        'If in sub and not forced to main, store line in sub
-        IF S = 1 AND ForceMain = 0 Then
-
-          CurrPos = LinkedListInsert(CurrPos, DataSource)
-                    'add this information  to metadata to enable debugging of code
-          GetMetaData(CurrPos)->OrgLine = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-          GetMetaData(CurrPos)->Conditional = InConditionalStatementCounter
-          Subroutine(SBC)->OriginalLOC += 1
-         'We're in a data table, so add line to it
-        ElseIf S = 2 THEN
-
-          If INSTR(DataSource, ";") <> 0 Then DataSource = Trim(Left(DataSource, INSTR(DataSource, ";") - 1))
-          With DataTable(DataTables)
-            .CurrItem = LinkedListInsert(.CurrItem, DataSource)
-            .CurrItem->MetaData = LineOrigin
-          End With
-
-         'Not in data table, not in sub or forced to main, so store in main
-        Else
-          MainCurrPos = LinkedListInsert(MainCurrPos, DataSource)
-
-          'add this information  to metadata to enable debugging of code
-          GetMetaData(MainCurrPos)->OrgLine = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
-          GetMetaData(MainCurrPos)->Conditional = InConditionalStatementCounter
-          'Only count lines in main routine of first file
-          If RF = 1 Then Subroutine(0)->OriginalLOC += 1
-
-        End If
-
-        CommandAdded:
-        IF RestOfLine <> "" THEN DataSource = RestOfLine: GOTO MultiCommand
+          CommandAdded:
+          IF RestOfLine <> "" THEN DataSource = RestOfLine: GOTO MultiCommand
+        
       END IF
       LoadNextLine:
 
@@ -2361,14 +2387,14 @@ SUB PreProcessor
     ELSEIF UCase(AsmExe) = "GCASM" then
       IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberGCASM")
     Else
-      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";AsmTool
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";Ucase(AsmTool->Name)
     END if
   END IF
   IF ModeAVR Then
     IF UCase(AsmExe) = "GCASM" Then
       IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberGCASM")
     Else
-      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";AsmTool
+      IF VBS = 1 THEN PRINT SPC(5); Message("SelectedAssemberOther");" ";Ucase(AsmTool->Name) 
     END if
   END IF
   IF VBS = 1 THEN PRINT
@@ -2446,12 +2472,14 @@ Sub ReadTableValues
             T = 0
           End If
 
-          'is this an string a decimal ?
-          if InStr(Value, ".") <> 0  then
-            OutMessage = Message("TableItemInvalid")
-            Replace OutMessage, "%item%", Value
-            LogError(OutMessage, GetOriginString(Origin))
-          end if
+          If Instr( UCASE(Value), "#INSERT") = 0 Then   '#insert will have a DOT in the filename
+            'is this an string a decimal ?
+            if InStr(Value, ".") <> 0  then
+              OutMessage = Message("TableItemInvalid")
+              Replace OutMessage, "%item%", Value
+              LogError(OutMessage, GetOriginString(Origin))
+            end if
+          End If
 
           'added to resolve empty tables in Linux build
           If Left(Value, 2) = "0X" Then

@@ -1,4 +1,4 @@
-'''Copyright 2017-2020 Evan R. Venn
+'''Copyright 2017-2024 Evan R. Venn
 '''A Hardware I2C ISR Handler for GCGB and GCB.
 '''------------------------------------------------------------------------------------------------------------------------------
 ''' Description: this ISR library provides an ISR to implement
@@ -86,7 +86,7 @@
 #script
 
     if novar(I2C1STAT1) then
-        Warning "You may using the incorrect library function ….library is likely to fail"
+        Warning "You may using the incorrect library function ï¿½.library is likely to fail"
     End if
 
 

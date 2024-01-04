@@ -20,7 +20,7 @@
 '********************************************************************************
 
 
-'    7 Segment LED display routines using the TM1637  for Great Cow BASIC
+'    7 Segment LED display routines using the TM1637  for GCBASIC
 '     The TM1637 module provide a cheap bright LED Display
 '     The ebay modules can be had for $1 to $4, somtimes less.
 '     They only need 2 pins to control : clk and dio
@@ -39,12 +39,12 @@
 '2020-09-09
 ' - Bugfixes in the startup and TMdec routine
 '
-' - Support for Siekoo 7 digit alphabet created by Alexander Fakoó,
+' - Support for Siekoo 7 digit alphabet created by Alexander Fakoï¿½,
 '
 '   more info at:  http://en.fakoo.de/siekoo.html
 '
 ' - 3 new special characters:
-'   ° Degree sign as special character 18
+'   ï¿½ Degree sign as special character 18
 '   ) Bracket sign as special character 19
 '   ? Question mark as special character 20
 '

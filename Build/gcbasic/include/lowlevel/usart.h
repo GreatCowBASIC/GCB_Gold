@@ -1,5 +1,5 @@
 '    USART routines for GCBASIC
-'    Copyright (C) 2009-2023 Hugh Considine, Mike Otte, William Roth and Evan Venn
+'    Copyright (C) 2009-2024 Hugh Considine, Mike Otte, William Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

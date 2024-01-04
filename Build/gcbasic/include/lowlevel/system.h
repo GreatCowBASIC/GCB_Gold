@@ -1,5 +1,5 @@
 '    System routines for GCBASIC
-'    Copyright (C) 2006-2023 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
+'    Copyright (C) 2006-2024 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -181,9 +181,9 @@ Sub InitSys
       #ENDIF
 
        #IFDEF Oneof(CHIP_18F24K40,CHIP_18F25K40,CHIP_18F26K40,CHIP_18F27K40,CHIP_18F45K40,CHIP_18F46K40,CHIP_18F47K40,CHIP_18F65K40,CHIP_18F66K40,CHIP_18LF24K40, CHIP_18LF25K40, CHIP_18LF26K40, CHIP_18LF27K40, CHIP_18LF45K40, CHIP_18LF46K40, CHIP_18LF47K40, CHIP_18F65K40, CHIP_18LF65K40, CHIP_18F66K40, CHIP_18LF66K40, CHIP_18F67K40, CHIP_18LF67K40 )
-           ' Added (Per  Chip Errata Sheets) to correctly support table reads on specific chips)
-           ' Sets NVRAM pointer to Static RAM as default location.
             #Ifdef Var(NVMCON1)
+            // Added (Per K40 Chip Errata Sheets) to correctly support table reads on specific chips)
+            // Sets NVRAM pointer to Static RAM as default location.
                NVMCON1.7 = 1
                NVMCON1.6 = 0
             #endif
@@ -211,7 +211,7 @@ Sub InitSys
   #IFDEF PIC
 
      #IFDEF ChipUsingIntOsc
-        asm showdebug This code block sets the internal oscillator to ChipMHz
+        //~This code block sets the internal oscillator to ChipMHz
 
         #IFDEF ChipMHz 31k
 
@@ -227,8 +227,10 @@ Sub InitSys
                 asm showdebug Default settings for microcontrollers with _OSCCON1_
 
                  #IF CHIPMHZ <> 24
+                  #IF ChipSubFamily<>16104
                     'Default OSCCON1 typically, NOSC HFINTOSC; NDIV 1 - Common as this simply sets the HFINTOSC
                     OSCCON1 = 0x60
+                  #ENDIF
                  #ENDIF
 
                  #IF CHIPMHZ = 24
@@ -249,20 +251,15 @@ Sub InitSys
 
 
                  #IFDEF ChipFamily 16
-                    asm showdebug The MCU is a chip family ChipFamily
+                    asm showdebug The MCU is a chip family 16
 
                     #IFDEF Bit(NDIV3)
                         'Section supports many MCUs, 18FxxK40, 18FxxK42 etc that have NDIV3 bit
 
                         asm showdebug OSCCON type is 101
 
-                        OSCCON1 = 0x60
-
-                        'Clear NDIV3:0
-                        NDIV3 = 0
-                        NDIV2 = 0
-                        NDIV1 = 0
-                        NDIV0 = 0
+                        
+                        OSCCON1 = 0x60          // Setting OSCCON1 implies clearing Clear NDIV3:0
 
                         #IFDEF ChipMHz 64       'No Div
                            OSCFRQ = 0b00001000  '64mhz
@@ -1107,6 +1104,32 @@ Sub InitSys
           Set ANSEL7 off
         #ENDIF
 
+        #IFDEF BIT(PCFG0)
+          Set PCFG0 on
+        #ENDIF
+        #IFDEF BIT(PCFG1)
+          Set PCFG1 on
+        #ENDIF
+        #IFDEF BIT(PCFG2)
+          Set PCFG2 on
+        #ENDIF
+        #IFDEF BIT(PCFG3)
+          Set PCFG3 on
+        #ENDIF
+        #IFDEF BIT(PCFG4)
+          Set PCFG4 on
+        #ENDIF
+        #IFDEF BIT(PCFG5)
+          Set PCF5 on
+        #ENDIF
+        #IFDEF BIT(PCFG6)
+          Set PCFG6 on
+        #ENDIF
+        #IFDEF BIT(PCFG7)
+          Set PCFG7 on
+        #ENDIF
+
+
       #ENDIF
 
       #IFDEF VAR(ANCON1)
@@ -1134,6 +1157,31 @@ Sub InitSys
         #IFDEF BIT(ANSEL15)
           Set ANSEL15 off
         #ENDIF
+        #IFDEF BIT(PCFG8)
+          Set PCFG8 on
+        #ENDIF
+        #IFDEF BIT(PCFG9)
+          Set PCFG9 on
+        #ENDIF
+        #IFDEF BIT(PCFG10)
+          Set PCFG10 on
+        #ENDIF
+        #IFDEF BIT(PCFG11)
+          Set PCFG11 on
+        #ENDIF
+        #IFDEF BIT(PCFG12)
+          Set PCFG12 on
+        #ENDIF
+        #IFDEF BIT(PCFG13)
+          Set PCFG13 on
+        #ENDIF
+        #IFDEF BIT(PCFG14)
+          Set PCFG14 on
+        #ENDIF
+        #IFDEF BIT(PCFG15)
+          Set PCFG15 on
+        #ENDIF
+
 
       #ENDIF
 
@@ -1343,9 +1391,9 @@ Sub InitSys
   #ENDIF
 
 
-'
 
-'  'Turn off all ports
+
+  'Turn off all ports
   #IFDEF Var(GPIO)
     GPIO = 0
   #ENDIF

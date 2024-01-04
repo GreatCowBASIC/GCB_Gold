@@ -1,5 +1,5 @@
 The following files have been tested, validated and/or documented.
-    Support is via the forums, and, if the file is documented please see the Great Cow Basic Help File.
+    Support is via the forums, and, if the file is documented please see the GCBASIC Help File.
 
 24LC16.h
 24LCXXXX.h

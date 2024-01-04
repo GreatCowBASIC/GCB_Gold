@@ -1,6 +1,6 @@
-'       Copyright (C) 2013-2022  Perry, Evan Venn and Jack James
+'       Copyright (C) 2013-2024  Perry, Evan Venn and Jack James
 '       ================================================================================
-'       MCP23017 Library for Great Cow BASIC Compiler
+'       MCP23017 Library for GCBASIC Compiler
 '       --------------------------------------------------------------------------------
 '       This file is used to easily program the MCP23017 circuit
 '       to have 16 input/output lines.

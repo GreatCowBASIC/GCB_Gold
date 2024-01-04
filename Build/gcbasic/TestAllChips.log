@@ -25,20 +25,92 @@ Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determin
 Processing 16f570
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
-Processing 18f06q20
+Processing 18f65j94
 Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
-Processing 18f16q20
+Processing 18f66j94
 Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 18f66j99
 Error: Program is too large, cannot fit into available program memory
+Processing 18f85j94
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f86j94
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
 Processing 18f86j99
 Error: Program is too large, cannot fit into available program memory
+Processing 18f95j94
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
 Processing 18f96j72
 Error: Program is too large, cannot fit into available program memory
+Processing 18f96j94
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
 Processing 18f96j99
 Error: Program is too large, cannot fit into available program memory
 Processing 18f97j72
 Error: Program is too large, cannot fit into available program memory
+Processing tiny15
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny25
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny26
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny261
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny261a
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny43u
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny45
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny461
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny461a
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny85
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny861
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing tiny861a
+timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
+timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
+timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
+timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
 Completed
