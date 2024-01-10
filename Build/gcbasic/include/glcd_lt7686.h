@@ -67,6 +67,9 @@ Sub InitGLCD_LT7686
                 Wait 50 ms
             End Repeat
 
+            LT7686_Software_Reset
+            wait 10 ms
+
             Dim GLCDbackground, GLCDForeground as Long
 
             LT7686_LoadDefaultRegisters
@@ -342,6 +345,9 @@ Sub GLCDCLS_LT7686 ( Optional In  GLCDbackground as Long = GLCDbackground )
         LT7686_LineColour = GLCDbackground 
         LT7686_SendColor 
 
+        //Core Task is Busy, Fontwr_Busy
+        LT7686_Check_Busy_Draw
+
         LT7686_WriteCMD( LT7686_REG_DCR1 )
         LT7686_WriteData(0xE0) 
 
@@ -520,9 +526,10 @@ Sub Line_Width_LT7686 ( In _xoffset1 as word, In _yoffset1 as word, _
         wtemp = 0
 
         if ( xtemp = 0 ) then 
-            temp_LT7686 = 2
+            // this is factorised by 10
+            temp_LT7686 = 20
         else 
-            // this calc is Y factorised by 10
+            // this calc is factorised by 10
             temp_LT7686 = ytemp / xtemp
         end if
 
@@ -533,6 +540,7 @@ Sub Line_Width_LT7686 ( In _xoffset1 as word, In _yoffset1 as word, _
                 wtemp++
             Loop	
         else 
+
             Do while ( _woffset > 0)
                 _woffset--
                 Line( _xoffset1+wtemp, _yoffset1, _xoffset2+wtemp, _yoffset2, LT7686_LineColour)
@@ -1385,10 +1393,10 @@ Sub LT7686_Print_Internal_Font ( _
     temp_LT7686.2 = 1
     temp_LT7686.1 = 0
     temp_LT7686.0 = 0
-    
 	LT7686_WriteData(temp_LT7686)
     //Core Task is Busy, Fontwr_Busy
     LT7686_Check_Busy_Draw
+    wait 50 us
 
     'Write string - char by char
     For GLCDPrint_String_Counter = 1 To GLCDPrintLen
@@ -1403,7 +1411,8 @@ Sub LT7686_Print_Internal_Font ( _
 	temp_LT7686 = LT7686_DataRead()
     temp_LT7686.2 = 0
 	LT7686_WriteData(temp_LT7686)
-
+    wait 50 us
+    
     End Sub
 
 Sub LT7686_Print_Internal_Font ( _ 
@@ -1415,10 +1424,7 @@ Sub LT7686_Print_Internal_Font ( _
     'Display
     LT7686_Print_Internal_Font ( _xoffset1, _yoffset1, Str(LCDValue) , LT7686_LineColour )
 
-End Sub
-
-
-
+    End Sub
 Sub Text_cursor_Init( Optional In _xoffset1 as byte = 0, _ 
         Optional In _yoffset1 as byte = 0, _ 
         Optional In _On_Off_Blinking as byte = 1, _ 
@@ -1748,6 +1754,9 @@ Function LT7686_Check_Init() As Byte
                 if LT7686_Check_Init = 0 & LT7686_Check_Init_Fail = 5 Then
 
                     LT7686_Hardware_Reset
+                    wait 10 ms
+                    LT7686_Software_Reset
+                    wait 10 ms
                     LT7686_LoadDefaultRegisters
                     LT7686_WriteCMD ( 0xE4 )
                     LT7686_WriteData ( 0x01 )
