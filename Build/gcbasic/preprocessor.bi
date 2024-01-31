@@ -237,7 +237,7 @@ End Sub
 Sub PrepareBuiltIn
 
   'Read built-in subs and constants
-  Dim As String InnerLoop, OuterLoop
+  Dim As String InnerLoop, OuterLoop, filenameConstant
   Dim As Integer CD, T, T2
   Dim As Double L
   Dim As LinkedListElement Pointer CurrPos
@@ -255,6 +255,16 @@ Sub PrepareBuiltIn
   AddConstant("CHIPRESERVEHIGHPROG", Str(ReserveHighProg))
   AddConstant( SelectedAssembler, "TRUE" )
 
+  ' Add a constant called SOURCEFILE that is the short filename
+  filenameConstant = ReplaceToolVariables( "%namepart%("+ SourceFile(1).FileName +")" )
+  replace (filenameConstant, ".GCB", "" )
+  'Constant as a string
+    SSC = SSC + 1
+    StringStore(SSC).Value = filenameConstant
+    StringStore(SSC).Used = 0
+    AddConstant( "SOURCEFILE", ";STRING" + Str(SSC) + ";")
+
+
   'Add a constant to indicate first RAM location
   AddConstant("CHIPSHAREDRAM",  str(NoBankLoc(1).StartLoc) )  
   
@@ -268,10 +278,10 @@ Sub PrepareBuiltIn
   If ModeZ8 Then AddConstant("Z8", "")
 
   'Constant to give chip name as string
-  SSC = SSC + 1
-  StringStore(SSC).Value = ChipName
-  StringStore(SSC).Used = 0
-  AddConstant("CHIPNAMESTR", ";STRING" + Str(SSC) + ";")
+    SSC = SSC + 1
+    StringStore(SSC).Value = ChipName
+    StringStore(SSC).Used = 0
+    AddConstant("CHIPNAMESTR", ";STRING" + Str(SSC) + ";")
 
  'Constant to give chip name as string
   SSC = SSC + 1
@@ -1983,7 +1993,7 @@ SUB PreProcessor
               Next
 
 
-        '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
+              '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
               TempData = Message("NotaValidDirective")
               Replace TempData, "%directive%", DataSource
               LogError TempData, " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"

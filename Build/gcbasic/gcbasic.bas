@@ -796,8 +796,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2024-01-03"
-buildVersion = "1323"
+Version = "1.01.00 2024-01-31"
+buildVersion = "1327"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -1976,7 +1976,7 @@ Sub AddMainInitCode
 
   'Comment start of main program
   CurrLine = LinkedListInsert(CurrLine, "")
-  CurrLine = LinkedListInsert(CurrLine, ";Start of the main program")
+  CurrLine = LinkedListInsert(CurrLine, ";Start_of_the_main_program")
 
 End Sub
 
@@ -15136,7 +15136,6 @@ Sub LogError(InMessage As String, Origin As String = "")
         instr(UCASE(InMessage), Ucase(Message("BadParamsSet"))) > 0 or _
         ( instr(UCASE(InMessage), Ucase(Message("NotIONOTVALID"))) > 0 and instr(UCASE(InMessage), Ucase("LCD_EB")) )   _
         Then
-          print Subroutine(GetSubID(Origin))->Name
           If Instr(Subroutine(GetSubID(Origin))->Name, "BACKLIGHT") > 0 Then
             InMessage = Message( "LCD_Not_Setup" ) + " " + Message("LCD_NO_BACKLITECONSTANT") 
           Else
@@ -18342,7 +18341,8 @@ Sub WriteAssembly
         CLOSE #2
 
         'reopen for 2.35 fix - as the comments are corrupted
-        If Instr(Ucase(ChipPICASRoot),"2.32") > 0 or Instr(Ucase(ChipPICASRoot),"2.35") > 0 then
+        'removed constraint check but this probable means that 2.32 and 2.35 will fail to compile.. use a version of PIC-AS from 2.4x or greater
+        'If Instr(Ucase(ChipPICASRoot),"2.32") > 0 or Instr(Ucase(ChipPICASRoot),"2.35") > 0 then
             OPEN AFI FOR INPUT AS #2
             OPEN AFI+".tmp" FOR OUTPUT AS #3
             Dim DataSource as String
@@ -18366,7 +18366,7 @@ Sub WriteAssembly
             Close #3
             FileCopy ( AFI+".tmp", AFI )
             Kill ( AFI+".tmp")
-        End If
+        'End If
 
 
 
@@ -19067,7 +19067,7 @@ Sub MergeSubroutines
   For CurrPage = 1 To ProgMemPages
 
     If UserCodeOnlyEnabled = 0  Then
-        CurrLine = LinkedListInsert(CurrLine, ";Start of program memory page " + Str(CurrPage - 1))
+        CurrLine = LinkedListInsert(CurrLine, ";Program_memory_page: " + Str(CurrPage - 1))
     End If
 
     If ModePIC Then
