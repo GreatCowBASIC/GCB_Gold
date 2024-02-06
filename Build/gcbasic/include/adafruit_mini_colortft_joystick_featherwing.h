@@ -19,7 +19,6 @@
 
 #include <glcd.h>
 #OPTION UserInclude
-#define GLCD_TYPE GLCD_TYPE_ST7735R_160_80
 
 'Need to user SW SPI as we are using MSSP1 for HWI2C
 '#define ST7735_HardwareSPI     ' remove comment out if you want to use software SPI.

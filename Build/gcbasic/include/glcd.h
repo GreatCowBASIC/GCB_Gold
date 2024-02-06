@@ -63,7 +63,7 @@
     19/12/22 Revised GLCDPrintLoc to correct Xpos value.
     25/03/23 Added ILI9488 support
     26/03/23 Added GLCD_TYPE_ST7789_320_240 support
-
+    05/02/24 Remove include statements except KX0108.h.  Other are now controlled by glcd.dat
 
 */
 'Constants that might need to be set
@@ -231,7 +231,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   
 
   If GLCD_TYPE = GLCD_TYPE_ST7789_240_240 Then
-     #include <GLCD_ST7789.h>
+     ' #include <GLCD_ST7789.h>
      InitGLCD = InitGLCD_ST7789
      GLCDCLS = GLCDCLS_ST7789
      GLCDDrawChar = GLCDDrawChar_ST7789
@@ -265,7 +265,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   End If
 
     If GLCD_TYPE = GLCD_TYPE_NT7108C Then
-     #include <glcd_nt7108c.h>
+     ' #include <glcd_nt7108c.h>
      InitGLCD = InitGLCD_NT7108C
      GLCDCLS = GLCDCLS_NT7108C
      FilledBox = FilledBox_NT7108C
@@ -284,7 +284,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   If GLCD_TYPE = GLCD_TYPE_SSD1306 Then
      'Support I2C, I2C2 and 4wire SPI with low memory optimisation.
-     #include <glcd_ssd1306.h>
+     ' #include <glcd_ssd1306.h>
      InitGLCD = InitGLCD_SSD1306
      GLCDCLS = GLCDCLS_SSD1306
      GLCDDrawChar = GLCDDrawChar_SSD1306
@@ -303,7 +303,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   If GLCD_TYPE = GLCD_TYPE_UC1601 Then
      'Support I2C, I2C2 and 4wire SPI with low memory optimisation.
-     #include <glcd_uc1601.h>
+     ' #include <glcd_uc1601.h>
      InitGLCD = InitGLCD_UC1601
      GLCDCLS = GLCDCLS_UC1601
      GLCDDrawChar = GLCDDrawChar_UC1601
@@ -323,7 +323,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
 
   If GLCD_TYPE = GLCD_TYPE_SSD1306_32 Then
-     #include <glcd_ssd1306.h>
+     ' #include <glcd_ssd1306.h>
      InitGLCD = InitGLCD_SSD1306
      GLCDCLS = GLCDCLS_SSD1306
      GLCDDrawChar = GLCDDrawChar_SSD1306
@@ -343,7 +343,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   If GLCD_TYPE = GLCD_TYPE_SSD1306_TWIN Then
 
-     #include <glcd_ssd1306_twin.h>
+     ' #include <glcd_ssd1306_twin.h>
      InitGLCD = InitGLCD_TwinSSD1306
      GLCDCLS = GLCDCLS_TwinSSD1306
      GLCDDrawChar = GLCDDrawChar_TwinSSD1306
@@ -362,7 +362,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ILI9341 Then
 
-      #include <glcd_ili9341.h>
+      ' #include <glcd_ili9341.h>
       InitGLCD = InitGLCD_ILI9341
       GLCDCLS = GLCDCLS_ILI9341
       GLCDDrawChar = GLCDDrawChar_ILI9341
@@ -380,7 +380,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ILI9340 Then
 
-      #include <glcd_ili9340.h>
+      ' #include <glcd_ili9340.h>
       InitGLCD = InitGLCD_ILI9340
       GLCDCLS = GLCDCLS_ILI9340
       GLCDDrawChar = GLCDDrawChar_ILI9340
@@ -398,7 +398,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_SSD1289 Then
 
-      #include <glcd_ssd1289.h>
+      ' #include <glcd_ssd1289.h>
       InitGLCD = InitGLCD_SSD1289
       GLCDCLS = GLCDCLS_SSD1289
       GLCDDrawChar = GLCDDrawChar_SSD1289
@@ -420,7 +420,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ST7735 Then
 
-      #include <glcd_st7735.h>
+      ' #include <glcd_st7735.h>
       InitGLCD = InitGLCD_ST7735
       GLCDCLS = GLCDCLS_ST7735
       GLCDDrawChar = GLCDDrawChar_ST7735
@@ -439,7 +439,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ST7735R Then
 
-      #include <glcd_st7735r.h>
+      ' #include <glcd_st7735r.h>
       'Device specific
       InitGLCD = InitGLCD_ST7735R
       Pset = Pset_ST7735R
@@ -463,7 +463,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ST7735R_160_80 Then
 
-      #include <glcd_st7735r.h>
+      ' #include <glcd_st7735r.h>
       'Device specific
       InitGLCD = InitGLCD_ST7735R
       Pset = Pset_ST7735R
@@ -487,7 +487,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ST7920 Then
 
-      #include <glcd_st7920.h>
+      ' #include <glcd_st7920.h>
       InitGLCD = InitGLCD_ST7920
       GLCDCLS = GLCDCLS_ST7920
       FilledBox = FilledBox_ST7920
@@ -502,7 +502,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_PCD8544 Then
 
-      #include <glcd_pcd8544.h>
+      ' #include <glcd_pcd8544.h>
       InitGLCD = InitGLCD_PCD8544
       GLCDCLS = GLCDCLS_PCD8544
       GLCDDrawChar = GLCDDrawChar_PCD8544
@@ -519,7 +519,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
     End If
 
     If GLCD_TYPE = GLCD_TYPE_SH1106 Then
-      #include <glcd_sh1106.h>
+      ' #include <glcd_sh1106.h>
       InitGLCD = InitGLCD_SH1106
       GLCDCLS = GLCDCLS_SH1106
       GLCDDrawChar = GLCDDrawChar_SH1106
@@ -542,7 +542,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_ILI9326 Then
 
-      #include <glcd_ili9326.h>
+      ' #include <glcd_ili9326.h>
       InitGLCD = InitGLCD_ILI9326
       GLCDCLS = GLCDCLS_ILI9326
       GLCDDrawChar = GLCDDrawChar_ILI9326
@@ -560,7 +560,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_SSD1351 Then
 
-      #include <glcd_ssd1351.h>
+      ' #include <glcd_ssd1351.h>
       InitGLCD = InitGLCD_SSD1351
       GLCDCLS = GLCDCLS_SSD1351
       GLCDDrawChar = GLCDDrawChar_SSD1351
@@ -592,7 +592,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   ' same as GLCD_TYPE_ILI9486 below
   If GLCD_TYPE = GLCD_TYPE_ILI9486L Then
 
-      #include <glcd_ili9486l.h>
+      ' #include <glcd_ili9486l.h>
       InitGLCD = InitGLCD_ili9486L
       GLCDCLS = GLCDCLS_ili9486L
       GLCDDrawChar = GLCDDrawChar_ili9486L
@@ -620,7 +620,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   ' same as GLCD_TYPE_ILI9486L above
   If GLCD_TYPE = GLCD_TYPE_ILI9486 Then
 
-      #include <glcd_ili9486l.h>
+      ' #include <glcd_ili9486l.h>
       InitGLCD = InitGLCD_ili9486L
       GLCDCLS = GLCDCLS_ili9486L
       GLCDDrawChar = GLCDDrawChar_ili9486L
@@ -649,7 +649,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   If GLCD_TYPE = GLCD_TYPE_ILI9488 Then
 
       ' uses overloader methods with COLOR=LONG for 18bit colors = box, cirle etc
-      #include <glcd_ili9488.h>
+      ' #include <glcd_ili9488.h>
       InitGLCD = InitGLCD_ili9488
       GLCDCLS = GLCDCLS_ili9488
       GLCDDrawChar = GLCDDrawChar_ili9488
@@ -677,7 +677,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   If GLCD_TYPE = GLCD_TYPE_ILI9481 Then
 
-      #include <glcd_ili9481.h>
+      ' #include <glcd_ili9481.h>
       InitGLCD = InitGLCD_ili9481
       GLCDCLS = GLCDCLS_ili9481
       GLCDDrawChar = GLCDDrawChar_ili9481
@@ -695,7 +695,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_HX8347 Then
 
-      #include <glcd_hx8347.h>
+      ' #include <glcd_hx8347.h>
       InitGLCD = InitGLCD_HX8347
       GLCDCLS = GLCDCLS_HX8347
       GLCDDrawChar = GLCDDrawChar_HX8347
@@ -714,7 +714,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_SSD1331 Then
 
-      #include <glcd_ssd1331.h>
+      ' #include <glcd_ssd1331.h>
       InitGLCD = InitGLCD_SSD1331
       GLCDCLS = GLCDCLS_SSD1331
       GLCDDrawChar = GLCDDrawChar_SSD1331
@@ -734,7 +734,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   If GLCD_TYPE = GLCD_TYPE_Nextion Then
 
-      #include <glcd_nextion.h>
+      ' #include <glcd_nextion.h>
       InitGLCD = InitGLCD_Nextion
       GLCDCLS = GLCDCLS_Nextion
       Circle = Circle_Nextion
@@ -764,7 +764,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
 
     If GLCD_TYPE = GLCD_TYPE_T6963_64 Then
-        #include <glcd_t6963.h>
+        ' #include <glcd_t6963.h>
         GLCD_TYPE = GLCD_TYPE_T6963
         LCD_IO = T36363
         LCDCursor = LCDCursor_T6963
@@ -798,7 +798,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
     End if
 
     If GLCD_TYPE = GLCD_TYPE_T6963_128 Then
-        #include <glcd_t6963.h>
+        ' #include <glcd_t6963.h>
         GLCD_TYPE = GLCD_TYPE_T6963
         LCD_IO = T36363
         LCDCursor = LCDCursor_T6963
@@ -833,7 +833,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
     If GLCD_TYPE = GLCD_TYPE_UC8230 Then
 
-      #include <glcd_uc8230.h>
+      ' #include <glcd_uc8230.h>
       InitGLCD = InitGLCD_uc8230
       GLCDCLS = GLCDCLS_uc8230
       GLCDDrawChar = GLCDDrawChar_uc8230
@@ -852,7 +852,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   ' For E-Paper Waveshare EP2.13inch HAT (D)
     If GLCD_TYPE = GLCD_TYPE_EPD_EPD2in13D Then
 
-      #include <epd_epd2in13d.h>
+      ' #include <epd_epd2in13d.h>
       InitGLCD = Init_EPD2in13D
       GLCDCLS  = CLS_EPD2in13D
       GLCDDrawChar = DrawChar_EPD2in13D
@@ -964,7 +964,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   ' For E-Paper Waveshare EP7.5inch HAT ( not the BC version - needs to use another library for that)
   If GLCD_TYPE = GLCD_TYPE_EPD_EPD7in5 Then
 
-     #include <epd_epd7in5.h>
+     ' #include <epd_epd7in5.h>
      InitGLCD = Init_EPD7in5
      GLCDCLS  = CLS_EPD7in5
      GLCDDrawChar = DrawChar_EPD7in5
@@ -1036,7 +1036,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   If GLCD_TYPE = GLCD_TYPE_ST7567 Then
     // Supports I2C and 4wire SPI
     // Based on SSD1306 - the only difference was the INIT 
-     #include <glcd_st7567.h>
+     ' #include <glcd_st7567.h>
      InitGLCD = InitGLCD_st7567
      GLCDCLS = GLCDCLS_st7567
      GLCDDrawChar = GLCDDrawChar_st7567
@@ -1055,7 +1055,7 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
   End If
 
 If GLCD_TYPE = GLCD_TYPE_ST7789_320_240 Then
-     #include <GLCD_ST7789.h>
+     ' #include <GLCD_ST7789.h>
      InitGLCD = InitGLCD_ST7789
      GLCDCLS = GLCDCLS_ST7789
      GLCDDrawChar = GLCDDrawChar_ST7789
@@ -1073,7 +1073,7 @@ If GLCD_TYPE = GLCD_TYPE_ST7789_320_240 Then
     // script code for LT7686 library
   If GLCD_TYPE = LT7686_800_480_BLUE or GLCD_TYPE = LT7686_1024_600_BLUE or GLCD_TYPE = LT7686_1024_600_BLACK Then
 
-      #include <glcd_lt7686.h>
+      ' #include <glcd_lt7686.h>
       InitGLCD = InitGLCD_LT7686
       GLCDCLS = GLCDCLS_LT7686
       FilledBox = FilledBox_LT7686

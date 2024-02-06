@@ -1,0 +1,55 @@
+'
+' Format. This is strict. Read the format below.
+'
+'   Comma delimiter and single quote a comment line 
+'
+'  Index,type,library[[&library]&library]
+'  
+'   Index =   the reference number from GLCD.H 
+'   Type  =   the type. must match those definition in GLCD.H
+'             this is use as the search/match in the user source program
+'             this is not case sensitive
+'   Library = library to be loaded, or, group of dependent libraries
+'             delimiter must be '&'
+'
+'
+' Index #1 below is should always be a  comment, this is shown only for completeness
+' glcd_ks0108.h is automatically loaded via glcd.h
+' 1,glcd_type_ks0108,glcd_ks0108.h
+
+2,glcd_type_st7735,glcd_st7735.h
+3,glcd_type_st7920,glcd_st7920.h
+4,glcd_type_pcd8544,glcd_pcd8544.h
+5,glcd_type_ssd1306,glcd_ssd1306.h
+6,glcd_type_ili9340,glcd_ili9340.h&glcd_ssd1289.h
+7,glcd_type_ssd1289,glcd_ssd1289.h
+8,glcd_type_ili9341,glcd_ili9341.h&glcd_ssd1289.h
+9,glcd_type_sh1106,glcd_sh1106.h
+10,glcd_type_ssd1306_32,glcd_ssd1306.h
+11,glcd_type_ili9486l,glcd_ili9486l.h&glcd_ssd1289.h
+11,glcd_type_ili9486,glcd_ili9486l.h&glcd_ssd1289.h
+12,glcd_type_ili9481,glcd_ili9481.h
+14,glcd_type_ssd1331,glcd_ssd1331.h
+15,glcd_type_hx8347,glcd_hx8347.h
+16,glcd_type_nextion,glcd_nextion.h&glcd_ili9341.h
+17,glcd_type_ili9326,glcd_ili9326.h
+18,glcd_type_nt7108c,glcd_nt7108c.h
+19,glcd_type_t6963,glcd_t6963.h&glcd_ssd1289.h
+20,glcd_type_t6963_64,glcd_t6963.h&glcd_ssd1289.h
+21,glcd_type_t6963_128,glcd_t6963.h&glcd_ssd1289.h
+22,glcd_type_uc8230,glcd_uc8230.h
+23,glcd_type_ili9320,glcd_uc8230.h
+24,glcd_type_uc1601,glcd_uc1601.h
+25,glcd_type_st7735r,glcd_st7735r.h
+26,glcd_type_ssd1351,glcd_ssd1351.h
+27,glcd_type_epd_epd2in13d,epd_epd2in13d.h&glcd_ssd1289.h
+28,glcd_type_st7735r_160_80,glcd_st7735r.h&glcd_st7735.h
+29,glcd_type_epd_epd7in5,epd_epd7in5.h&epd_epd2in13d.h&glcd_ssd1289.h
+30,glcd_type_ssd1306_twin,glcd_ssd1306_twin.h
+31,glcd_type_st7789_240_240,glcd_st7789.h&glcd_ssd1289.h
+32,glcd_type_ili9488,glcd_ili9488.h&glcd_ssd1289.h
+33,glcd_type_st7567,glcd_st7567.h
+34,glcd_type_st7789_320_240,glcd_st7789.h&glcd_ssd1289.h
+35,lt7686_800_480_blue,glcd_lt7686.h
+36,lt7686_1024_600_blue,glcd_lt7686.h
+37,lt7686_1024_600_black,glcd_lt7686.h

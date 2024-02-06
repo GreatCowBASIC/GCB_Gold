@@ -29,7 +29,8 @@
 ' - compiled with FreeBasic 1.09.0 and "Gui Library window9" 2022-01-23
 ' - parse reportfile for random promotion messages and show in output window
 ' 2023-07-1
-' GCBASIC port
+' GCBASIC port 
+' 2024-2-6 remove Great Cow BASIC changed to GCBASIC
 
 #Include "file.bi"
 #Include "vbcompat.bi"
@@ -299,7 +300,7 @@ Sub CheckGCBErrors()
   If FileLen(sPathGCBSyn+"\GCBASIC\Errors.txt") Then
     MessageBeep (&h00000010)
     'Print Using "###.#  Sec."; Timer - dTimerStart;  'show duration for programm execution
-    Print ">>>  WARNINGs / ERRORs reported by Great Cow BASIC  (if Syntax Error, doubleclick on the errormessage below)  <<<"
+    Print ">>>  WARNINGs / ERRORs reported by GCBASIC  (if Syntax Error, doubleclick on the errormessage below)  <<<"
      'a 2-byte errorfile is made by the batchfiles itself, so no "Doubleclick ..." message:
      'If FileLen(sPathGCBSyn+"\GCBASIC\Errors.txt") > 3 Then
      'Print "Doubleclick on blue errormessage below to go to sourcecode-line:"

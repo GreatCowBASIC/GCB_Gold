@@ -377,263 +377,264 @@ Type PinDirType
 End Type
 
 'Subs in this file
-DECLARE SUB Add18FBanks(CompSub As SubType Pointer)
-DECLARE SUB AddBankCommands(CompSub As SubType Pointer)
-Declare Sub AddMainEndCode
-Declare Sub AddMainInitCode
-Declare Sub AddPageCommands(CompSub As SubType Pointer)
-Declare Sub AddInterruptCode
-DECLARE SUB AddSysVarBits (CompSub As SubType Pointer)
-Declare SUB BuildMemoryMap
-DECLARE SUB CalcConfig
-DECLARE Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As String, OriginIn As String, NeverLast As Integer)
-Declare Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As AsmCommand Pointer = 0, GotoPos As AsmCommand Pointer = 0) As Integer
-Declare Sub CalcSubSize(CurrSub As SubType Pointer)
-DECLARE FUNCTION CastOrder (InType As String) As Integer
-Declare Sub CheckConstName (ConstName As String, Origin As String)
-Declare Sub CheckClockSpeed
-Declare Sub CompileProgram
-Declare Sub CompileSubroutine(CompSub As SubType Pointer)
-Declare Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0)
-DECLARE FUNCTION CompileCalcAdd(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-DECLARE FUNCTION CompileCalcCondition(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-DECLARE FUNCTION CompileCalcLogic(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-DECLARE FUNCTION CompileCalcMult(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-Declare Function CompileCalcUnary(CodeSection As CodeSection Pointer, Act As String, V2 As String, Origin As String, AnswerIn As String) As String
-Declare Function CompileConditions (Condition As String, IfTrue As String, Origin As String, CompSub As SubType Pointer = 0) As LinkedListElement Pointer
-DECLARE Sub CompileDim (CurrSub As SubType Pointer)
-DECLARE SUB CompileDir (CompSub As SubType Pointer)
-DECLARE SUB CompileDo (CompSub As SubType Pointer)
-DECLARE SUB CompileExitSub (CompSub As SubType Pointer)
-DECLARE SUB CompileFor (CompSub As SubType Pointer)
-Declare Sub CompileGoto (CompSub As SubType Pointer)
-DECLARE SUB CompileIF (CompSub As SubType Pointer)
-Declare Sub CompileIntOnOff (CompSub As SubType Pointer)
-Declare SUB CompileOn (CompSub As SubType Pointer)
-DECLARE SUB CompilePot (CompSub As SubType Pointer)
-DECLARE SUB CompileReadTable (CompSub As SubType Pointer)
-DECLARE SUB CompileRepeat (CompSub As SubType Pointer)
-Declare Sub CompileReturn (CompSub As SubType Pointer)
-DECLARE SUB CompileRotate (CompSub As SubType Pointer)
-DECLARE SUB CompileSelect (CompSub As SubType Pointer)
-DECLARE SUB CompileSet (CompSub As SubType Pointer)
-Declare Function CompileString (InLine As String, Origin As String) As LinkedListElement Pointer
-Declare Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Pointer
-Declare Sub CompileSubCalls (CompSub As SubType Pointer)
-DECLARE SUB CompileTables
-DECLARE SUB CompileVars (CompSub As SubType Pointer)
-Declare Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, InvertBitCopy As Integer = 0) As LinkedListElement Pointer
-DECLARE SUB CompileWait (CompSub As SubType Pointer)
-Declare Function CompileWholeArray (InLine As String, Origin As String) As LinkedListElement Pointer
-Declare Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
-Declare Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny As Integer = 0) As Integer
-Declare Sub CreateCallTree
-Declare Sub CreateReservedWordsList
-Declare Sub DisplayProgram
-Declare Sub DisplayCallTree
-Declare Sub ExtAssembler
-Declare Sub PICASAssembler
-Declare Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
-Declare Sub FinalOptimise
-Declare Sub FindAssembly (CompSub As SubType Pointer)
-Declare Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As LinkedListElement Pointer = 0, CheckedLines As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-Declare Sub FindUncompiledLines
-Declare Function FixBit (InBit As String, Origin As String) As String
-DECLARE SUB FixFunctions (CompSub As SubType Pointer)
-Declare Sub FixPointerOps (CompSub As SubType Pointer)
-Declare Sub FixSinglePinSet
-Declare Sub FixTemporaryVariables
-Declare Sub FreeCalcVar (VarName As String)
-Declare Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
-Declare Function GenerateAutoPinDir As LinkedListElement Pointer
-Declare Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As String, CurrSub As SubType Pointer = 0, SetStatus As Integer = -1) As LinkedListElement Pointer
-Declare Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointer
-Declare Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As String, CurrSub As SubType Pointer, CanSkip As Integer) As LinkedListElement Pointer
-Declare Function GenerateVectorCode As LinkedListElement Pointer
-Declare Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As String) As String
-Declare Function GetCalcVar (VarTypeIn As String) As String
-Declare Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListElement Pointer = 0, FindCallers As Integer = 0) As LinkedListElement Pointer
-DECLARE FUNCTION GetDestSub(Origin As String) As Integer
-Declare Sub GetEqConfig
-Declare Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
-Declare Function GetLinearLoc(Location As Integer) As Integer
-Declare Function GetNonLinearLoc(Location As Integer) As Integer
-Declare Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Pointer
-Declare Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
-Declare Function GetRealIOName(InName As String) As String
-Declare Function GetRegisterLoc(RegName As String) As Integer
-Declare Function GetSysVar(VarName As String) As SysVarType Pointer
-DECLARE FUNCTION GetSub(Origin As String) As String
-Declare Function GetSubFullName(SubIndex As Integer) As String
-Declare FUNCTION GetSubID(Origin As String) As Integer
-Declare Function GetSubSig(CurrentSub As SubType) As String
-Declare Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
-Declare Function GetTool(ToolName As String) As ExternalTool Pointer
-DECLARE SUB InitCompiler
-DECLARE FUNCTION IsArray (VarName As String, CurrSub As SubType Pointer) As Integer
-Declare Function IsNonBanked(Location As Integer) As Integer
-Declare Function IsInAccessBank(VarNameIn As String) As Integer
-Declare Function IsIOPinName(PinName As String) As Integer
-Declare Function IsIOReg (RegNameIn As String) As Integer
-Declare Function IsLowIOReg (RegNameIn As String) As Integer
-Declare Function IsLowRegister(VarName As String) As Integer
-Declare Function IsRegister (VarName As String) As Integer
-Declare FUNCTION IsString (InData As String, CurrSub As SubType Pointer) As Integer
-Declare Function IsUnaryOp (InData As String) As Integer
-Declare Sub LoadConverters
-DECLARE FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
-Declare Sub LogError(InMessage As String, Origin As String = "")
-Declare Sub LogOutputMessage(InMessage As String)
-Declare Sub LogWarning(InMessage As String, Origin As String = "")
-Declare Sub MergeSubroutines
-DECLARE FUNCTION Message (InData As String) As String
-DECLARE Function ModeAVR As Integer
-DECLARE Function ModePIC As Integer
-Declare Function ModeZ8 As Integer
-Declare Function NewCodeSection As CodeSection Pointer
-Declare Function NewProgLineMeta As ProgLineMeta Pointer
-Declare Function NewSubroutine(SubName As String) As SubType Pointer
-Declare Sub OptimiseCalls
-DECLARE SUB OptimiseIF(CompSub As SubType Pointer = 0)
-Declare Sub OptimiseIncrement(CompSub As SubType Pointer)
-Declare Sub PreparePageData
-Declare Sub PrepareProgrammer
-DECLARE SUB ProcessArrays (CompSub As SubType Pointer)
-DECLARE SUB ProcessWords ()
-Declare Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue As String, RegType As String, Origin As String) As String
-DECLARE SUB ReadChipData
-DECLARE SUB ReadPICASChipData
-Declare Sub ReadOptions(OptionsIn As String)
-Declare Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
-Declare Function ReplaceFnNames(InName As String) As String
-Declare Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn As String = "") As Integer
-Declare Sub RetrySubRequests
-Declare Sub SetCalcTempType (CalcVar As String, NewType As String)
-Declare Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
-DECLARE SUB ShowBlock (BlockIn As String)
-Declare SUB SplitLines (CompSub As SubType Pointer)
-Declare Function TempRemove(Removed As String) As String
-Declare Sub TidyProgram
-Declare Sub TidySubroutine(CompSub As SubType Pointer)
-Declare Function TranslateFile(InFile As String) As String
-Declare FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
-Declare FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
-Declare Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
-Declare Sub UpdateSubMap
-Declare Sub UpgradeCalcVar (VarName As String, VarType As String)
-Declare Sub ValueChanged(VarName As String, VarValue As String)
-DECLARE FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
-Declare Sub WriteAssembly
-Declare Sub WriteCompilationReport
-DECLARE SUB WriteErrorLog
+declare SUB Add18FBanks(CompSub As SubType Pointer)
+declare SUB AddBankCommands(CompSub As SubType Pointer)
+declare Sub AddMainEndCode
+declare Sub AddMainInitCode
+declare Sub AddPageCommands(CompSub As SubType Pointer)
+declare Sub AddInterruptCode
+declare SUB AddSysVarBits (CompSub As SubType Pointer)
+declare SUB BuildMemoryMap
+declare SUB CalcConfig
+declare Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As String, OriginIn As String, NeverLast As Integer)
+declare Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As AsmCommand Pointer = 0, GotoPos As AsmCommand Pointer = 0) As Integer
+declare Sub CalcSubSize(CurrSub As SubType Pointer)
+declare FUNCTION CastOrder (InType As String) As Integer
+declare Sub CheckConstName (ConstName As String, Origin As String)
+declare Sub CheckClockSpeed
+declare Sub CompileProgram
+declare Sub CompileSubroutine(CompSub As SubType Pointer)
+declare Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0)
+declare FUNCTION CompileCalcAdd(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+declare FUNCTION CompileCalcCondition(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+declare FUNCTION CompileCalcLogic(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+declare FUNCTION CompileCalcMult(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+declare Function CompileCalcUnary(CodeSection As CodeSection Pointer, Act As String, V2 As String, Origin As String, AnswerIn As String) As String
+declare Function CompileConditions (Condition As String, IfTrue As String, Origin As String, CompSub As SubType Pointer = 0) As LinkedListElement Pointer
+declare Sub CompileDim (CurrSub As SubType Pointer)
+declare SUB CompileDir (CompSub As SubType Pointer)
+declare SUB CompileDo (CompSub As SubType Pointer)
+declare SUB CompileExitSub (CompSub As SubType Pointer)
+declare SUB CompileFor (CompSub As SubType Pointer)
+declare Sub CompileGoto (CompSub As SubType Pointer)
+declare SUB CompileIF (CompSub As SubType Pointer)
+declare Sub CompileIntOnOff (CompSub As SubType Pointer)
+declare SUB CompileOn (CompSub As SubType Pointer)
+declare SUB CompilePot (CompSub As SubType Pointer)
+declare SUB CompileReadTable (CompSub As SubType Pointer)
+declare SUB CompileRepeat (CompSub As SubType Pointer)
+declare Sub CompileReturn (CompSub As SubType Pointer)
+declare SUB CompileRotate (CompSub As SubType Pointer)
+declare SUB CompileSelect (CompSub As SubType Pointer)
+declare SUB CompileSet (CompSub As SubType Pointer)
+declare Function CompileString (InLine As String, Origin As String) As LinkedListElement Pointer
+declare Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Pointer
+declare Sub CompileSubCalls (CompSub As SubType Pointer)
+declare SUB CompileTables
+declare SUB CompileVars (CompSub As SubType Pointer)
+declare Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, InvertBitCopy As Integer = 0) As LinkedListElement Pointer
+declare SUB CompileWait (CompSub As SubType Pointer)
+declare Function CompileWholeArray (InLine As String, Origin As String) As LinkedListElement Pointer
+declare Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
+declare Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny As Integer = 0) As Integer
+declare Sub CreateCallTree
+declare Sub CreateReservedWordsList
+declare Sub DisplayProgram
+declare Sub DisplayCallTree
+declare Sub ExtAssembler
+declare Sub PICASAssembler
+declare Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
+declare Sub FinalOptimise
+declare Sub FindAssembly (CompSub As SubType Pointer)
+declare Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As LinkedListElement Pointer = 0, CheckedLines As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+declare Sub FindUncompiledLines
+declare Function FixBit (InBit As String, Origin As String) As String
+declare SUB FixFunctions (CompSub As SubType Pointer)
+declare Sub FixPointerOps (CompSub As SubType Pointer)
+declare Sub FixSinglePinSet
+declare Sub FixTemporaryVariables
+declare Sub FreeCalcVar (VarName As String)
+declare Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
+declare Function GenerateAutoPinDir As LinkedListElement Pointer
+declare Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As String, CurrSub As SubType Pointer = 0, SetStatus As Integer = -1) As LinkedListElement Pointer
+declare Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointer
+declare Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As String, CurrSub As SubType Pointer, CanSkip As Integer) As LinkedListElement Pointer
+declare Function GenerateVectorCode As LinkedListElement Pointer
+declare Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As String) As String
+declare Function GetCalcVar (VarTypeIn As String) As String
+declare Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListElement Pointer = 0, FindCallers As Integer = 0) As LinkedListElement Pointer
+declare FUNCTION GetDestSub(Origin As String) As Integer
+declare Sub GetEqConfig
+declare Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
+declare Function GetLinearLoc(Location As Integer) As Integer
+declare Function GetNonLinearLoc(Location As Integer) As Integer
+declare Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Pointer
+declare Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
+declare Function GetRealIOName(InName As String) As String
+declare Function GetRegisterLoc(RegName As String) As Integer
+declare Function GetSysVar(VarName As String) As SysVarType Pointer
+declare FUNCTION GetSub(Origin As String) As String
+declare Function GetSubFullName(SubIndex As Integer) As String
+declare FUNCTION GetSubID(Origin As String) As Integer
+declare Function GetSubSig(CurrentSub As SubType) As String
+declare Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
+declare Function GetTool(ToolName As String) As ExternalTool Pointer
+declare SUB InitCompiler
+declare FUNCTION IsArray (VarName As String, CurrSub As SubType Pointer) As Integer
+declare Function IsNonBanked(Location As Integer) As Integer
+declare Function IsInAccessBank(VarNameIn As String) As Integer
+declare Function IsIOPinName(PinName As String) As Integer
+declare Function IsIOReg (RegNameIn As String) As Integer
+declare Function IsLowIOReg (RegNameIn As String) As Integer
+declare Function IsLowRegister(VarName As String) As Integer
+declare Function IsRegister (VarName As String) As Integer
+declare FUNCTION IsString (InData As String, CurrSub As SubType Pointer) As Integer
+declare Function IsUnaryOp (InData As String) As Integer
+declare Sub LoadConverters
+declare FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
+declare Sub LogError(InMessage As String, Origin As String = "")
+declare Sub LogOutputMessage(InMessage As String)
+declare Sub LogWarning(InMessage As String, Origin As String = "")
+declare Sub MergeSubroutines
+declare FUNCTION Message (InData As String) As String
+declare Function ModeAVR As Integer
+declare Function ModePIC As Integer
+declare Function ModeZ8 As Integer
+declare Function NewCodeSection As CodeSection Pointer
+declare Function NewProgLineMeta As ProgLineMeta Pointer
+declare Function NewSubroutine(SubName As String) As SubType Pointer
+declare Sub OptimiseCalls
+declare SUB OptimiseIF(CompSub As SubType Pointer = 0)
+declare Sub OptimiseIncrement(CompSub As SubType Pointer)
+declare Sub PreparePageData
+declare Sub PrepareProgrammer
+declare SUB ProcessArrays (CompSub As SubType Pointer)
+declare SUB ProcessWords ()
+declare Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue As String, RegType As String, Origin As String) As String
+declare SUB ReadChipData
+declare SUB ReadPICASChipData
+declare Sub ReadOptions(OptionsIn As String)
+declare Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
+declare Function ReplaceFnNames(InName As String) As String
+declare Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn As String = "") As Integer
+declare Sub RetrySubRequests
+declare Sub SetCalcTempType (CalcVar As String, NewType As String)
+declare Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
+declare SUB ShowBlock (BlockIn As String)
+declare SUB SplitLines (CompSub As SubType Pointer)
+declare Function TempRemove(Removed As String) As String
+declare Sub TidyProgram
+declare Sub TidySubroutine(CompSub As SubType Pointer)
+declare Function TranslateFile(InFile As String) As String
+declare FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
+declare FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
+declare Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
+declare Sub UpdateSubMap
+declare Sub UpgradeCalcVar (VarName As String, VarType As String)
+declare Sub ValueChanged(VarName As String, VarValue As String)
+declare FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
+declare Sub WriteAssembly
+declare Sub WriteCompilationReport
+declare SUB WriteErrorLog
 
 'Subs in assembly.bi
-Declare Sub AddAsmSymbol(SymName As String, SymValue As String)
-Declare Sub AsmOptimiser (CompSub As SubType Pointer)
-DECLARE FUNCTION AsmTidy (DataSource As String, StoredGCASM as integer = -1 ) As String
-DECLARE Function ConfigTidy (DataSource As String ) As String
-DECLARE SUB AssembleProgram
-Declare Sub BuildAsmSymbolTable
-Declare Function GetConfigBaseLoc As Integer
-Declare FUNCTION IsASM (DataSource As String, ParamCount As Integer = -1) As AsmCommand Pointer
-Declare Function IsASMConst (DataSource As String) As Integer
-Declare Function IsHexConfigValid(HexFile As String, ConfigSettings As String) As Integer
-Declare Function IsForVariant(FoundCmd As AsmCommand Pointer) As Integer
+declare Sub AddAsmSymbol(SymName As String, SymValue As String)
+declare Sub AsmOptimiser (CompSub As SubType Pointer)
+declare FUNCTION AsmTidy (DataSource As String, StoredGCASM as integer = -1 ) As String
+declare Function ConfigTidy (DataSource As String ) As String
+declare SUB AssembleProgram
+declare Sub BuildAsmSymbolTable
+declare Function GetConfigBaseLoc As Integer
+declare FUNCTION IsASM (DataSource As String, ParamCount As Integer = -1) As AsmCommand Pointer
+declare Function IsASMConst (DataSource As String) As Integer
+declare Function IsHexConfigValid(HexFile As String, ConfigSettings As String) As Integer
+declare Function IsForVariant(FoundCmd As AsmCommand Pointer) As Integer
 
 'Subs in variables.bi
-Declare Function AddFinalVar(VarName As String, VarLoc As String, VarIsArray As Integer = 0) As Integer
-Declare Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSubIn As SubType Pointer, VarPointerIn As String, OriginIn As String, FixedLocation As Integer = -1, ExplicitDeclaration As Integer = 0, Used As Integer = -1)
-DECLARE SUB AllocateRAM
-Declare Function CalcAliasLoc(LocationIn As String) As Integer
-Declare Function GetWholeSFR(BitName As String) As String
-Declare Function GetSFRBitValue(BitName As String) As String
-Declare Function HasSFR(SFRName As String) As Integer
-Declare Function HasSFRBit(BitName As String) As Integer
-Declare Sub MakeSFR (UserVar As String, SFRAddress As Integer)
-Declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
-Declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
+declare Function AddFinalVar(VarName As String, VarLoc As String, VarIsArray As Integer = 0) As Integer
+declare Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSubIn As SubType Pointer, VarPointerIn As String, OriginIn As String, FixedLocation As Integer = -1, ExplicitDeclaration As Integer = 0, Used As Integer = -1)
+declare SUB AllocateRAM
+declare Function CalcAliasLoc(LocationIn As String) As Integer
+declare Function GetWholeSFR(BitName As String) As String
+declare Function GetSFRBitValue(BitName As String) As String
+declare Function HasSFR(SFRName As String) As Integer
+declare Function HasSFRBit(BitName As String) As Integer
+declare Sub MakeSFR (UserVar As String, SFRAddress As Integer)
+declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
+declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
 
 'Subs in preprocessor.bi
-Declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
-Declare Function CheckSysVarDef(ConditionIn As String) As String
-Declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
-DECLARE SUB PrepareBuiltIn ()
-DECLARE SUB PreProcessor ()
-Declare Sub ProcessSame (DirectiveIn As String)
-Declare Sub ReadTableValues
-DECLARE SUB RemIfDefs ()
-DECLARE SUB ReplaceConstants ()
-Declare Function ReplaceConstantsLine (DataSourceIn As String, IncludeStartup As Integer) As String
-DECLARE SUB RunScripts ()
-Declare Sub TidyInputSource (CompSub As SubType Pointer)
-Declare Sub TableString (DataSource As String, TF As String )
+declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
+declare Function CheckSysVarDef(ConditionIn As String) As String
+declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
+declare SUB PrepareBuiltIn ()
+declare SUB PreProcessor ()
+declare Sub ProcessSame (DirectiveIn As String)
+declare Sub ReadTableValues
+declare SUB RemIfDefs ()
+declare Function RemoveSpacesfromCommands ( CO as String, Param as String ) As String
+declare SUB ReplaceConstants ()
+declare Function ReplaceConstantsLine (DataSourceIn As String, IncludeStartup As Integer) As String
+declare SUB RunScripts ()
+declare Sub TidyInputSource (CompSub As SubType Pointer)
+declare Sub TableString (DataSource As String, TF As String )
 
 'Subs in utils.bi
-Declare Function AddFullPath(CurrPath As String, FullPathIn As String = "") As String
-DECLARE SUB Calculate (SUM As String)
-DECLARE FUNCTION CountOccur (Source As String, Search As String, SearchWhole As Integer = 0) As Integer
-DECLARE FUNCTION CountSubstring (Source As String, Search As String) As Integer
-Declare Function DelType (InString As String) As String
-DECLARE FUNCTION GetByte (DataSource As String, BS As Integer) As String
-Declare Function GetElements(InData As String, DivChar As String = "", IncludeDividers As Integer = 0) As LinkedListElement Pointer
-Declare Function GetFileLine(Origin As String) As String
-Declare Function GetNextTempVar(CurrVar As String) As String
-Declare Function GetOriginString(OriginIn As OriginType Pointer) As String
-Declare Function GetDoubleBytes (InValue As Double) As ULongInt
-Declare Function GetSingleBytes (InValue As Single) As UInteger
-Declare Function GetString(StringName As String, UsedInProgram As Integer = -1) As String
-Declare Sub GetTokens(InData As String, OutArray() As String, ByRef OutSize As Integer, DivChar As String = "", IncludeDividers As Integer = 0)
-Declare Function GetTypeLetter(InType As String) As String
-Declare Function GetTypeSize(InType As String) As Integer
-Declare Function GetVarByteNumber(VarName As String) As Integer
-Declare Function HashMapCreate As HashMap Pointer
-Declare Function HashMapCalcHash(Key As String) As Integer
-Declare Sub HashMapDestroy(Map As HashMap Pointer)
-Declare Sub HashMapDelete(Map As HashMap Pointer, Key As String, DeleteMeta As Integer = -1)
-Declare Function HashMapGet(Map As HashMap Pointer, Key As String) As Any Pointer
-Declare Function HashMapGetStr(Map As HashMap Pointer, Key As String) As String
-Declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As String, ReplaceExisting As Integer = -1) As Integer
-Declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As Any Pointer, ReplaceExisting As Integer = -1) As Integer
-Declare Function HashMapToList(Map As HashMap Pointer, Sorted As Integer = 0) As LinkedListElement Pointer
-DECLARE FUNCTION IsCalc (Temp As String) As Integer
-Declare FUNCTION IsCalcDivider (Temp As String) As Integer
-DECLARE FUNCTION IsConst (Temp As String) As Integer
-DECLARE FUNCTION IsDivider (Temp As String) As Integer
-Declare Function IsFloatType(InType As String) As Integer
-Declare Function IsIntType(InType As String) As Integer
-DECLARE FUNCTION IsLet(Temp As String) As Integer
-Declare Function IsSysTemp(VarNameIn As String) As Integer
-Declare Function IsValidName(InName As String) As Integer
-Declare Function IsValidValue(InValue As LongInt, TypeIn As String) As Integer
-Declare Function LinkedListCreate As LinkedListElement Pointer
-Declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchMeta As Any Pointer) As LinkedListElement Pointer
-Declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchValue As String) As LinkedListElement Pointer
-Declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewLine As String, NewNumVal As Integer = 0) As LinkedListElement Pointer
-Declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewData As Any Pointer) As LinkedListElement Pointer
-Declare Function LinkedListInsertList (Location As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-Declare Function LinkedListAppend (ListIn As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-Declare Function LinkedListDelete (Location As LinkedListElement Pointer, DeleteMeta As Integer = -1) As LinkedListElement Pointer
-Declare Function LinkedListDeleteList (StartLoc As LinkedListElement Pointer, EndLoc As LinkedListElement Pointer) As LinkedListElement Pointer
-Declare Sub LinkedListPrint(StartNode As LinkedListElement Pointer)
-Declare Sub LinkedListPrintwithComments(StartNode As LinkedListElement Pointer)
-Declare Function LinkedListSize(StartNode As LinkedListElement Pointer) As Integer
-DECLARE FUNCTION MakeDec (DataSource As String) As LongInt
-DECLARE FUNCTION MakeDecFloat (DataSource As String) As Double
-Declare Function NCase(InValue As String) As String
-Declare Function NextCodeLine(CodeLine As LinkedListElement Pointer) As LinkedListElement Pointer
-Declare Function PrefIsYes(CheckVal As String, YesVal As Integer = -1) As Integer
-DECLARE SUB Replace (DataVar As String, Find As String, Rep As String)
-Declare SUB ReplaceAll (DataVar As String, Find As String, Rep As String)
-Declare Function ReplaceToolVariables(InData As String, FNExtension As String = "", FileNameIn As String = "", Tool As ExternalTool Pointer = 0) As String
-DECLARE SUB SCICONV (STemp As String)
-Declare Function ShortFileName(InName As String) As String
-DECLARE FUNCTION ShortName (NameIn As String) As String
-Declare Function SubSigMatch (SubSigIn As String, CallSigIn As String) As Integer
-Declare Sub WaitForKeyOrTimeout
-DECLARE Function WholeINSTR (DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
-Declare Function WholeInstrLoc(DataSource As String, FindTemp As String) As Integer
-DECLARE SUB WholeReplace (DataVar As String, Find As String, Rep As String)
-DECLARE Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret() As String)
+declare Function AddFullPath(CurrPath As String, FullPathIn As String = "") As String
+declare SUB Calculate (SUM As String)
+declare FUNCTION CountOccur (Source As String, Search As String, SearchWhole As Integer = 0) As Integer
+declare FUNCTION CountSubstring (Source As String, Search As String) As Integer
+declare Function DelType (InString As String) As String
+declare FUNCTION GetByte (DataSource As String, BS As Integer) As String
+declare Function GetElements(InData As String, DivChar As String = "", IncludeDividers As Integer = 0) As LinkedListElement Pointer
+declare Function GetFileLine(Origin As String) As String
+declare Function GetNextTempVar(CurrVar As String) As String
+declare Function GetOriginString(OriginIn As OriginType Pointer) As String
+declare Function GetDoubleBytes (InValue As Double) As ULongInt
+declare Function GetSingleBytes (InValue As Single) As UInteger
+declare Function GetString(StringName As String, UsedInProgram As Integer = -1) As String
+declare Sub GetTokens(InData As String, OutArray() As String, ByRef OutSize As Integer, DivChar As String = "", IncludeDividers As Integer = 0)
+declare Function GetTypeLetter(InType As String) As String
+declare Function GetTypeSize(InType As String) As Integer
+declare Function GetVarByteNumber(VarName As String) As Integer
+declare Function HashMapCreate As HashMap Pointer
+declare Function HashMapCalcHash(Key As String) As Integer
+declare Sub HashMapDestroy(Map As HashMap Pointer)
+declare Sub HashMapDelete(Map As HashMap Pointer, Key As String, DeleteMeta As Integer = -1)
+declare Function HashMapGet(Map As HashMap Pointer, Key As String) As Any Pointer
+declare Function HashMapGetStr(Map As HashMap Pointer, Key As String) As String
+declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As String, ReplaceExisting As Integer = -1) As Integer
+declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As Any Pointer, ReplaceExisting As Integer = -1) As Integer
+declare Function HashMapToList(Map As HashMap Pointer, Sorted As Integer = 0) As LinkedListElement Pointer
+declare FUNCTION IsCalc (Temp As String) As Integer
+declare FUNCTION IsCalcDivider (Temp As String) As Integer
+declare FUNCTION IsConst (Temp As String) As Integer
+declare FUNCTION IsDivider (Temp As String) As Integer
+declare Function IsFloatType(InType As String) As Integer
+declare Function IsIntType(InType As String) As Integer
+declare FUNCTION IsLet(Temp As String) As Integer
+declare Function IsSysTemp(VarNameIn As String) As Integer
+declare Function IsValidName(InName As String) As Integer
+declare Function IsValidValue(InValue As LongInt, TypeIn As String) As Integer
+declare Function LinkedListCreate As LinkedListElement Pointer
+declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchMeta As Any Pointer) As LinkedListElement Pointer
+declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchValue As String) As LinkedListElement Pointer
+declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewLine As String, NewNumVal As Integer = 0) As LinkedListElement Pointer
+declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewData As Any Pointer) As LinkedListElement Pointer
+declare Function LinkedListInsertList (Location As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+declare Function LinkedListAppend (ListIn As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+declare Function LinkedListDelete (Location As LinkedListElement Pointer, DeleteMeta As Integer = -1) As LinkedListElement Pointer
+declare Function LinkedListDeleteList (StartLoc As LinkedListElement Pointer, EndLoc As LinkedListElement Pointer) As LinkedListElement Pointer
+declare Sub LinkedListPrint(StartNode As LinkedListElement Pointer)
+declare Sub LinkedListPrintwithComments(StartNode As LinkedListElement Pointer)
+declare Function LinkedListSize(StartNode As LinkedListElement Pointer) As Integer
+declare FUNCTION MakeDec (DataSource As String) As LongInt
+declare FUNCTION MakeDecFloat (DataSource As String) As Double
+declare Function NCase(InValue As String) As String
+declare Function NextCodeLine(CodeLine As LinkedListElement Pointer) As LinkedListElement Pointer
+declare Function PrefIsYes(CheckVal As String, YesVal As Integer = -1) As Integer
+declare SUB Replace (DataVar As String, Find As String, Rep As String)
+declare SUB ReplaceAll (DataVar As String, Find As String, Rep As String)
+declare Function ReplaceToolVariables(InData As String, FNExtension As String = "", FileNameIn As String = "", Tool As ExternalTool Pointer = 0) As String
+declare SUB SCICONV (STemp As String)
+declare Function ShortFileName(InName As String) As String
+declare FUNCTION ShortName (NameIn As String) As String
+declare Function SubSigMatch (SubSigIn As String, CallSigIn As String) As Integer
+declare Sub WaitForKeyOrTimeout
+declare Function WholeINSTR (DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
+declare Function WholeInstrLoc(DataSource As String, FindTemp As String) As Integer
+declare SUB WholeReplace (DataVar As String, Find As String, Rep As String)
+declare Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret() As String)
 
 'Initialise
 'Misc Vars
@@ -796,8 +797,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "1.01.00 2024-01-31"
-buildVersion = "1327"
+Version = "2024.2.6"
+buildVersion = "1331"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -4399,7 +4400,7 @@ FUNCTION CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act 
   Else
     CalcVarType = CalcType
     If CalcVarType = "BIT" Then CalcVarType = "BYTE"
-    'Declare SysCalcTempA, SysCalcTempB and SysCalcTempX
+    'declare SysCalcTempA, SysCalcTempB and SysCalcTempX
     AddVar "Sys" + CalcVarType + "TempA", CalcVarType, 1, Subroutine(SourceSub), "REAL", Origin, , -1
     AddVar "Sys" + CalcVarType + "TempB", CalcVarType, 1, Subroutine(SourceSub), "REAL", Origin, , -1
     AddVar "SysByteTempX", "BYTE", 1, Subroutine(SourceSub), "REAL", Origin, , -1
@@ -14573,7 +14574,7 @@ SUB InitCompiler
   END IF
 
   'Start Compile
-  PRINT Message("Compiling")
+  IF VBS = 0 Then   PRINT Message("CompilingShortname") Else  PRINT Message("Compiling")
 
 END SUB
 
@@ -19572,10 +19573,14 @@ Function Message (InData As String) As String
   End If
 
   'Replace values
+  IF INSTR(UCase(MsgOut), "%SHORTFILENAME%") <> 0 THEN 
+    Replace MsgOut, "%SHORTFILENAME%", Mid(FI, InstrRev(FI, "\")+1) 
+  End If
   IF INSTR(UCase(MsgOut), "%VERSION%") <> 0 THEN Replace MsgOut, "%VERSION%", Version
   IF INSTR(UCase(MsgOut), "%FILENAME%") <> 0 THEN Replace MsgOut, "%FILENAME%", FI
   IF INSTR(UCase(MsgOut), "%OUTPUTFILE%") <> 0 THEN Replace MsgOut, "%OUTPUTFILE%", OFI
   IF INSTR(UCase(MsgOut), "%CHIPNAME%") <> 0 THEN Replace MsgOut, "%CHIPNAME%", ChipName
+  
 
   Return MsgOut
 END FUNCTION

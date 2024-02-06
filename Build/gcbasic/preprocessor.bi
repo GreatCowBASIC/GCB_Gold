@@ -206,6 +206,54 @@ End if
   Return Condition
 End Function
 
+Function SelectGLCDLibrary (  glcdstring as string  ) as String
+
+  Dim DataSource as String
+  Dim outstring as String 
+  if glcdstring = "0" Then
+    return ""
+  end if
+  outstring = ""
+  Dim as String GLCDdataArray()
+  
+  iF Instr( glcdstring , "'") > 0 Then
+    glcdstring = left ( glcdstring, Instr( glcdstring , "'") - 1)
+  End If
+  glcdstring = trim(ucase(glcdstring))
+
+  'Add GLCD.dat
+    #IFDEF __FB_UNIX__
+      OPEN ID + "/include/glcd.dat" FOR INPUT AS #8
+    #ELSE
+      OPEN ID + "\include\glcd.dat" FOR INPUT AS #8
+    #EndIf
+
+  DO WHILE NOT EOF(8)
+    LINE INPUT #8, DataSource
+    DataSource = Trim(DataSource)
+    IF Left(DataSource, 1) <> "'" AND Trim(DataSource) <> "" THEN
+      DataSource = ucase ( DataSource )
+      StringSplit(DataSource,",",-1,GLCDdataArray() )
+
+        GLCDdataArray(0) = GLCDdataArray(0)
+        GLCDdataArray(1) = GLCDdataArray(1)
+        GLCDdataArray(2) = GLCDdataArray(2)
+
+        ' print glcdstring,  Instr( trim(glcdstring) , trim(GLCDdataArray(1) ) ), GLCDdataArray(0), GLCDdataArray(1),GLCDdataArray(2)
+
+        If glcdstring = trim(GLCDdataArray(1) ) Then
+            outstring = GLCDdataArray(2)
+          ' we have a hit
+          exit do
+        End if
+    END IF
+  LOOP
+  Close #8
+
+  return outstring
+
+End Function
+
 Sub LoadTableFromFile(DataTable As DataTableType Pointer)
   'Read a data table from a file
   Dim TempData As String
@@ -649,7 +697,7 @@ SUB PreProcessor
 
   Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter
   Dim As Integer ForceMain, LineTokens, FoundFunction, FoundMacro, CurrChar, ReadScript, CachedCmdPointer
-  Dim As Integer CurrCharPos, ReadType, ConvertAgain, UnconvertedFiles, FileNo, HandlingInsert
+  Dim As Integer CurrCharPos, ReadType, ConvertAgain, UnconvertedFiles, FileNo, HandlingInsert, HandledGLCDSelection
   Dim As Single CurrPerc, PercAdd, PercOld
   Dim As Double LastCompTime, StartTime
   Dim InConditionalStatementCounter as Integer = 0
@@ -662,6 +710,7 @@ SUB PreProcessor
   Dim As String CachedCmd( 20 )
   Dim As Integer CachedPMode( 20 )
   CachedCmdPointer = 0
+  HandledGLCDSelection = 0
 
   CurrentSub = ""
   UnconvertedFiles = 0
@@ -670,6 +719,7 @@ SUB PreProcessor
   'Find required files
   IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("FindSource")
   SourceFiles = 1: SourceFile(1).FileName = ShortName(FI):SourceFile(1).UserInclude = -1
+
   T = 1
 
   'Get date on output (hex) file
@@ -714,6 +764,7 @@ SUB PreProcessor
         End If
 
         If Not SourceFile(T).RequiresConversion Then
+        
           Open SourceFile(T).FileName For INPUT AS #1
           LC = 0
 
@@ -827,6 +878,7 @@ SUB PreProcessor
         SourceFiles += 1
         SourceFile(SourceFiles).FileName = DataSource
         SourceFile(SourceFiles).SystemInclude = -1
+        
         Temp = Dir(DataSource)
         IF Temp <> "" Then
           Temp = ": " + Message("found")
@@ -859,13 +911,15 @@ SUB PreProcessor
     Next
 
   'Read all required files
-  IF VBS = 1 THEN PRINT SPC(5); Message("LoadSource");
   PercOld = 0
   CurrPerc = 0.5
   PercAdd = 1 / SourceFiles * 100
   LineOrigin = 0
   StartTime = Timer
-  FOR RF = 1 TO SourceFiles
+  
+  RF = 0
+  Do While RF <=  SourceFiles
+    RF = RF + 1
 
     'Translate files if needed
     If SourceFile(RF).RequiresConversion Then
@@ -1801,6 +1855,65 @@ SUB PreProcessor
               DataSource = DataSource + "':" + Str(RF)
               ForceMain = 1
 
+              If Instr( DataSource, "GLCD_TYPE ") > 0 Then
+                If RF =1 then    ' Only proceed if the user program
+                  
+                  'load GLCD libraries
+                  If HandledGLCDSelection = 0 then
+                    Dim GLCDfilestoloaded as String * 255
+
+                    'call the handlers
+                    GLCDfilestoloaded = trim( SelectGLCDLibrary(  trim(mid( DataSource, Instr(DataSource,"GLCD_TYPE ")+10) ) ) )
+
+                    HandledGLCDSelection = -1
+
+                    'handled multiple files
+                    Do While GLCDfilestoloaded <> ""
+
+                      SourceFiles = SourceFiles + 1
+                      If Instr ( GLCDfilestoloaded, "&") > 0  Then
+                        SourceFile(SourceFiles).FileName = Left( GLCDfilestoloaded, Instr ( GLCDfilestoloaded, "&") - 1 )
+                      Else
+                        SourceFile(SourceFiles).FileName = GLCDfilestoloaded
+                      End If
+                      
+                      ' print "loading";SourceFile(SourceFiles).FileName
+                      
+                      'remove the current file from the string
+                      GLCDfilestoloaded = trim( Mid( GLCDfilestoloaded, Len(SourceFile(SourceFiles).FileName) + 2 ) ) 
+
+                      'Change for Linux etc
+                      #IFDEF __FB_UNIX__
+                        SourceFile(SourceFiles).FileName = lcase ( ID + "/include/" + SourceFile(SourceFiles).FileName )
+                      #ELSE
+                        SourceFile(SourceFiles).FileName = ID + "\include\" + SourceFile(SourceFiles).FileName
+                      #EndIf
+
+                      SourceFile(SourceFiles).UserInclude = 0  
+                      ' check file exists, else handle error
+                      IF Dir(SourceFile(SourceFiles).FileName) = "" THEN
+
+                        Temp = Message("NoFileOther")
+                        Replace Temp, "%Gname%", SourceFile(SourceFiles).FileName
+
+                        'Log warning
+                        LogError(Temp, SourceFile(1).IncludeOrigin)
+
+                      Else
+                        IF VBS = 1 THEN PRINT SPC(10); SourceFile(SourceFiles).FileName + ": " + Message("found")
+                      End IF  
+
+                    Loop 
+
+                  Else
+                      'Log warning
+                      LogError(Message("WarningRefinedGLCDIgnored"), SourceFile(1).IncludeOrigin)
+
+                  End If
+                  
+                End If
+              End If
+              
             ElseIf Left(DataSource, 8) = "#OPTION " Then
               DataSource = Trim(Mid(DataSource, 8))
               If WholeINSTR(DataSource, "EXPLICIT") = 2 Then
@@ -2086,19 +2199,24 @@ SUB PreProcessor
       S = 0
     END IF
     CLOSE
+    
+    IF VBS = 1 AND RF = 1 THEN PRINT SPC(5); Message("LoadSource");
+
     If VBS = 1 And ShowProgressCounters Then
+      PercAdd = 1 / SourceFiles * 100
       CurrPerc += PercAdd
       If Int(CurrPerc) > Int(PercOld) Then
         PercOld = CurrPerc
         LOCATE , 60
         Print Int(CurrPerc);
         Print "%";
+        
       End If
     End If
 
     LoadNextFile:
 
-  NEXT
+  LOOP 'NEXT
   IF VBS = 1 THEN Print
 
   'Find compiler directives, except SCRIPT, ENDSCRIPT, IFDEF and ENDIF using ( a question ) Subroutine(0)
@@ -3098,7 +3216,7 @@ SUB RunScripts
   For CurrSub = 0 To SBC
     CurrLine = Subroutine(CurrSub)->CodeStart->Next
     Do While CurrLine <> 0
-
+    
       IF CurrLine->Value = "#SCRIPT" THEN
         If ReadScript = -1 Then 'there is already a script open
             LogError Subroutine(CurrSub)->Name, "Missing #ENDSCRIPT in "
@@ -3119,6 +3237,9 @@ SUB RunScripts
           TempData = Message("DoNotUseLetinScripts")
           Origin = Trim(Mid(ScriptCodePos->Value, InStr(ScriptCodePos->Value, ";?F")))
           LogError(TempData, Origin)
+        ElseIf Left(ScriptCodePos->Value,3) = "#IF" Then
+          TempData = ScriptCodePos->Value + " @ " + Message("ConditionCompilationNotPermittedinScript") 
+          LogError(TempData)        
         End If
       End If
 
@@ -3131,6 +3252,10 @@ SUB RunScripts
   ScriptCodePos = ScriptCode->Next
   Do While ScriptCodePos <> 0
     CO = ScriptCodePos->Value
+
+    CO = RemoveSpacesfromCommands( CO, "VAR" )
+    CO = RemoveSpacesfromCommands( CO, "DEF" )
+    CO = RemoveSpacesfromCommands( CO, "BIT" )
 
     'Get origin
     Origin = ""
@@ -3253,6 +3378,23 @@ SUB RunScripts
   Loop
 
 END Sub
+
+Function RemoveSpacesfromCommands ( CO as String, Param as String ) As String
+
+    'Syntax check
+    If  InStr(CO, Param ) <> 0 and InStr(CO, "(") <> 0  Then
+
+      If InStr(CO, "(") - InStr(CO, Param ) > Len(Param) Then
+        Do While MID( CO, InStr(CO, Param )+Len(Param) ,1 ) = " "
+          'REMOVE THE SPACE
+          CO = MID( CO, 1 , InStr(CO, Param )+Len(Param)-1  )  + MID( CO, InStr(CO, Param )+Len(Param)+1 )
+        loop
+      End if
+    End if
+    
+    Return CO
+
+End Function
 
 Sub TidyInputSource (CompSub As SubType Pointer)
   Dim As String Value, Temp, Origin, InLine

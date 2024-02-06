@@ -1,6 +1,5 @@
 'English messages.dat for GCBASIC
-'Original translation creator Hugh Considine
-'Translation last updated 2020-01-28 by Hugh Considine
+'Translation last updated 2024.2.6 by Evan R. Venn
 
 'Common Messages
 AnyKey = "Press any key to continue"
@@ -70,7 +69,9 @@ End Block
 
 Startup = "GCBASIC (%Version%)"
 Compiling = "Compiling %Filename%"
+CompilingShortname = "Compiling: %ShortFilename%"
 NoFile = "Cannot find %Filename%"
+NoFileOther = "GLCD.DAT library error: File not found "%Gname%"
 SkippingCompile = "Search for an existing hexFile, compile if not found, then program"
 
 'Verbose mode messages
@@ -381,7 +382,7 @@ WarningBitByteCompare = "Comparison will fail if %nonbit% is any value other tha
 WarningProcesorTranformingArrayBitSource = "Preprocessor - transformating source value to multi-line source to resolve array(element).bit addresssing"
 WarningProcesorTranformingArrayBitDest = "Preprocessor - transformating destination value to multi-line source to resolve array(element).bit addresssing"
 WarningConditionalExpressionAssumesVarType= "COMPILER INFORMATION: Conditional expression in ASM above is using variable %vartype% type. Fix 1113"
-
+WarningRefinedGLCDIgnored="Refined GLCD_TYPE ignored"
 
 'GCASM messages
 SymbolTable = "Building symbol table ..."

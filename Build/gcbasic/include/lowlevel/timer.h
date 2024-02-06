@@ -407,12 +407,7 @@
       #define PS_0_256 4
       #define PS_0_1024 5
 
-      #define PS_1_0 0         ' no clock source
-      #define PS_1_1 1
-      #define PS_1_8 2
-      #define PS_1_64 3
-      #define PS_1_256 4
-      #define PS_1_1024 5
+      ' Set the script for PS_1_*
 
       #define PS_3_0 0         ' no clock source
       #define PS_3_1 1
@@ -506,6 +501,15 @@
 
 
 #script
+
+  if novar(TCNT1) then  
+      PS_1_0 = 0         ' no clock source
+      PS_1_1 = 1
+      PS_1_8 = 2
+      PS_1_64 = 3
+      PS_1_256 = 4
+      PS_1_1024 = 5
+   End if
 
   if var(TCNT1) then  '05/01/2016 added for ATtiny15/25/45/85/216/461/861
     PS_1_0 = 0
