@@ -797,8 +797,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.2.6"
-buildVersion = "1331"
+Version = "2024.2.7"
+buildVersion = "1332"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -7690,8 +7690,9 @@ END SUB
 SUB CompileRepeat (CompSub As SubType Pointer)
 
   Dim As String InLine, Origin, Temp, RepCount, NewOrigin, RepValType
-  Dim As Integer RVN, RL, EV, FE, FS, RepNone, CheckZero, CurrByte, RepCountVal
+  Dim As Integer RVN, RL, EV, FE, FS, RepNone, CheckZero, CurrByte
   Dim As LinkedListElement Pointer CurrLine, EndLoc, FindEnd
+  Dim As Longint RepCountVal
 
   'Was RVN = 0
   'Quick and dirty fix to stop variables getting reused badly
@@ -13926,7 +13927,7 @@ SUB InitCompiler
   PauseOnErr = 1
   WarningsAsErrors = 0
   MuteBanners = -1
-  MuteDonate = 0
+  MuteDonate = -1
   ExtendedVerboseMessages= 0
   PreserveMode = 0
   PauseAfterCompile = 0

@@ -1889,7 +1889,8 @@ SUB PreProcessor
                         SourceFile(SourceFiles).FileName = ID + "\include\" + SourceFile(SourceFiles).FileName
                       #EndIf
 
-                      SourceFile(SourceFiles).UserInclude = 0  
+                      SourceFile(SourceFiles).SystemInclude = 1
+                        
                       ' check file exists, else handle error
                       IF Dir(SourceFile(SourceFiles).FileName) = "" THEN
 
