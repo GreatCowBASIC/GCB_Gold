@@ -1370,9 +1370,9 @@ FUNCTION MakeDecFloat (Temp As String) As Double
     If dotPos = 1 then LogError("Illegal use of decimal point")
     'Compare Exponent and compare Mantissa
     'If Exponent is same and Mantissa = 0 then we have nnnn.0 make this a numberic constant
-    IF Trim(left(DataSource,dotPos-1)) = Trim(Str(VAL(left(DataSource,dotPos-1)))) and ( Val( MID( DataSource, dotPos+1 )) = 0 )Then
+    'IF Trim(left(DataSource,dotPos-1)) = Trim(Str(VAL(left(DataSource,dotPos-1)))) and ( Val( MID( DataSource, dotPos+1 )) = 0 )Then
       Return Val(DataSource)
-    End If
+    'End If
   End If
 
   StrTemp = GetString(DataSource, 0)

@@ -36,6 +36,9 @@
 ' 24/1/2016: Added LeftPad and correct PAD
 ' 20/9/2017: Revised StrInteger to correct labels clash with other methods
 ' 25/02/2021: Add VarToBin, VarWToBin, IntegerToBin, LongtoBin
+' 01/03/2024: Add WordToHex, LongToHex and SingleToHex
+' 01/03/2024: Add SingleToString
+
 
 'Length/position
 Function Len (LenTemp())
@@ -348,6 +351,32 @@ Function Hex(In SysValTemp) As String * 3
   SysStringTemp = SysValTemp And 0x0F
   If SysStringTemp > 9 Then SysStringTemp = SysStringTemp + 7
   Hex(1) = SysStringTemp + 48
+
+End Function
+
+Function WordToHex ( in WordToHex_Word as Word ) as String * 4
+
+    WordToHex = HEX([byte]WordToHex_Word_H)
+    WordToHex += HEX([byte]WordToHex_Word)
+
+End Function
+
+
+Function LongToHex ( in LongToHex_Long as Long ) as String * 8
+    
+    LongToHex = HEX([byte]LongToHex_Long_E)
+    LongToHex += HEX([byte]LongToHex_Long_U)
+    LongToHex += HEX([byte]LongToHex_Long_H)
+    LongToHex += HEX([byte]LongToHex_Long)
+
+End Function
+
+Function SingleToHex ( in SnglToHex_Sngl as Single ) as String * 8
+
+    SingleToHex = HEX([byte]SnglToHex_Sngl_E)
+    SingleToHex += HEX([byte]SnglToHex_Sngl_U)
+    SingleToHex += HEX([byte]SnglToHex_Sngl_H)
+    SingleToHex += HEX([byte]SnglToHex_Sngl)
 
 End Function
 
@@ -728,5 +757,109 @@ Function LeftPad ( in SysInString as string, SysStrLen, optional in SysInString2
      LeftPad = SysInString
 
   end if
+
+End Function
+
+// *********************** Advanced variables
+
+Function SingleToString(in SingleNum as Single) as String * 16
+  ' Source from Clint Koehn 01/03/2024
+  '-----------------------------------------------------------
+  '   SingleNum = Single variable or constant to HSerPrint
+  '-----------------------------------------------------------
+  dim SysULongIntTempA, SysULongIntTempB, SysULongIntTempX as ULongInt
+  dim SysLongTempA, SysLongTempB, SysLongTempX as Long
+  dim SysByte_STS_Sgn, SysByte_STS_Exp, SysByte_STS_Bin as Byte
+  dim SysByte_STS_Ptr as Byte  
+
+  'ExtractSingleParts
+  SysLongTempB = [byte]SingleNum: SysLongTempB_H = [byte]SingleNum_H: SysLongTempB_U = [byte]SingleNum_U: SysLongTempB_E = [byte]SingleNum_E
+  
+  SysLongTempX = SysLongTempB & 0x7FFFFF  
+  Repeat 23
+    Set C Off
+    Rotate SysLongTempB Right Simple
+  End Repeat
+
+  SysByte_STS_Exp = SysLongTempB & 0xFF  
+  Repeat 8
+    Set C Off
+    Rotate SysLongTempB Right Simple
+  End Repeat
+
+  SysByte_STS_Sgn = SysLongTempB
+
+  SysLongTempX.23 = 1      'add hidden Bit
+  
+  SysULongIntTempA = SysLongTempX  
+  SysULongIntTempB = 100000000
+  SysMultSub64
+
+  SysULongIntTempA = SysULongIntTempX
+
+  if SysByte_STS_Exp < 127 then
+    'fractional - divide - shift right
+    SysByte_STS_Bin = (127 - SysByte_STS_Exp) + 23
+    
+    SysLongTempB = 1
+    Repeat SysByte_STS_Bin
+      SysLongTempB = SysLongTempB * 2
+    End Repeat
+
+    SysULongIntTempB = SysLongTempB
+    SysDivSub64    
+  else
+    'whole number - multiply - shift left
+    SysByte_STS_Bin = SysByte_STS_Exp - 127    
+    if SysByte_STS_Bin < 23 then
+      SysByte_STS_Bin = 23 - SysByte_STS_Bin      
+    else
+      SysByte_STS_Bin = SysByte_STS_Bin - 23      
+    end if
+    
+	'divide the mantissa by 2^(127 - exp) apparently.  Your suppose to multiply the mantissa by 2^(127 - exp)    
+    SysLongTempB = 1
+    Repeat SysByte_STS_Bin
+      SysLongTempB = SysLongTempB * 2
+    End Repeat
+
+    SysULongIntTempB = SysLongTempB
+    SysDivSub64		'SysULongIntTempA holds the quotient, SysULongIntTempX hold the remainder which is dicarded
+  end if
+
+  'init string to receive number
+  SysByte_STS_Ptr = 16
+  SingleToString = "      0.00000000"
+  
+  'have to do this because uLongInt has no comparison routines
+  SysLongTempA = [byte]SysULongIntTempA_D + [byte]SysULongIntTempA_C +[byte]SysULongIntTempA_B +[byte]SysULongIntTempA_A +[byte]SysULongIntTempA_E +[byte]SysULongIntTempA_U +[byte]SysULongIntTempA_H +[byte]SysULongIntTempA 
+
+  SysULongIntTempB = 10	'divide SysULongIntTempA by 10 till SysULongIntTempA = 0
+
+  do while SysLongTempA > 0
+    SysDivSub64
+    SysByte_STS_Bin = [byte]SysULongIntTempX 	'remainder hold 0-9
+    SingleToString(SysByte_STS_Ptr) = (SysByte_STS_Bin + 48)	'add 48 gives tha ASC value of 0 - 9    
+    SysByte_STS_Ptr --
+
+    if SysByte_STS_Ptr = 8 then	'multiplying by 100,000,000 gave it 8 decimal places      
+      SingleToString(SysByte_STS_Ptr) = "."
+      SysByte_STS_Ptr --
+    end if
+    
+    'have to do this because uLongInt has no comparison routines
+    SysLongTempA = [byte]SysULongIntTempA_D + [byte]SysULongIntTempA_C +[byte]SysULongIntTempA_B +[byte]SysULongIntTempA_A +[byte]SysULongIntTempA_E +[byte]SysULongIntTempA_U +[byte]SysULongIntTempA_H +[byte]SysULongIntTempA 
+  loop
+
+  If SysByte_STS_Ptr > 7 then
+    SysByte_STS_Ptr = 7
+  End If
+
+  SingleToString = Right(SingleToString, (17 - SysByte_STS_Ptr))	'remove leading spaces
+
+  If SysByte_STS_Sgn = 1 then
+    'negative
+    SingleToString(1) = "-"
+  End If
 
 End Function

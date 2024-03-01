@@ -18,7 +18,10 @@
 'If you have any questions about the source code, please email me: hconsidine at internode.on.net
 'Any other questions, please email me or see the GCBASIC forums.
 
-'#Define showdevdebug
+'Show compiler debug
+  '#DEFINE SHOWDEVDEBUG
+  '#DEFINE SHOWCOMPILECALCADDDEBUG
+  '#DEFINE SHOWCALCOPSDEBUG
 
 'Array sizes
 #Define MAX_PROG_PAGES 20
@@ -801,8 +804,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.2.29"
-buildVersion = "1344"
+Version = "2024.3.1"
+buildVersion = "1347"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -3169,8 +3172,10 @@ SearchForOpAgain:
   End If
 
   CalcType = GetCalcType(TypeV1, Act, TypeV2, TypeAV)
-  'Print V1, Act, V2, CalcType, AV, Origin
-
+  ' Potential debug point
+  #IF SHOWCALCOPSDEBUG
+    Print "CALCOPS       :" +V1, Act, V2, CalcType, AV, ": " + TypeV1 + " " + Act + " " +TypeV2, Origin
+  #ENDIF
   'Decide output variable
   If CalcStart = 1 And CalcEnd = LEN(SUM) And AV <> "" And (Not NeverLast) Then
     AnswerIn = AV
@@ -3920,11 +3925,17 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   V2Type = TypeOfValue(V2, Subroutine(SourceSub))
   
   'override type for Floats - this is OK as TypeOfValue() would handle if... V1 or V2 had not been stripped of CAST
+  If Instr( V1Org, "[SINGLE]" ) Then
+    V1Type = "SINGLE"
+  End If
+  If Instr( V1Org, "[DOUBLE]" ) Then
+    V1Type = "DOUBLE"
+  End If
   If Instr( V2Org, "[SINGLE]" ) Then
-    V2Type = "[SINGLE]"
+    V2Type = "SINGLE"
   End If
   If Instr( V2Org, "[DOUBLE]" ) Then
-    V2Type = "[DOUBLE]"
+    V2Type = "DOUBLE"
   End If
   DestType = TypeOfVar(Answer, Subroutine(DestSub))
   CalcType = DestType
@@ -3938,7 +3949,10 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
 
   'Get output var
   AV = Answer
-  'Print "Calculating " + AV + " = " + V1 + " " + Act + " " + V2
+  
+  #IF SHOWCOMPILECALCADDDEBUG
+    Print "COMPILECALCADD: " + AV + " = " + V1 + " " + Act + " " + V2 + " TYPE: " + V1Type + ACT + V2Type + " " +  " CONST: " + Str(IsConst(V1)) + " " +Str(IsConst(V2))+ " CalcType: " + CalcType
+  #ENDIF
 
   'Check if both are constants
   IF IsConst(V1) AND IsConst(V2) Then
@@ -8204,17 +8218,19 @@ Function CompileString (InLine As String, Origin As String) As LinkedListElement
 
     ' single > string   floats2024
     Case "SINGLE":
+          LogError "Cannot assign Single to String, use SingleToString() method", Origin
 
-        Dim As String DType, SType
-        DType = "STRING"
-        SType = SourceType
+        ' Following code works... just there is no SYSSINGLETOSTRING functionality in SYSTEM.H
+        'Dim As String DType, SType
+        'DType = "STRING"
+        'SType = SourceType
 
-        AddVar "Sys" + SType + "Temp", SType, 1, 0, "REAL", "", , -1
-        AddVar "Sys" + DType + "Temp", DType, 1, 0, "REAL", "", , -1
-        RequestSub(CurrSub, "Sys" + SType + "To" + DType, "")
-        CurrLine = LinkedListInsertList(CurrLine, CompileVarSet(Source, "Sys" + SType + "Temp", Origin))
-        CurrLine = LinkedListInsert(CurrLine, " call Sys" + SType + "To" + DType)
-        CurrLine = LinkedListInsertList(CurrLine, CompileVarSet("Sys" + DType + "Temp", Source, Origin))
+        'AddVar "Sys" + SType + "Temp", SType, 1, 0, "REAL", "", , -1
+        'AddVar "Sys" + DType + "Temp", DType, 1, 0, "REAL", "", , -1
+        'RequestSub(CurrSub, "Sys" + SType + "To" + DType, "")
+        'CurrLine = LinkedListInsertList(CurrLine, CompileVarSet(Source, "Sys" + SType + "Temp", Origin))
+        'CurrLine = LinkedListInsert(CurrLine, " call Sys" + SType + "To" + DType)
+        'CurrLine = LinkedListInsertList(CurrLine, CompileVarSet("Sys" + DType + "Temp", Source, Origin))
 
     'Anything else, show error
     Case Else:
