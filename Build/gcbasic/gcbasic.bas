@@ -18,6 +18,7 @@
 'If you have any questions about the source code, please email me: hconsidine at internode.on.net
 'Any other questions, please email me or see the GCBASIC forums.
 
+'#Define showdevdebug
 
 'Array sizes
 #Define MAX_PROG_PAGES 20
@@ -642,7 +643,7 @@ DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, C
 DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC
+Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
@@ -771,6 +772,9 @@ const   ChipFamily18FxxQ84 as integer = 16106
 const   ChipFamily18FxxK83 as integer = 16107
 const   ChipFamily18FxxQ83 as integer = 16108
 const   ChipFamily18FxxQ71 as integer = 16109
+const   ChipFamily18FxxQ71 as integer = 16109
+const   ChipFamily18FxxQ20 as integer = 16110
+const   ChipFamily18FxxQ24 as integer = 16111
 
 const   INSERTFILENOTOPEN = 1
 const   INSERTFILEOPEN    = 2
@@ -797,8 +801,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.2.7"
-buildVersion = "1332"
+Version = "2024.2.29"
+buildVersion = "1344"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -844,6 +848,8 @@ UseChipOutLatches = -1
 AutoContextSave = -1
 LaxSyntax = 0
 PICASdebug = false
+methodstructuredebug = false
+floatcapability =  1 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
 PICASDEBUGmessageShown = false
 DATfileinspection = true
 NoSummary = 0
@@ -2763,7 +2769,8 @@ SUB CalcConfig
           DesiredSetting = "OFF"
         ElseIf ConfigNameMatch(.Name, "VDDIO2MD") Then     'new for Q20 chips
           DesiredSetting = "STANDARD_RANGE"
-
+        ElseIf ConfigNameMatch(.Name, "VDDIO3MD") Then     'new for Q20 chips
+          DesiredSetting = "STANDARD_RANGE"
 
         ElseIf ConfigNameMatch(.Name, "OSC") Then
           'Get setting from #osc directive
@@ -3873,7 +3880,7 @@ This sub compiles the ADD and SUBTRACTION maths
 FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
 
   Dim OutVal As LongInt
-  Dim As String V1Type, V2Type, CalcType, DestType, AV, R1, R2, Temp
+  Dim As String V1Type, V2Type, CalcType, DestType, AV, R1, R2, Temp, V1Org, V2Org
   Dim As Integer SourceSub, DestSub
   Dim As String CurrV1, CurrV2
   Dim As String Cmd, Ovr, TempVar
@@ -3882,6 +3889,9 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   Dim As LinkedListElement Pointer CurrLine, NewCode
   CurrLine = OutList->CodeEnd
 
+  V1Org = V1
+  V2Org = V2
+ 
   'Calculate +, -. Replace sum with variable containing answer
 
   'Notes for new code:
@@ -3908,6 +3918,14 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   If INSTR(Origin, "D") <> 0 Then DestSub = GetDestSub(Origin) Else DestSub = SourceSub
   V1Type = TypeOfValue(V1, Subroutine(SourceSub))
   V2Type = TypeOfValue(V2, Subroutine(SourceSub))
+  
+  'override type for Floats - this is OK as TypeOfValue() would handle if... V1 or V2 had not been stripped of CAST
+  If Instr( V2Org, "[SINGLE]" ) Then
+    V2Type = "[SINGLE]"
+  End If
+  If Instr( V2Org, "[DOUBLE]" ) Then
+    V2Type = "[DOUBLE]"
+  End If
   DestType = TypeOfVar(Answer, Subroutine(DestSub))
   CalcType = DestType
 
@@ -4819,6 +4837,7 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
   If CalcType = "LONG" Then SNT += "32"
   IF CalcType = "SINGLE" THEN SNT += "SINGLE"
   IF CalcType = "DOUBLE" THEN SNT += "DOUBLE"
+  IF CalcType = "ULONGINT" THEN SNT += "64"
 
   'Call calculation sub
   SNT = Ucase( SNT )  'added was case sensistive
@@ -6371,7 +6390,7 @@ SUB CompileFor (CompSub As SubType Pointer)
 
   'force use at RC43 + RC44
   If HashMapGet(Constants, "USELEGACYFORNEXT" ) = 0 then
-    ADDCONSTANT("NEWNEXTFORHANDLER","NEWNEXTFORHANDLER")
+    ADDCONSTANT("NEWNEXTFORHANDLER","")
   end if
 
   CurrLine = CompSub->CodeStart->Next
@@ -8183,6 +8202,20 @@ Function CompileString (InLine As String, Origin As String) As LinkedListElement
       If TC = 1 Then CurrLine = LinkedListInsert(CurrLine, " call SYSREADSTRING")   'was camelcase
       If TC > 1 Then CurrLine = LinkedListInsert(CurrLine, " call SYSREADSTRINGPART") 'was camelcase
 
+    ' single > string   floats2024
+    Case "SINGLE":
+
+        Dim As String DType, SType
+        DType = "STRING"
+        SType = SourceType
+
+        AddVar "Sys" + SType + "Temp", SType, 1, 0, "REAL", "", , -1
+        AddVar "Sys" + DType + "Temp", DType, 1, 0, "REAL", "", , -1
+        RequestSub(CurrSub, "Sys" + SType + "To" + DType, "")
+        CurrLine = LinkedListInsertList(CurrLine, CompileVarSet(Source, "Sys" + SType + "Temp", Origin))
+        CurrLine = LinkedListInsert(CurrLine, " call Sys" + SType + "To" + DType)
+        CurrLine = LinkedListInsertList(CurrLine, CompileVarSet("Sys" + DType + "Temp", Source, Origin))
+
     'Anything else, show error
     Case Else:
       Temp = Message("CannotConcat")
@@ -9798,7 +9831,6 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
       LogWarning( Message("NoDestParam"), Origin)
   End if
 
-
   'Initialise
   Source = SourceIn
   CurrentSub = Subroutine(GetSubID(Origin))
@@ -9865,7 +9897,44 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
   SourceReg = IsRegister(Source)
   SourceIO = IsIOReg(Source)
 
-  'Print "Var set " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
+  ' Correct numeric defintions
+  If Stype = "CONST" and ( Dtype = "SINGLE" or Dtype = "DOUBLE" ) Then
+
+    If Val(Trim(Source)) = 0 Then 
+      Source = "0.0"
+    ElseIf Right(Trim(Source),1) = "." Then
+      'Always add 0 to nn. to give nn.0
+      Source = Source + "0"  
+    Else 
+      If Left(Trim(Source),1) = "." Then
+        'Always add 0 to . to give 0.nnn
+        Source = "0" + Source
+      End if
+
+      'All add .0 when nn to give nn.0
+      If Instr(Source,".") = 0 And Trim(Source) = Trim(Str(VAL(Source))) Then
+        Source = Source + ".0"
+      End if
+    End If
+
+    'Remove Leading 0
+    Do While Left(Source,1) = "0" And Mid( Source, 2, 1) <> "."
+      Source = Mid(Source, 2)
+    Loop 
+
+    'Remove trailing 0
+      Do While Right(Source,1) = "0" And Mid( Source, Len(Source)-1, 1) <> "."
+      Source = Mid(Source, 1, Len(Source) - 1)
+    Loop 
+
+
+    #ifdef showdevdebug
+      Print "Var set " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
+    #endif
+    
+  End if 
+
+  ' Print "Var set " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
 
   'Record reads and writes (for auto pin direction setting)
   If DType = "BIT" Or DType = "BYTE" Then
@@ -10399,6 +10468,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'sconst > bit
     Case "SCONST":
+      ' support could be added this to catch silent compilation with no ASM  
+      Temp = Message("SynErrIncorrectBitDestination")
+      LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10457,6 +10530,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'sconst > byte
     Case "SCONST":
+      ' support could be added this to catch silent compilation with no ASM  
+      Temp = Message("SynErrIncorrectByteDestination")
+      LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10515,6 +10592,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'sconst > word
     Case "SCONST":
+      ' support could be added this to catch silent compilation with no ASM  
+      Temp = Message("SynErrIncorrectWordDestination")
+      LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10576,6 +10657,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'sconst > long
     Case "SCONST":
+      ' support could be added this to catch silent compilation with no ASM  
+      Temp = Message("SynErrIncorrectLongDestination")
+      LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10626,6 +10711,9 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'string > single
     Case "STRING":
+
+      ' HANDLED ELSEWHERE    LogError "ErrorTemp 1", Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10646,6 +10734,11 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'sconst > single
     Case "SCONST":
+
+      ' support could be added this to catch silent compilation with no ASM  
+      Temp = Message("SynErrIncorrectSingleDestination")
+      LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -14299,7 +14392,15 @@ SUB InitCompiler
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
                     PICASdebug = true
                   End if
+                
+                Case "methodstructuredebug"
+                  if PrefIsYes(MsgVal, 1 ) = 1   Then
+                    methodstructuredebug = true
+                  End if
 
+                Case "floatcapability"
+                    floatcapability = val(msgval)
+                  
                 Case "datfileinspection"
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
                     DATfileinspection = true
@@ -17408,6 +17509,7 @@ Sub WriteAssembly
   Dim As Integer PD, AddSFR, FindSREG, legacyConfigPublished
   Dim As LinkedListElement Pointer CurrLine
   Dim As LinkedListElement Pointer VarList
+  Dim As LinkedListElement Pointer FinalConstantList 
   Dim As SysVarType Pointer SysVar
 
   'Force AVR to use GCASM if PIC-AS, or MPASM selected .. this is not supported
@@ -17723,6 +17825,30 @@ Sub WriteAssembly
 
   End If
   PRINT #1, ""
+
+  'Out All constants
+  If CDFSupport = 1 Then
+    Print #CDFFileHandle, ""
+    'use FinalConstantList
+    Dim as String templine, explandedtempline 
+    FinalConstantList = HashMapToList(Constants, -1)
+    IF FinalConstantList <> 0 AndAlso FinalConstantList->Next <> 0 THEN
+      CurrLine = FinalConstantList->Next
+      Do While CurrLine <> 0
+        templine = CurrLine->value
+        explandedtempline = templine
+        explandedtempline = ReplaceConstantsLine(explandedtempline,0)
+        If InStr(UCase(explandedtempline), ";STRING") <> 0 Then
+          templine = GetString(explandedtempline)
+           Print #CDFFileHandle  ,Space(14) + "FINAL/CONSTANT :" +  Left( CurrLine->value+Space(40),40)  ,  chr(34)+templine+chr(34), ReplaceConstantsLine(explandedtempline,0)
+        else
+           Print #CDFFileHandle  ,Space(14) + "FINAL/CONSTANT :" +  Left(tempLine+Space(40),40)  ,  ReplaceConstantsLine(templine,0)
+        end if
+       
+        CurrLine = CurrLine->Next
+      Loop
+    End If
+  End If
 
   VarList = HashMapToList(FinalVarList, -1)
   IF VarList <> 0 AndAlso VarList->Next <> 0 THEN
@@ -19391,9 +19517,17 @@ Sub MergeSubroutines
               'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
               EPAddress = &h380000
             ElseIf ( ChipSubFamily = ChipFamily18FxxQ83 )  then
-              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ71 EEPROM Address 0x380000)")
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ83 EEPROM Address 0x380000)")
               'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
-              EPAddress = &h380000             
+              EPAddress = &h380000    
+            ElseIf ( ChipSubFamily = ChipFamily18FxxQ20 )  then
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ20 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000                     
+            ElseIf ( ChipSubFamily = ChipFamily18FxxQ24 )  then
+              CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamily18FxxQ24 EEPROM Address 0x380000)")
+              'CurrLine = LinkedListInsert(CurrLine, " ORG 0x380000")
+              EPAddress = &h380000                                         
             ElseIf ChipFamilyVariant = 1 then
               CurrLine = LinkedListInsert(CurrLine, "; Data Tables (ChipFamilyVariant EEPROM Address 0x310000)")
               'CurrLine = LinkedListInsert(CurrLine, " ORG 0x310000")

@@ -1,6 +1,6 @@
 ' GCBASIC - A BASIC Compiler for microcontrollers
 '  Miscellaneous routines
-' Copyright (C) 2006 - 2023 Hugh Considine and Evan R. Venn
+' Copyright (C) 2006 - 2024 Hugh Considine and Evan R. Venn
 '
 ' This program is free software; you can redistribute it and/or modify
 ' it under the terms of the GNU General Public License as published by
@@ -1044,58 +1044,85 @@ FUNCTION IsConst (DataSource As String) As Integer
   ' - Anything not listed above
   ' - Anything above but with a calculation operator
 
-  Dim As Double StartTime
-  StartTime = Timer
-
-  Dim As Integer CurrChar, CurrLoc, CurrState
-  CurrState = 0
-  'States:
-  '0 - could be literal
-  '1 - not literal, quit
-  '2 - inside type cast, stay in 2 until closing bracket
-  '3 - definite literal
-  'For CurrLoc = 1 To Len(DataSource)
-  ' CurrChar = Asc(DataSource, CurrLoc)
-  ' If CurrChar = Asc("[") Then
-  '   CurrState = 2
-  ' ElseIf CurrChar = Asc("]") And CurrState = 2 Then
-  '   CurrState = 0
-  ' ElseIf CurrState = 0 Then
-  '   If CurrChar = Asc("B") And Asc(DataSource, CurrLoc + 1) = Asc("'") Then
-  '
-  '   EndIf
-  ' End If
-  'Next
-  '
   Dim As String Temp
 
   Temp = UCase(Trim(DelType(DataSource)))
   IF Left(Temp, 1) = "-" THEN Temp = Mid(Temp, 2)
+  If Left(Temp,1) = "+" Then temp=Mid(Temp,2)
+  
+   Dim As Integer TmpIsConst ' this is my tempory IsConst.  You can't check the current value of IsConst,
+                             ' so keep it elsewhere until the end
+  TmpIsConst=0               ' assume no good    
 
-  IsConst = 0
-  IF Trim(Temp) = Trim(Str(VAL(Temp))) THEN IsConst = -1
-  IF Left(Temp, 2) = "B'" THEN IsConst = -1
-  IF Left(Temp, 2) = "0X" THEN IsConst = -1
+   Dim As Integer idx,dotflag
+   Dim As Byte tempb
+   For idx=0 To Len(Temp)-1 ' check for valid decimal number
+      tempb=temp[idx]
+      If tempb=46 Then  ' is it a decimal point
+         If dotflag Then GoTo IsConstCheckRest     ' no good, two decimal points.  TmpIsConst is already zero.
+         dotflag=1
+      else
+         If tempb < 48 Or tempb > 57 Then GoTo IsConstCheckRest ' if < "0" or > "9" invalid decimal number
+      EndIf
+   Next
+   TmpIsConst=-1      ' passed all tests
+   GoTo IsConstWrap  ' good decimal, skip rest
 
-  IF INSTR(Temp, "@") <> 0 THEN IsConst = -1
-  If INSTR(Temp, ";STRING") <> 0 Then IsConst = -1
+IsConstCheckRest:
 
-  IF INSTR(Temp, "+") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "-") > 1 THEN IsConst = 0
-  IF INSTR(Temp, "*") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "/") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "%") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "&") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "|") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "!") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "#") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "=") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, "<") <> 0 THEN IsConst = 0
-  IF INSTR(Temp, ">") <> 0 THEN IsConst = 0
+   IF Left(Temp, 2) = "B'"  Then  ' check for binary of the form B'01010101'
+      For idx=2 To Len(Temp)-1
+         If tempb=temp[idx]=39 Then   ' may have found closing appostrophe
+            If idx < (Len(Temp)-1) Then GoTo IsConstCheckRest2  ' no good, stuff after appostrophe.  also can't be '0X' hex
+            If idx>2 Then ' found at least one good digit
+               TmpIsConst=-1
+               GoTo IsConstWrap  ' good binary, skip rest
+            EndIf         
+         EndIf
+         If tempb < 48 Or tempb > 49 Then GoTo IsConstCheckRest2 ' if < "0" or > "1" then invalid binary number and can't be hex
+      Next
+      TmpIsConst = -1    ' passed all tests
+      GoTo IsConstWrap  ' all done
+   EndIf
+  
+   IF Left(Temp, 2) = "0X" THEN ' posible hex value
+      For idx=2 To Len(Temp)-1
+         tempb=temp[idx]
+         If tempb>64 And tempb < 71 Then 'good A-F
+         elseIf tempb > 47 and tempb < 64 Then  ' good, 0-9
+         Else
+            GoTo IsConstCheckRest2 'no good, check for something else
+         EndIf
+      Next
+      TmpIsConst = -1    ' passed all tests
+      GoTo IsConstWrap  ' all done  
+   EndIf
 
-  'DebugTime += (Timer - StartTime)
+IsConstCheckRest2:
+
+  IF InStr(Temp, "@") <> 0 THEN TmpIsConst = -1        ' this has probably never been true
+
+  If INSTR(Temp, ";STRING") <> 0 Then TmpIsConst = -1  ' no idea how to make this better
+
+  If INSTR(Temp, "+") <> 0 Then TmpIsConst = 0
+  IF INSTR(Temp, "-") > 1 THEN TmpIsConst = 0
+  IF INSTR(Temp, "*") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "/") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "%") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "&") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "|") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "!") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "#") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, "=") <> 0 THEN TmpIsConst = 0
+  If INSTR(Temp, "<") <> 0 THEN TmpIsConst = 0
+  IF INSTR(Temp, ">") <> 0 THEN TmpIsConst = 0
+
+IsConstWrap:
+
+   IsConst=TmpIsConst
 
 END FUNCTION
+
 
 FUNCTION IsDivider (Temp As String) As Integer
   Select Case Asc(Temp)
@@ -1332,6 +1359,21 @@ FUNCTION MakeDecFloat (Temp As String) As Double
   IF DataSource = Str(VAL(DataSource)) THEN
     Return Val(DataSource)
   END If
+
+
+  'special case for floats nnnn.0
+  'try to isolate this test to find decimal points
+  IF INSTR(DataSource, ".") <> 0 THEN
+    Dim dotPos as Byte
+    'Examine mantissa, is this a number with nnn.0 ?  could be nnn.00000001 but this would have been picked up by firstconstanttest
+    dotPos =  INSTR(DataSource, ".")
+    If dotPos = 1 then LogError("Illegal use of decimal point")
+    'Compare Exponent and compare Mantissa
+    'If Exponent is same and Mantissa = 0 then we have nnnn.0 make this a numberic constant
+    IF Trim(left(DataSource,dotPos-1)) = Trim(Str(VAL(left(DataSource,dotPos-1)))) and ( Val( MID( DataSource, dotPos+1 )) = 0 )Then
+      Return Val(DataSource)
+    End If
+  End If
 
   StrTemp = GetString(DataSource, 0)
   IF Len(StrTemp) = 1 Then Return ASC(StrTemp)

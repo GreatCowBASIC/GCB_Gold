@@ -229,13 +229,37 @@ Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSu
   END IF
 
   'Check Type
+  T = -1
   Select Case VarType
-    Case "BIT", "BYTE", "WORD", "INTEGER", "LONG", "ULONGINT", "LONGINT": T = 0
-    Case "SINGLE", "DOUBLE", "STRING": T = 0
-    Case Else: T = -1
+    Case "BIT", "BYTE", "WORD", "INTEGER", "LONG" 
+      T = 0
+    Case "STRING"
+      T = 0
+    Case "LONGINT"  
+      If ( (floatcapability and 4) = 4 ) OR CurrFile <> 1 Then
+        T = 0
+      End if
+    Case "ULONGINT"   
+      If ( (floatcapability and 8) = 8 )  OR CurrFile <> 1 Then 
+        T = 0
+      End If
+    Case "SINGLE"
+      if ( (floatcapability and 1) = 1 ) Then
+        T = 0
+      End If
+    Case "DOUBLE"
+      If ( (floatcapability and 2) = 2 )  OR CurrFile <> 1 Then 
+        T = 0
+      End If
+    Case Else
+      T = -1
   End Select
 
-  IF T THEN
+  ' Override variable check when SYStem variables
+  If Left( VarName, 3 ) = "SYS" Then T = 0
+  'print VarName, VarType, T, CurrFile
+  
+  IF T = -1 THEN
     Temp = Message("BadVarType")
     Replace Temp, "%type%", VarType
     LogError Temp, Origin
@@ -875,9 +899,11 @@ SUB AllocateRAM
               If ALC < VarSize Then
                 'If the alias is too small for the variable type, show error
                 Temp = Message("BadAliasSize")
-                Replace Temp, "%size%", Str(VarSize)
-                Replace Temp, "%locations%", Str(ALC)
+                Replace Temp, "(%size%)", "["+.Type+" - "+Str(VarSize)+" byte(s)]"+.Name
+                Replace Temp, "%locations%", Str(ALC) +" byte(s)"
+                Replace Temp, "%target%", .Alias
                 LogError Temp, Origin
+                
               Else
                 'Define alias
                 .Location = -1

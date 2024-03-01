@@ -695,7 +695,7 @@ SUB PreProcessor
   Dim As SourceFileType UnconvertedFile(100)
   Dim As OriginType Pointer LineOrigin
 
-  Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter
+  Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter, LCCACHE
   Dim As Integer ForceMain, LineTokens, FoundFunction, FoundMacro, CurrChar, ReadScript, CachedCmdPointer
   Dim As Integer CurrCharPos, ReadType, ConvertAgain, UnconvertedFiles, FileNo, HandlingInsert, HandledGLCDSelection
   Dim As Single CurrPerc, PercAdd, PercOld
@@ -945,9 +945,6 @@ SUB PreProcessor
     InlineRAWASM = 0
 
     DO WHILE NOT EOF(1) or HandlingInsert = INSERTFILEOPEN 
-     LoadFileData:
-
-     ProcessDataSource:
 
       'To support the #INSERT directive .. what follows is state engine.
       'Once the compiler encounters the #INSERT directive the INSERTFILEOPEN is set.
@@ -969,7 +966,7 @@ SUB PreProcessor
           LC = INT(LC/10000)
         End If
         'illegal operation
-        If Left(DataSource,1) = "#" Then
+        If Left(trim(DataSource),1) = "#" Then
             If Instr(trim(ucase(DataSource)), "#INCLUDE") = 1 Then
               LogError Message("CannotUseIncludeInsideInsert") , ";?F" + Str(RF) + "L" + Str(LC) + "?"
               Close
@@ -980,6 +977,8 @@ SUB PreProcessor
         DataSource = ""
         Close FileNo
         HandlingInsert = INSERTFILENOTOPEN
+        'Restore line number
+        LC = LCCACHE -1
       Else
         'Read main line code.. not the #INSERT state engine ... this was the original way to read the code
         LINE INPUT #1, DataSource
@@ -1315,6 +1314,7 @@ SUB PreProcessor
         If Not EOF(FileNo) Then
           HandlingInsert = INSERTFILEOPEN
           ' Main LineCode number * 10000 + LC for Inserted file is the numbering scheme
+          LCCACHE = LC 
           LC = LC * 10000
 
           PCC += 1: PreserveCode(PCC) = ";" + Trim(DataSourceRaw)
@@ -1432,6 +1432,7 @@ SUB PreProcessor
                 Close
                 exit sub  
               End if
+              IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
               subCounter = subCounter + 1
               endsubCounter = 0
             else
@@ -1441,7 +1442,8 @@ SUB PreProcessor
             end if
           End if
           
-          If Left( DataSource,7) = "END SUB" Then
+          If Left( DataSource,7) = "END SUB" or ( DataSource = "RETURN" and Instr(SourceFile(RF).filename, ".h") = 0 )  Then
+            IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
             If subCounter = 1 Then
               endsubCounter = 0
               subCounter = 0
@@ -2237,6 +2239,7 @@ SUB PreProcessor
     Print #CDFFileHandle, "     CODE/Constant - constants defined in a user program or library"
     Print #CDFFileHandle, "     SCRIPT/AddConstant constants defined in a #script/#endscript construct"
     Print #CDFFileHandle, "     SCRIPT/CurrentValue - constants already defined then redefined in another #script/#endscript construct"
+    Print #CDFFileHandle, "     FINAL/CONSTANT - final constants defined"
     Print #CDFFileHandle, "     CHECKSYSVARDEF - expansion of a mutli-condition conditional test.  "
     Print #CDFFileHandle, "     Remainder of report us the user program or libaries code remaining post conditional processing"
     Print #CDFFileHandle, "*********************************************************************************************************************************"
@@ -3156,7 +3159,7 @@ Function ReplaceConstantsLine (ByRef DataSourceIn As String, IncludeStartup As I
         Origin = ""
         IF INSTR(DataSourceIn, ";?F") <> 0 THEN Origin = Mid(DataSourceIn, INSTR(DataSourceIn, ";?F"))
         If INSTR(Origin, ";STARTUP") <> 0 Then Origin = Left(Origin, INSTR(Origin, ";STARTUP") - 1)
-        LogError Message("RecursiveDefine"), Origin
+        LogError Message("RecursiveDefine")+ DataSourceIn+" " + Meta->STARTUP, Origin
         CurrElement = LinkedListDelete(CurrElement)
 
       Else
