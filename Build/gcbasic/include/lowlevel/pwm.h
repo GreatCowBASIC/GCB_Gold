@@ -268,9 +268,10 @@ Sub InitPWM
        if bit(CCP1MODE0) then
 
             if nobit(CCP1M0) Then
-
-    '~          warning "Supporting microcontrollers like the 16f18326 and related microcontrollers for CCPxMODEx"
-              CCP1M0 = CCP1MODE0
+                If def(DEVELOPER_PWM_DEBUG) Then
+                  warning "Supporting microcontrollers with CCPxMODEx/CCP1MODE0 and nobit(CCP1M0)"
+                End If              
+		  	  CCP1M0 = CCP1MODE0
               CCP1M1 = CCP1MODE1
               CCP1M2 = CCP1MODE2
               CCP1M3 = CCP1MODE3
@@ -301,7 +302,9 @@ Sub InitPWM
 
         'remapped for consistency
         if bit(CCP4EN) then
-    '        warning "Supporting microcontrollers like the 16f18326 and related microcontrollers for CCPxEN"
+              If def(DEVELOPER_PWM_DEBUG) Then
+                warning "Supporting microcontrollers with CCP4EN, CCPxEN"
+              End If            
             CCP2CON_EN = CCP2EN
             CCP3CON_EN = CCP3EN
             CCP4CON_EN = CCP4EN
@@ -344,7 +347,7 @@ Sub InitPWM
         PRxPeriodRegister = PR2_CPP_PWM_Temp
         TIMERXPRESCALESELECTVALUE = TxPR
 
-        IF DEF(SHOWPWMCCPCALCULATIONRESULTS) THEN
+         IF DEF(DEVELOPER_PWM_DEBUG)  or DEF(SHOWPWMCCPCALCULATIONRESULTS) THEN
           If PWMCCP1MAXDUTYVALUE < 256 Then
             warning "8Bit PWMCCP"
             //~ Shift value to left to aling to CCPR1L<8>:DC1B1<1>:DC1B0<1> bits
@@ -368,6 +371,11 @@ Sub InitPWM
         DutyCycleL = int(DutyCycle AND 3)
         'End of Code from Early days
 
+      If def(DEVELOPER_PWM_DEBUG) THEN
+        Warning "---------------------------------"
+        Warning "DutyCycleH         : " DutyCycleH
+        Warning "DutyCycleL         : " DutyCycleL
+      End if
         PWMOsc1 = int(60000/(240/ChipMHz))    'This is used in the calculations
         PWMOsc4 = int(60000/(960/ChipMHz))    '*** Unused constant ***
         PWMOsc16 = int(60000/(3840/ChipMHz))  '*** Unused constant ***
@@ -543,6 +551,9 @@ Legacy_StartofFixedCCPPWMModeCode:
        'Handle Timer 2
        if PWM_Timer2_Freq Then
 
+          If def(DEVELOPER_PWM_DEBUG) THEN
+            Warning "This specific chip is using PWM_TimerX_Freq script section of PWM.h"
+          End If          
           if  PWM_9_Clock_Source then
 
               Script_PWM9CON = 0b01000000 + ( HPWMxCon_Default * 128) 'Enable PWM Module, Module Output
@@ -2865,7 +2876,7 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8bit resolution on timer 2
           //~added to handle different timer sources
           //~added to support HPWM_CCPTimerN. Makes the code longer but more flexible
           //~user optimisation to reduce code.
-CCPPWMSetupClockSource:
+ CCPPWMSetupClockSource:
           //~ Tx_PR is either 1, 4, 16 or 64.  This is controlled by the maths section.  
           //~ So, other values are NOT ever going to be selected.
           select case _PWMTimerSelected
@@ -3021,7 +3032,7 @@ CCPPWMSetupClockSource:
 
           end Select
 
-End_of_CCPPWMSetupClockSource:
+ End_of_CCPPWMSetupClockSource:
 
   #ifdef HPWM_FAST
           PWMFreqOld = PWMFreq
@@ -3037,7 +3048,7 @@ End_of_CCPPWMSetupClockSource:
   'this code can be optimised by using defines USE_HPWMCCP1|2|3|4|5
   'and, you can define user setup and exit commands using AddHPWMCCPSetupN and  AddHPWMCCPExitN
   '   These can be used to FIX little errors!
-SetupTheCorrectTimerBits:
+ SetupTheCorrectTimerBits:
   'ChipPWMTimerVariant some chips have variants on CCPTMRS0
   Dim TimerSelectionBits as Byte
   #if ChipPWMTimerVariant = 2
@@ -3052,7 +3063,7 @@ SetupTheCorrectTimerBits:
       TimerSelectionBits =  (_PWMTimerSelected / 2 )-1
   #endif
 
-SetupCCPPWMRegisters:
+ SetupCCPPWMRegisters:
   'If there is no ASM here then the CHIP is not recognised, look at section SETUPCCPPWMREGISTERS in PMW.H
 
   #ifdef USE_HPWMCCP1 TRUE
@@ -3082,6 +3093,10 @@ SetupCCPPWMRegisters:
           C1TSEL1 = TimerSelectionBits.1
           #endif
 
+      #endif
+
+      #if ChipFamily = 16
+          ChipFamilyPWMCCP1CON16Handler:
       #endif
 
       #if ChipSubFamily = ChipFamily18FxxQ41 OR ChipSubFamily = ChipFamily18FxxQ40

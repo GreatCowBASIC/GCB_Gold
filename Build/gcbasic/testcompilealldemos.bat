@@ -23,15 +23,10 @@ REM  echo "%%F">>test.log
     del errors.txt > nul
   )
 
-  ..\G+Stools\gawk.exe -f ..\G+Stools\preprocess.awk "%%F"
-  if exist errors.txt (
 
-	for /f "tokens=* delims=" %%a in (errors.txt) do echo.    %%a>>test.log
-    	rem copy /b test.log+errors.txt test.log
-  )
   del compiled.* /Q
 
-  findstr /i "#Skiptest" "%%F" >nul 2>nul
+  findstr /i "#SKIPTEST" "%%F" >nul 2>nul
   if errorlevel 1 (
     GCBASIC "%%F" /NP /O:compiled.asm /A:GCASM  /K:A /WX
   ) ELSE (

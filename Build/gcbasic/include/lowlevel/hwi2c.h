@@ -876,6 +876,7 @@ End Sub
 
 
 Sub SI2CSend ( in I2Cbyte )
+
     asm showdebug  Redirected for K-mode family probalby called HI2CSend
     asm showdebug  This method sets the registers and register bits to send I2C data
 
@@ -1016,7 +1017,11 @@ Sub SI2CWait4Ack
         'Wait for this event
         if I2C1CON1.ACKSTAT = 0 then
             'Set status
-            HI2CAckPollState = I2C1CON1.ACKSTAT
+            #IF ChipSubFamily =  ChipFamily18FxxQ41
+              HI2CAckPollState = !I2C1CON1.ACKSTAT
+            #ELSE
+              HI2CAckPollState = I2C1CON1.ACKSTAT
+            #ENDIF
             exit sub
 
         else

@@ -84,6 +84,7 @@
 '    30042023 - Add deviceconfigurationRead to read Device Configuration ( additive to ProgramRead as this limited to PFM )
 '    23082023 - Added support for 18FxxK40 for PFM ops
 '    13112023 - Resolve 18F1220 digital port setting
+'    29022024 - Correct SysDivSub64 renaming system variable to SysTotalTemp... you cannot use SYSTEMP as this reserved
 
 ' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
 
@@ -116,6 +117,8 @@
 #DEFINE  ChipFamily18FxxK83 = 16107
 #DEFINE  ChipFamily18FxxQ83 = 16108
 #DEFINE  ChipFamily18FxxQ71 = 16109
+#DEFINE  ChipFamily18FxxQ20 = 16110
+#DEFINE  ChipFamily18FxxQ24 = 16111
 
 //  Set RESERVEHIGHPROG values
   //  1024 words for Optiboot non USB, 2048 for OptiBoot with USB support and 128 for TBL.
@@ -175,7 +178,7 @@ End Macro
 Sub InitSys
 
    #Ifdef PIC
-
+          
       #IFNDEF ChipUsingIntOsc
         asm showdebug _For_selected_frequency_-_the_external_oscillator_has_been_selected_by_compiler ChipMHz
       #ENDIF
@@ -2450,13 +2453,18 @@ Sub SysAddSubSingle
     SysCalcSingMantB.31 = 1
   End If
 
+  dim SysByteTempX
+  SysByteTempX = 0
   'Normalise result (shifted 8 bits left)
   SysSingleTempX_E += 8
   Do While SysCalcSingMantA.31 <> 1
     Set C Off
     Rotate SysCalcSingMantA Left
     SysSingleTempX_E -= 1
-  Loop
+    'When mantissa is 0, exit
+    SysByteTempX++
+    If SysByteTempX = 32 then exit do
+  Loop 
 
   'Set result
   SysSingleTempX_U = SysSingleTempA_E
@@ -2539,12 +2547,16 @@ Sub SysAddSubDouble
     SysCalcDoubMantB.63 = 1
   End If
 
+  dim SysByteTempX
+  SysByteTempX = 0
   'Normalise result (shifted 8 bits left)
   SysDoubleTempX_E += 8
   Do While SysCalcDoubMantA.60 <> 1
     Set C Off
     Rotate SysCalcDoubMantA Left
     SysDoubleTempX_E -= 1
+    SysByteTempX++
+    If SysByteTempX = 32 then exit do
   Loop
 
   'Set result
@@ -2804,9 +2816,9 @@ sub SysMultSub32
 
 end sub
 
-sub SysMultSubSingle
 
-end sub
+  
+
 
 '64 bit
 sub SysMultSub64
@@ -2856,7 +2868,8 @@ sub SysMultSub64
 end sub
 
 sub SysMultSubSingle
-
+!NOT SUPPORTED
+//! MULTIPLICATION NOT SUPPORTED..
 end sub
 
 '********************************************************************************
@@ -3067,7 +3080,7 @@ end sub
 
 '64 bit
 sub SysDivSub64
-  dim TempTotal as Word
+  dim SysTotalTemp as Word
   dim SysULongIntTempA as ulongint
   dim SysULongIntTempB as ulongint
   dim SysULongIntTempX as ulongint
@@ -3084,8 +3097,8 @@ sub SysDivSub64
 
   'Avoid division by zero
   'Have to do it this way because there are no comparison routines for ULongInt
-  TempTotal = SysULongIntDivMultB + SysULongIntDivMultB_U + SysULongIntDivMultB_E + SysULongIntDivMultB_A + SysULongIntDivMultB_B + SysULongIntDivMultB_C + SysULongIntDivMultB_D
-  if TempTotal = 0 then
+  SysTotalTemp = SysULongIntDivMultB + SysULongIntDivMultB_U + SysULongIntDivMultB_E + SysULongIntDivMultB_A + SysULongIntDivMultB_B + SysULongIntDivMultB_C + SysULongIntDivMultB_D
+  if SysTotalTemp = 0 then
     SysULongIntTempA = 0
     exit sub
   end if
@@ -3127,7 +3140,8 @@ sub SysDivSub64
 end sub
 
 sub SysDivSubSingle
-
+!NOT SUPPORTED
+//! DIVISION NOT SUPPORTED..
 end sub
 
 '********************************************************************************

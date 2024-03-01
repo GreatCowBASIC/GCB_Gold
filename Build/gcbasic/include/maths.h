@@ -236,7 +236,7 @@ end function
 
 'This version takes any +/- XY vector and returns degrees 0-360
 'v1.01
-Function  ATan  ( xvector as integer, yvector as integer ) as word
+Function  ATan  ( _xvector as integer, _yvector as integer ) as word
       'Fast XY vector to integer degree algorithm - Jan 2011 www.RomanBlack.com
       'See http://www.romanblack.com/integer_degree.htm
       'Converts any XY values including 0 to a degree value that should be
@@ -249,35 +249,35 @@ Function  ATan  ( xvector as integer, yvector as integer ) as word
       'they are between -1456 and 1456 so the 16bit multiply does not overflow.
       '
 
-    Dim uxvector, uyvector, degree as Integer
+    Dim _uxvector, _uyvector, _degree as Integer
 
 
   'Save the sign flags then remove signs and get XY as unsigned ints
    negflag = 0
    if (xvector < 0) then
       negflag += 0x01' x flag bit
-      xvector = (0 - xvector) 'is now +
+      _xvector = (0 - _xvector) 'is now +
    end if
 
-   uxvector = xvector 'copy to unsigned var before multiply
+   _uxvector = _xvector 'copy to unsigned var before multiply
    if (yvector < 0) then
       negflag += 0x02; y flag bit
-      yvector = (0 - yvector ) 'is now +
+      _yvector = (0 - _yvector ) 'is now +
     end if
-   uyvector  = yvector 'copy to unsigned var before multiply
+   _uyvector  = _yvector 'copy to unsigned var before multiply
 
 
 '1. Calc the scaled "degrees"
-   if (uxvector > uyvector) then
-      degree = (uyvector * 45) / uxvector   'degree result will be 0-45 range
+   if (_uxvector > _uyvector) then
+      _degree = (_uyvector * 45) / _uxvector   'degree result will be 0-45 range
       negflag += 0x10                       'octant flag bit
    else
-      degree = (uxvector * 45) / uyvector   'degree result will be 0-45 range
+      _degree = (_uxvector * 45) / _uyvector   'degree result will be 0-45 range
     end if
 
 '2. Compensate for the 4 degree error curve
    comp = 0
-   tempdegree = degree            'use an unsigned char for speed!
+   tempdegree = _degree            'use an unsigned char for speed!
    if (tempdegree > 22)      then 'if top half of range
       if (tempdegree <= 44) then comp++
       if (tempdegree <= 41) then comp++
@@ -291,29 +291,29 @@ Function  ATan  ( xvector as integer, yvector as integer ) as word
       if (tempdegree >= 10) then comp++
       if (tempdegree >= 15) then comp++  '// max is 4 degrees compensated
    end if
-   degree += comp                         'degree is now accurate to +/- 1 degree!
+   _degree += comp                         'degree is now accurate to +/- 1 degree!
 
 'Invert degree if it was X>Y octant, makes 0-45 into 90-45
-   if (negflag & 0x10) = 0x10 then degree = (90 - degree);
+   if (negflag & 0x10) = 0x10 then _degree = (90 - _degree);
 
 '3. Degree is now 0-90 range for this quadrant,
 'need to invert it for whichever quadrant it was in
    if (negflag & 0x02) = 0x02  then 'if -Y
 
       if (negflag & 0x01)  = 0x01  then 'if -Y -X
-            degree = (180 + degree)
+            _degree = (180 + _degree)
       else        'else is -Y +X
-            degree = (180 - degree)
+            _degree = (180 - _degree)
       end if
 
    else    'else is +Y
       if (negflag & 0x01) = 0x01 then  'if +Y -X
-            degree = (360 - degree)
+            _degree = (360 - _degree)
       end if
     end if
 
     ' Return result
-    Atan = degree
+    Atan = _degree
     select case negflag
       case 0
         negflag = 1
