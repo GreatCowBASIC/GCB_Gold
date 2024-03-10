@@ -42,6 +42,7 @@ Bootloader
 Box
 Byte
 ByteToBin
+ByteToString
 Call
 canskip
 Case
@@ -265,7 +266,9 @@ InitTimer7
 InitTimer8
 INKEY
 Instr
+Int
 Integer
+IntegerToString
 Interrupt
 IntOff
 IntOn
@@ -307,6 +310,8 @@ Log10
 Log2
 Loge
 Long
+LongToHex
+LongToString
 Loop
 Ltrim
 m
@@ -371,6 +376,7 @@ Return
 Right
 Rotate
 RoundRect
+RoundSingle
 Rtrim
 s
 SAFEraseBlock
@@ -406,6 +412,8 @@ shiftR
 ShortTone
 Simple
 sin
+SingleToHex
+SingleToString
 SLOW
 SOSC
 SPIMode
@@ -444,6 +452,11 @@ StopTimer
 Str
 Str32
 String
+StringToByte
+StringToWord
+StringToLong
+StringToInteger
+StringToSingle
 StrInteger
 Sub
 SWAP
@@ -499,6 +512,8 @@ Volatile
 Wait
 While
 Word
+WordToHex
+WordToString
 WORDTOBIN
 XOR
 _GLCDPage

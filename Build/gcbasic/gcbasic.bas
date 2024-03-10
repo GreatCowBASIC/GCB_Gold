@@ -18,10 +18,6 @@
 'If you have any questions about the source code, please email me: hconsidine at internode.on.net
 'Any other questions, please email me or see the GCBASIC forums.
 
-'Show compiler debug
-  '#DEFINE SHOWDEVDEBUG
-  '#DEFINE SHOWCOMPILECALCADDDEBUG
-  '#DEFINE SHOWCALCOPSDEBUG
 
 'Array sizes
 #Define MAX_PROG_PAGES 20
@@ -646,7 +642,7 @@ DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, C
 DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability
+Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
@@ -729,7 +725,7 @@ Dim Shared As String Pad32
 
 Dim Shared As String ChipName, OSCType, CONFIG, Intrpt, gcOPTION, ChipProgrammerName
 Dim Shared As String ChipOscSource
-Dim Shared As String CDF, AFI, FI, OFI, HFI, ID, Version, buildVersion, ProgDir, CLD, LabelEnd
+Dim Shared As String CDF, AFI, FI, OFI, HFI, ID, Version, buildVersion, ProgDir, CLD, LabelEnd, VersionSuffix
 Dim Shared As String PrgExe, PrgParams, PrgDir, AsmExe, AsmParams, PrgName, HexAppend
 Dim Shared As ExternalTool Pointer AsmTool, PrgTool
 Dim Shared As String CompReportFormat, globalSettingsFile
@@ -779,6 +775,12 @@ const   ChipFamily18FxxQ71 as integer = 16109
 const   ChipFamily18FxxQ20 as integer = 16110
 const   ChipFamily18FxxQ24 as integer = 16111
 
+' Compiler debug constants
+const   cCOMPILECALCADD     as integer = 1
+const   cVAR_SET            as integer = 2
+const   cCALCOPS            as integer = 4
+const   cCOMPILECALCMULT    as integer = 8
+
 const   INSERTFILENOTOPEN = 1
 const   INSERTFILEOPEN    = 2
 const   INSERTFILEPROCESS = 3
@@ -804,8 +806,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.3.1"
-buildVersion = "1347"
+Version = "2024.3.9"
+buildVersion = "1364"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -852,7 +854,8 @@ AutoContextSave = -1
 LaxSyntax = 0
 PICASdebug = false
 methodstructuredebug = false
-floatcapability =  1 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
+floatcapability =  0 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
+compilerdebug = 0
 PICASDEBUGmessageShown = false
 DATfileinspection = true
 NoSummary = 0
@@ -867,7 +870,7 @@ DebugTime = 0
 MakeHexMode = 1
 Conditionaldebugfile = ""
 SelectedAssembler = "GCASM"
-
+VersionSuffix = ""
 
 AddConstant("CHIPASSEMBLER", SelectedAssembler )
 
@@ -3025,7 +3028,9 @@ Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As
 
   Dim As LinkedListElement Pointer NewCode
 
-  'PRINT "CalcOps origin", OriginIn, SUM, ops, av
+  If (( compilerdebug and cCALCOPS ) = cCALCOPS )  Then
+    Print "4 CALCOPS origin: " + OriginIn, SUM, ops, av
+  End If
   Origin = OriginIn
   CurrentSub = Subroutine(GetSubID(Origin))
   IF INSTR(Origin, "D") <> 0 Then DestSub = Subroutine(GetDestSub(Origin)) Else DestSub = CurrentSub
@@ -3173,9 +3178,9 @@ SearchForOpAgain:
 
   CalcType = GetCalcType(TypeV1, Act, TypeV2, TypeAV)
   ' Potential debug point
-  #IF SHOWCALCOPSDEBUG
-    Print "CALCOPS       :" +V1, Act, V2, CalcType, AV, ": " + TypeV1 + " " + Act + " " +TypeV2, Origin
-  #ENDIF
+  If (( compilerdebug and cCALCOPS ) = cCALCOPS ) Then
+    Print "4 CALCOPS       : " +V1, Act, V2, CalcType, AV, ": " + TypeV1 + " " + Act + " " +TypeV2, Origin
+  End If
   'Decide output variable
   If CalcStart = 1 And CalcEnd = LEN(SUM) And AV <> "" And (Not NeverLast) Then
     AnswerIn = AV
@@ -3950,9 +3955,9 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   'Get output var
   AV = Answer
   
-  #IF SHOWCOMPILECALCADDDEBUG
-    Print "COMPILECALCADD: " + AV + " = " + V1 + " " + Act + " " + V2 + " TYPE: " + V1Type + ACT + V2Type + " " +  " CONST: " + Str(IsConst(V1)) + " " +Str(IsConst(V2))+ " CalcType: " + CalcType
-  #ENDIF
+  If (( compilerdebug and cCOMPILECALCADD ) = cCOMPILECALCADD ) Then
+    Print "1 COMPILECALCADD: " + AV + " = " + V1 + " " + Act + " " + V2 + " TYPE: " + V1Type + ACT + V2Type + " " +  " CONST: " + Str(IsConst(V1)) + " " +Str(IsConst(V2))+ " CalcType: " + CalcType
+  End If
 
   'Check if both are constants
   IF IsConst(V1) AND IsConst(V2) Then
@@ -4853,6 +4858,11 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
   IF CalcType = "DOUBLE" THEN SNT += "DOUBLE"
   IF CalcType = "ULONGINT" THEN SNT += "64"
 
+  'Special case for SINGLE
+  If Act = "%" and CalcType = "SINGLE" Then SNT = "SYSMODSUBSINGLE"
+  If Act = "%" and CalcType = "DOUBLE" Then SNT = "SYSMODSUBDOUBLE"
+  
+
   'Call calculation sub
   SNT = Ucase( SNT )  'added was case sensistive
   CurrLine = LinkedListInsert(CurrLine, " call " + SNT)
@@ -4862,7 +4872,10 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
   If Act = "*" Then AV = "Sys" + CalcType + "TempX"
   If Act = "/" Then AV = "Sys" + CalcType + "TempA"
   If Act = "%" Then AV = "Sys" + CalcType + "TempX"
-  'Print V1, V2, AV, CalcType
+  
+  If (( compilerdebug and cCOMPILECALCMULT ) = cCOMPILECALCMULT ) Then
+    Print "8 COMPILECALCMULT :" + V1, V2, AV, CalcType
+  End If    
 
   'Replace sum with answer variable
  MultDivAnswer:
@@ -7764,6 +7777,10 @@ SUB CompileRepeat (CompSub As SubType Pointer)
       RepValType = TypeOfValue(RepCount, CompSub)
       'If told to repeat once, counter should be byte rather than bit
       If RepValType = "BIT" Then RepValType = "BYTE"
+      
+      If RepValType = "SINGLE" or RepValType = "DOUBLE" Then
+        LogError Message("CannotUseFloatforRepeatOperation"), Origin
+      End If
 
       RepNone = 0
       CheckZero = -1
@@ -8272,7 +8289,7 @@ End Function
 SUB CompileSelect (CompSub As SubType Pointer)
   FoundCount = 0
   Dim As String InLine, Origin, Temp, SelectValue, Condition, NextCaseLabel
-  Dim As String ElseCaseLabel
+  Dim As String ElseCaseLabel, RepValType, SCastType
   Dim As Integer PD, CC, AL, SCL, MinValue, MaxValue, AllNumeric, UseJumpTable
   Dim As Integer NumVal, HasElse, ElseCaseNo
   Dim As LinkedListElement Pointer CurrLine, NewCode, FindCase
@@ -8298,10 +8315,27 @@ SUB CompileSelect (CompSub As SubType Pointer)
       CurrCase = CaseStatements
 
       SelectValue = Trim(Mid(InLine, 12))
-
       If LEN(TRIM(SelectValue)) = 0 then
           LogError Message("NoSelectVariableParameter"), Origin
       End if
+        
+      ' Ensure SelectValue is NOT decimal
+      SCastType = Mid(InLine, InStr(InLine, "[") + 1)
+      SCastType = UCase(Left(SCastType, InStr(SCastType, "]") - 1))
+      RepValType = TypeOfValue(SelectValue, CompSub)
+
+      If IsConst(SelectValue) Then
+          LogWarning Message("ShouldNotUseConstant"), Origin
+      End If
+
+      If CountOccur( inLine, "[") > 1 Then
+        'Error handler for use of Singles.
+        Dim temp As String
+        temp = Message("CannotUseFloatforSelectOperation")
+        Replace ( temp, "%varerror%", InLine )
+        LogError temp, Origin
+      End If
+
 
       SCL = 1
       CC = 0
@@ -8585,6 +8619,7 @@ SUB CompileSelect (CompSub As SubType Pointer)
                 'Test range
                 Temp = RTrim(Left(CurrCase->Value, InStr(CurrCase->Value, " TO ") - 1))
                 Condition = LTrim(Mid(CurrCase->Value, InStr(CurrCase->Value, " TO ") + 4))
+
                 'Test lower
                 NewCode = CompileConditions(SelectValue + "<" + Temp, "TRUE", Origin, CompSub)
                 FindCase = LinkedListInsertList(FindCase, NewCode)
@@ -8606,7 +8641,6 @@ SUB CompileSelect (CompSub As SubType Pointer)
                 'Only one value to test
                 IF CountOccur(Condition, "';=~<>{}") = 0 THEN Condition = "=" + Condition
                 Condition = SelectValue + Condition
-
                 NewCode = CompileConditions(Condition, "FALSE", Origin, CompSub)
                 FindCase = LinkedListInsertList(FindCase, NewCode)
                 If ModePIC Then
@@ -9382,18 +9416,28 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
           ReturnVar = ""
           If NewSubCall.Called->IsFunction Then
             If NewSubCall.Called->Overloaded Then
-              ReturnVar = "SYS" + Chr(31) + Str(CurrSub) + CHR(31) + UCase(NewSubCall.Called->ReturnType)
+              If UCase(NewSubCall.Called->ReturnType) = "STRING" Then
+                Dim Temp as String
+                Temp = Message("OverLoadFunctionsNotSupported")
+                Replace ( Temp, "%functionname%", NewSubCall.Called->Name)
+                LogError Temp, Origin
+                WriteErrorLog
+                End
 
-              'Add alias for return variable with appropriate type
-              If NewSubCall.Called->ReturnAlias = "" Then
-                For CurrAliasByte = GetTypeSize(NewSubCall.Called->ReturnType) - 1 To 0 Step -1
-                  If NewSubCall.Called->ReturnAlias = "" Then
-                    NewSubCall.Called->ReturnAlias = GetByte(NewSubCall.Called->Name, CurrAliasByte)
-                  Else
-                    NewSubCall.Called->ReturnAlias += "," + GetByte(NewSubCall.Called->Name, CurrAliasByte)
-                  End If
-                Next
-                AddVar("SYS" + UCase(NewSubCall.Called->Name + NewSubCall.Called->ReturnType), NewSubCall.Called->ReturnType, 1, 0, "ALIAS:" + NewSubCall.Called->ReturnAlias, Origin,, -1)
+            Else
+                ReturnVar = "SYS" + Chr(31) + Str(CurrSub) + CHR(31) + UCase(NewSubCall.Called->ReturnType)
+
+                'Add alias for return variable with appropriate type
+                If NewSubCall.Called->ReturnAlias = "" Then
+                  For CurrAliasByte = GetTypeSize(NewSubCall.Called->ReturnType) - 1 To 0 Step -1
+                    If NewSubCall.Called->ReturnAlias = "" Then
+                      NewSubCall.Called->ReturnAlias = GetByte(NewSubCall.Called->Name, CurrAliasByte)
+                    Else
+                      NewSubCall.Called->ReturnAlias += "," + GetByte(NewSubCall.Called->Name, CurrAliasByte)
+                    End If
+                  Next
+                  AddVar("SYS" + UCase(NewSubCall.Called->Name + NewSubCall.Called->ReturnType), NewSubCall.Called->ReturnType, 1, 0, "ALIAS:" + NewSubCall.Called->ReturnAlias, Origin,, -1)
+                End If
               End If
             Else
               ReturnVar = CHR(31) + Str(CurrSub) + CHR(31)
@@ -9916,6 +9960,14 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
   ' Correct numeric defintions
   If Stype = "CONST" and ( Dtype = "SINGLE" or Dtype = "DOUBLE" ) Then
 
+    If CountOccur( Source, ".") > 1 Then
+      Temp = Message("BadValueType")
+      Replace Temp, "%value%", Source
+      Replace Temp, "%type%", LCase(DType)
+      Replace Temp, "%var%", Dest
+      LogError Temp, Origin
+    End If
+
     If Val(Trim(Source)) = 0 Then 
       Source = "0.0"
     ElseIf Right(Trim(Source),1) = "." Then
@@ -9942,15 +9994,20 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
       Do While Right(Source,1) = "0" And Mid( Source, Len(Source)-1, 1) <> "."
       Source = Mid(Source, 1, Len(Source) - 1)
     Loop 
-
-
-    #ifdef showdevdebug
-      Print "Var set " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
-    #endif
-    
+  ElseIf SType = "BIT" and ( Dtype = "SINGLE" or Dtype = "DOUBLE" ) Then
+      'check for double decimal point
+      If CountOccur( Source, ".") > 1 Then
+        Temp = Message("BadValueType")
+        Replace Temp, "%value%", Source
+        Replace Temp, "%type%", LCase(DType)
+        Replace Temp, "%var%", Dest
+        LogError Temp, Origin
+      End If
   End if 
 
-  ' Print "Var set " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
+  If (( compilerdebug and cVAR_SET ) = cVAR_SET ) Then
+    Print "2 VAR SET       : " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
+  End If
 
   'Record reads and writes (for auto pin direction setting)
   If DType = "BIT" Or DType = "BYTE" Then
@@ -14415,8 +14472,13 @@ SUB InitCompiler
                   End if
 
                 Case "floatcapability"
-                    floatcapability = val(msgval)
-                  
+                    If floatcapability = 0 Then  'so, not set by #OPTION FLOATS 
+                      floatcapability = val(msgval)
+                      VersionSuffix = Str(floatcapability)
+                    End if
+                Case "compilerdebug"
+                    compilerdebug = val(msgval)
+
                 Case "datfileinspection"
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
                     DATfileinspection = true
@@ -15182,7 +15244,7 @@ FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
 
     'Is the supplied name the same name as in output code?
     'Full name will be unique, so have found the right one
-    If SubName = UCase(GetSubFullName(T)) Then
+    If SubName = UCase(GetSubFullName(T)) or Left(UCase(GetSubFullName(T)),2) = "FN" Then
       Return T
     End If
 
@@ -17005,6 +17067,19 @@ Sub ReadOptions(OptionsIn As String)
     If CurrElement->Value = "EXPLICIT" Then
       'Do nothing
 
+    ElseIf CurrElement->Value = "FLOATS" Then
+      If  CurrElement->Next <> 0 Then
+        If IsConst(CurrElement->Next->Value) Then
+          floatcapability = MakeDec(CurrElement->Next->Value)
+          CurrElement = CurrElement->Next
+          VersionSuffix = Str(floatcapability)
+        Else
+          LogError message("NOFLOATPARAMETER"), ""
+        End If
+      Else
+        LogError message("NOFLOATPARAMETER"), ""
+      End If
+
     'Get bootloader setting
     ElseIf CurrElement->Value = "BOOTLOADER" Then
       If  CurrElement->Next <> 0 Then
@@ -17584,22 +17659,30 @@ Sub WriteAssembly
   if AFISupport = 1 then
       ' AS file
       PRINT #2, ";Program compiled by GCBASIC (" + Version + ") for Microchip PIC-AS using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
-  Print #2, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
-  Print #2, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
-  Print #2, ";or, email:"
-  Print #2, ";   evanvennn at users dot sourceforge dot net"
-      Print #2, ""
+      Print #2, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
+      Print #2, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
+      Print #2, ";or, email:"
+      Print #2, ";   evanvennn at users dot sourceforge dot net"
       PRINT #2, Star80
-      PRINT #2, ""
+      Print #2, ";   Source file      : " + SourceFile(1).FileName
+      Print #2, ";   Setting file     : " + globalSettingsFile
+      Print #2, ";   Preserve mode    : " + str(PreserveMode)
+      Print #2, ";   Assembler        : " + ASMEXE
+      Print #2, ";   Programmer       : " + PrgExe
+      Print #2, ";   Output file      : " + OFI
+      Print #2, ";   Float Capability : " + VersionSuffix
+      Print #2, Star80
+  
   End if
 
   
-  Print #1, ";   Source file    : " + SourceFile(1).FileName
-  Print #1, ";   Setting file   : " + globalSettingsFile
-  Print #1, ";   Preserve mode  : " + str(PreserveMode)
-  Print #1, ";   Assembler      : " + ASMEXE
-  Print #1, ";   Programmer     : " + PrgExe
-  Print #1, ";   Output file    : " + OFI
+  Print #1, ";   Source file      : " + SourceFile(1).FileName
+  Print #1, ";   Setting file     : " + globalSettingsFile
+  Print #1, ";   Preserve mode    : " + str(PreserveMode)
+  Print #1, ";   Assembler        : " + ASMEXE
+  Print #1, ";   Programmer       : " + PrgExe
+  Print #1, ";   Output file      : " + OFI
+  Print #1, ";   Float Capability : " + VersionSuffix
   Print #1, Star80
   Print #1, ""
   If ModePIC Then
@@ -18574,6 +18657,9 @@ Sub WriteCompilationReport
     Print #F, Message("CRTitle")
     Print #F, ""
   End If
+
+  'Format the version string
+  If Right(Trim(Version),1) <> ")" Then Version = Version + ")"
 
   'Write compiler information
   If RF = "html" Then

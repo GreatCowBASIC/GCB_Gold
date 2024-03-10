@@ -1,3 +1,4 @@
+#option explicit
 '    System routines for GCBASIC
 '    Copyright (C) 2006-2024 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
@@ -85,8 +86,12 @@
 '    23082023 - Added support for 18FxxK40 for PFM ops
 '    13112023 - Resolve 18F1220 digital port setting
 '    29022024 - Correct SysDivSub64 renaming system variable to SysTotalTemp... you cannot use SYSTEMP as this reserved
-
-' Warning .. warning .. warning... 64 bit methods above all require replacement of IF THEN conditional statement when compiler supports Advanced variables.
+'    04032024 -  Added SYSCOMPLESSTHANSINGLE and SYSCOMPEQUALSINGLE for Singles support
+'    06032024 -  Added MUTLIPLE for Singles support
+'    06032024 -  Added DIVIDE for Singles support with shared memory block
+'               Added common memory block for singles APPNOTE00575MEMORY()
+'               Added SysModSubSingle
+'    09032024 - Renamed all APPNOTE00575MEMORY variables and constants
 
 'Constants
 #define ON 1
@@ -1231,6 +1236,7 @@ Sub InitSys
       #IFDEF ChipFamily 12
         'The MCU is a chip family ChipNameStr, so, set GPIO.2 to digital by clear T0CS bit
         #IFDEF Bit(T0CS)
+          Dim option_reg 
           movlw b'11000111'
           option
           option_reg = b'11000111'
@@ -2868,9 +2874,221 @@ sub SysMultSub64
 end sub
 
 sub SysMultSubSingle
-!NOT SUPPORTED
-//! MULTIPLICATION NOT SUPPORTED..
+
+    // Input are
+      // SysSingleTempA
+      // SysSingleTempB
+    // Output
+      // SysSingleTempX
+
+    // https://ww1.microchip.com/downloads/en/AppNotes/AN575.pdf
+
+    Dim SysByteTempX as Byte
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrint "*in  IEEE  HEX "+SingleToHex(SysSingleTempA)
+      HSerPrint " , "
+      HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+    #ENDIF
+
+      // Fix the format to Microchip format, see https://www.ccsinfo.com/faq.php?page=mchp_float_format
+
+      // Transform SysSingleTempA
+      SysByteTempX.0 = SysSingleTempA_E.7
+      SET C OFF
+      ROTATE SysSingleTempA_E LEFT
+      SysSingleTempA_E.0 = SysSingleTempA_U.7
+      SysSingleTempA_U.7 = SysByteTempX.0
+
+      // Transform SysSingleTempB
+      SysByteTempX.0 = SysSingleTempB_E.7
+      SET C OFF
+      ROTATE SysSingleTempB_E LEFT
+      SysSingleTempB_E.0 = SysSingleTempB_U.7
+      SysSingleTempB_U.7 = SysByteTempX.0
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrint "*in  MCHIP HEX " + SingleToHex(SysSingleTempA)
+      HSerPrint " , "
+      HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+    #ENDIF
+
+      _SysMultSubSingle
+
+      MOVLW SysByteTempX
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HserPrint "*out _AARGB HEX "
+      HserPrint hex(_AEXP)
+      HserPrint hex(_AARGB0)
+      HserPrint hex(_AARGB1)
+      HserPrint hex(_AARGB2)
+      HserPrintCRLF
+    #ENDIF
+
+      // Transform _AARGBx to Transform SysSingleTempX
+      [BYTE]SysSingleTempX =   [BYTE]_AARGB2
+      [BYTE]SysSingleTempX_H = [BYTE]_AARGB1
+      [BYTE]SysSingleTempX_U = [BYTE]_AARGB0
+      // Load the MSByte
+      [BYTE]SysSingleTempX_E = [BYTE]_AEXP
+      // Shift to Right
+      Set C Off
+      Rotate [BYTE]SysSingleTempX_E Right
+      // Set the MSBit of the 3rd Byte
+      SysSingleTempX_U.7 = _AEXP.0
+      // Set -/+
+      SysSingleTempX_E.7 = _AARGB0.7
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrintStringCRLF "*out IEEE  HEX " +SingleToHex(SysSingleTempX)
+    #ENDIF
+End Sub
+
+Sub _SysMultSubSingle
+
+  #IFDEF PIC
+    // Variables for the Microchip AppNote
+    AppNote00575Memory
+
+    // ASM from APPNOTE. Only change is to place labels on new line, plus, correction for ASCII string for Decimal 24
+    FPM32:
+    MOVF _AEXP,W ; test for zero arguments
+    BTFSS cZ
+    MOVF _BEXP,W
+    BTFSC cZ
+    GOTO RES032a
+    M32BNE0:
+    MOVF _AARGB0,W
+    XORWF _BARGB0,W
+    MOVWF _SIGN ; save sign in SIGN
+    MOVF _BEXP,W
+    ADDWF _EXP,F
+    MOVLW cEXPBIAS-1
+    BTFSS cStatusC
+    GOTO MTUN32
+    SUBWF _EXP,F
+    BTFSC cStatusC
+    GOTO SETFOV32a ; set multiply overflow flag
+    GOTO MOK32
+    MTUN32:
+    SUBWF _EXP,F
+    BTFSS cStatusC
+    GOTO SETFUN32a
+    MOK32:
+    MOVF _AARGB0,W
+    MOVWF _AARGB3
+    MOVF _AARGB1,W
+    MOVWF _AARGB4
+    MOVF _AARGB2,W
+    MOVWF _AARGB5
+    BSF _AARGB3,cMSB ; make argument MSB’s explicit
+    BSF _BARGB0,cMSB
+    BCF cStatusC
+    CLRF _AARGB0 ; clear initial partial product
+    CLRF _AARGB1
+    CLRF _AARGB2
+    MOVLW 24
+    MOVWF _TEMP ; initialize counter
+    MLOOP32:
+    BTFSS _AARGB5,cLSB ; test next bit
+    GOTO MNOADD32
+    MADD32:
+    MOVF _BARGB2,W
+    ADDWF _AARGB2,F
+    MOVF _BARGB1,W
+    BTFSC cStatusC
+    INCFSZ _BARGB1,W
+    ADDWF _AARGB1,F
+    MOVF _BARGB0,W
+    BTFSC cStatusC
+    INCFSZ _BARGB0,W
+    ADDWF _AARGB0,F
+    MNOADD32: 
+    RRF _AARGB0,F
+    RRF _AARGB1,F
+    RRF _AARGB2,F
+    RRF _AARGB3,F
+    RRF _AARGB4,F
+    RRF _AARGB5,F
+    BCF cStatusC
+    DECFSZ _Temp,F
+    GOTO MLOOP32
+    BTFSC _AARGB0,cMSB ; check for postnormalization
+    GOTO MROUND32
+    RLF _AARGB3,F
+    RLF _AARGB2,F
+    RLF _AARGB1,F
+    RLF _AARGB0,F
+    DECF _EXP,F
+    MROUND32:
+    BTFSC _FPFLAGS,cRND 
+    BTFSS _AARGB2,cLSB
+    GOTO MUL32OK
+    BTFSS _AARGB3,cMSB
+    GOTO MUL32OK
+    INCF _AARGB2,F
+    BTFSC cZ
+    INCF _AARGB1,F
+    BTFSC cZ
+    INCF _AARGB0,F
+    BTFSS cZ ; has rounding caused carryout?
+    GOTO MUL32OK
+    RRF _AARGB0,F ; if so, right shift
+    RRF _AARGB1,F
+    RRF _AARGB2,F
+    INCF _EXP,F
+    BTFSC cZ ; check for overflow
+    GOTO SETFOV32a
+    MUL32OK:
+    BTFSS _SIGN,cMSB
+    BCF _AARGB0,cMSB ; clear explicit MSB if positive
+    RETLW 0
+    SETFOV32a:
+    BSF _FPFLAGS,cFOV ; set floating point underflag
+    BTFSS _FPFLAGS,cSAT ; test for saturation
+    RETLW 0xFF ; return error code in WREG
+    MOVLW 0xFF
+    MOVWF _AEXP ; saturate to largest floating
+    MOVWF _AARGB0 ; point number = 0x FF 7F FF FF
+    MOVWF _AARGB1 ; modulo the appropriate sign bit
+    MOVWF _AARGB2
+    RLF _SIGN,F
+    RRF _AARGB0,F
+    RETLW 0xFF ; return error code in WREG
+
+    // Additional routine from AppNote
+    RES032a:
+    CLRF _AARGB0 ; result equals zero
+    CLRF _AARGB1
+    CLRF _AARGB2
+    CLRF _AARGB3
+    CLRF _EXP
+    RETLW 0
+
+    // Additional routine from AppNote
+    SETFUN32a: 
+    BSF _FPFLAGS,cFUN ; set floating point underflag
+    BTFSS _FPFLAGS,cSAT ; test for saturation
+    RETLW 0xFF ; return error code in WREG
+    MOVLW 0x01 ; saturate to smallest floating
+    MOVWF _AEXP ; point number = 0x 01 00 00 00
+    CLRF _AARGB0 ; modulo the appropriate sign bit
+    CLRF _AARGB1
+    CLRF _AARGB2
+    RLF _SIGN,F
+    RRF _AARGB0,F
+    RETLW 0xFF ; return error code in WREG
+  #ENDIF
+  #IFDEF PIC
+  #ENDIF
 end sub
+
+Sub SYSMULTSUBDOUBLE
+  //!
+  //! Double not supported
+  !
+END SUB
 
 '********************************************************************************
 'Divide subroutines
@@ -3140,10 +3358,376 @@ sub SysDivSub64
 end sub
 
 sub SysDivSubSingle
-!NOT SUPPORTED
-//! DIVISION NOT SUPPORTED..
+
+    // Input are
+      // SysSingleTempA
+      // SysSingleTempB
+    // Output
+      // SysSingleTempX
+
+    // https://ww1.microchip.com/downloads/en/AppNotes/AN575.pdf
+
+    Dim SysByteTempX as Byte
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrint "/in  IEEE  HEX "+SingleToHex(SysSingleTempA)
+      HSerPrint " , "
+      HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+    #ENDIF
+
+      // Fix the format to Microchip format, see https://www.ccsinfo.com/faq.php?page=mchp_float_format
+
+      // Transform SysSingleTempA
+      SysByteTempX.0 = SysSingleTempA_E.7
+      SET C OFF
+      ROTATE SysSingleTempA_E LEFT
+      SysSingleTempA_E.0 = SysSingleTempA_U.7
+      SysSingleTempA_U.7 = SysByteTempX.0
+
+      // Transform SysSingleTempB
+      SysByteTempX.0 = SysSingleTempB_E.7
+      SET C OFF
+      ROTATE SysSingleTempB_E LEFT
+      SysSingleTempB_E.0 = SysSingleTempB_U.7
+      SysSingleTempB_U.7 = SysByteTempX.0
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrint "/in  MCHIP HEX " + SingleToHex(SysSingleTempA)
+      HSerPrint " , "
+      HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+    #ENDIF
+
+      _SysDivSubSingle
+
+      MOVLW SysByteTempX
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HserPrint "/out _AARGB HEX "
+      HserPrint hex(_AEXP)
+      HserPrint hex(_AARGB0)
+      HserPrint hex(_AARGB1)
+      HserPrint hex(_AARGB2)
+      HserPrintCRLF
+    #ENDIF
+
+      // Transform _AARGBx to Transform SysSingleTempX
+      [BYTE]SysSingleTempX =   [BYTE]_AARGB2
+      [BYTE]SysSingleTempX_H = [BYTE]_AARGB1
+      [BYTE]SysSingleTempX_U = [BYTE]_AARGB0
+      // Load the MSByte
+      [BYTE]SysSingleTempX_E = [BYTE]_AEXP
+      // Shift to Right
+      Set C Off
+      Rotate [BYTE]SysSingleTempX_E Right
+      // Set the MSBit of the 3rd Byte
+      SysSingleTempX_U.7 = _AEXP.0
+      // Set -/+
+      SysSingleTempX_E.7 = _AARGB0.7
+
+      // Return result
+      [SINGLE]SysSingleTempA = [SINGLE]SysSingleTempX
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrintStringCRLF "/out IEEE  HEX " +SingleToHex(SysSingleTempX)
+    #ENDIF
+
 end sub
 
+
+sub _SysDivSubSingle
+
+  #IFDEF PIC
+  // Variables for the Microchip AppNote
+  AppNote00575Memory
+
+  ;**********************************************************************************************
+  ;**********************************************************************************************
+  ; Floating Point Divide
+  ; Input: 32 bit floating point dividend in _AEXP, _AARGB0, _AARGB1, _AARGB2
+  ; 32 bit floating point divisor in _BEXP, _BARGB0, _BARGB1, _BARGB2
+  ; Use: CALL FPD32
+  ; Output: 32 bit floating point quotient in _AEXP, _AARGB0, _AARGB1, _AARGB2
+  ; Result: AARG <-- AARG / BARG
+  ; Max Timing: 43+12+23*36+35+14 = 932 clks RND = 0
+  ; 43+12+23*36+35+50 = 968 clks RND = 1, SAT = 0
+  ; 43+12+23*36+35+53 = 971 clks RND = 1, SAT = 1
+  ; Min Timing: 7+6 = 13 clks
+  ; PM: 155 DM: 14
+  ;----------------------------------------------------------------------------------------------
+  FPD32:
+  MOVF _BEXP,W ; test for divide by zero
+  BTFSC cZ
+  GOTO SETFDZ32
+  MOVF _AEXP,W
+  BTFSC cZ
+  GOTO RES032b
+  D32BNE0:
+  MOVF _AARGB0,W
+  XORWF _BARGB0,W
+  MOVWF _SIGN ; save sign in SIGN
+  BSF _AARGB0,cMSB ; make argument MSB’s explicit
+  BSF _BARGB0,cMSB
+  TALIGN32:
+  CLRF _TEMP ; clear align increment
+  MOVF _AARGB0,W
+  MOVWF _AARGB3 ; test for alignment
+  MOVF _AARGB1,W
+  MOVWF _AARGB4
+  MOVF _AARGB2,W
+  MOVWF _AARGB5
+  MOVF _BARGB2,W
+  SUBWF _AARGB5,F
+  MOVF _BARGB1,W
+  BTFSS cStatusC
+  INCFSZ _BARGB1,W
+  TS1ALIGN32:
+  SUBWF _AARGB4,F
+  MOVF _BARGB0,W
+  BTFSS cStatusC
+  INCFSZ _BARGB0,W
+  TS2ALIGN32:
+  SUBWF _AARGB3,F
+  CLRF _AARGB3
+  CLRF _AARGB4
+  CLRF _AARGB5
+  BTFSS cStatusC
+  GOTO DALIGN32OK
+  BCF cStatusC ; align if necessary
+  RRF _AARGB0,F
+  RRF _AARGB1,F
+  RRF _AARGB2,F
+  RRF _AARGB3,F
+  MOVLW 0x01
+  MOVWF _TEMP ; save align increment
+  DALIGN32OK:
+  MOVF _BEXP,W ; compare _AEXP and _BEXP
+  SUBWF _EXP,F
+  BTFSS cStatusC
+  GOTO ALTB32
+
+  AGEB32:
+  MOVLW cEXPBIAS-1
+  ADDWF _Temp,W
+  ADDWF _EXP,F
+  BTFSC cStatusC
+  GOTO SETFOV32b
+  GOTO DARGOK32 ; set overflow flag
+  ALTB32:
+  MOVLW cEXPBIAS-1
+  ADDWF _TEMP,W
+  ADDWF _EXP,F
+  BTFSS cStatusC
+  GOTO SETFUN32b ; set underflow flag
+  DARGOK32:
+  MOVLW 24 ; initialize counter
+  MOVWF _TEMPB1
+  DLOOP32:
+  RLF _AARGB5,F ; left shift
+  RLF _AARGB4,F
+  RLF _AARGB3,F
+  RLF _AARGB2,F
+  RLF _AARGB1,F
+  RLF _AARGB0,F
+  RLF _Temp,F
+  MOVF _BARGB2,W ; subtract
+  SUBWF _AARGB2,F
+  MOVF _BARGB1,W
+  BTFSS cStatusC
+  INCFSZ _BARGB1,W
+  DS132:
+  SUBWF _AARGB1,F
+  MOVF _BARGB0,W
+  BTFSS cStatusC
+  INCFSZ _BARGB0,W
+  DS232:
+  SUBWF _AARGB0,F
+  RLF _BARGB0,W
+  IORWF _Temp,F
+
+  BTFSS _Temp,cLSB ; test for restore
+  GOTO DREST32
+  BSF _AARGB5,cLSB
+  GOTO DOK32
+  DREST32:
+  MOVF _BARGB2,W ; restore if necessary
+  ADDWF _AARGB2,F
+  MOVF _BARGB1,W
+  BTFSC cStatusC
+
+  INCFSZ _BARGB1,W
+  DAREST32:
+  ADDWF _AARGB1,F
+  MOVF _BARGB0,W
+  BTFSC cStatusC
+  INCF _BARGB0,W
+  ADDWF _AARGB0,F
+  BCF _AARGB5,cLSB
+  DOK32:
+  DECFSZ _TEMPB1,F
+  GOTO DLOOP32
+  DROUND32:
+  BTFSC _FPFLAGS,cRND
+  BTFSS _AARGB5,cLSB
+  GOTO DIV32OK
+  BCF cStatusC
+  RLF _AARGB2,F ; compute next significant bit
+  RLF _AARGB1,F ; for rounding
+  RLF _AARGB0,F
+  RLF _Temp,F
+  MOVF _BARGB2,W ; subtract
+  SUBWF _AARGB2,F
+  MOVF _BARGB1,W
+  BTFSS cStatusC
+  INCFSZ _BARGB1,W
+  SUBWF _AARGB1,F
+  MOVF _BARGB0,W
+  BTFSS cStatusC
+  INCFSZ _BARGB0,W
+  SUBWF _AARGB0,F
+  RLF _BARGB0,W
+  IORWF _Temp,W
+  ANDLW 0x01
+  ADDWF _AARGB5,F
+  BTFSC cStatusC
+  INCF _AARGB4,F
+  BTFSC cZ
+  INCF _AARGB3,F
+  BTFSS cZ ; test if rounding caused carryout
+  GOTO DIV32OK
+  RRF _AARGB3,F
+  RRF _AARGB4,F
+  RRF _AARGB5,F
+  INCF _EXP,F
+  BTFSC cZ ; test for overflow
+  GOTO SETFOV32b
+  DIV32OK:
+  BTFSS _SIGN,cMSB
+  BCF _AARGB3,cMSB ; clear explicit MSB if positive
+  MOVF _AARGB3,W
+  MOVWF _AARGB0 ; move result to AARG
+  MOVF _AARGB4,W
+  MOVWF _AARGB1
+  MOVF _AARGB5,W
+  MOVWF _AARGB2
+  RETLW 0
+
+  SETFDZ32:
+  BSF _FPFLAGS,cFDZ ; set divide by zero flag
+  RETLW 0xFF
+
+      // Additional routine from AppNote
+      SETFUN32b: 
+      BSF _FPFLAGS,cFUN ; set floating point underflag
+      BTFSS _FPFLAGS,cSAT ; test for saturation
+      RETLW 0xFF ; return error code in WREG
+      MOVLW 0x01 ; saturate to smallest floating
+      MOVWF _AEXP ; point number = 0x 01 00 00 00
+      CLRF _AARGB0 ; modulo the appropriate sign bit
+      CLRF _AARGB1
+      CLRF _AARGB2
+      RLF _SIGN,F
+      RRF _AARGB0,F
+      RETLW 0xFF ; return error code in WREG
+
+      SETFOV32b:
+      BSF _FPFLAGS,cFOV ; set floating point underflag
+      BTFSS _FPFLAGS,cSAT ; test for saturation
+      RETLW 0xFF ; return error code in WREG
+      MOVLW 0xFF
+      MOVWF _AEXP ; saturate to largest floating
+      MOVWF _AARGB0 ; point number = 0x FF 7F FF FF
+      MOVWF _AARGB1 ; modulo the appropriate sign bit
+      MOVWF _AARGB2
+      RLF _SIGN,F
+      RRF _AARGB0,F
+      RETLW 0xFF ; return error code in WREG
+
+    // Additional routine from AppNote
+      RES032b:
+      CLRF _AARGB0 ; result equals zero
+      CLRF _AARGB1
+      CLRF _AARGB2
+      CLRF _AARGB3
+      CLRF _EXP
+      RETLW 0
+  #ENDIF
+
+  #IFDEF AVR
+    //!
+    //! AVR Not supported
+    !
+  #ENDIF
+end sub
+
+Sub SYSDIVSUBDOUBLE
+  //!
+  //! Double not supported
+  !
+End Sub
+
+Macro AppNote00575Memory
+
+    // Variables for the Microchip AppNote
+    //  Use an ALLOC to create a contigous block of RAM
+    Dim SysCalcSingleVariables As Alloc * 18
+
+    // Alias to the ALLOC
+    Dim _AARGB5 as Byte Alias SysCalcSingleVariables
+    Dim _AARGB4 as Byte Alias SysCalcSingleVariables + 1
+    Dim _AARGB3 as Byte Alias SysCalcSingleVariables + 2
+    Dim _AARGB2 as Byte Alias SysCalcSingleVariables + 3
+    Dim _AARGB1 as Byte Alias SysCalcSingleVariables + 4
+    Dim _AARGB0 as Byte Alias SysCalcSingleVariables + 5
+    Dim _AEXP   as Byte Alias SysCalcSingleVariables + 6
+    Dim _EXP    As Byte Alias SysCalcSingleVariables + 6
+
+    Dim _SIGN      as Byte Alias SysCalcSingleVariables + 7
+    Dim _FPFLAGS   as Byte Alias SysCalcSingleVariables + 8
+    Dim _BARGB3    as Byte Alias SysCalcSingleVariables + 9
+    Dim _BARGB2    as Byte Alias SysCalcSingleVariables + 10
+    Dim _BARGB1    as Byte Alias SysCalcSingleVariables + 11
+    Dim _BARGB0    as Byte Alias SysCalcSingleVariables + 12
+    Dim _BEXP      as Byte Alias SysCalcSingleVariables + 13
+
+    Dim _TEMPB1    as Byte Alias SysCalcSingleVariables + 16
+    Dim _TEMP      as Byte Alias SysCalcSingleVariables + 17
+    Dim _TEMPB0    as Byte Alias SysCalcSingleVariables + 17
+    
+    // Assign the Microchip format 32 bit numbers for A
+    _AEXP   = [BYTE]SysSingleTempA_E
+    _AARGB0 = [BYTE]SysSingleTempA_U
+    _AARGB1 = [BYTE]SysSingleTempA_H
+    _AARGB2 = [BYTE]SysSingleTempA
+
+    // Assign the Microchip format 32 bit numbers for B
+    _BEXP   = [BYTE]SysSingleTempB_E
+    _BARGB0 = [BYTE]SysSingleTempB_U
+    _BARGB1 = [BYTE]SysSingleTempB_H
+    _BARGB2 = [BYTE]SysSingleTempB
+
+    // Define constants to make AppNote ASM work = macros
+    #DEFINE  cStatusC STATUS,C
+    #DEFINE  cZ STATUS,Z
+    #DEFINE  cMSB 7
+    #DEFINE  cLSB 0
+    #DEFINE  cEXPBIAS 127  
+
+    // Dim _FPFLAGS as Byte ; floating point library exception flags as per AppNote
+    #DEFINE cIOV 0 ; bit0 = integer overflow flag
+    #DEFINE cFOV 1 ; bit1 = floating point overflow flag
+    #DEFINE cFUN 2 ; bit2 = floating point underflow flag
+    #DEFINE cFDZ 3 ; bit3 = floating point divide by zero flag
+    #DEFINE cNAN 4 ; bit4 = not-a-number exception flag
+    #DEFINE cDOM 5 ; bit5 = domain error exception flag
+    #DEFINE cRND 6 ; bit6 = floating point rounding flag, 0 = truncation
+    ; 1 = unbiased rounding to nearest LSB
+    #DEFINE cSAT 7 ; bit7 = floating point saturate flag, 0 = terminate on
+    ; exception without saturation, 1 = terminate on
+    ; exception with saturation to appropriate value
+    _FPFLAGS.cSAT = 0
+    _FPFLAGS.cRND = 1
+
+End Macro    
 '********************************************************************************
 'Misc calculations
 
@@ -3322,6 +3906,91 @@ sub SysCompEqual32
     com SysByteTempX
     SCE32False:
   #ENDIF
+end sub
+
+sub SYSCOMPEQUALSINGLE
+  //~ new for singles
+  dim SysSingleTempA as long
+  dim SysSingleTempB as long
+  dim SYSBYTETEMPX as byte
+
+  #IFDEF ChipFamily 12,14,15
+    // ChipFamily 12,14,15
+    clrf SYSBYTETEMPX
+
+    'Test low, exit if false
+    movf SysSingleTempA, W
+    subwf SysSingleTempB, W
+    btfss STATUS, Z
+    return
+
+    'Test high, exit if false
+    movf SysSingleTempA_H, W
+    subwf SysSingleTempB_H, W
+    btfss STATUS, Z
+    return
+
+    'Test upper, exit if false
+    movf SysSingleTempA_U, W
+    subwf SysSingleTempB_U, W
+    btfss STATUS, Z
+    return
+
+    'Test exp, exit if false
+    movf SysSingleTempA_E, W
+    subwf SysSingleTempB_E, W
+    btfss STATUS, Z
+    return
+
+    comf SYSBYTETEMPX,F
+  #ENDIF
+
+  #IFDEF ChipFamily 16
+    // ChipFamily 16
+    clrf SYSBYTETEMPX
+
+    'Test low, exit if false
+    movf SysSingleTempB, W
+    cpfseq SysSingleTempA
+    return
+
+    'Test high, exit if false
+    movf SysSingleTempB_H, W
+    cpfseq SysSingleTempA_H
+    return
+
+    'Test upper, exit if false
+    movf SysSingleTempB_U, W
+    cpfseq SysSingleTempA_U
+    return
+
+    'Test exp, exit if false
+    movf SysSingleTempB_E, W
+    cpfseq SysSingleTempA_E
+    return
+
+    setf SYSBYTETEMPX
+
+  #ENDIF
+  #IFDEF AVR
+    clr SYSBYTETEMPX
+
+    cp SysSingleTempA, SysSingleTempB
+    brne SCESingleFalse
+
+    cp SysSingleTempA_H, SysSingleTempB_H
+    brne SCESingleFalse
+
+    cp SysSingleTempA_U, SysSingleTempB_U
+    brne SCESingleFalse
+
+    cp SysSingleTempA_E, SysSingleTempB_E
+    brne SCESingleFalse
+
+    com SYSBYTETEMPX
+    SCESingleFalse:
+  #ENDIF
+
 end sub
 
 sub SysCompEqual64
@@ -3646,6 +4315,140 @@ Sub SysCompLessThan32
     SCLT32False:
   #ENDIF
 
+End Sub
+
+Sub SYSCOMPLESSTHANSINGLE
+
+    // Fix the format to Microchip format, see https://www.ccsinfo.com/faq.php?page=mchp_float_format
+    // Input are
+      // SysSingleTempA
+      // SysSingleTempB
+    // Output
+      // SysSingleTempX
+
+    // https://ww1.microchip.com/downloads/en/AppNotes/AN575.pdf
+
+      Dim SysByteTempX as Byte
+
+      #IFDEF SYSSINGLECALCS_DEBUG
+        HSerPrint "<in  IEEE  HEX "+SingleToHex(SysSingleTempA)
+        HSerPrint " , "
+        HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+      #ENDIF
+
+      // Fix the format to Microchip format, see https://www.ccsinfo.com/faq.php?page=mchp_float_format
+
+      // Transform SysSingleTempA
+      SysByteTempX.0 = SysSingleTempA_E.7
+      SET C OFF
+      ROTATE SysSingleTempA_E LEFT
+      SysSingleTempA_E.0 = SysSingleTempA_U.7
+      SysSingleTempA_U.7 = SysByteTempX.0
+
+      // Transform SysSingleTempB
+      SysByteTempX.0 = SysSingleTempB_E.7
+      SET C OFF
+      ROTATE SysSingleTempB_E LEFT
+      SysSingleTempB_E.0 = SysSingleTempB_U.7
+      SysSingleTempB_U.7 = SysByteTempX.0
+
+    #IFDEF SYSSINGLECALCS_DEBUG
+      HSerPrint "<in  MCHIP HEX " + SingleToHex(SysSingleTempA)
+      HSerPrint " , "
+      HSerPrintStringCRLF SingleToHex(SysSingleTempB)
+    #ENDIF
+    
+
+    Call _SYSCOMPLESSTHANSINGLE
+    // returns with W set to state
+    MOVWF SysByteTempX
+    If SysByteTempX = 0 Then
+      SysByteTempX = 0
+    Else
+      SysByteTempX = 255
+    End if
+
+End Sub
+
+Sub _SYSCOMPLESSTHANSINGLE
+
+  #IFDEF PIC
+    // https://ww1.microchip.com/downloads/en/AppNotes/00660.pdf
+    // Variables for the Microchip AppNote
+    AppNote00575Memory
+    
+      
+    // This ASM is directly from the .. AppNotes/00660.pdf unchanged
+    TALTB32:
+    MOVF _AARGB0,W
+    XORWF _BARGB0,W
+    MOVWF _TEMPB0
+    BTFSC _TEMPB0,cMSB
+    GOTO TALTB32O
+    BTFSC _AARGB0,cMSB
+    GOTO TALTB32N
+    TALTB32P:
+    MOVF _AEXP,W
+    SUBWF _BEXP,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _AARGB0,W
+    SUBWF _BARGB0,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _AARGB1,W
+    SUBWF _BARGB1,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _AARGB2,W
+    SUBWF _BARGB2,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    RETLW 0x00
+    TALTB32N:
+    MOVF _BEXP,W
+    SUBWF _AEXP,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _BARGB0,W
+    SUBWF _AARGB0,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _BARGB1,W
+    SUBWF _AARGB1,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    MOVF _BARGB2,W
+    SUBWF _AARGB2,W
+    BTFSS cStatusC
+    RETLW 0x00
+    BTFSS cZ
+    RETLW 0x01
+    RETLW 0x00
+    TALTB32O:
+    BTFSS _BARGB0,cMSB
+    RETLW 0x01
+    RETLW 0x00
+  #ENDIF
+  #IFDEF AVR
+    //!
+    //! Not supported
+    !
+  #ENDIF
 End Sub
 
 Sub SysCompLessThan64
@@ -4539,5 +5342,29 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
       'Set the NVMCMD control bits for Word Read operation to avoid accidental writes
       NVMCON1 = NVMCON1 and 0XF8
       GIE = _GIE_SAVE     'restore saved interrupt
+
+End Sub
+
+Sub SysModSubSingle
+  /*
+
+  Modulus on a Standard Calculator
+  Divide a by n.
+  Subtract the whole part of the resulting quantity.
+  Multiply by n to obtain the modulus.
+  */
+  Dim SysSingleTempACache, SysSingleTempBCache, SysSingleTempX, SysSingleTempB As Single
+  Dim SYSTempLong As Long
+  SysSingleTempACache = SysSingleTempA
+  SysSingleTempBCache = SysSingleTempB
+  // To Divide a by n.
+  SysDivSubSingle
+  // Subtract the whole part of the resulting quantity.
+  SYSTempLong = SysSingleTempX   // This creates the Integer value
+  SysSingleTempA = SysSingleTempX - SYSTempLong
+  SysSingleTempB = SysSingleTempBCache
+  // Multiply by n to obtain the modulus.
+  SysMultSubSingle
+  // SysSingleTempX will have the result
 
 End Sub

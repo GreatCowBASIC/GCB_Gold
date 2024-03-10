@@ -37,6 +37,8 @@
 ' 04/03/2018: Added Scale() and a mapping to Map
 ' 30/01/2019: Added word Scale()
 ' 19/10/2021: Change PULSEx delays to one cycle less using WAITL1
+' 04/03/2024: Add RoundSingle for Single support
+' 07/03/2024: Add Int()
 
 'Misc settings
 
@@ -145,9 +147,9 @@ End Function
 
 'Duty is /255, Dur is ms
 sub PWMOut(PWMChannel, SoftPWMDuty, SoftPWMCycles) #NR
-  For PWMDur = 1 to SoftPWMCycles
+  Dim PWMDur, DOPWM as Byte
+  For PWMDur = 1 to SoftPWMCycles 
     For DOPWM = 1 to 255
-
       if SoftPWMDuty > DOPWM then
         #IFDEF PWM_Out1
           if PWMChannel = 1 then set PWM_Out1 ON
@@ -178,8 +180,8 @@ sub PWMOut(PWMChannel, SoftPWMDuty, SoftPWMCycles) #NR
       #IFDEF PWM_Delay
         Wait PWM_Delay
       #ENDIF
-    next
-  next
+    next DOPWM
+  next PWMDur
 end sub
 
 'PulseOut
@@ -452,3 +454,37 @@ End Function
       End If
 
     end Function
+
+  //~ added for Single Support
+  Function RoundSingle ( in _Round_Single As Single ) as Long
+          _Round_Single = ([Single]_Round_Single + [single]0.5)
+          RoundSingle = _Round_Single
+  End Function
+
+  Function int ( SYSSINGLETEMP as Single ) as Long
+    int = SYSSINGLETEMP
+    End Function
+
+Function int ( SYSSINGLETEMP as Integer ) as Integer
+    //! Int() is not supported for Integer variables
+    //! Please close this library and remove function call from your source program
+    |
+    End Function
+
+Function int ( SYSSINGLETEMP as Word ) as Word
+    //! Int() is not supported for Word variables
+    //! Please close this library and remove function call from your source program
+    |
+    End Function
+
+Function int ( SYSSINGLETEMP as Byte ) as Byte
+    //! Int() is not supported for Byte variables
+    //! Please close this library and remove function call from your source program
+    |
+    End Function
+
+Function int ( SYSSINGLETEMP as Long ) as Long
+    //! Int() is not supported for Long variables
+    //! Please close this library and remove function call from your source program
+    |
+    End Function

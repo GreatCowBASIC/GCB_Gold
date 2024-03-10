@@ -38,7 +38,40 @@
 ' 25/02/2021: Add VarToBin, VarWToBin, IntegerToBin, LongtoBin
 ' 01/03/2024: Add WordToHex, LongToHex and SingleToHex
 ' 01/03/2024: Add SingleToString
+' 03/03/2024: Revise LTRIM to save 46 bytes of RAM
+/*
+  04/03/2025:
+              Revised type to STRing, type to HEX and type to BINary functions with common naming[]
+              Type to string functions
 
+                ByteToString()       127
+                Str()      Legacy    127
+                WordToString()       32768
+                Str()      Legacy    32768
+                LongToString()       2147483647
+                Str32()    Legacy    2147483647
+                IntegerToString()    -16384
+                StrInteger() Legacy  -16384
+                SingleToString()     12345.67871093
+
+              Type to hexidecimal string functions
+
+                ByteToHex()          0x7F
+                Hex()      Legacy    0x7F
+                WordToHex()          0x8000
+                LongToHex()          0x7FFFFFFF
+                IntegerToHex()       0xC000
+                SingleToHex()        0x4640E6B7
+
+              Type to binary string functions
+
+                ByteToBin()          0b01111111
+                WordToBin()          0b1000000000000000
+                LongToBin()          0b01111111111111111111111111111111
+                IntegerToBin()       0b010000000000000
+                SingleToBin()        0b01000110010000001110011010110111
+
+  */
 
 'Length/position
 Function Len (LenTemp())
@@ -76,6 +109,8 @@ End Function
 'String/number conversion
 'Word > String
 '(Max output will be 5 characters)
+#DEFINE ByteToString Str
+#DEFINE WordToString Str
 Function Str(SysValTemp As Word) As String * 5
 
   SysCharCount = 0
@@ -127,6 +162,7 @@ Function Str(SysValTemp As Word) As String * 5
 
 End Function
 
+#DEFINE LongToString Str32
 function Str32(SysValTemp As long) As String * 10
 'converts strings of 10 Digits to a long Var (32bit)
 'max in = # 4.294.967.295 (h FFFF FFFF)
@@ -239,6 +275,7 @@ end function
 'String/number conversion
 'Integer > String  -32767 to 32767
 '(Max output will be 6 characters)
+#DEFINE IntegerToString StrInteger
 Function StrInteger(SysValTemp As Word) As String * 6
 
   SysCharCount = 0
@@ -336,7 +373,8 @@ Function Val32(SysInString as String) as Long
 end Function
 
 'Decimal > Hex
-Function Hex(In SysValTemp) As String * 3
+#DEFINE ByteToHex Hex
+Function Hex (In SysValTemp) As String * 2
   Hex(0) = 2
 
   'Low nibble
@@ -354,22 +392,47 @@ Function Hex(In SysValTemp) As String * 3
 
 End Function
 
-Function WordToHex ( in WordToHex_Word as Word ) as String * 4
+#DEFINE IntegerToHex WordToHex
+Function WordToHex ( in SysValTemp as Word ) as String * 4
+  WordToHex(0) = 4
 
-    WordToHex = HEX([byte]WordToHex_Word_H)
-    WordToHex += HEX([byte]WordToHex_Word)
+  Repeat 4
+
+    SysStringTemp = SysValTemp And 0x0F
+    If SysStringTemp > 9 Then SysStringTemp = SysStringTemp + 7
+    WordToHex(WordToHex(0)) = SysStringTemp + 48
+
+    Repeat 4 
+      Rotate SysValTemp Right
+    End Repeat
+
+    WordToHex(0)--
+
+  End Repeat
+  WordToHex(0) = 4
 
 End Function
 
+Function LongToHex ( in SysValTemp as Long ) as String * 8
+  LongToHex(0) = 8
 
-Function LongToHex ( in LongToHex_Long as Long ) as String * 8
-    
-    LongToHex = HEX([byte]LongToHex_Long_E)
-    LongToHex += HEX([byte]LongToHex_Long_U)
-    LongToHex += HEX([byte]LongToHex_Long_H)
-    LongToHex += HEX([byte]LongToHex_Long)
+  Repeat 8
+
+    SysStringTemp = SysValTemp And 0x0F
+    If SysStringTemp > 9 Then SysStringTemp = SysStringTemp + 7
+    LongToHex(LongToHex(0)) = SysStringTemp + 48
+
+    Repeat 4 
+      Rotate SysValTemp Right
+    End Repeat
+
+    LongToHex(0)--
+
+  End Repeat
+  LongToHex(0) = 8
 
 End Function
+
 
 Function SingleToHex ( in SnglToHex_Sngl as Single ) as String * 8
 
@@ -483,7 +546,20 @@ function Trim (SysInString()) As String
   trim = rtrim(ltrim(SysInString))
 end function
 
-function LTrim (SysInString2 as string) As String
+Function LTrim ( in TrimCharLeftString as String , Optional in TrimCharLeftChar as Byte = 32 ) as String
+  Dim TTrimCharLeftTemp as Byte
+
+  Do While TrimCharLeftString(1) = TrimCharLeftChar
+    For TTrimCharLeftTemp = 1 to TrimCharLeftString(0)-1
+        TrimCharLeftString(TTrimCharLeftTemp) = TrimCharLeftString(TTrimCharLeftTemp+1) 
+    Next
+    TrimCharLeftString(0)--
+  Loop
+  Return TrimCharLeftString
+End Function
+
+
+function OLDLTrim (SysInString2 as string) As String
 
   'Get length of string, return empty string.  If you dont do this you will return an uninitialize value... ooops
   Ltrim = ""
@@ -628,13 +704,15 @@ Function VarWToBin (In __WordNum as Word ) as String * 16
   End Repeat
 End Function
 
-Function IntegerToBin (In __IntegerNum as Integer ) as String * 16
+Function IntegerToBin (In __IntegerNum as Integer, optional in _IntegerSign as Bit = 0 ) as String * 16
   IntegerToBin = ""
+  If _IntegerSign = 1 Then
     If __IntegerNum.15 = 1 Then
       IntegerToBin = "-"
     Else
        IntegerToBin = "+"
     End If
+  End If
   Repeat 15
     If __IntegerNum.15 = 1 Then
       If __IntegerNum.14 = 1 Then
@@ -665,6 +743,18 @@ Function LongToBin (In __LongNum as Long ) as String * 32
   End Repeat
 End Function
 
+Function SingleToBin (In __SingleNum as Single ) as String * 32
+  SingleToBin = ""
+  SingleToBinPTR = 31
+  Repeat 32
+      If __SingleNum.SingleToBinPTR = 1 Then
+         SingleToBin = SingleToBin +"1"
+      Else
+         SingleToBin = SingleToBin +"0"
+      End If
+      SingleToBinPTR--
+  End Repeat
+End Function
 
 'PAD(str,len,padchr )
 'Description  - The PAD() function pads a specified string
@@ -774,6 +864,8 @@ Function SingleToString(in SingleNum as Single) as String * 16
 
   'ExtractSingleParts
   SysLongTempB = [byte]SingleNum: SysLongTempB_H = [byte]SingleNum_H: SysLongTempB_U = [byte]SingleNum_U: SysLongTempB_E = [byte]SingleNum_E
+
+  SysByte_STS_Sgn = SysLongTempB.31
   
   SysLongTempX = SysLongTempB & 0x7FFFFF  
   Repeat 23
@@ -786,8 +878,6 @@ Function SingleToString(in SingleNum as Single) as String * 16
     Set C Off
     Rotate SysLongTempB Right Simple
   End Repeat
-
-  SysByte_STS_Sgn = SysLongTempB
 
   SysLongTempX.23 = 1      'add hidden Bit
   

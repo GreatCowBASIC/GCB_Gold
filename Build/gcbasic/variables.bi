@@ -244,7 +244,7 @@ Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSu
         T = 0
       End If
     Case "SINGLE"
-      if ( (floatcapability and 1) = 1 ) Then
+      if ( (floatcapability and 1) = 1 ) OR CurrFile <> 1 Then
         T = 0
       End If
     Case "DOUBLE"

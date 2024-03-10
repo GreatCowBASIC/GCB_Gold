@@ -1544,4 +1544,1583 @@ sub HSerSend (In SerData)
 
         #ifdef  USART_TX_BLOCKING
           #ifdef Bit(UDRE0)
-      
+            Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+          #endif
+
+          #ifndef Bit(UDRE0)
+            Wait While UDRE = Off
+          #endif
+        #endif
+
+        #ifdef Var(UDR) ' ***************
+          UDR = SerData
+        #endif
+
+        #ifdef Var(UDR0)
+          UDR0 = SerData ' *******************
+        #endif
+
+    #endif
+
+  #endif
+
+end sub
+
+
+sub HSerSend (In SerData, optional In comport = 1)
+
+ #ifdef PIC
+
+    //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+    #if SCRIPT_USART_USAGE_CHECK > 1 Then
+    Select Case comport
+    #endif
+
+    #If USART_BAUD_RATE Then
+      HSerSendUSART1Handler:
+
+      //~Ensure specific 18F are set to digital port prior to USART usage
+      #Ifdef ChipFamily 16 
+        #ifdef bit(PCFG6) 
+          PCFG6 = 1
+        #endif
+        #ifdef bit(PCFG5) 
+          PCFG5 = 1
+        #endif                
+      #Endif
+
+      //~Registers/Bits determined by #samevar at top of library
+       #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       Case 1
+       #endif
+
+          //~HANDLE USART1
+          #ifdef USART_TX_BLOCKING
+            'USART_TX_BLOCKING
+            #ifdef Bit(TXIF)
+              #IF CANBUSCHIP_SCRIPT = TRUE
+                //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
+                Wait While U1TXIF = Off
+              #endif
+
+              #IF CANBUSCHIP_SCRIPT = FALSE
+                Wait While TXIF = Off
+              #endif
+
+            #endif
+            #ifdef Bit(TRMT)
+              //~Ensure any previous operation has completed
+              Wait until TRMT = 1
+            #endif
+          #endif
+
+          #ifdef USART_BLOCKING
+
+            #ifndef USART_TX_BLOCKING //~The ifndef tests ensure the only one of USART_BLOCKING or USART_TX_BLOCKING is implemented
+                'USART_BLOCKING and NOT USART_TX_BLOCKING
+
+              #IF CANBUSCHIP_SCRIPT = TRUE
+                //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
+                Wait While U1TXIF = Off
+              #endif
+
+              #IF CANBUSCHIP_SCRIPT = FALSE
+                #ifdef Bit(TXIF)
+                  Wait While TXIF = Off
+                #endif
+                #ifdef Bit(TRMT)
+                  //~Ensure any previous operation has completed
+                  Wait until TRMT = 1
+                #endif
+              #endif
+
+            #endif
+
+          #endif
+
+          #ifdef Var(TXREG)
+
+              //~WRITE THE DATA BYTE TO THE USART
+              //~ Sets register to value of SerData - where register could be TXREG or TXREG1 or U1TXB set via the #samevar
+              TXREG = SerData
+
+              #IF USART_DELAY <> OFF
+                  //~ All bits shifted out on TX Pin
+                  Wait USART_DELAY
+              #ENDIF
+
+          #endif
+
+    #endif
+
+    #If USART2_BAUD_RATE Then
+       //~Registers/Bits determined by #samevar at top of file
+       #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       HSerSendUSART2Handler:
+       Case 2
+       #endif
+
+          //~HANDLE USART2
+          #ifdef USART2_TX_BLOCKING     'Blocking TX
+             #ifdef Bit(TX2IF)
+                Wait While TX2IF = Off
+             #endif
+          #endif
+
+          #ifdef USART2_BLOCKING
+            #ifndef USART2_TX_BLOCKING   //~The ifndef tests ensure the only one of USART2_BLOCKING or USART2_TX_BLOCKING is implemented
+                'USART2_BLOCKING and NOT USART2_TX_BLOCKING
+
+                 #ifdef Bit(TX2IF)
+                    Wait While TX2IF = Off
+                 #endif
+            #endif
+          #endif
+
+          #ifdef Var(TXREG2)
+             //~WRITE THE DATA BYTE TO THE USART
+             //~ Sets register to value of SerData - where register could be TX2REG, TXREG2  or U2TXB  via the #samevar
+             #IFDEF VAR(TX2REG)
+              TX2REG = SerData
+             #ELSE
+              TXREG2 = SerData
+            #ENDIF
+
+             #IF USART2_DELAY <> OFF
+                //~ The USART_DELAY After all bits are shifted out
+                Wait until TXSTA2_TRMT = 1
+                //~ All bits shifted out on TX Pin
+                Wait USART2_DELAY
+             #ENDIF
+          #endif
+
+    #endif
+
+    #If USART3_BAUD_RATE Then
+       //~Registers/Bits determined by #samevar at top of file
+       #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       HSerSendUSART3Handler:
+       Case 3
+       #endif
+
+          //~HANDLE USART3
+          #ifdef USART3_TX_BLOCKING     'Blocking TX
+             #ifdef Bit(TX3IF)
+                Wait While TX3IF = Off
+             #endif
+          #endif
+
+          #ifdef USART3_BLOCKING
+            #ifndef USART3_TX_BLOCKING   //~The ifndef tests ensure the only one of USART3_BLOCKING or USART3_TX_BLOCKING is implemented
+                'USART3_BLOCKING and NOT USART3_TX_BLOCKING
+
+                 #ifdef Bit(TX3IF)
+                    Wait While TX3IF = Off
+                 #endif
+            #endif
+          #endif
+
+          #ifdef Var(TXREG3)
+             //~WRITE THE DATA BYTE TO THE USART
+             //~ Sets register to value of SerData - where register could be TX2REG, TXREG2  or U2TXB  via the #samevar
+             TXREG3 = SerData
+
+             #IF USART3_DELAY <> OFF
+                //~ The USART_DELAY After all bits are shifted out
+                Wait until TXSTA3_TRMT = 1
+                //~ All bits shifted out on TX Pin
+                Wait USART3_DELAY
+             #ENDIF
+          #endif
+
+    #endif
+
+    #If USART4_BAUD_RATE Then
+       //~Registers/Bits determined by #samevar at top of file
+       #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       HSerSendUSART4Handler:
+       Case 4
+       #endif
+
+          //~HANDLE USART4
+          #ifdef USART4_TX_BLOCKING     'Blocking TX
+             #ifdef Bit(TX4IF)
+                Wait While TX4IF = Off
+             #endif
+          #endif
+
+          #ifdef USART4_BLOCKING
+            #ifndef USART4_TX_BLOCKING   //~The ifndef tests ensure the only one of USART4_BLOCKING or USART4_TX_BLOCKING is implemented
+                'USART4_BLOCKING and NOT USART4_TX_BLOCKING
+
+                 #ifdef Bit(TX4IF)
+                    Wait While TX4IF = Off
+                 #endif
+            #endif
+          #endif
+
+          #ifdef Var(TXREG4)
+             //~WRITE THE DATA BYTE TO THE USART
+             //~ Sets register to value of SerData - where register could be TX2REG, TXREG2  or U2TXB  via the #samevar
+             TXREG4 = SerData
+
+             #IF USART4_DELAY <> OFF
+                //~ The USART_DELAY After all bits are shifted out
+                Wait until TXSTA4_TRMT = 1
+                //~ All bits shifted out on TX Pin
+                Wait USART4_DELAY
+             #ENDIF
+          #endif
+
+    #endif
+
+    #If USART5_BAUD_RATE Then
+       //~Registers/Bits determined by #samevar at top of file
+       #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       HSerSendUSART5Handler:
+       Case 5
+       #endif
+
+          //~HANDLE USART5
+          #ifdef USART5_TX_BLOCKING     'Blocking TX
+             #ifdef Bit(TX5IF)
+                Wait While TX5IF = Off
+             #endif
+          #endif
+
+          #ifdef USART5_BLOCKING
+            #ifndef USART5_TX_BLOCKING   //~The ifndef tests ensure the only one of USART5_BLOCKING or USART5_TX_BLOCKING is implemented
+                'USART5_BLOCKING and NOT USART5_TX_BLOCKING
+
+                 #ifdef Bit(TX5IF)
+                    Wait While TX5IF = Off
+                 #endif
+            #endif
+          #endif
+
+          #ifdef Var(TXREG5)
+             // WRITE THE DATA BYTE TO THE USART
+             //~ Sets register to value of SerData - where register could be TX5REG, TXREG5  or U5TXB  via the #samevar
+             TXREG5 = SerData
+
+             #IF USART5_DELAY <> OFF
+                //~ The USART_DELAY After all bits are shifted out
+                Wait until TXSTA5_TRMT = 1
+                //~ All bits shifted out on TX Pin
+                Wait USART5_DELAY
+             #ENDIF
+          #endif
+
+    #endif
+
+    #if SCRIPT_USART_USAGE_CHECK > 1 Then
+    End Select
+    #endif
+
+
+  #endif
+
+
+
+  #ifdef AVR
+   //~ AVR USART1 Send
+    #If USART_BAUD_RATE Then
+      if comport = 1 Then
+
+        #ifdef USART_BLOCKING
+          #ifdef Bit(UDRE0)
+            Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
+          #endif
+
+          #ifndef Bit(UDRE0)
+            Wait While UDRE = Off
+          #endif
+        #endif
+
+        #ifdef  USART_TX_BLOCKING
+          #ifdef Bit(UDRE0)
+            Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+          #endif
+
+          #ifndef Bit(UDRE0)
+            Wait While UDRE = Off
+          #endif
+        #endif
+
+        #ifdef Var(UDR) ' ***************
+          UDR = SerData
+        #endif
+
+        #ifdef Var(HIDETHESECOMMENTEDCODE)
+        '#ifndef Var(UDR0)
+        ' #ifdef Var(UDR1)
+        '   UDR1 = SerData    '? second comport
+        ' #endif
+        '#endif
+        #endif
+        #ifdef Var(UDR0)
+          UDR0 = SerData ' *******************
+        #endif
+      End If
+    #endif
+
+  ;----------------------------------------------------
+
+    #If USART2_BAUD_RATE Then
+   'AVR USART 2 send
+      if comport = 2 Then
+        #ifdef USART2_BLOCKING
+          #ifdef Bit(UDRE1)       'comport 2 TX and Rxblocker
+              Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef USART2_TX_BLOCKING
+          #ifdef Bit(UDRE1)       'comport 2 TX blocker
+              Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef Var(UDR1)
+          UDR1 = SerData ' *****************
+        #endif
+
+      End If
+    #endif
+
+    #If USART3_BAUD_RATE Then
+   'AVR USART 3 send
+      if comport = 3 Then
+        #ifdef USART3_BLOCKING
+          #ifdef Bit(UDRE2)       'comport 3 TX and Rx blocker
+            Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef USART3_TX_BLOCKING
+          #ifdef Bit(UDRE2)       'comport 3 TX blocker
+            Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef Var(UDR2)
+            UDR2 = SerData
+        #endif
+      End If
+    #endif
+
+    #If USART4_BAUD_RATE Then
+  'AVR USART 3 send
+      if comport = 4 Then
+        #ifdef USART4_BLOCKING
+          #ifdef Bit(UDRE3)       'comport 4 TX and RX  blocker
+            Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef USART4_TX_BLOCKING
+          #ifdef Bit(UDRE3)       'comport 4 TX blocker
+            Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+          #endif
+        #endif
+
+        #ifdef Var(UDR3)
+            UDR3 = SerData
+        #endif
+
+      End If
+    #endif
+  #endif
+end sub
+
+Function HSerReceive
+  Comport = 1
+  HSerReceive( SerData )
+  HSerReceive = SerData
+End Function
+
+Function HSerReceive1
+  Comport = 1
+  HSerReceive( SerData )
+  HSerReceive1 = SerData
+End Function
+
+
+Function HSerReceive2
+  Comport = 2
+  HSerReceive( SerData )
+  HSerReceive2 = SerData
+End Function
+
+
+Function HSerReceiveFrom ( Optional in comport = 1 )
+  Comport = comport
+  HSerReceive( SerData )
+  HSerReceiveFrom = SerData
+End Function
+
+
+Sub HSerReceive(Out SerData)
+
+  #ifdef PIC
+
+    HSerReceive1Handler:
+
+      //~Ensure specific 18F are set to digital port prior to USART usage
+      #Ifdef ChipFamily 16 
+        #ifdef bit(PCFG6) 
+          PCFG6 = 1
+        #endif
+        #ifdef bit(PCFG5) 
+          PCFG5 = 1
+        #endif                
+      #Endif
+
+    //~Only set the Serdata to DefaultUsartReturnValue if needed. See the script for the examimation criteria
+    //~It has to check all 5 usarts as any or all could need the value setting.
+    #IF SCRIPT_SET_DEFAULTUSART1RETURNVALUE = 1
+      SerData = DefaultUsartReturnValue
+    #ELSE
+      #IF SCRIPT_SET_DEFAULTUSART2RETURNVALUE = 1
+        SerData = DefaultUsartReturnValue
+      #ELSE
+        #IF SCRIPT_SET_DEFAULTUSART3RETURNVALUE = 1
+          SerData = DefaultUsartReturnValue
+        #ELSE
+          #IF SCRIPT_SET_DEFAULTUSART4RETURNVALUE = 1
+            SerData = DefaultUsartReturnValue
+          #ELSE
+            #IF SCRIPT_SET_DEFAULTUSART5RETURNVALUE = 1
+              SerData = DefaultUsartReturnValue
+            #ENDIF
+          #ENDIF
+        #ENDIF
+      #ENDIF
+    #ENDIF
+
+    //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+    #if SCRIPT_USART_USAGE_CHECK > 1 Then
+    // Requires the byte variable `comport` to be set first by calling routines, this defaults to 1
+    Select Case comport
+    #endif
+
+    #If USART_BAUD_RATE Then
+
+      //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+      #if SCRIPT_USART_USAGE_CHECK > 1 Then
+       Case 1
+      #endif
+
+        #ifdef USART_BLOCKING
+           'Get a byte from register, if interrupt flag is valid
+           Wait Until USARTHasData
+        #endif
+
+        #ifdef var(U1RXB)
+
+            #ifdef USART_BLOCKING
+              SerData = U1RXB
+            #else
+              If USARTHasData Then
+                SerData = U1RXB
+              end if
+            #endif
+
+            U1RXEN = 1
+            U1ERRIR=0
+            if ( U1FERIF = 1 ) then
+                'UART1 error - restart
+                ON_U1CON1 = 0
+                ON_U1CON1 = 1
+            end if
+
+
+        #endif
+
+
+        #ifndef Var(RCREG1)
+
+            #ifndef var(U1RXB)
+              'Get a byte from register, if interrupt flag is valid
+              #ifdef USART_BLOCKING
+                  SerData = RCREG
+              #else
+                If USARTHasData Then
+                  SerData = RCREG
+                End if
+              #endif
+
+              'Clear error to ensure next in byte can happen
+              If OERR Then
+                Set CREN Off
+                Set CREN On
+              End If
+          #endif
+        #endif
+
+        #ifdef Var(RCREG1)
+
+          'Get a byte from register, if interrupt flag is valid
+          #ifdef USART_BLOCKING
+            SerData = RCREG1
+          #else
+            If USARTHasData Then
+              SerData = RCREG1
+            End if
+          #endif
+
+          #ifdef bit(OERR1)
+          'Clear error to ensure next in byte can happen
+
+            If OERR1 Then
+              Set CREN1 Off
+              Set CREN1 On
+            End If
+
+          #endif
+
+          #Ifndef bit(OERR1) '  For Chips with RCREG1 but no OEER1
+
+            #IFDEF Bit(OERR)
+              IF OERR then
+                Set CREN off
+                Set CREN On
+              END IF
+            #ENDIF
+          #ENDIF
+        #endif
+    #endif
+
+
+    #If USART2_BAUD_RATE Then
+
+      //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+      #if SCRIPT_USART_USAGE_CHECK > 1 Then
+      HSerReceive2Handler:
+      Case 2
+      #endif
+
+        #ifdef USART2_BLOCKING
+           Wait Until USART2HasData
+        #endif
+
+        #ifdef Var(RC2REG)
+
+          #ifdef Bit(RC2STA_OERR)
+              if  RC2STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC2STA_CREN = 0
+                  RC2STA_CREN = 1 
+              End IF
+          #endif
+
+         'Get a byte from register, if interrupt flag is valid
+          If USART2HasData Then
+             SerData = RC2REG
+          End if
+
+        #endif
+
+        #ifdef var(U2RXB)
+            U2RXEN = 1
+            if ( U2FERIF = 1 ) then
+                'UART2 error - clear the error
+                ON_U2CON1 = 0
+                ON_U2CON1 = 1
+            end if
+            SerData = U2RXB
+        #endif
+
+        #ifdef Var(RCREG2)
+          'Get a byte from register, if interrupt flag is valid
+          If USART2HasData Then
+              SerData = RCREG2
+          End if
+        #endif
+
+        #ifdef bit(OERR2)
+          'Clear error to ensure next in byte can happen
+            If OERR2 Then
+              Set CREN2 Off
+              Set CREN2 On
+            End If
+        #endif
+    #endif
+
+    #If USART3_BAUD_RATE Then
+
+      //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+      #if SCRIPT_USART_USAGE_CHECK > 1 Then
+      HSerReceive3Handler:
+      Case 3
+      #endif
+
+        #ifdef USART3_BLOCKING
+           Wait Until USART3HasData
+        #endif
+        
+        #ifdef var(U3RXB)
+            U3RXEN = 1
+            'If UART3 has an error - clear the error
+            if ( U3FERIF = 1 ) then
+                ON_U3CON1 = 0
+                ON_U3CON1 = 1
+            end if
+            SerData = U3RXB
+        #endif
+
+        #ifdef Var(RCREG3)
+
+          #ifdef Bit(RC3STA_OERR)
+              if  RC3STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC3STA_CREN = 0
+                  RC3STA_CREN = 1 
+              End IF
+          #endif
+
+          'Get a byte from register, if interrupt flag is valid
+          If USART3HasData Then
+            SerData = RCREG3
+          End if
+        #endif
+
+    #endif
+
+    #If USART4_BAUD_RATE Then
+
+      //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+      #if SCRIPT_USART_USAGE_CHECK > 1 Then
+      HSerReceive4Handler:
+      Case 4
+      #endif
+
+        #ifdef USART4_BLOCKING
+           Wait Until USART4HasData
+        #endif
+
+        #ifdef var(U4RXB)
+            U4RXEN = 1
+            'If UART4 has an error - clear the error
+            if ( U4FERIF = 1 ) then
+                ON_U4CON1 = 0
+                ON_U4CON1 = 1
+            end if
+            SerData = U4RXB
+        #endif
+
+        #ifdef Var(RC4REG)
+
+          #ifdef Bit(RC4STA_OERR)
+              if  RC4STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC4STA_CREN = 0
+                  RC4STA_CREN = 1 
+              End IF
+          #endif
+
+          'Get a byte from register, if interrupt flag is valid
+          If USART4HasData Then
+            SerData = RC4REG
+          End if
+        #endif
+
+    #endif
+
+    #If USART5_BAUD_RATE Then
+
+      //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+      #if SCRIPT_USART_USAGE_CHECK > 1 Then
+      HSerReceive5Handler:
+      Case 5
+      #endif
+
+        #ifdef USART5_BLOCKING
+           Wait Until USART5HasData
+        #endif
+
+        #ifdef Var(RC5REG)
+
+          #ifdef Bit(RC5STA_OERR)
+              if  RC5STA_OERR = 1 Then
+                  // EUSART5 error - restart
+                  RC5STA_CREN = 0
+                  RC5STA_CREN = 1 
+              End IF
+          #endif
+
+          'Get a byte from register, if interrupt flag is valid
+          If USART5HasData Then
+              SerData = RC5REG
+          End if
+        #endif
+
+        #ifdef var(U5RXB)
+            U5RXEN = 1
+            'If UART5 has an error - clear the error
+            if ( U5FERIF = 1 ) then
+                ON_U5CON1 = 0
+                ON_U5CON1 = 1
+            end if
+            SerData = U5RXB
+        #endif
+
+    #endif
+
+    #if SCRIPT_USART_USAGE_CHECK > 1 Then
+    End Select
+    #endif
+
+  #endif
+
+
+  #ifdef AVR
+    'AVR USART 1 receive
+    #If USART_BAUD_RATE Then
+      if comport = 1 Then
+        SerData = DefaultUsartReturnValue
+        'If set up to block, wait for data
+        #ifdef USART_BLOCKING
+        Wait Until USARTHasData
+        #endif
+        If USARTHasData Then
+          #ifndef Var(UDR0)
+            #ifdef Var(UDR1)
+              SerData = UDR1
+            #endif
+            #ifndef Var(UDR1)
+              SerData = UDR
+            #endif
+          #endif
+          #ifdef Var(UDR0)
+            SerData = UDR0
+          #endif
+        End If
+      End If
+    #endif
+
+
+    #If USART2_BAUD_RATE Then
+       'AVR USART 2 receive
+        if comport = 2 Then
+          SerData = DefaultUsartReturnValue
+          'If set up to block, wait for data
+          #ifdef USART2_BLOCKING
+          Wait Until USART2HasData
+          #endif
+          If USART2HasData Then
+            #ifdef Var(UDR1)
+              SerData = UDR1
+            #endif
+          End If
+        End If
+    #endif
+
+
+    #If USART3_BAUD_RATE Then
+        'AVR USART 3 receive
+        if comport = 3 Then
+          SerData = DefaultUsartReturnValue
+          'If set up to block, wait for data
+          #ifdef USART3_BLOCKING
+          Wait Until USART3HasData
+          #endif
+          If USART3HasData Then
+            #ifdef Var(UDR2)
+              SerData = UDR2
+            #endif
+          End If
+        End If
+      #endif
+
+
+    #If USART4_BAUD_RATE Then
+        'AVR USART 4 receive
+        if comport = 4 Then
+          SerData = DefaultUsartReturnValue
+          'If set up to block, wait for data
+          #ifdef USART4_BLOCKING
+          Wait Until USART4HasData
+          #endif
+          If USART4HasData Then
+            #ifdef Var(UDR3)
+              SerData = UDR3
+            #endif
+          End If
+        End If
+      #endif
+  #endif
+
+End Sub
+
+
+  'Added  11/4/2015 by mlo
+  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+
+  ' A number is input to a USART as a series of ASCII digits with a CR at the end
+  'Output Value is in range of 0 to 65535 (Dec)
+  'Input value is entered as decimal digits
+sub HSerGetNum (Out HSerNum As Word, optional In comport = 1)
+  Dim HSerDataIn(5)
+  HSerIndex = 0
+  HSerNum = 0
+
+  Do
+    HSerReceive( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 OR HSerIndex >= 5 Then       ' ***** look for CR  OR digits >= 5****
+      For HSerTemp = 1 to HSerIndex
+        HSerNum = HSerNum * 10 + HSerDataIn(HSerTemp) - 48
+      Next
+      Exit Sub
+    End If
+    'Number?
+    If HSerInByte >= 48 and HSerInByte <= 57 Then
+        HSerIndex++
+        HSerDataIn(HSerIndex) = HSerInByte
+    End If
+  Loop
+End Sub
+
+  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+
+  ' A number is input to a USART as a series of ASCII digits with a CR at the end
+  'Output Value is in range of 0 to 99999 (Dec)
+  'Input value is entered as decimal digits
+sub HSerGetNum (Out HSerNum As Long, optional In comport = 1)
+  Dim HSerDataIn(5)
+  HSerIndex = 0
+  HSerNum = 0
+
+  Do
+    HSerReceive( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 OR HSerIndex >= 5 Then       ' ***** look for CR  OR digits >= 5****
+      For HSerTemp = 1 to HSerIndex
+        HSerNum = HSerNum * 10 + HSerDataIn(HSerTemp) - 48
+      Next
+
+      Exit Sub
+    End If
+
+   'Number?
+    If HSerInByte >= 48 and HSerInByte <= 57 Then
+        HSerIndex++
+        HSerDataIn(HSerIndex) = HSerInByte
+    End If
+  Loop
+End Sub
+
+
+
+  'Added  11/4/2015 by mlo
+  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+
+  ' A string is input to a USART as a series of ASCII chars with a CR at the end
+  'Output Value is a string
+  'Input value is entered as digits,letters and most punctuation
+sub HSerGetString (Out HSerString As String, optional In comport = 1)
+  HSerIndex = 0
+  Do
+    comport = comport 'not really required but added for clarity
+    HSerReceive ( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 Then
+       Exit Sub
+    End If
+    'letters,numbers,punctuation
+    If HSerInByte >= 32 and HSerInByte <= 126 Then
+        HSerIndex++
+        HSerString(HSerIndex) = HSerInByte
+        HSerString(0) = HSerIndex
+    End If
+  Loop
+End Sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+sub HSerPrintStringCRLF (In PrintData As String, optional In comport = 1)
+
+  PrintLen = PrintData(0)
+
+  If PrintLen <> 0 then
+    'Write Data
+    for SysPrintTemp = 1 to PrintLen
+      HSerSend(PrintData(SysPrintTemp),comport )
+    next
+  End If
+
+  HSerSend(13,comport)
+  HSerSend(10,comport)
+
+End Sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+sub HSerPrint (In PrintData As String, optional In comport = 1)
+
+  PrintLen = PrintData(0)
+
+  If PrintLen <> 0 then
+    'Write Data
+    for SysPrintTemp = 1 to PrintLen
+      HSerSend(PrintData(SysPrintTemp),comport )
+    next
+  End If
+
+  'CR
+  'All Usarts
+  #IFDEF SerPrintCR
+    HSerSend(13,comport)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10,comport)
+  #ENDIF
+ '--------------------------
+
+  'Specific USARTs
+  #IFDEF HSerPrintCR1
+    HSerSend(13,1)
+  #ENDIF
+
+  #IFDEF HSerPrintLF1
+    HSerSend(10,1)
+  #ENDIF
+
+   #IFDEF HSerPrintCR2
+    HSerSend(13,2)
+  #ENDIF
+
+  #IFDEF HSerPrintLF2
+    HSerSend(10,2)
+  #ENDIF
+
+  #IFDEF HSerPrintCR3
+    HSerSend(13,3)
+  #ENDIF
+
+  #IFDEF HSerPrintLF3
+    HSerSend(10,3)
+  #ENDIF
+
+  #IFDEF HSerPrintCR4
+    HSerSend(13,4)
+  #ENDIF
+
+  #IFDEF HSerPrintLF4
+    HSerSend(10,4)
+  #ENDIF
+
+  #IFDEF HSerPrintCR5
+    HSerSend(13,5)
+  #ENDIF
+
+  #IFDEF HSerPrintLF5
+    HSerSend(10,5)
+  #ENDIF
+ '------------------
+
+end sub
+
+Sub HserSpace(IN Optional NumSpaces = 1, IN Optional Comport = 1)
+   Repeat Numspaces
+     Hsersend 32, Comport
+   End Repeat
+End Sub
+
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+sub HSerPrint (In SerPrintVal, optional In comport = 1)
+
+  OutValueTemp = 0
+
+  IF SerPrintVal >= 100 Then
+    OutValueTemp = SerPrintVal / 100
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport )
+
+  End If
+  If OutValueTemp > 0 Or SerPrintVal >= 10 Then
+    OutValueTemp = SerPrintVal / 10
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport )
+  End If
+  HSerSend(SerPrintVal + 48 ,comport)
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13,comport)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10,comport)
+  #ENDIF
+
+end sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+Sub HSerPrint (In SerPrintVal As Word, optional In comport = 1)
+  Dim SysCalcTempX As Word
+
+  OutValueTemp = 0
+
+  If SerPrintVal >= 10000 then
+    OutValueTemp = SerPrintVal / 10000 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport )
+    Goto HSerPrintWord1000
+  End If
+
+  If SerPrintVal >= 1000 then
+  HSerPrintWord1000:
+    OutValueTemp = SerPrintVal / 1000 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport  )
+    Goto HSerPrintWord100
+  End If
+
+  If SerPrintVal >= 100 then
+  HSerPrintWord100:
+    OutValueTemp = SerPrintVal / 100 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport )
+    Goto HSerPrintWord10
+  End If
+
+  If SerPrintVal >= 10 then
+  HSerPrintWord10:
+    OutValueTemp = SerPrintVal / 10 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48 ,comport )
+  End If
+
+  OutValueTemp = SerPrintVal
+  HSerSend(OutValueTemp + 48 ,comport  )
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13,comport)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10,comport)
+  #ENDIF
+
+End Sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+Sub HSerPrint (In SerPrintValInt As Integer, optional In comport = 1)
+  Dim SerPrintVal As Word
+
+  'If sign bit is on, print - sign and then negate
+  If SerPrintValInt.15 = On Then
+    HSerSend( 0x2D ,comport )
+
+    SerPrintVal = -SerPrintValInt
+
+  'Sign bit off, so just copy value
+  Else
+    SerPrintVal = SerPrintValInt
+  End If
+
+  'Use Print(word) to display value
+  HSerPrint SerPrintVal,comport
+End Sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+Sub HSerPrint (In SerPrintVal As Long, optional In comport = 1)
+
+  Dim SysCalcTempA As Long
+  Dim SysPrintBuffer(10)
+  SysPrintBuffLen = 0
+
+  Do
+    'Divide number by 10, remainder into buffer
+    SysPrintBuffLen += 1
+    SysPrintBuffer(SysPrintBuffLen) = SerPrintVal % 10
+    SerPrintVal = SysCalcTempA
+  Loop While SerPrintVal <> 0
+
+  'Display
+  For SysPrintTemp = SysPrintBuffLen To 1 Step -1
+    HSerSend(SysPrintBuffer(SysPrintTemp) + 48, comport  )
+  Next
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13 )
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10 )
+  #ENDIF
+
+End Sub
+
+ 'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
+Sub HserPrintByteCRLF(In PrintValue,optional In comport =1)
+  HSerPrint(PrintValue)
+  HSerSend(13,comport)
+  HSerSend(10,comport)
+End Sub
+
+Sub HserPrintCRLF  ( Optional in HSerPrintCRLFCount = 1,Optional In comport =1 )
+    repeat HSerPrintCRLFCount
+      HSerSend(13,comport)
+      HSerSend(10,comport)
+    end Repeat
+End Sub
+
+
+' NO COMPORT variable for these methods() below
+'***********  same methods, as above methods, but duplicated to remove COMPORT
+
+sub HSerSendRC(In SerData)
+
+  #ifdef AVR
+ 'AVR USART1 Send
+    #If USART_BAUD_RATE Then
+
+
+        #ifdef USART_BLOCKING
+          #ifdef Bit(UDRE0)
+            Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
+          #endif
+
+          #ifndef Bit(UDRE0)
+            Wait While UDRE = Off
+          #endif
+        #endif
+
+        #ifdef  USART_TX_BLOCKING
+          #ifdef Bit(UDRE0)
+            Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+          #endif
+
+          #ifndef Bit(UDRE0)
+            Wait While UDRE = Off
+          #endif
+        #endif
+
+        #ifdef Var(UDR) ' ***************
+          UDR = SerData
+        #endif
+
+        #ifdef Var(UDR0)
+          UDR0 = SerData ' *******************
+        #endif
+
+    #endif
+
+  #endif
+end sub
+
+
+sub HSerGetNumRC (Out HSerNum As Word)
+  Dim HSerDataIn(5)
+  HSerIndex = 0
+  HSerNum = 0
+
+  Do
+    HSerReceive( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 OR HSerIndex >= 5 Then       ' ***** look for CR  OR digits >= 5****
+      For HSerTemp = 1 to HSerIndex
+        HSerNum = HSerNum * 10 + HSerDataIn(HSerTemp) - 48
+      Next
+      Exit Sub
+    End If
+    'Number?
+    If HSerInByte >= 48 and HSerInByte <= 57 Then
+        HSerIndex++
+        HSerDataIn(HSerIndex) = HSerInByte
+    End If
+  Loop
+End Sub
+
+' A number is input to a USART as a series of ASCII digits with a CR at the end
+'Output Value is in range of 0 to 99999 (Dec)
+'Input value is entered as decimal digits
+sub HSerGetNumRC (Out HSerNum As Long)
+  Dim HSerDataIn(5)
+  HSerIndex = 0
+  HSerNum = 0
+
+  Do
+    HSerReceive( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 OR HSerIndex >= 5 Then       ' ***** look for CR  OR digits >= 5****
+      For HSerTemp = 1 to HSerIndex
+        HSerNum = HSerNum * 10 + HSerDataIn(HSerTemp) - 48
+      Next
+
+      Exit Sub
+    End If
+
+   'Number?
+    If HSerInByte >= 48 and HSerInByte <= 57 Then
+        HSerIndex++
+        HSerDataIn(HSerIndex) = HSerInByte
+    End If
+  Loop
+End Sub
+
+
+'Added  11/4/2015 by mlo
+' A string is input to a USART as a series of ASCII chars with a CR at the end
+'Output Value is a string
+'Input value is entered as digits,letters and most punctuation
+sub HSerGetStringRC (Out HSerString As String)
+  HSerIndex = 0
+  Do
+    HSerReceive ( HSerInByte )
+    'Enter key?
+    If HSerInByte = 13 Then
+       Exit Sub
+    End If
+    'letters,numbers,punctuation
+    If HSerInByte >= 32 and HSerInByte <= 126 Then
+        HSerIndex++
+        HSerString(HSerIndex) = HSerInByte
+        HSerString(0) = HSerIndex
+    End If
+  Loop
+End Sub
+
+
+sub HSerPrintStringCRLFRC (In PrintData As String)
+
+  PrintLen = PrintData(0)
+
+  If PrintLen <> 0 then
+    'Write Data
+    for SysPrintTemp = 1 to PrintLen
+      HSerSend(PrintData(SysPrintTemp) )
+    next
+  End If
+
+  HSerSend(13)
+  HSerSend(10)
+
+End Sub
+
+sub HSerPrintRC (In PrintData As String)
+
+  PrintLen = PrintData(0)
+
+  If PrintLen <> 0 then
+    'Write Data
+    for SysPrintTemp = 1 to PrintLen
+      HSerSend(PrintData(SysPrintTemp) )
+    next
+  End If
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10)
+  #ENDIF
+end sub
+
+
+
+sub HSerPrintRC (In SerPrintVal)
+
+  OutValueTemp = 0
+
+  IF SerPrintVal >= 100 Then
+    OutValueTemp = SerPrintVal / 100
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48  )
+
+  End If
+  If OutValueTemp > 0 Or SerPrintVal >= 10 Then
+    OutValueTemp = SerPrintVal / 10
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48  )
+  End If
+  OutValueTemp = SerPrintVal
+  HSerSend(OutValueTemp + 48 )
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10)
+  #ENDIF
+
+end sub
+
+Sub HSerPrintRC (In SerPrintVal As Word)
+  Dim SysCalcTempX As Word
+
+  OutValueTemp = 0
+
+  If SerPrintVal >= 10000 then
+    OutValueTemp = SerPrintVal / 10000 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48  )
+    Goto HSerPrintWord1000
+  End If
+
+  If SerPrintVal >= 1000 then
+  HSerPrintWord1000:
+    OutValueTemp = SerPrintVal / 1000 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48   )
+    Goto HSerPrintWord100
+  End If
+
+  If SerPrintVal >= 100 then
+  HSerPrintWord100:
+    OutValueTemp = SerPrintVal / 100 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48  )
+    Goto HSerPrintWord10
+  End If
+
+  If SerPrintVal >= 10 then
+  HSerPrintWord10:
+    OutValueTemp = SerPrintVal / 10 [word]
+    SerPrintVal = SysCalcTempX
+    HSerSend(OutValueTemp + 48  )
+  End If
+  OutValueTemp = SerPrintVal
+  HSerSend(OutValueTemp + 48   )
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13)
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10)
+  #ENDIF
+
+End Sub
+
+Sub HSerPrintRC (In SerPrintValInt As Integer)
+  Dim SerPrintVal As Word
+
+  'If sign bit is on, print - sign and then negate
+  If SerPrintValInt.15 = On Then
+    HSerSend("-" )
+
+    SerPrintVal = -SerPrintValInt
+
+  'Sign bit off, so just copy value
+  Else
+    SerPrintVal = SerPrintValInt
+  End If
+
+  'Use Print(word) to display value
+  HSerPrint SerPrintVal
+End Sub
+
+Sub HSerPrintRC (In SerPrintVal As Long)
+
+  Dim SysCalcTempA As Long
+  Dim SysPrintBuffer(10)
+  SysPrintBuffLen = 0
+
+  Do
+    'Divide number by 10, remainder into buffer
+    SysPrintBuffLen += 1
+    SysPrintBuffer(SysPrintBuffLen) = SerPrintVal % 10
+    SerPrintVal = SysCalcTempA
+  Loop While SerPrintVal <> 0
+
+  'Display
+  For SysPrintTemp = SysPrintBuffLen To 1 Step -1
+    HSerSend(SysPrintBuffer(SysPrintTemp) + 48 )
+  Next
+
+  'CR
+  #IFDEF SerPrintCR
+    HSerSend(13 )
+  #ENDIF
+
+  #IFDEF SerPrintLF
+    HSerSend(10 )
+  #ENDIF
+
+End Sub
+
+Sub HserPrintByteCRLFRC(In PrintValue )
+  HSerPrint(PrintValue)
+  HSerSend(13)
+  HSerSend(10)
+End Sub
+
+Sub HserPrintCRLFRC( Optional in HSerPrintCRLFCount = 1 )
+    repeat HSerPrintCRLFCount
+      HSerSend(13)
+      HSerSend(10)
+    end Repeat
+End Sub
+
+
+Function HSerReceiveRC
+  HSerReceiveRC( SerData )
+  HSerReceiveRC = SerData
+End Function
+
+Sub HSerReceiveRC(Out SerData)
+
+  /* Removal of PIC section at build 1176 - to validate that this section is not required as HSerReceiveRC is for AVR family 121 chips ONLY - so, AVRs!!
+    //~ Needs comport to be set first by calling routines
+    #ifdef PIC
+
+      #If USART_BAUD_RATE Then
+
+        if comport = 1 Then
+
+          SerData = DefaultUsartReturnValue
+
+          #ifdef USART_BLOCKING
+            'If set up to block, wait for data
+            Wait Until USARTHasData
+          #endif
+
+          #ifdef var(U1RXB)
+
+              If USARTHasData Then
+                SerData = U1RXB
+              end if
+
+              U1RXEN = 1
+              U1ERRIR=0
+              if ( U1FERIF = 1 ) then
+                  'UART1 error - restart
+                  ON_U1CON1 = 0
+                  ON_U1CON1 = 1
+              end if
+
+
+          #endif
+
+
+          #ifndef Var(RCREG1)
+              #ifndef var(U1RXB)
+                'Get a byte from register, if interrupt flag is valid
+                If USARTHasData Then
+                  SerData = RCREG
+                End if
+
+                'Clear error to ensure next in byte can happen
+                If OERR Then
+                  Set CREN Off
+                  Set CREN On
+                End If
+            #endif
+          #endif
+
+          #ifdef Var(RCREG1)
+            'Get a byte from register, if interrupt flag is valid
+            If USARTHasData Then
+              SerData = RCREG1
+            End if
+
+            #ifdef bit(OERR1)
+            'Clear error to ensure next in byte can happen
+
+              If OERR1 Then
+                Set CREN1 Off
+                Set CREN1 On
+              End If
+
+            #endif
+
+            #Ifndef bit(OERR1) '  For Chips with RCREG1 but no OEER1
+
+              #IFDEF Bit(OERR)
+                IF OERR then
+                  Set CREN off
+                  Set CREN On
+                END IF
+              #ENDIF
+
+            #ENDIF
+          #endif
+        end if
+      #endif
+
+
+      #If USART2_BAUD_RATE Then
+        'PIC USART 2 receive
+        if comport = 2 Then
+          SerData = DefaultUsartReturnValue
+
+          #ifdef USART2_BLOCKING
+            Wait Until USART2HasData
+          #endif
+
+          #ifdef Var(RC2REG)
+
+          'Get a byte from register, if interrupt flag is valid
+            If USART2HasData Then
+              SerData = RC2REG
+            End if
+
+          #endif
+
+          #ifdef var(U2RXB)
+              U2RXEN = 1
+              'Wait Until USARTHasData
+              if ( U2FERIF = 1 ) then
+                  'UART1 error - restart
+                  ON_U2CON1 = 0
+                  ON_U2CON1 = 1
+              end if
+              SerData = U2RXB
+          #endif
+
+          #ifdef Var(RCREG2)
+            'Get a byte from register, if interrupt flag is valid
+            If USART2HasData Then
+              SerData = RCREG2
+            End if
+          #endif
+
+          #ifdef bit(OERR2)
+            'Clear error to ensure next in byte can happen
+              If OERR2 Then
+                Set CREN2 Off
+                Set CREN2 On
+              End If
+          #endif
+        end if
+      #endif
+    #endif
+  */
+
+    #ifdef AVR
+      'AVR USART 1 receive
+      #If USART_BAUD_RATE Then
+          SerData = DefaultUsartReturnValue
+          'If set up to block, wait for data
+          #ifdef USART_BLOCKING
+          Wait Until USARTHasData
+          #endif
+          If USARTHasData Then
+            #ifndef Var(UDR0)
+              #ifdef Var(UDR1)
+                SerData = UDR1
+              #endif
+              #ifndef Var(UDR1)
+                SerData = UDR
+              #endif
+            #endif
+            #ifdef Var(UDR0)
+              SerData = UDR0
+            #endif
+          End If
+      #endif
+
+    #endif
+
+End Sub
