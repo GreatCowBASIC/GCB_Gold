@@ -522,6 +522,7 @@ declare Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
 declare Sub UpdateSubMap
 declare Sub UpgradeCalcVar (VarName As String, VarType As String)
 declare Sub ValueChanged(VarName As String, VarValue As String)
+declare Sub ValidateParameterIsValid ( inline as String, FunctionParam as String, Origin as String )
 declare FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
 declare Sub WriteAssembly
 declare Sub WriteCompilationReport
@@ -806,8 +807,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.3.9"
-buildVersion = "1364"
+Version = "2024.3.16"
+buildVersion = "1369"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -3724,6 +3725,7 @@ Sub CompileSubroutine(CompSub As SubType Pointer)
 
   'Compile calls to other subroutines, insert macros
   If ExtendedVerboseMessages Then Print Spc(15); "Compiling sub calls"
+
   CompileSubCalls (CompSub)
 
   'Compile DIMs again, in case any come through from macros
@@ -9038,10 +9040,14 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
             End If
             If SourceArrayPtr = 0 Then
               'This should never run
-              Color 12
-              Print "Internal error in CompileSubCall: Function " + ReplaceFnNames(SourceArray) + " exists but its variable does not"
-              Print "(in " + .Caller->Name + ", calling " + SourceArray + ")"
-              Color 7
+'              Color 12
+'              Print "Internal error in CompileSubCall: A GCBASIC library method " + ReplaceFnNames(SourceArray) + " exists but the return variable does not. Is this a call to a Subroutine rather than a Function? "
+'              Print "(in " + .Caller->Name + ", calling " + SourceArray + ")"
+'              Color 7
+              Dim temp as String
+              Temp = Message( "CannotHandleFunctionCall")
+              Replace ( Temp, "%fn" , ReplaceFnNames(SourceArray) )
+              LogError Temp, .Origin
               GoTo CompileNextParam
             End If
 
@@ -9054,7 +9060,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
             SourceArrayPtr = VarAddress(ReplaceFnNames(SourceArray), .Caller)
             If Cast( Integer, SourceArrayPtr ) = INVALIDARRAYVALUE Then
                 Dim Temp as String
-                Temp = Message("CannotHandleConstruction")
+                Temp = Message("CannotHandleArrayConstruction")
                 LogError Temp, .Origin
                 GoTo CompileNextParam
             End If
@@ -9348,6 +9354,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
           'Extract parameters from brackets if brackets used
           If FirstBracketLoc <> -1 And LastBracketLoc > 0 Then
             FunctionParams = Trim(Mid(AfterFn, FirstBracketLoc + 1, LastBracketLoc - FirstBracketLoc - 1))
+            
             'For a subroutine, remove anything after parameters
             If Subroutine(CurrSub)->IsFunction Then
               AfterFn = Mid(AfterFn, LastBracketLoc + 1)
@@ -9365,6 +9372,8 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
               AfterFn = ""
             End If
           End If
+
+          ValidateParameterIsValid( Subroutine(CurrSub)->Name, FunctionParams, Origin )
 
           'Remove origin from FunctionParams
           IF INSTR(FunctionParams, ";?F") <> 0 Then
@@ -10542,8 +10551,8 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     'sconst > bit
     Case "SCONST":
       ' support could be added this to catch silent compilation with no ASM  
-      Temp = Message("SynErrIncorrectBitDestination")
-      LogError Temp, Origin
+      'Temp = Message("SynErrIncorrectBitDestination")
+      'LogError Temp, Origin
 
       If ModePIC Then
 
@@ -10595,6 +10604,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'string > byte
     Case "STRING":
+
+      'Temp = Message("SynErrIncorrectByteDestination")
+      'LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10604,8 +10617,8 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     'sconst > byte
     Case "SCONST":
       ' support could be added this to catch silent compilation with no ASM  
-      Temp = Message("SynErrIncorrectByteDestination")
-      LogError Temp, Origin
+      'Temp = Message("SynErrIncorrectByteDestination")
+      'LogError Temp, Origin
 
       If ModePIC Then
 
@@ -10657,6 +10670,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'string > word
     Case "STRING":
+
+      'Temp = Message("SynErrIncorrectWordDestination")
+      'LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10666,8 +10683,8 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     'sconst > word
     Case "SCONST":
       ' support could be added this to catch silent compilation with no ASM  
-      Temp = Message("SynErrIncorrectWordDestination")
-      LogError Temp, Origin
+      'Temp = Message("SynErrIncorrectWordDestination")
+      'LogError Temp, Origin
 
       If ModePIC Then
 
@@ -10722,6 +10739,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
 
     'string > long
     Case "STRING":
+
+      'Temp = Message("SynErrIncorrectLongDestination")
+      'LogError Temp, Origin
+
       If ModePIC Then
 
       ElseIf ModeAVR Then
@@ -10731,8 +10752,8 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     'sconst > long
     Case "SCONST":
       ' support could be added this to catch silent compilation with no ASM  
-      Temp = Message("SynErrIncorrectLongDestination")
-      LogError Temp, Origin
+      'Temp = Message("SynErrIncorrectLongDestination")
+      'LogError Temp, Origin
 
       If ModePIC Then
 
@@ -10785,6 +10806,9 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     'string > single
     Case "STRING":
 
+      'Temp = Message("SynErrIncorrectSingleDestination")
+      'LogError Temp, Origin
+
       ' HANDLED ELSEWHERE    LogError "ErrorTemp 1", Origin
 
       If ModePIC Then
@@ -10809,8 +10833,8 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     Case "SCONST":
 
       ' support could be added this to catch silent compilation with no ASM  
-      Temp = Message("SynErrIncorrectSingleDestination")
-      LogError Temp, Origin
+      'Temp = Message("SynErrIncorrectSingleDestination")
+      'LogError Temp, Origin
 
       If ModePIC Then
 
@@ -12577,6 +12601,8 @@ Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub 
 
   IF ArrayPtr = Cast( VariableType Pointer, INVALIDARRAYVALUE ) THEN
     Temp = Message("CannotHandleConstruction")
+    Replace Temp, "%var%", DestVar
+    Replace Temp, "%sub%", CurrSub->Name    
     LogError Temp, Origin
     Return OutList
   END IF
@@ -17066,19 +17092,6 @@ Sub ReadOptions(OptionsIn As String)
     'Ignore Explicit (should have been read earlier)
     If CurrElement->Value = "EXPLICIT" Then
       'Do nothing
-
-    ElseIf CurrElement->Value = "FLOATS" Then
-      If  CurrElement->Next <> 0 Then
-        If IsConst(CurrElement->Next->Value) Then
-          floatcapability = MakeDec(CurrElement->Next->Value)
-          CurrElement = CurrElement->Next
-          VersionSuffix = Str(floatcapability)
-        Else
-          LogError message("NOFLOATPARAMETER"), ""
-        End If
-      Else
-        LogError message("NOFLOATPARAMETER"), ""
-      End If
 
     'Get bootloader setting
     ElseIf CurrElement->Value = "BOOTLOADER" Then

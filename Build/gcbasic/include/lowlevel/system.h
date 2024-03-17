@@ -92,6 +92,7 @@
 '               Added common memory block for singles APPNOTE00575MEMORY()
 '               Added SysModSubSingle
 '    09032024 - Renamed all APPNOTE00575MEMORY variables and constants
+'    12032024 - Added development comments
 
 'Constants
 #define ON 1
@@ -2038,23 +2039,28 @@ end sub
 ' - SysSingleTemp
 
 sub SysIntToString
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  !
 end sub
 
 sub SysSingleToString
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  !
 end sub
 
 sub SysStringToVal
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  !
 end sub
 
 sub SysStringToInt
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  !  
 end sub
 
 sub SysStringToSingle
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  !  
 end sub
 
 Sub SysConvIntegerToSingle
@@ -2915,7 +2921,11 @@ sub SysMultSubSingle
 
       _SysMultSubSingle
 
+    #IF VAR(WREG)
+      SysByteTempX = WREG
+    #ELSE
       MOVLW SysByteTempX
+    #ENDIF
 
     #IFDEF SYSSINGLECALCS_DEBUG
       HserPrint "*out _AARGB HEX "
@@ -3080,14 +3090,22 @@ Sub _SysMultSubSingle
     RRF _AARGB0,F
     RETLW 0xFF ; return error code in WREG
   #ENDIF
-  #IFDEF PIC
+  #IFDEF AVR
+  //! Not implemented
+  //!  See https://avr-asm.tripod.com/math32x.html
+  //!
+  //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+  //!
   #ENDIF
 end sub
 
 Sub SYSMULTSUBDOUBLE
+  //! Not implemented
+  //!  
+  //! This should be easy to implement as the PIC routines already support - needs testing
   //!
-  //! Double not supported
-  !
+  //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+  //!
 END SUB
 
 '********************************************************************************
@@ -3399,7 +3417,11 @@ sub SysDivSubSingle
 
       _SysDivSubSingle
 
+    #IF VAR(WREG)
+      SysByteTempX = WREG
+    #ELSE
       MOVLW SysByteTempX
+    #ENDIF
 
     #IFDEF SYSSINGLECALCS_DEBUG
       HserPrint "/out _AARGB HEX "
@@ -3437,232 +3459,237 @@ end sub
 sub _SysDivSubSingle
 
   #IFDEF PIC
-  // Variables for the Microchip AppNote
-  AppNote00575Memory
+    // Variables for the Microchip AppNote
+    AppNote00575Memory
 
-  ;**********************************************************************************************
-  ;**********************************************************************************************
-  ; Floating Point Divide
-  ; Input: 32 bit floating point dividend in _AEXP, _AARGB0, _AARGB1, _AARGB2
-  ; 32 bit floating point divisor in _BEXP, _BARGB0, _BARGB1, _BARGB2
-  ; Use: CALL FPD32
-  ; Output: 32 bit floating point quotient in _AEXP, _AARGB0, _AARGB1, _AARGB2
-  ; Result: AARG <-- AARG / BARG
-  ; Max Timing: 43+12+23*36+35+14 = 932 clks RND = 0
-  ; 43+12+23*36+35+50 = 968 clks RND = 1, SAT = 0
-  ; 43+12+23*36+35+53 = 971 clks RND = 1, SAT = 1
-  ; Min Timing: 7+6 = 13 clks
-  ; PM: 155 DM: 14
-  ;----------------------------------------------------------------------------------------------
-  FPD32:
-  MOVF _BEXP,W ; test for divide by zero
-  BTFSC cZ
-  GOTO SETFDZ32
-  MOVF _AEXP,W
-  BTFSC cZ
-  GOTO RES032b
-  D32BNE0:
-  MOVF _AARGB0,W
-  XORWF _BARGB0,W
-  MOVWF _SIGN ; save sign in SIGN
-  BSF _AARGB0,cMSB ; make argument MSB’s explicit
-  BSF _BARGB0,cMSB
-  TALIGN32:
-  CLRF _TEMP ; clear align increment
-  MOVF _AARGB0,W
-  MOVWF _AARGB3 ; test for alignment
-  MOVF _AARGB1,W
-  MOVWF _AARGB4
-  MOVF _AARGB2,W
-  MOVWF _AARGB5
-  MOVF _BARGB2,W
-  SUBWF _AARGB5,F
-  MOVF _BARGB1,W
-  BTFSS cStatusC
-  INCFSZ _BARGB1,W
-  TS1ALIGN32:
-  SUBWF _AARGB4,F
-  MOVF _BARGB0,W
-  BTFSS cStatusC
-  INCFSZ _BARGB0,W
-  TS2ALIGN32:
-  SUBWF _AARGB3,F
-  CLRF _AARGB3
-  CLRF _AARGB4
-  CLRF _AARGB5
-  BTFSS cStatusC
-  GOTO DALIGN32OK
-  BCF cStatusC ; align if necessary
-  RRF _AARGB0,F
-  RRF _AARGB1,F
-  RRF _AARGB2,F
-  RRF _AARGB3,F
-  MOVLW 0x01
-  MOVWF _TEMP ; save align increment
-  DALIGN32OK:
-  MOVF _BEXP,W ; compare _AEXP and _BEXP
-  SUBWF _EXP,F
-  BTFSS cStatusC
-  GOTO ALTB32
+    ;**********************************************************************************************
+    ;**********************************************************************************************
+    ; Floating Point Divide
+    ; Input: 32 bit floating point dividend in _AEXP, _AARGB0, _AARGB1, _AARGB2
+    ; 32 bit floating point divisor in _BEXP, _BARGB0, _BARGB1, _BARGB2
+    ; Use: CALL FPD32
+    ; Output: 32 bit floating point quotient in _AEXP, _AARGB0, _AARGB1, _AARGB2
+    ; Result: AARG <-- AARG / BARG
+    ; Max Timing: 43+12+23*36+35+14 = 932 clks RND = 0
+    ; 43+12+23*36+35+50 = 968 clks RND = 1, SAT = 0
+    ; 43+12+23*36+35+53 = 971 clks RND = 1, SAT = 1
+    ; Min Timing: 7+6 = 13 clks
+    ; PM: 155 DM: 14
+    ;----------------------------------------------------------------------------------------------
+    FPD32:
+    MOVF _BEXP,W ; test for divide by zero
+    BTFSC cZ
+    GOTO SETFDZ32
+    MOVF _AEXP,W
+    BTFSC cZ
+    GOTO RES032b
+    D32BNE0:
+    MOVF _AARGB0,W
+    XORWF _BARGB0,W
+    MOVWF _SIGN ; save sign in SIGN
+    BSF _AARGB0,cMSB ; make argument MSB’s explicit
+    BSF _BARGB0,cMSB
+    TALIGN32:
+    CLRF _TEMP ; clear align increment
+    MOVF _AARGB0,W
+    MOVWF _AARGB3 ; test for alignment
+    MOVF _AARGB1,W
+    MOVWF _AARGB4
+    MOVF _AARGB2,W
+    MOVWF _AARGB5
+    MOVF _BARGB2,W
+    SUBWF _AARGB5,F
+    MOVF _BARGB1,W
+    BTFSS cStatusC
+    INCFSZ _BARGB1,W
+    TS1ALIGN32:
+    SUBWF _AARGB4,F
+    MOVF _BARGB0,W
+    BTFSS cStatusC
+    INCFSZ _BARGB0,W
+    TS2ALIGN32:
+    SUBWF _AARGB3,F
+    CLRF _AARGB3
+    CLRF _AARGB4
+    CLRF _AARGB5
+    BTFSS cStatusC
+    GOTO DALIGN32OK
+    BCF cStatusC ; align if necessary
+    RRF _AARGB0,F
+    RRF _AARGB1,F
+    RRF _AARGB2,F
+    RRF _AARGB3,F
+    MOVLW 0x01
+    MOVWF _TEMP ; save align increment
+    DALIGN32OK:
+    MOVF _BEXP,W ; compare _AEXP and _BEXP
+    SUBWF _EXP,F
+    BTFSS cStatusC
+    GOTO ALTB32
 
-  AGEB32:
-  MOVLW cEXPBIAS-1
-  ADDWF _Temp,W
-  ADDWF _EXP,F
-  BTFSC cStatusC
-  GOTO SETFOV32b
-  GOTO DARGOK32 ; set overflow flag
-  ALTB32:
-  MOVLW cEXPBIAS-1
-  ADDWF _TEMP,W
-  ADDWF _EXP,F
-  BTFSS cStatusC
-  GOTO SETFUN32b ; set underflow flag
-  DARGOK32:
-  MOVLW 24 ; initialize counter
-  MOVWF _TEMPB1
-  DLOOP32:
-  RLF _AARGB5,F ; left shift
-  RLF _AARGB4,F
-  RLF _AARGB3,F
-  RLF _AARGB2,F
-  RLF _AARGB1,F
-  RLF _AARGB0,F
-  RLF _Temp,F
-  MOVF _BARGB2,W ; subtract
-  SUBWF _AARGB2,F
-  MOVF _BARGB1,W
-  BTFSS cStatusC
-  INCFSZ _BARGB1,W
-  DS132:
-  SUBWF _AARGB1,F
-  MOVF _BARGB0,W
-  BTFSS cStatusC
-  INCFSZ _BARGB0,W
-  DS232:
-  SUBWF _AARGB0,F
-  RLF _BARGB0,W
-  IORWF _Temp,F
+    AGEB32:
+    MOVLW cEXPBIAS-1
+    ADDWF _Temp,W
+    ADDWF _EXP,F
+    BTFSC cStatusC
+    GOTO SETFOV32b
+    GOTO DARGOK32 ; set overflow flag
+    ALTB32:
+    MOVLW cEXPBIAS-1
+    ADDWF _TEMP,W
+    ADDWF _EXP,F
+    BTFSS cStatusC
+    GOTO SETFUN32b ; set underflow flag
+    DARGOK32:
+    MOVLW 24 ; initialize counter
+    MOVWF _TEMPB1
+    DLOOP32:
+    RLF _AARGB5,F ; left shift
+    RLF _AARGB4,F
+    RLF _AARGB3,F
+    RLF _AARGB2,F
+    RLF _AARGB1,F
+    RLF _AARGB0,F
+    RLF _Temp,F
+    MOVF _BARGB2,W ; subtract
+    SUBWF _AARGB2,F
+    MOVF _BARGB1,W
+    BTFSS cStatusC
+    INCFSZ _BARGB1,W
+    DS132:
+    SUBWF _AARGB1,F
+    MOVF _BARGB0,W
+    BTFSS cStatusC
+    INCFSZ _BARGB0,W
+    DS232:
+    SUBWF _AARGB0,F
+    RLF _BARGB0,W
+    IORWF _Temp,F
 
-  BTFSS _Temp,cLSB ; test for restore
-  GOTO DREST32
-  BSF _AARGB5,cLSB
-  GOTO DOK32
-  DREST32:
-  MOVF _BARGB2,W ; restore if necessary
-  ADDWF _AARGB2,F
-  MOVF _BARGB1,W
-  BTFSC cStatusC
+    BTFSS _Temp,cLSB ; test for restore
+    GOTO DREST32
+    BSF _AARGB5,cLSB
+    GOTO DOK32
+    DREST32:
+    MOVF _BARGB2,W ; restore if necessary
+    ADDWF _AARGB2,F
+    MOVF _BARGB1,W
+    BTFSC cStatusC
 
-  INCFSZ _BARGB1,W
-  DAREST32:
-  ADDWF _AARGB1,F
-  MOVF _BARGB0,W
-  BTFSC cStatusC
-  INCF _BARGB0,W
-  ADDWF _AARGB0,F
-  BCF _AARGB5,cLSB
-  DOK32:
-  DECFSZ _TEMPB1,F
-  GOTO DLOOP32
-  DROUND32:
-  BTFSC _FPFLAGS,cRND
-  BTFSS _AARGB5,cLSB
-  GOTO DIV32OK
-  BCF cStatusC
-  RLF _AARGB2,F ; compute next significant bit
-  RLF _AARGB1,F ; for rounding
-  RLF _AARGB0,F
-  RLF _Temp,F
-  MOVF _BARGB2,W ; subtract
-  SUBWF _AARGB2,F
-  MOVF _BARGB1,W
-  BTFSS cStatusC
-  INCFSZ _BARGB1,W
-  SUBWF _AARGB1,F
-  MOVF _BARGB0,W
-  BTFSS cStatusC
-  INCFSZ _BARGB0,W
-  SUBWF _AARGB0,F
-  RLF _BARGB0,W
-  IORWF _Temp,W
-  ANDLW 0x01
-  ADDWF _AARGB5,F
-  BTFSC cStatusC
-  INCF _AARGB4,F
-  BTFSC cZ
-  INCF _AARGB3,F
-  BTFSS cZ ; test if rounding caused carryout
-  GOTO DIV32OK
-  RRF _AARGB3,F
-  RRF _AARGB4,F
-  RRF _AARGB5,F
-  INCF _EXP,F
-  BTFSC cZ ; test for overflow
-  GOTO SETFOV32b
-  DIV32OK:
-  BTFSS _SIGN,cMSB
-  BCF _AARGB3,cMSB ; clear explicit MSB if positive
-  MOVF _AARGB3,W
-  MOVWF _AARGB0 ; move result to AARG
-  MOVF _AARGB4,W
-  MOVWF _AARGB1
-  MOVF _AARGB5,W
-  MOVWF _AARGB2
-  RETLW 0
+    INCFSZ _BARGB1,W
+    DAREST32:
+    ADDWF _AARGB1,F
+    MOVF _BARGB0,W
+    BTFSC cStatusC
+    INCF _BARGB0,W
+    ADDWF _AARGB0,F
+    BCF _AARGB5,cLSB
+    DOK32:
+    DECFSZ _TEMPB1,F
+    GOTO DLOOP32
+    DROUND32:
+    BTFSC _FPFLAGS,cRND
+    BTFSS _AARGB5,cLSB
+    GOTO DIV32OK
+    BCF cStatusC
+    RLF _AARGB2,F ; compute next significant bit
+    RLF _AARGB1,F ; for rounding
+    RLF _AARGB0,F
+    RLF _Temp,F
+    MOVF _BARGB2,W ; subtract
+    SUBWF _AARGB2,F
+    MOVF _BARGB1,W
+    BTFSS cStatusC
+    INCFSZ _BARGB1,W
+    SUBWF _AARGB1,F
+    MOVF _BARGB0,W
+    BTFSS cStatusC
+    INCFSZ _BARGB0,W
+    SUBWF _AARGB0,F
+    RLF _BARGB0,W
+    IORWF _Temp,W
+    ANDLW 0x01
+    ADDWF _AARGB5,F
+    BTFSC cStatusC
+    INCF _AARGB4,F
+    BTFSC cZ
+    INCF _AARGB3,F
+    BTFSS cZ ; test if rounding caused carryout
+    GOTO DIV32OK
+    RRF _AARGB3,F
+    RRF _AARGB4,F
+    RRF _AARGB5,F
+    INCF _EXP,F
+    BTFSC cZ ; test for overflow
+    GOTO SETFOV32b
+    DIV32OK:
+    BTFSS _SIGN,cMSB
+    BCF _AARGB3,cMSB ; clear explicit MSB if positive
+    MOVF _AARGB3,W
+    MOVWF _AARGB0 ; move result to AARG
+    MOVF _AARGB4,W
+    MOVWF _AARGB1
+    MOVF _AARGB5,W
+    MOVWF _AARGB2
+    RETLW 0
 
-  SETFDZ32:
-  BSF _FPFLAGS,cFDZ ; set divide by zero flag
-  RETLW 0xFF
+    SETFDZ32:
+    BSF _FPFLAGS,cFDZ ; set divide by zero flag
+    RETLW 0xFF
+
+        // Additional routine from AppNote
+        SETFUN32b: 
+        BSF _FPFLAGS,cFUN ; set floating point underflag
+        BTFSS _FPFLAGS,cSAT ; test for saturation
+        RETLW 0xFF ; return error code in WREG
+        MOVLW 0x01 ; saturate to smallest floating
+        MOVWF _AEXP ; point number = 0x 01 00 00 00
+        CLRF _AARGB0 ; modulo the appropriate sign bit
+        CLRF _AARGB1
+        CLRF _AARGB2
+        RLF _SIGN,F
+        RRF _AARGB0,F
+        RETLW 0xFF ; return error code in WREG
+
+        SETFOV32b:
+        BSF _FPFLAGS,cFOV ; set floating point underflag
+        BTFSS _FPFLAGS,cSAT ; test for saturation
+        RETLW 0xFF ; return error code in WREG
+        MOVLW 0xFF
+        MOVWF _AEXP ; saturate to largest floating
+        MOVWF _AARGB0 ; point number = 0x FF 7F FF FF
+        MOVWF _AARGB1 ; modulo the appropriate sign bit
+        MOVWF _AARGB2
+        RLF _SIGN,F
+        RRF _AARGB0,F
+        RETLW 0xFF ; return error code in WREG
 
       // Additional routine from AppNote
-      SETFUN32b: 
-      BSF _FPFLAGS,cFUN ; set floating point underflag
-      BTFSS _FPFLAGS,cSAT ; test for saturation
-      RETLW 0xFF ; return error code in WREG
-      MOVLW 0x01 ; saturate to smallest floating
-      MOVWF _AEXP ; point number = 0x 01 00 00 00
-      CLRF _AARGB0 ; modulo the appropriate sign bit
-      CLRF _AARGB1
-      CLRF _AARGB2
-      RLF _SIGN,F
-      RRF _AARGB0,F
-      RETLW 0xFF ; return error code in WREG
-
-      SETFOV32b:
-      BSF _FPFLAGS,cFOV ; set floating point underflag
-      BTFSS _FPFLAGS,cSAT ; test for saturation
-      RETLW 0xFF ; return error code in WREG
-      MOVLW 0xFF
-      MOVWF _AEXP ; saturate to largest floating
-      MOVWF _AARGB0 ; point number = 0x FF 7F FF FF
-      MOVWF _AARGB1 ; modulo the appropriate sign bit
-      MOVWF _AARGB2
-      RLF _SIGN,F
-      RRF _AARGB0,F
-      RETLW 0xFF ; return error code in WREG
-
-    // Additional routine from AppNote
-      RES032b:
-      CLRF _AARGB0 ; result equals zero
-      CLRF _AARGB1
-      CLRF _AARGB2
-      CLRF _AARGB3
-      CLRF _EXP
-      RETLW 0
-  #ENDIF
+        RES032b:
+        CLRF _AARGB0 ; result equals zero
+        CLRF _AARGB1
+        CLRF _AARGB2
+        CLRF _AARGB3
+        CLRF _EXP
+        RETLW 0
+    #ENDIF
 
   #IFDEF AVR
+    //! Not implemented
+    //!  See https://avr-asm.tripod.com/math32x.html
     //!
-    //! AVR Not supported
-    !
+    //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+    //!
   #ENDIF
 end sub
 
 Sub SYSDIVSUBDOUBLE
+  //! Not implemented
+  //!  
+  //! This should be easy to implement as the PIC routines already support - needs testing
   //!
-  //! Double not supported
-  !
+  //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+  //!
 End Sub
 
 Macro AppNote00575Memory
@@ -3689,6 +3716,8 @@ Macro AppNote00575Memory
     Dim _BARGB0    as Byte Alias SysCalcSingleVariables + 12
     Dim _BEXP      as Byte Alias SysCalcSingleVariables + 13
 
+    Dim _SIG_FIG   as Byte Alias SysCalcSingleVariables + 14
+    
     Dim _TEMPB1    as Byte Alias SysCalcSingleVariables + 16
     Dim _TEMP      as Byte Alias SysCalcSingleVariables + 17
     Dim _TEMPB0    as Byte Alias SysCalcSingleVariables + 17
@@ -3739,7 +3768,8 @@ End Macro
 'Negate
 'Only needed for Single, Integer negation compiled inline
 sub SysNegateSingle
-
+  // ! Please reported to development team on https://sourceforge.net/p/gcbasic/discussion/ use the Compiler Issue Forum
+  ! 
 end sub
 
 '********************************************************************************
@@ -4445,9 +4475,12 @@ Sub _SYSCOMPLESSTHANSINGLE
     RETLW 0x00
   #ENDIF
   #IFDEF AVR
+    //! Not implemented
+    //!  
+    //! This should be easy to implement as the PIC routines already support - needs testing
     //!
-    //! Not supported
-    !
+    //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+    //!
   #ENDIF
 End Sub
 

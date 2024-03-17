@@ -2451,3 +2451,30 @@ Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret()
    Ret(Count) = Mid(Text, RetVal(Count - 1) + 1)
 
 End Sub
+
+Sub ValidateParameterIsValid (  inline as String, FunctionParam as String, Origin as String )
+  ' This can be expanded to read reference data,and, it can cover many more rules
+  ' Currenly supports
+  '    READAD() - ensures first paramters is NOT an IO port or an SFR
+
+
+  Dim Temp as String 
+
+    ' Handle READAD. This handle one or more parameters. However, this current checks the first parameter only. This can be expanded
+    ' Check the call to READAD does not break when using an IO port and the READAD parameter    
+    If Instr( UCAsE(inline), "READAD") > 0 Then
+
+      If Instr(FunctionParam, ",") > 0 Then 
+        ' Get first parameter
+        FunctionParam = Trim(Left( FunctionParam, Instr(FunctionParam, ",")-1 ))
+      End If 
+
+      ' If IO name, or is an SFR then this is not valid. 
+      If IsIOPinName(Trim(FunctionParam)) or HasSFR(Trim(FunctionParam)) or HasSFR( Mid(Trim(FunctionParam),1, Instr(Trim(FunctionParam),".")-1 )) Then
+          Temp = Message("BadADCConstName")
+          Replace ( Temp, "%const%", FunctionParam )
+          LogError Temp, Origin
+      End If 
+    End If
+
+End Sub
