@@ -1,4 +1,4 @@
-#option explicit
+'    #option explicit
 '    System routines for GCBASIC
 '    Copyright (C) 2006-2024 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
@@ -2337,7 +2337,7 @@ End Sub
 
 Sub SysConvDoubleToLong
   Dim SysCalcExpA As Word Alias SysDoubleTemp_D, SysDoubleTemp_C
-
+  Dim SysCalcMantA
   'Get mantissa (split between output var, and with extra bits in SysCalcMantA)
   'This has essentially been shifted right 3 into SysCalcMantA
   SysLongTemp_E = SysDoubleTemp_C And 0x0F
@@ -3095,7 +3095,7 @@ Sub _SysMultSubSingle
   //!  See https://avr-asm.tripod.com/math32x.html
   //!
   //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
-  //!
+  !
   #ENDIF
 end sub
 
@@ -3105,7 +3105,7 @@ Sub SYSMULTSUBDOUBLE
   //! This should be easy to implement as the PIC routines already support - needs testing
   //!
   //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
-  //!
+  !
 END SUB
 
 '********************************************************************************
@@ -3679,7 +3679,7 @@ sub _SysDivSubSingle
     //!  See https://avr-asm.tripod.com/math32x.html
     //!
     //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
-    //!
+    !
   #ENDIF
 end sub
 
@@ -3689,7 +3689,7 @@ Sub SYSDIVSUBDOUBLE
   //! This should be easy to implement as the PIC routines already support - needs testing
   //!
   //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
-  //!
+  !
 End Sub
 
 Macro AppNote00575Memory
@@ -4480,7 +4480,7 @@ Sub _SYSCOMPLESSTHANSINGLE
     //! This should be easy to implement as the PIC routines already support - needs testing
     //!
     //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
-    //!
+    !
   #ENDIF
 End Sub
 

@@ -954,9 +954,9 @@ SUB PreProcessor
             LINE INPUT #FileNo, DataSource
             If Len(DataSource) <> 0 Then
               'Optionally, to include in code.
-     '             PCC += 1: PreserveCode(PCC) = "; Line " + Str(InsertLineNo) +": " + Trim(DataSource)
-     '             IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
-     '             IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
+          '             PCC += 1: PreserveCode(PCC) = "; Line " + Str(InsertLineNo) +": " + Trim(DataSource)
+          '             IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
+          '             IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
             Else
               DataSource = ""
             End If
@@ -1405,6 +1405,50 @@ SUB PreProcessor
               DataSource = "ELSE:"+MID(DataSource,5)
             End If
           END IF
+
+          'Convert HEX assignment of non Byte value for Single into Mutliple lines of code
+          If InStr(UCase(DataSource), "[SINGLE]") <> 0 Then          
+              'Only examime casts
+              Dim HexPos as Integer = InStr(UCase(DataSourceRaw), "0X")
+              If HexPos <> 0 Then
+                'Has the cast and is a HEX number
+                If HexPos > InStr(DataSource, "[SINGLE]") Then
+                  'The HEX number is formatted correctly  [SINGLE] 0X
+                  Dim HexString As String = Mid ( DataSourceRaw, HexPos+2)
+                  HexString = Right("00000000"+Str(HEX(VAL("&H"+HexString))), 8 )
+
+                    ' Reform HEX value 
+                    Dim DataSourceOrg as String = DataSource
+
+                    ' Remove spaces
+                    ReplaceAll ( DataSourceOrg, " ", ""  )
+
+                    ' Get Destination variable name
+                    DataSourceOrg = Left ( DataSourceOrg, Instr( DataSourceOrg, "="   ) - 1 )
+                    
+                    ' Get uncast variable only
+                    DataSource = Mid ( DataSource, 1,  Instr(DataSource, "[")-1)
+
+                    Dim DataSource_B as String
+                    Dim DataSource_H as String
+                    Dim DataSource_U as String
+                    Dim DataSource_E as String
+
+                    DataSource_B = Right ( HexString, 2)
+                    DataSource_H = Mid ( HexString, 5, 2)
+                    DataSource_U = Mid ( HexString, 3, 2)
+                    DataSource_E = Mid ( HexString, 1, 2)
+                    
+                    ' Create four lines of code to encoded the hex constant
+                    DataSource = "[BYTE]" + DataSource+"[SINGLE] "  + Str(Val( "&H"+ DataSource_B )) + ": " _ 
+                                          + DataSourceOrg + "_H = " + Str(Val( "&H"+ DataSource_H )) + ": " _  
+                                          + DataSourceOrg + "_U = " + Str(Val( "&H"+ DataSource_U )) + ": " _ 
+                                          + DataSourceOrg + "_E = " + Str(Val( "&H"+ DataSource_E ))
+
+                End IF
+              End If
+          End If 
+
 
       MultiCommand:
 
@@ -2296,6 +2340,7 @@ SUB PreProcessor
         'Convert all non-decimal values to decimal
         If InStr(Value, "0X") <> 0 Or InStr(Value, "B'") <> 0 Then
           If IsConst(Value) Then
+            'Convert HEX when a Define
             Value = Str(MakeDec(Value))
           End If
         End If
@@ -2987,6 +3032,7 @@ SUB RemIfDefs
                   'Convert all non-decimal values to decimal
                   If InStr(Value, "0X") <> 0 Or InStr(Value, "B'") <> 0 Then
                     If IsConst(Value) Then
+                      'Convert Hex
                       Value = Str(MakeDec(Value))
                     End If
                   End If
@@ -3720,3 +3766,28 @@ Sub TableString (DataSource As String, TF As String )  '( TF must persist!)
      End If
 End Sub
 
+' Am9511
+const as ulong sign_mask  = &B10000000000000000000000000000000
+const as ulong expo_mask  = &B01111111000000000000000000000000
+const as ulong mant_mask  = &B00000000111111111111111111111111
+' PI in Am9511 binary format
+const as ulong Am9511_PI = &H02C90FDA
+' PI in IEEE 754 format
+dim as single PI = atn(1)*4
+
+' build text from a 4 byte Am9511 binary floating point number
+function LongToString(byval value as ulong) as string
+
+  dim as single  exponent = 2 ^ ((value and expo_mask) shr 24)
+  dim as single  mantisse = value and mant_mask
+  dim as single  bitval   = 1.0
+  dim as integer bitpos   = 2^23
+  dim as single  mantissa
+  if (value and sign_mask) then exponent=-exponent
+  for i as integer = 1 to 24
+    bitval  *=0.5
+    if (mantisse and bitpos) then mantissa += bitval
+    bitpos shr=1
+  next
+  return str(mantissa * exponent)
+end function

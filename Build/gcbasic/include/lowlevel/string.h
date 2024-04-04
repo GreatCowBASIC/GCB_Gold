@@ -69,15 +69,17 @@
                 LongToBin()          0b01111111111111111111111111111111
                 IntegerToBin()       0b010000000000000
                 SingleToBin()        0b01000110010000001110011010110111
-                ULingInttoBIN()      0b01000110010000001110011010110111
 
     */
 ' 09/03/2024: Revised SingleToString
 ' 10/03/2024: Add StringToLong by renaming VAL32
 ' 10/03/2024: Add prototype StringToSingle
-' 10/03/2024: Updated to SingleToStrijng to resolve 0.0 error
-' 12/03/2024: Added StringToSingle
-' 14/03/2024: Added ULongIntToBin. Help updated and GCODE. Updated SingletoString and StringToSingle 
+' 10/03/2024: Updated to SingleToString to resolve 0.0 error
+' 25/03/2024: Updated StringToSingle to remove CHR() and INSTR()
+' 26/03/2024: Updated StringToSingle to optimise multiplications
+' 27/03/2024: Updated StringToSingle for 12F/16F support
+' 29/03/2024: Updated SingleToString for 12F/16F support
+
 
 'Length/position
 Function Len (LenTemp())
@@ -399,30 +401,10 @@ Function StringToLong(SysInString as String) as Long
     Next
 end Function
 
-// Prototpe by Evan R. Venn 10/02/2024
-Function StringToSingleERV ( in inStringToSingle as String ) As Single
-	
-	Dim _LongSTS as Long
-	// determine decimal value from string
-    _LongSTS = StringToLong(Mid( inStringToSingle, Instr ( inStringToSingle, ".")+1, 3 ))
-
-    'using GCBASIC method to assing the Long to Single
-    StringToSingle = ( _LongSTS + (_LongSTS % 2) )
-	
-	StringToSingle = StringToSingle / 1000
-	
-    _LongSTS = StringToLong(Mid( inStringToSingle, 1, Instr ( inStringToSingle, ".")-1 ))
-
-    // Add the two parts
-    StringToSingle = StringToSingle + _LongSTS
-
-	// Set to negative, if required
-	If Instr(inStringToSingle, "-" ) Then StringToSingle.31 = 1
-
-End Function
-
-Function StringToSingle (in StrNum as String * 18) as Single
-  // 14/03/2024 version 05
+Function StringToSingle (in StrNum as String) as Single
+// remove INSTR and CHR 25/03/2024 erv
+// improved mutliplication Clint 27/03/2024
+// improved support for 12F/16F chip and added debug levels    // #DEFINE DebugStr2Sngle 1..8 
 	'-----------------------------------------------------------
 	'   SysByte_STS_Err.0 = 1 good - 0 - bad
 	'   SysByte_STS_Err.1 = 1 decimals places to many chars,  0 = ok
@@ -457,6 +439,17 @@ Function StringToSingle (in StrNum as String * 18) as Single
 	'-------------------------------	
 	dim SysULongInt_STS_Num as uLongINT	
 	dim SysLong_STS_Total as Long
+  dim SysByteCache as Byte Alias SysByte_STS_Err  // Reuse this variable
+
+    #IF DebugStr2Sngle = 1 
+      // Show the incoming string
+      HserSend 0x44 :HserSend 0x31: HserSend 32
+      Dim debugloop as Byte
+      For debugloop = 1 to StrNum(0)
+        HserSend StrNum(debugloop)
+      Next 
+      HserPrintCRLF
+    #Endif
 
 	' Seperate int from fraction
 	SysByte_STS_Ptr = 1
@@ -464,85 +457,165 @@ Function StringToSingle (in StrNum as String * 18) as Single
 
 	Do While (SysByte_STS_Ptr <= StrNum(0))	'as long as isn't a decimal and not over string length
 		SysByte_STS_Bin = StrNum(SysByte_STS_Ptr)
-		If Instr(".+-0123456789", Chr(SysByte_STS_Bin)) > 0 then
-			Exit Do
-		End If
+
+    #IF DebugStr2Sngle = 2 
+      // Show the character being processed - for a valid string... should see it all
+      Dim debugloop as Byte
+      For debugloop = 1 to StrNum(0)
+        HserSend StrNum(debugloop)
+      Next 
+      HserPrintCRLF
+    #Endif
+    
+    Select Case SysByte_STS_Bin
+      Case 0x2D to 0X2E  
+        // -.
+        Exit Do
+      Case 0x30 to 0x39
+        // numbers
+        Exit Do
+      Case 0x2B    
+        // +
+        Exit Do
+    End Select
+
 		SysByte_STS_Ptr ++
 	Loop
+  // So, at this point the DO-LOOP has been exited when it find any valid of these .-+0123456789
+  // but, there could be a leading character that is not valid
 
+  // Check for a sign - or +; this is assumed to be the first character.
 	SysByte_STS_Sgn = 0
-	if StrNum(1) = "-" Then
+	if StrNum(1) = 0x2D Then            // "-"  removal of string
 		SysByte_STS_Sgn = 1
 		SysByte_STS_Ptr ++
-	else If StrNum(1) = "+" then
+	else If StrNum(1) = 0x2B then       // "+"  removal of string
 		SysByte_STS_Ptr ++
 	end If
 
-	SysULongInt_STS_Num = 0
+	SysULongInt_STS_Num = 0         'Integer part
+
 	Do While (SysByte_STS_Ptr <= StrNum(0))	'as long as isn't a decimal and not over string length
 		SysByte_STS_Bin = StrNum(SysByte_STS_Ptr)
-		If Instr(".0123456789", Chr(SysByte_STS_Bin)) = 0 then
-			'ERROR Should be a . or a number
-			SysByte_STS_Err = 0
-			SysByte_STS_Err.4 = 1	'non numeric chars found
-			Exit Function
-		Else
-			'check for .
-			If SysByte_STS_Bin = ASC(".") then
-				Exit Do
-			End if
-		End If
+    Select Case SysByte_STS_Bin
+      Case 0x2E ' "."
+        Exit Do
+      Case 0x30 to 0x39
+        NOP ' as this is good
+      Case Else
+        'ERROR Should be a . or a number
+        SysByte_STS_Err = 0
+        SysByte_STS_Err.4 = 1	'non numeric chars found
+        Exit Function
+    End Select
 
-		SysULongIntTempA = SysULongInt_STS_Num
-		Set C Off
-		Rotate SysULongIntTempA Left			'x 2
-		SysULongIntTempB = 5					'x 5 = x 10 with less iterations
-		SysMultSub64
-		SysByte_STS_Bin -= 48
+		SysULongIntTempA = SysULongInt_STS_Num  'Num = Num * 10 + (Char - 48)
+    #IF DebugStr2Sngle = 3
+      // Show the character being processed - for a valid string... should see it all
+      HserSend 0x44 :HserSend 0x33: HserSend 32
+      Dim debugloop as Byte
+      For debugloop = 1 to StrNum(0)
+        HserSend StrNum(debugloop)
+      Next 
+      HserPrintCRLF
+    #Endif
+
+    SysULongIntTempX = 0
+    Repeat 10
+        SysULongIntTempX = SysULongIntTempA + SysULongIntTempX
+    End Repeat
+    SysByte_STS_Bin -= 48
 		SysULongInt_STS_Num = SysULongIntTempX + SysByte_STS_Bin
 
 		'NEED TO CHECK FOR OVERFLOW
 		If SysULongInt_STS_Num.63 = 1 then			
 			SysByte_STS_Err = 0
 			SysByte_STS_Err.2 = 1	'1 integer places to many chars-out of range,   0 = ok
+          #IFDEF DebugStr2Sngle
+            HserPrint "Overflow!"
+          #ENDIF
 			Exit Function
 		end If
+
+    #IF DebugStr2Sngle = 4
+      // Show the character being processed until the Do- Loop exits when it finds a Decimal point
+        HserSend SysByte_STS_Bin
+    #Endif
 
 		SysByte_STS_Ptr ++
 	Loop
 
-	SysByte_STS_Ptr ++	'move off of the decimal
-	SysLong_STS_Total = 1	'need to do this for .0xx number, otherwize .625 is the same as .00625
+	If SysByte_STS_Bin = 0x2E then  // This should only be incremented if . was first character
+    SysByte_STS_Ptr ++	      // So, move off of the decimal
+  End If
+
+  // DEBUG
+      #IF DebugStr2Sngle = 5
+        // Show the decimal component ONLY to be processed
+        HserSend 0x44 :HserSend 0x35: HserSend 32
+        Dim debugloop as Byte
+        For debugloop = SysByte_STS_Ptr to StrNum(0)
+          HserSend StrNum(debugloop)
+        Next 
+        HserPrintCRLF
+      #Endif
+
+      #IF DebugStr2Sngle = 6
+        // Show the decimal char being processed - not the value!
+        HserSend 0x44 :HserSend 0x36: HserSend 32
+      #Endif
+
+      #IF DebugStr2Sngle = 7
+        // Show the decimal value of the  being processed
+        HserSend 0x44 :HserSend 0x37: HserSend 32
+      #Endif
+
+  SysLong_STS_Total = 1  // Need to do this for .0xx number, otherwize .625 is the same as .00625
+                         // This base line number is eradicated during a factorisation latter in the function
 
 	Repeat 8
 		If SysByte_STS_Ptr <= StrNum(0) then	'do while less than length of string
-			SysLongTempA = SysLong_STS_Total
-			Set C Off
-			Rotate SysLongTempA Left	'x 2
-			SysLongTempB = 5			'x 5 = x 10 with less iterations
-			SysMultSub32	'multiply -> X = A * B
+			SysLongTempA = SysLong_STS_Total      
+      SysLongTempX = 0
 
-			SysLongTempB = StrNum(SysByte_STS_Ptr) - 48
+      Repeat 10
+        SysLongTempX = SysLongTempX + SysLongTempA 
+      End Repeat
+      SysLong_STS_Total = SysLongTempX
+
+      SysByteCache = StrNum(SysByte_STS_Ptr) - 48
 			
-			SysLong_STS_Total = SysLongTempX + SysLongTempB 'A = X + digit
+          #IF DebugStr2Sngle = 6
+            // Show the decimal char being processed
+            HserSend StrNum(SysByte_STS_Ptr)
+          #Endif
+
+          #IF DebugStr2Sngle = 7
+            // Show the decimal value
+            HserSend SysByte_STS_Ptr+48: HserSend 0x3C: HserSend  [Byte]SysByteCache + 48:HserSend 0x3E
+          #Endif
+
+			[Long]SysLong_STS_Total = [Long]SysLong_STS_Total + SysByteCache 'A = X + digit
+
 			SysByte_STS_Ptr ++	'next digit
 		else
+      // Should never get here
 			Exit Repeat
 		end If
 	End Repeat
 
-	Repeat 8	'truancate to 8 decimals
-		SysLongTempB = MaxDecimal		'100000000
-		SysLongTempA = SysLong_STS_Total	' A < B	
-		SysCompLessThan32	'<--- not implementedd in compiler
+  //DEBUG
+    #IF DebugStr2Sngle = 6 or DebugStr2Sngle = 7 
+      HserSend 13:      HserSend 10
+    #Endif
 
-		If SysByteTempX = true Then		'A < B  multiply by 10	
-			SysLongTempA = SysLong_STS_Total
-			Set C Off
-			Rotate SysLongTempA Left		'x 2
-			SysLongTempB = 5				'x 5 = x 10 with less iterations		
-			SysMultSub32
-			SysLong_STS_Total = SysLongTempX
+	// At this point 
+    //  SysULongInt_STS_Num  = the integer value
+    //  SysLong_STS_Total    = the decimal value
+  
+  Repeat 8	'truncate to 8 decimals
+		If SysLong_STS_Total < MaxDecimal Then		'A < B  multiply by 10	
+      SysLong_STS_Total = SysLong_STS_Total * 10
 		else
 			Exit Repeat						' No Exit, precision reached
 		end if
@@ -550,14 +623,65 @@ Function StringToSingle (in StrNum as String * 18) as Single
 
 	SysLong_STS_Total = SysLong_STS_Total - MaxDecimal
 
+  // At this point
+    // SysLong_STS_Total is a truncated to 8 Decimal points
+
+  //DEBUG
+          #IF DebugStr2Sngle = 8
+            // Show the decimal component ONLY to be processed
+            HserSend 0x44 :HserSend 0x38: HserSend 32
+            HSerPrintStringCRLF LongToString( SysLong_STS_Total )
+          #ENDIF
+
+	// At this point 
+  //  SysULongInt_STS_Num  = the integer value
+  //  SysLong_STS_Total    = the decimal value
+
+  // Check that integer <> 0, AND then, if SysByteTempX = True check decimal <> 0   
+  
+      #IFDEF ChipFamily 12,14,15
+        //~ Prevent stack issues
+        SysByteTempX = False
+        If [BYTE]SysULongInt_STS_Num = 0 Then    // Check all is ZERO
+        If SysULongInt_STS_Num_H = 0 Then
+        If SysULongInt_STS_Num_U = 0 Then
+        If SysULongInt_STS_Num_E = 0 Then
+        If SysULongInt_STS_Num_A = 0 Then
+        If SysULongInt_STS_Num_B = 0 Then
+        If SysULongInt_STS_Num_C = 0 Then
+        If SysULongInt_STS_Num_D = 0 Then
+          SysByteTempX = True
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+      #ELSE
+        SysULongIntTempA = SysULongInt_STS_Num
+        SysULongIntTempB = 0      
+        SysCompEqual64
+      #ENDIF
+  
+
+  If SysByteTempX = True Then    
+    If SysLong_STS_Total = 0 Then
+      StringToSingle = 0
+      SysByte_STS_Err = 0
+      SysByte_STS_Err.0 = 1     '1 good - 0 - bad
+      #IFDEF DebugStr2Sngle
+        HSerPrint "Zero"
+      #ENDIF
+      Exit Function
+    End If
+  End If
+
 	'---------------------------------------------
 	'  SysULongInt_STS_Num = Integer
 	'  SysLong_STS_Total = Fraction
 	'---------------------------------------------
-
-  '---- SysLong_STS_Total = fraction in 8 decimal places ---
-  ' x 2^32 / 100000000 >> 23, ULongInt needs to be used
-  '----------------------------------------------------------
 
 	SysULongIntTempX = SysLong_STS_Total
 	Repeat 32
@@ -566,16 +690,39 @@ Function StringToSingle (in StrNum as String * 18) as Single
 	End Repeat
   SysUlongIntTempA = SysULongIntTempX	'result of multiply
   SysULongIntTempB = MaxDecimal
-  SysDivSub64  
+  Call SysDivSub64  
   
-  SysLong_STS_Total = SysULongIntTempA  ' store division result back into Total
-
+  SysLong_STS_Total = SysULongIntTempA  'store division result back into Total    '
+  
 	SysByte_STS_Exp = 127
 	
 	'if integer is 0, we handle this different
-	SysULongIntTempA = SysULongInt_STS_Num
-	SysULongIntTempB = 0
-	SysCompEqual64
+
+    #IFDEF ChipFamily 12,14,15
+      //~ Prevent stack issues
+      SysByteTempX = False
+      If [BYTE]SysULongInt_STS_Num = 0 Then    // ERV check all are ZERO
+      If SysULongInt_STS_Num_H = 0 Then
+      If SysULongInt_STS_Num_U = 0 Then
+      If SysULongInt_STS_Num_E = 0 Then
+      If SysULongInt_STS_Num_A = 0 Then
+      If SysULongInt_STS_Num_B = 0 Then
+      If SysULongInt_STS_Num_C = 0 Then
+      If SysULongInt_STS_Num_D = 0 Then
+        SysByteTempX = True
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+    #ELSE
+    	SysULongIntTempA = SysULongInt_STS_Num
+	    SysULongIntTempB = 0
+      SysCompEqual64
+    #ENDIF
 
 	If SysByteTempX = true Then	'Integer is 0, all we have is a fraction
 		'move left until STATUS.C has a 1		
@@ -594,6 +741,40 @@ Function StringToSingle (in StrNum as String * 18) as Single
 		'move right into SysLong_STS_Total till SysULongInt_STS_Num = 0
     
 		Repeat 64	'if SysULongInt_STS_Num is never 0, integer is too big
+
+      #IFDEF ChipFamily 12,14,15
+		
+        //~ Prevent stack issues
+        SysByteTempX = False
+        If [BYTE]SysULongInt_STS_Num = 1 Then  // ERV is the correct - just check this byte ?
+        If SysULongInt_STS_Num_H = 0 Then
+        If SysULongInt_STS_Num_U = 0 Then
+        If SysULongInt_STS_Num_E = 0 Then
+        If SysULongInt_STS_Num_A = 0 Then
+        If SysULongInt_STS_Num_B = 0 Then
+        If SysULongInt_STS_Num_C = 0 Then
+        If SysULongInt_STS_Num_D = 0 Then
+          SysByteTempX = True
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+      #ELSE
+			  SysULongIntTempA = SysULongInt_STS_Num     // ERV move to #ELSE once Clint as approved
+			  SysULongIntTempB = 1
+        SysCompEqual64
+      #ENDIF
+
+			If SysByteTempX = True then
+        SysByte_STS_Bin = SysByteTempX
+				'SysByte_STS_Exp ++
+				Exit Repeat
+			end If
+
 			Set C Off
 			Rotate SysLong_STS_Total right
 
@@ -602,15 +783,6 @@ Function StringToSingle (in StrNum as String * 18) as Single
 			Set C Off
 			Rotate SysULongInt_STS_Num right
 
-			SysULongIntTempA = SysULongInt_STS_Num
-			SysULongIntTempB = 1
-			SysCompEqual64
-
-			If SysByteTempX = True then
-        SysByte_STS_Bin = SysByteTempX
-				SysByte_STS_Exp ++
-				Exit Repeat
-			end If
 
 			SysByte_STS_Exp ++
 		End Repeat
@@ -632,6 +804,8 @@ Function StringToSingle (in StrNum as String * 18) as Single
 		Set C Off
 		rotate SysByte_STS_Exp right
 	End Repeat
+
+  SysLong_STS_Total +=1 'round up
 	
 	Set C Off
 	rotate SysLong_STS_Total right	'make room for sign
@@ -639,7 +813,7 @@ Function StringToSingle (in StrNum as String * 18) as Single
 	SysLong_STS_Total.31 = SysByte_STS_Sgn.0
 
   '---- should round up 1 bit ---
-  SysLong_STS_Total ++
+  'SysLong_STS_Total ++
   
 	StringToSingle_E = [byte]SysLong_STS_Total_E 	
 	StringToSingle_U = [byte]SysLong_STS_Total_U 
@@ -650,6 +824,29 @@ Function StringToSingle (in StrNum as String * 18) as Single
 	SysByte_STS_Err.0 = 1
 End Function
 
+/*
+// Prototpe by Evan R. Venn 10/02/2024
+Function StringToSingle ( in inStringToSingle as String ) As Single
+	
+	Dim _LongSTS as Long
+	// determine decimal value from string
+    _LongSTS = StringToLong(Mid( inStringToSingle, Instr ( inStringToSingle, ".")+1, 3 ))
+
+    'using GCBASIC method to assing the Long to Single
+    StringToSingle = ( _LongSTS + (_LongSTS % 2) )
+	
+	StringToSingle = StringToSingle / 1000
+	
+    _LongSTS = StringToLong(Mid( inStringToSingle, 1, Instr ( inStringToSingle, ".")-1 ))
+
+    // Add the two parts
+    StringToSingle = StringToSingle + _LongSTS
+
+	// Set to negative, if required
+	If Instr(inStringToSingle, "-" ) Then StringToSingle.31 = 1
+
+End Function
+*/
 
 'Decimal > Hex
 #DEFINE ByteToHex Hex
@@ -1022,6 +1219,18 @@ Function LongToBin (In __LongNum as Long ) as String * 32
   End Repeat
 End Function
 
+Function ULongIntToBin (in __ULongInt as uLongINT) as String * 64
+  ULongIntToBin = ""
+  Repeat 64
+      If __ULongInt.63 = 1 Then
+         ULongIntToBin = ULongIntToBin +"1"
+      Else
+         ULongIntToBin = ULongIntToBin +"0"
+      End If
+      Rotate __ULongInt Left
+  End Repeat
+End Function
+
 Function SingleToBin (In __SingleNum as Single ) as String * 32
   SingleToBin = ""
   SingleToBinPTR = 31
@@ -1034,21 +1243,6 @@ Function SingleToBin (In __SingleNum as Single ) as String * 32
       SingleToBinPTR--
   End Repeat
 End Function
-
-
-Function ULongIntToBin (in __ULongInt as uLongINT) as String * 64
-  'Client 14/03/2024 
-  ULongIntToBin = ""
-  Repeat 64
-      If __ULongInt.63 = 1 Then
-         ULongIntToBin = ULongIntToBin +"1"
-      Else
-         ULongIntToBin = ULongIntToBin +"0"
-      End If
-      Rotate __ULongInt Left
-  End Repeat
-End Function
-
 
 'PAD(str,len,padchr )
 'Description  - The PAD() function pads a specified string
@@ -1147,7 +1341,7 @@ End Function
 // *********************** Advanced variables
 
 Function SingleToString(in SingleNum as Single) as String * 20
-  ' 14/03/2024  Version 07
+  ' Source from Clint Koehn 25/03/2024
   '-----------------------------------------------------------
   '   SingleNum = Single variable or constant to HSerPrint
   '
@@ -1165,6 +1359,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
   dim SysLongTempA as Long
   dim SysLongTempB as Long
   dim SysLongTempX as Long
+  dim SysWordTempX as Word
 
   dim SysULongInt_STS_Num as ULongInt  
   dim SysLong_STS_Mantissa as Long  
@@ -1172,38 +1367,45 @@ Function SingleToString(in SingleNum as Single) as String * 20
   dim SysByte_STS_Exp as Byte
   dim SysByte_STS_Bin as Byte
   dim SysByte_STS_Ptr as Byte
-  dim SysByte_STS_Err as Byte  
+  dim SysByte_STS_Err as Byte 
 
   'ExtractSingleParts
   SysLongTempB = [byte]SingleNum: SysLongTempB_H = [byte]SingleNum_H: SysLongTempB_U = [byte]SingleNum_U: SysLongTempB_E = [byte]SingleNum_E
   
   SysByte_STS_Sgn = SysLongTempB.31
 
-  SysLong_STS_Mantissa = SysLongTempB & 0x7FFFFF  
+  SysLong_STS_Mantissa = (SysLongTempB & 0x7FFFFF)
   
   Rotate SysLongTempB Left
   
   SysByte_STS_Exp = [byte]SysLongTempB_E
 
+  If (SysLong_STS_Mantissa + SysByte_STS_Exp) = 0 then
+    SingleToString = " 0.0"
+    SysByte_STS_Err = 0
+    SysByte_STS_Err.0 = 1     '1 good - 0 - bad    
+    Exit Function
+  End If
+
   SysLong_STS_Mantissa.23 = 1      'add hidden Bit
 
   SysULongInt_STS_Num = 0
-  
+
   Repeat 8   ' align 24 bit mantissa to left 32
     Set C Off
     rotate SysLong_STS_Mantissa Left
   End Repeat
 
-  If SysByte_STS_Exp > 127 Then            'number is > 0
+  If SysByte_STS_Exp >= 127 Then            'number is > 0
     SysByte_STS_Bin = SysByte_STS_Exp - 126 'needed because I'm including the 1.
 
-    SysULongInt_STS_Num = 0
-
     Set C Off 
-    Repeat SysByte_STS_Bin              'move integer into Num3  
+    Repeat SysByte_STS_Bin              'move integer into Num  
       rotate SysLong_STS_Mantissa Left  'when finished will be remainder
       rotate SysULongInt_STS_Num Left
     End Repeat
+
+    SysByte_STS_Bin = 32
 
   else if SysByte_STS_Exp = 0 Then      'if Exp is 0 then answer is 0
     SingleToString = "0.0"
@@ -1211,7 +1413,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
     SysByte_STS_Err.0 = 1     '1 good - 0 - bad
     exit Function
 
-  else '<=127 - move decimal place to the left  answer is <= 0
+  else '<127 - move decimal place to the left  answer is <= 0
     SysByte_STS_Bin = (126 - SysByte_STS_Exp)
     if (SysByte_STS_Bin > 23) Then ' resulting number will be less than 0.00000001
       SingleToString = "Error "
@@ -1220,8 +1422,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
       SysByte_STS_Err.1 = 1     '1 decimals places to many chars,  0 = ok      
       exit Function
     end If
-
-    SysULongInt_STS_Num = 0
+    SysByte_STS_Bin += 32
   End If
 
   'init string to receive number
@@ -1230,40 +1431,78 @@ Function SingleToString(in SingleNum as Single) as String * 20
   
   If SysLong_STS_Mantissa > 0 Then
     ' m * 100,000,000 >> 32 bits results in 8 digit accuracy
-    '<< 8  and x 390625 = x 100000000
     SysULongIntTempA = SysLong_STS_Mantissa
-    'Repeat 8
-    '  Rotate SysULongIntTempA Left
-    'End Repeat
-    SysULongIntTempB = 100000000  '390625
+    SysULongIntTempX = 0
+    SysULongIntTempB = 100000000
+    
     SysMultSub64
 
-    Repeat 32
+    Repeat SysByte_STS_Bin
       Set C Off
       Rotate SysULongIntTempX Right
     End Repeat
 
-    SysLong_STS_Mantissa = SysULongIntTempX 'load m with fractional for safe keeping
-
-    SysULongIntTempA = SysULongIntTempX
+    SysLong_STS_Mantissa = SysULongIntTempX 'load m with fractional for safe keeping    
+    SysULongIntTempA = SysLong_STS_Mantissa
   
     'Starting with fraction
-
-    SysULongIntTempA = SysLong_STS_Mantissa
-    SysULongIntTempB = 0
-    SysCompEqual64
+      #IFDEF ChipFamily 12,14,15
+        //~ Prevent stack issues
+        SysByteTempX = False
+        If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
+        If SysULongIntTempA_H = 0 Then
+        If SysULongIntTempA_U = 0 Then
+        If SysULongIntTempA_E = 0 Then
+        If SysULongIntTempA_A = 0 Then
+        If SysULongIntTempA_B = 0 Then
+        If SysULongIntTempA_C = 0 Then
+        If SysULongIntTempA_D = 0 Then
+          SysByteTempX = True
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+      #ELSE    
+        SysULongIntTempB = 0
+        SysCompEqual64
+      #ENDIF
 
     do while SysByteTempX = False
-      SysULongIntTempB = 10	'divide SysULongIntTempA by 10 till SysULongIntTempA = 0
+      SysULongIntTempB = 10	'divide SysULongIntTempA by 10 till SysULongIntTempA = 0      
       SysDivSub64
 
       SysByte_STS_Bin = [byte]SysULongIntTempX 	'remainder hold 0-9
       SingleToString(SysByte_STS_Ptr) = (SysByte_STS_Bin + 48)	'add 48 gives tha ASC value of 0 - 9 
 
-      SysByte_STS_Ptr --
-      
-      SysULongIntTempB = 0
-      SysCompEqual64
+      SysByte_STS_Ptr --    ' decrement pos in SingleToString for next char
+      #IFDEF ChipFamily 12,14,15
+        //~ Prevent stack issues
+        SysByteTempX = False
+        If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
+        If SysULongIntTempA_H = 0 Then
+        If SysULongIntTempA_U = 0 Then
+        If SysULongIntTempA_E = 0 Then
+        If SysULongIntTempA_A = 0 Then
+        If SysULongIntTempA_B = 0 Then
+        If SysULongIntTempA_C = 0 Then
+        If SysULongIntTempA_D = 0 Then
+          SysByteTempX = True
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+        End if
+      #ELSE    
+        SysULongIntTempB = 0
+        SysCompEqual64
+      #ENDIF
     loop
   End If
 
@@ -1282,8 +1521,31 @@ Function SingleToString(in SingleNum as Single) as String * 20
   End If
 
   SysULongIntTempA = SysULongInt_STS_Num
-  SysULongIntTempB = 0
-  SysCompEqual64
+
+  #IFDEF ChipFamily 12,14,15
+    //~ Prevent stack issues
+    SysByteTempX = False
+        If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
+        If SysULongIntTempA_H = 0 Then
+        If SysULongIntTempA_U = 0 Then
+        If SysULongIntTempA_E = 0 Then
+        If SysULongIntTempA_A = 0 Then
+        If SysULongIntTempA_B = 0 Then
+        If SysULongIntTempA_C = 0 Then
+        If SysULongIntTempA_D = 0 Then
+      SysByteTempX = True
+    End if
+    End if
+    End if
+    End if
+    End if
+    End if
+    End if
+    End if
+  #ELSE    
+    SysULongIntTempB = 0
+    SysCompEqual64
+  #ENDIF
 
   do while SysByteTempX = False  
     if SysByte_STS_Ptr < 1 Then
@@ -1301,8 +1563,30 @@ Function SingleToString(in SingleNum as Single) as String * 20
     SingleToString(SysByte_STS_Ptr) = (SysByte_STS_Bin + 48)	'add 48 gives tha ASC value of 0 - 9    
     SysByte_STS_Ptr --
     
-    SysULongIntTempB = 0
-    SysCompEqual64
+    #IFDEF ChipFamily 12,14,15
+      //~ Prevent stack issues
+      SysByteTempX = False
+          If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
+          If SysULongIntTempA_H = 0 Then
+          If SysULongIntTempA_U = 0 Then
+          If SysULongIntTempA_E = 0 Then
+          If SysULongIntTempA_A = 0 Then
+          If SysULongIntTempA_B = 0 Then
+          If SysULongIntTempA_C = 0 Then
+          If SysULongIntTempA_D = 0 Then
+        SysByteTempX = True
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+      End if
+    #ELSE    
+      SysULongIntTempB = 0
+      SysCompEqual64
+    #ENDIF
   loop
 
   '---- remove leading spaces -----------
@@ -1349,3 +1633,73 @@ Function SingleToString(in SingleNum as Single) as String * 20
   SysByte_STS_Err = 0
   SysByte_STS_Err.0 = 1     '1 good - 0 - bad
 End Function
+
+// Evan R. Venn 10/02/2024
+Function StringToSingle3DP ( in inStringToSingle as String ) As Single
+	
+	Dim _LongSTS as Long
+	// determine decimal value from string
+    _LongSTS = StringToLong(Mid( inStringToSingle, Instr ( inStringToSingle, ".")+1, 3 ))
+
+    'using GCBASIC method to assing the Long to Single
+    StringToSingle3DP = ( _LongSTS + (_LongSTS % 2) )
+	
+	StringToSingle3DP = StringToSingle3DP / 1000
+	
+    _LongSTS = StringToLong(Mid( inStringToSingle, 1, Instr ( inStringToSingle, ".")-1 ))
+
+    // Add the two parts
+    StringToSingle3DP = StringToSingle3DP + _LongSTS
+
+	// Set to negative, if required
+	If Instr(inStringToSingle, "-" ) Then StringToSingle3DP.31 = 1
+
+End Function
+
+Function SingleToString3DP (  In SingleNum as Single  ) as String
+    //! Show to three decimal points using psuedo_multiplication .. which is addition, many times
+
+        // Dimension the variables
+        Dim ExponentNumberInteger, MantissaNumberInteger as Integer
+        Dim ResultNumber as Single
+
+        // Extract exponent
+        // Assign the Single to the Integer 
+        ExponentNumberInteger = SingleNum
+
+        // Deduct the exponent from float
+        SingleNum = SingleNum - ExponentNumberInteger
+
+        psuedo_multiplication:
+            // Now SingleNum is just the mantissa
+            // Factorise to 3 digits
+            //
+            // ResultNumber is the result
+            //
+            ResultNumber = SingleNum
+            Repeat 1000
+                If SingleNum.31 = 0 Then
+                    ResultNumber += SingleNum
+                Else
+                    ResultNumber -= SingleNum
+                End If
+            End Repeat
+
+            // Handle rounding
+            If SingleNum.31 = 0 Then
+                ResultNumber--
+            Else
+                ResultNumber++
+            End If
+        end_of_psuedo_multiplication:
+
+        MantissaNumberInteger = ResultNumber
+        // Factorisation can cause decimal rounding so, check for the integer value and add to exponent
+        ExponentNumberInteger  = ExponentNumberInteger + (MantissaNumberInteger / 1000)
+
+        // Show results
+        SingleToString3DP = IntegerToString(ExponentNumberInteger)
+        SingleToString3DP += "."
+        SingleToString3DP += Right("000"+Str(MantissaNumberInteger),3)
+    
+    End Function

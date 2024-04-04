@@ -2412,6 +2412,9 @@ sub HSerGetNum (Out HSerNum As Long, optional In comport = 1)
 End Sub
 
 
+function HSERGETSTRING ( optional In comport = 1)
+  HSerGetString (  HSERGETSTRING , comport )
+end function
 
   'Added  11/4/2015 by mlo
   'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.

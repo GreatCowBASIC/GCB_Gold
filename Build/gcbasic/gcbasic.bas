@@ -555,6 +555,7 @@ declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
 declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
 
 'Subs in preprocessor.bi
+declare function LongToString(value as ulong) as string
 declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
 declare Function CheckSysVarDef(ConditionIn As String) As String
 declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
@@ -781,6 +782,7 @@ const   cCOMPILECALCADD     as integer = 1
 const   cVAR_SET            as integer = 2
 const   cCALCOPS            as integer = 4
 const   cCOMPILECALCMULT    as integer = 8
+const   cGENERATEAUTOPINDIR as integer = 16
 
 const   INSERTFILENOTOPEN = 1
 const   INSERTFILEOPEN    = 2
@@ -807,8 +809,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.3.16"
-buildVersion = "1369"
+Version = "2024.4.23"
+buildVersion = "1381"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -1134,23 +1136,23 @@ If MuteDonate = -1 then
   IF Not ErrorsFound and MuteBanners = -1 THEN
       Randomize timer
       Select Case  int(Rnd * (10 - 1) + 1)
-        Case 1:
+        Case 1,2,3:
       Print
       Print "Enjoying GCBASIC ?"
       Print
-      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
+      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
 
-        Case 2:
+        Case 4,5,6:
       Print
       Print "Finding GCBASIC useful ?"
       Print
-      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
+      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
 
-        Case 3:
+        Case 7,8,9:
       Print
       Print "Spreading the word about using GCBASIC ?"
       Print
-      Print "Please goto to https://sourceforge.net/projects/gcbasic/reviews/new?stars=5 and provide feedback to share your experience."
+      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
 
         Case Else
 
@@ -3030,7 +3032,7 @@ Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As
   Dim As LinkedListElement Pointer NewCode
 
   If (( compilerdebug and cCALCOPS ) = cCALCOPS )  Then
-    Print "4 CALCOPS origin: " + OriginIn, SUM, ops, av
+    Print " 4 CALCOPS origin: " + OriginIn, SUM, ops, av
   End If
   Origin = OriginIn
   CurrentSub = Subroutine(GetSubID(Origin))
@@ -3180,7 +3182,7 @@ SearchForOpAgain:
   CalcType = GetCalcType(TypeV1, Act, TypeV2, TypeAV)
   ' Potential debug point
   If (( compilerdebug and cCALCOPS ) = cCALCOPS ) Then
-    Print "4 CALCOPS       : " +V1, Act, V2, CalcType, AV, ": " + TypeV1 + " " + Act + " " +TypeV2, Origin
+    Print " 4 CALCOPS       : " +V1, Act, V2, CalcType, AV, ": " + TypeV1 + " " + Act + " " +TypeV2, Origin
   End If
   'Decide output variable
   If CalcStart = 1 And CalcEnd = LEN(SUM) And AV <> "" And (Not NeverLast) Then
@@ -3958,7 +3960,7 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   AV = Answer
   
   If (( compilerdebug and cCOMPILECALCADD ) = cCOMPILECALCADD ) Then
-    Print "1 COMPILECALCADD: " + AV + " = " + V1 + " " + Act + " " + V2 + " TYPE: " + V1Type + ACT + V2Type + " " +  " CONST: " + Str(IsConst(V1)) + " " +Str(IsConst(V2))+ " CalcType: " + CalcType
+    Print " 1 COMPILECALCADD: " + AV + " = " + V1 + " " + Act + " " + V2 + " TYPE: " + V1Type + ACT + V2Type + " " +  " CONST: " + Str(IsConst(V1)) + " " +Str(IsConst(V2))+ " CalcType: " + CalcType
   End If
 
   'Check if both are constants
@@ -4423,9 +4425,17 @@ FUNCTION CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act 
       CurrLine = LinkedListInsert(CurrLine, " comf SysByteTempX,F")
       GoTo CompileConditionDone
     ElseIf ModeAVR Then
-      CurrLine = LinkedListInsert(CurrLine, " clr SysByteTempX")
+    
+      'Incorrect handler - this just set the CLR!! - corrected #1377
+      CurrLine = LinkedListInsert(CurrLine, " ldi	SysValueCopy,255")
+      CurrLine = LinkedListInsert(CurrLine, " mov	SYSBYTETEMPX,SysValueCopy")        
+      'Pre 1377 change
+      '        CurrLine = LinkedListInsert(CurrLine, " clr SysByteTempX")
+      'End if #1377 change
+
       CurrLine = LinkedListInsertList(CurrLine, CompileConditions(V1 + "=" + Str(TestFor), "FALSE", Origin, Subroutine(SourceSub)))
-      CurrLine = LinkedListInsert(CurrLine, " com SysByteTempX,F")
+      'Incorrect syntax, extra ,F... a tie over from PIC stuff... maybe Hugh made an error - corrected #1377 was " com SysByteTempX,F")
+      CurrLine = LinkedListInsert(CurrLine, " com SysByteTempX")
       GoTo CompileConditionDone
     End If
   End If
@@ -4876,7 +4886,7 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
   If Act = "%" Then AV = "Sys" + CalcType + "TempX"
   
   If (( compilerdebug and cCOMPILECALCMULT ) = cCOMPILECALCMULT ) Then
-    Print "8 COMPILECALCMULT :" + V1, V2, AV, CalcType
+    Print " 8 COMPILECALCMULT :" + V1, V2, AV, CalcType
   End If    
 
   'Replace sum with answer variable
@@ -6472,8 +6482,8 @@ SUB CompileFor (CompSub As SubType Pointer)
         EndIf
 
         If HashMapGet(Constants, "NEWNEXTFORHANDLER" )  then
-          'create an integer from the constant
-          If IsConst(StepValue) and StepValue <> "1" then
+          'create an integer from the constant, only not ABS(1)
+          If IsConst(StepValue) and ABS(Val(StepValue)) <> 1 then
              AddVar "SysForLoopStep" + Str(FLC), "INTEGER", 1, 0, "REAL", "", , -1
 
              CurrLine = LinkedListInsert(CurrLine,  "SysForLoopStep" + Str(FLC) + " = " + StepValue)
@@ -6536,11 +6546,22 @@ SUB CompileFor (CompSub As SubType Pointer)
       FLC = FLC + 1
       FL = 1
 
-      'And, finally determine if we can use the old method for specific use cases of constants and step=1
+      'And, finally determine if we can use the old method for specific use cases of constants and step=1, belt and braces check
       IF ( VAL(EndValue) > VAL(StartValue) ) AND IsConst(EndValue) AND IsConst(StartValue) AND (InStr(StepValue, "-") = 0 And Val(StepValue)=1 ) THEN
           StepExists  = 0
       End if
-
+print loopvar, stepvalue, StepExists
+      ' A final, final check to try and force legacy....
+      If StepExists = -1 Then
+        If ABS(Val(Stepvalue)) = 1 Then 
+          If  ( TypeOfValue(LoopVar, Subroutine(GetSubID(Origin)))= "BYTE" or _ 
+                TypeOfValue(LoopVar, Subroutine(GetSubID(Origin)))= "WORD" or _ 
+                TypeOfValue(LoopVar, Subroutine(GetSubID(Origin)))= "LONG" or _ 
+                TypeOfValue(LoopVar, Subroutine(GetSubID(Origin)))= "INTEGER" ) Then
+            StepExists = 0
+          End If
+        End If
+      End If
 
       If StepExists Then
 
@@ -10015,7 +10036,7 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
   End if 
 
   If (( compilerdebug and cVAR_SET ) = cVAR_SET ) Then
-    Print "2 VAR SET       : " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
+    Print " 2 VAR SET       : " + Dest + "[" + DType + "] = " + Source + "[" + SType + "]"
   End If
 
   'Record reads and writes (for auto pin direction setting)
@@ -12739,13 +12760,16 @@ Function GenerateAutoPinDir As LinkedListElement Pointer
   OutList = LinkedListCreate
   CurrLine = OutList
 
-  'Get pin directions
-  'Print "Pin", "In", "Out", "Read", "Written"
+  'Get pin directions/
+  If (( compilerdebug and cGenerateAutoPinDir ) = cGenerateAutoPinDir ) Then
+    Print "16: AUTOPINDIR","Pin", "In", "Out", "Read", "Written"
+  End If
   CurrPin = PinDirections->Next
   Do While CurrPin <> 0
     CurrPinDir = CurrPin->MetaData
-    'Print CurrPin->Value, CurrPinDir->SetIn, CurrPinDir->SetOut, CurrPinDir->ReadFrom, CurrPinDir->WrittenTo
-
+    If (( compilerdebug and cGenerateAutoPinDir ) = cGenerateAutoPinDir ) Then
+      Print ,,CurrPin->Value, CurrPinDir->SetIn, CurrPinDir->SetOut, CurrPinDir->ReadFrom, CurrPinDir->WrittenTo
+    End If
     'If direction not set manually, and required direction is known, set direction
     With (*CurrPinDir)
       'Checking a pin
@@ -12888,6 +12912,14 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
     LogError Temp, Origin
     Return OutList
   End Select
+
+  If VarType = "BYTE" and Instr(VarBit, "," ) > 0 Then
+    'Trap things like DIR PORTB.0,1,2 OUT
+    Temp = Message("InvalidDirCommand")
+    Replace Temp, "%status%", Status
+    LogError Temp, Origin
+    Return OutList
+  End If
 
   'Status should be 0 or 1
   If Status <> "0" And Status <> "1" And SetStatus Then
@@ -17662,6 +17694,8 @@ Sub WriteAssembly
       PRINT #1, ";Program compiled by GCBASIC (" + Version + ") for Microchip AVR Assembler using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
   End If
   Print #1, ";Need help? "
+  Print #1, ";  Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
+  Print #1, ";  "
   Print #1, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
   Print #1, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
   Print #1, ";or, email us:"
@@ -17672,6 +17706,8 @@ Sub WriteAssembly
   if AFISupport = 1 then
       ' AS file
       PRINT #2, ";Program compiled by GCBASIC (" + Version + ") for Microchip PIC-AS using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
+      Print #2, ";  Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
+      Print #2, ";  "
       Print #2, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
       Print #2, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
       Print #2, ";or, email:"
