@@ -809,8 +809,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.4.23"
-buildVersion = "1381"
+Version = "2024.4.26"
+buildVersion = "1386"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -6550,7 +6550,7 @@ SUB CompileFor (CompSub As SubType Pointer)
       IF ( VAL(EndValue) > VAL(StartValue) ) AND IsConst(EndValue) AND IsConst(StartValue) AND (InStr(StepValue, "-") = 0 And Val(StepValue)=1 ) THEN
           StepExists  = 0
       End if
-print loopvar, stepvalue, StepExists
+
       ' A final, final check to try and force legacy....
       If StepExists = -1 Then
         If ABS(Val(Stepvalue)) = 1 Then 

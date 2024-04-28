@@ -299,8 +299,8 @@ MissingOperand = "Missing operand, %pos% %operator%"
 MissingSubParam = "Missing value for parameter %param%"
 MissingTarget = "No subroutine specified as a target"
 
-MissingEndSubDef="Missing End Sub or Return definition"
-MissingSubDef="Missing Sub definition"
+MissingEndSubDef="Missing 'End Sub' or 'Return' definition or invalid 'GoSub'"
+MissingSubDef="Missing Sub definition, or, missing GoSub definition"
 MissingEndFuncDef="Missing End Function definition"
 MissingFuncDef="Missing Function definition"
 

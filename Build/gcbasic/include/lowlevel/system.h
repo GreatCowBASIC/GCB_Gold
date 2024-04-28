@@ -93,6 +93,7 @@
 '               Added SysModSubSingle
 '    09032024 - Renamed all APPNOTE00575MEMORY variables and constants
 '    12032024 - Added development comments
+'    25042024 - Added forced creation of SysValTemp variable
 
 'Constants
 #define ON 1
@@ -2891,6 +2892,9 @@ sub SysMultSubSingle
 
     Dim SysByteTempX as Byte
 
+    // Variables for the Microchip AppNote
+    AppNote00575Memory
+
     #IFDEF SYSSINGLECALCS_DEBUG
       HSerPrint "*in  IEEE  HEX "+SingleToHex(SysSingleTempA)
       HSerPrint " , "
@@ -2921,6 +2925,9 @@ sub SysMultSubSingle
 
       _SysMultSubSingle
 
+    'Use this to force initiatision of the SysValTemp variable
+    SysByteTempX = hex(0)
+    'Set the exit
     #IF VAR(WREG)
       SysByteTempX = WREG
     #ELSE
@@ -2957,9 +2964,12 @@ End Sub
 
 Sub _SysMultSubSingle
 
+  Dim SysByteTempX as Byte
+    
+  // Variables for the Microchip AppNote
+  AppNote00575Memory
+
   #IFDEF PIC
-    // Variables for the Microchip AppNote
-    AppNote00575Memory
 
     // ASM from APPNOTE. Only change is to place labels on new line, plus, correction for ASCII string for Decimal 24
     FPM32:

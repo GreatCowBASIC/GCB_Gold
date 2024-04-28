@@ -695,7 +695,7 @@ SUB PreProcessor
   Dim As SourceFileType UnconvertedFile(100)
   Dim As OriginType Pointer LineOrigin
 
-  Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter, LCCACHE
+  Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter, LCCACHE, lableCounter
   Dim As Integer ForceMain, LineTokens, FoundFunction, FoundMacro, CurrChar, ReadScript, CachedCmdPointer
   Dim As Integer CurrCharPos, ReadType, ConvertAgain, UnconvertedFiles, FileNo, HandlingInsert, HandledGLCDSelection
   Dim As Single CurrPerc, PercAdd, PercOld
@@ -943,6 +943,8 @@ SUB PreProcessor
     InsertLineNo = 0
 
     InlineRAWASM = 0
+
+    lableCounter = 0
 
     DO WHILE NOT EOF(1) or HandlingInsert = INSERTFILEOPEN 
 
@@ -1466,84 +1468,99 @@ SUB PreProcessor
 
           'This section syntax checks the source for improved syntax checking
           'GOTO jumpEndofimprovedsyntaxchecking
-          
-          If Left( DataSource,4) = "SUB " Then
-            If endsubCounter = 0 Then
-              If subCounter = 0 Then
-                firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              Else
-                LogError Message("MissingEndSubDef"), firstSubEncountered
-                Close
-                exit sub  
-              End if
-              IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              subCounter = subCounter + 1
-              endsubCounter = 0
-            else
-              LogError Message("MissingEndSubDef"), firstSubEncountered
-              Close
-              exit sub
-            end if
-          End if
-          
-          If Left( DataSource,7) = "END SUB" or ( DataSource = "RETURN" and Instr(SourceFile(RF).filename, ".h") = 0 )  Then
-            IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
-            If subCounter = 1 Then
-              endsubCounter = 0
-              subCounter = 0
-              firstSubEncountered = ""                       
-            Else
-              LogError Message("MissingSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              Close
-              exit sub
-            End if
-          End if
-            
-          If Left( DataSource,9) = "FUNCTION " Then
-            If endfunctionCounter = 0 Then
-              firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              If functionCounter = 0 Then
-                firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              Else
-                LogError Message("MissingEndFuncDef"), firstSubEncountered
-                Close
-                exit sub  
-              End if
-              functionCounter = functionCounter + 1
-              endfunctionCounter = 0
-            else
-              LogError Message("MissingEndFuncDef"), firstSubEncountered
-              Close
-              exit sub
-            end if
-          End if
-          
-          If Left( DataSource,12) = "END FUNCTION" Then       
-            If functionCounter = 1 Then
-              endfunctionCounter = 0
-              functionCounter = 0
-              firstSubEncountered = ""                       
-            Else
-              LogError Message("MissingFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              Close
-              exit sub
-            End if
-          End if
 
-          If Left( DataSource,6) = "ELSEIF" Then
-              LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-              Close
-              exit sub
-          End If
-
-          If Left( DataSource,7) = "ELSE IF" Then
-            If Instr( DataSource, " THEN" ) = 0 Then
-                LogError Message("ElseIfMissingThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
-                Close
-                exit Sub
+          'Count the user labels. This is needed to handle missing GOSUB when a RETURN exists
+          If RF = 1 Then
+            If Right(DataSource, 1) = ":" Then
+              lableCounter = lableCounter + 1 
             End If
           End If
 
+          IF LaxSyntax = 0 THEN
+
+            If Left( DataSource,6) = "GOSUB " then
+              LaxSyntax = -1
+            End If
+
+            If Left( DataSource,4) = "SUB "  Then
+              If endsubCounter = 0 Then
+                If subCounter = 0 Then
+                  firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Else
+                  LogError Message("MissingEndSubDef"), firstSubEncountered
+                  Close
+                  exit sub  
+                End if
+                IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                subCounter = subCounter + 1
+                endsubCounter = 0
+              else
+                LogError Message("MissingEndSubDef"), firstSubEncountered
+                Close
+                exit sub
+              end if
+            End if
+            
+            If Left( DataSource,7) = "END SUB" or ( DataSource = "RETURN" and Instr(SourceFile(RF).filename, ".h") = 0 )  Then
+              IF methodstructuredebug THEN  PRINT DATASOURCE, ";?F" + Str(RF) + "L" + Str(LC) + "?"
+              If subCounter = 1 Then
+                endsubCounter = 0
+                subCounter = 0
+                firstSubEncountered = ""                       
+              Else
+                If lableCounter = 0 Then
+                  LogError Message("MissingSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                  Close
+                  exit sub
+                End If
+              End if
+            End if
+              
+            If Left( DataSource,9) = "FUNCTION " Then
+              If endfunctionCounter = 0 Then
+                firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                If functionCounter = 0 Then
+                  firstSubEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Else
+                  LogError Message("MissingEndFuncDef"), firstSubEncountered
+                  Close
+                  exit sub  
+                End if
+                functionCounter = functionCounter + 1
+                endfunctionCounter = 0
+              else
+                LogError Message("MissingEndFuncDef"), firstSubEncountered
+                Close
+                exit sub
+              end if
+            End if
+            
+            If Left( DataSource,12) = "END FUNCTION" Then       
+              If functionCounter = 1 Then
+                endfunctionCounter = 0
+                functionCounter = 0
+                firstSubEncountered = ""                       
+              Else
+                LogError Message("MissingFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Close
+                exit sub
+              End if
+            End if
+
+            If Left( DataSource,6) = "ELSEIF" Then
+                LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Close
+                exit sub
+            End If
+
+            If Left( DataSource,7) = "ELSE IF" Then
+              If Instr( DataSource, " THEN" ) = 0 Then
+                  LogError Message("ElseIfMissingThen"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                  Close
+                  exit Sub
+              End If
+            End If
+          End If
 
           If instr( DataSource, "(" ) + instr( DataSource, ")" ) <> 0 Then
             If countSubstring(DataSource,"(" ) <> countSubstring(DataSource,")" ) Then
