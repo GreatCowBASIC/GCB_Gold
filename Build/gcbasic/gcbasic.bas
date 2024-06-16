@@ -181,6 +181,7 @@ Type SubType
 
   IsMacro As Integer
   IsFunction As Integer
+  IsData As Integer
   ReturnType As String
   Params(50) As SubParam
   ParamCount As Integer
@@ -242,6 +243,7 @@ Type DataTableType
   Items As Integer
   Item(MAXTABLEITEMS) As LongInt
   IsEEPromData As Integer
+  IsData As Integer
   FixedLoc As Integer
 End Type
 
@@ -342,6 +344,7 @@ Type ProgMemPageType
   EndLoc As Integer
   CodeSize As Integer
   MaxSize As Integer
+  PageSize as Integer
 End Type
 
 'Type to store a RAM bank
@@ -379,6 +382,7 @@ End Type
 'Subs in this file
 declare SUB Add18FBanks(CompSub As SubType Pointer)
 declare SUB AddBankCommands(CompSub As SubType Pointer)
+declare SUB AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage As Integer, ByRef CurrPagePos As Integer, ByRef DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer )
 declare Sub AddMainEndCode
 declare Sub AddMainInitCode
 declare Sub AddPageCommands(CompSub As SubType Pointer)
@@ -809,8 +813,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.4.26"
-buildVersion = "1386"
+Version = "2024.6.12"
+buildVersion = "1388"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -15848,6 +15852,7 @@ Sub PreparePageData
     FirstPageStart = LastVector + 1
   End If
   'Generate page info
+  ProgMemPage(0).PageSize = PageSize
   LastLoc = 0
   Do While LastLoc < AvailableChipProg
     ProgMemPages += 1
@@ -15869,6 +15874,7 @@ Sub PreparePageData
       .EndLoc = LastLoc - 1
       .CodeSize = 0
       .MaxSize = .EndLoc - .StartLoc + 1
+      .PageSize = PageSize
     End With
   Loop
 
@@ -18247,7 +18253,8 @@ Sub WriteAssembly
                           Param1 = elements0(1)
 
                         Case Else
-                          If Left(outline,1) <> ";" and Left(trim(outline),2) <> "DB" Then
+                          ' items that are not processed
+                          If Left(outline,1) <> ";" and Left(trim(outline),2) <> "DB" and Left(trim(outline),2) <> "DW" Then
                             LogWarning "GCBASIC compiler: PIC-AS conversion unhandled for "+outline
                           End If
                       End Select
@@ -19069,6 +19076,12 @@ Sub MergeSubroutines
   Dim As SubType Pointer IntSub
   Dim As Integer IntSubLoc
 
+  Dim MaxDestPage as Integer = 0  
+  Dim DataBlockCount as Integer = 0
+  Dim CurrEPTable as Integer
+  Dim OrgPosOffset as Integer
+  Dim NonChipFamily16DataBlocksNotAdded As Integer = -1
+
   'Set ForceFit if on AVR or 18F
   'OptimiseCalls and OptimiseIf may reduce the code enough to fit, let the assembler worry if it doesn't
   ForceFit = 0
@@ -19341,53 +19354,73 @@ Sub MergeSubroutines
     End If
   End If
 
+  ' Calculate max page used and how many DATA blocks 
+  For CurrSub = 1 To SubQueueCount
+    If CurrSubPtr <> 0 Then
+      If CurrSubPtr->DestPage > MaxDestPage then 
+        MaxDestPage = CurrSubPtr->DestPage
+      End If
+    End If
+  Next
+  ' Print "Max Page Used " + Str(MaxDestPage)
+
+  For CurrEPTable = 1 TO DataTables
+    With DataTable(CurrEPTable)
+      If .IsData = -1 Then
+        DataBlockCount = DataBlockCount +1
+      End If       
+    End With
+  Next
   'Add all subs to output code
   'Add subs that could be located
+ 
   For CurrPage = 1 To ProgMemPages
-
-    If UserCodeOnlyEnabled = 0  Then
-        CurrLine = LinkedListInsert(CurrLine, ";Program_memory_page: " + Str(CurrPage - 1))
+    
+    If ( ChipFamily <> 16 And MaxDestPage = CurrPage - 1 and CurrPagePos <> 0 )   Then
+          ' Handle the DATABLOCKs here for non 18F or AVR
+          AddDataBlocks ( CurrLine, CurrPage, CurrPagePos, DataBlockCount, NonChipFamily16DataBlocksNotAdded  )
+          NonChipFamily16DataBlocksNotAdded = 0
     End If
 
+    If UserCodeOnlyEnabled = 0  Then
+      If CurrPage > 0 and CurrPage <= ProgMemPages Then
+        'Only output this line when there this is normal GCB compilation and there is no data blocks being processsed.
+        CurrLine = LinkedListInsert(CurrLine, ";Program_memory_page: " + Str(CurrPage - 1) )
+      End If
+    End If
+    
     If ModePIC Then
-      If ChipFamily = 16 Or IntSub = 0 Or CurrPage > 1 Then
-          If UserCodeOnlyEnabled = 0  Then
+      If CurrPage <= ProgMemPages Then 
+        If ChipFamily = 16 Or IntSub = 0 Or CurrPage > 1 Then
+            If UserCodeOnlyEnabled = 0  Then
 
-            If CurrPage > 1 then
-                CurrLine = LinkedListInsert(CurrLine, " PSECT Progmem" + Str(CurrPage - 1) + ",class=CODE,space=SPACE_CODE,delta=2, abs, ovrld " )
-                GetMetaData(CurrLine)->IsPICAS = -1
+              If CurrPage > 1 then
+                  CurrLine = LinkedListInsert(CurrLine, " PSECT Progmem" + Str(CurrPage - 1) + ",class=CODE,space=SPACE_CODE,delta=2, abs, ovrld " )
+                  GetMetaData(CurrLine)->IsPICAS = -1
+              End if
 
-            '    CurrLine = LinkedListInsert(CurrLine, "__ProgmemPage" + Str(CurrPage - 1)+":" )
-            '    GetMetaData(CurrLine)->IsPICAS = -1
+              CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(ProgMemPage(CurrPage).StartLoc))
+              CurrPagePos = ProgMemPage(CurrPage).StartLoc
 
-            ELSE
-
-            '    CurrLine = LinkedListInsert(CurrLine, " PSECT __ProgmemPage" + Str(CurrPage - 1) + ",class=CODE,space=SPACE_CODE,delta=2, abs,  size = "+ Str(ProgMemPage(CurrPage).StartLoc) )
-            '    GetMetaData(CurrLine)->IsPICAS = -1
-
-            End if
-
-            CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(ProgMemPage(CurrPage).StartLoc))
-            CurrPagePos = ProgMemPage(CurrPage).StartLoc
-
-          Else
-              'Output as comment
-              CurrLine = LinkedListInsert(CurrLine, ";ORG " + Str(ProgMemPage(CurrPage).StartLoc))
-          End If
-      Else
-        'On 10/12/16, Interrupt must go at very start of program
-        'Allow it space in page 0.
-        If UserCodeOnlyEnabled = 0  Then
-            CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(ProgMemPage(CurrPage).StartLoc + IntSub->HexSize))
-            CurrPagePos = ProgMemPage(CurrPage).StartLoc + IntSub->HexSize
+            Else
+                'Output as comment
+                CurrLine = LinkedListInsert(CurrLine, ";ORG " + Str(ProgMemPage(CurrPage).StartLoc))
+            End If
         Else
-           'only output once
-           If CurrPage = 1 then
+          'On 10/12/16, Interrupt must go at very start of program
+          'Allow it space in page 0.
+          If UserCodeOnlyEnabled = 0  Then
               CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(ProgMemPage(CurrPage).StartLoc + IntSub->HexSize))
               CurrPagePos = ProgMemPage(CurrPage).StartLoc + IntSub->HexSize
-           Else
-              CurrLine = LinkedListInsert(CurrLine, ";ORG " + Str(ProgMemPage(CurrPage).StartLoc + IntSub->HexSize))
-           End  If
+          Else
+            'only output once
+            If CurrPage = 1 then
+                CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(ProgMemPage(CurrPage).StartLoc + IntSub->HexSize))
+                CurrPagePos = ProgMemPage(CurrPage).StartLoc + IntSub->HexSize
+            Else
+                CurrLine = LinkedListInsert(CurrLine, ";ORG " + Str(ProgMemPage(CurrPage).StartLoc + IntSub->HexSize))
+            End  If
+          End If
         End If
       End If
 
@@ -19428,8 +19461,7 @@ Sub MergeSubroutines
       CurrPagePos = ProgMemPage(CurrPage).StartLoc
     End If
 
-
-    'check for #zzREQUIRED PARAMETERS
+    'check for #REQUIRED PARAMETERS
     For CurrSub = 1 To SubQueueCount
       CurrSubPtr = Subroutine(SubQueue(CurrSub))
       If CurrSubPtr->Required And CurrSubPtr->LocationSet And CurrSubPtr->DestPage = CurrPage Then
@@ -19516,7 +19548,7 @@ Sub MergeSubroutines
             SubNameOut = "SysInd_" + SubNameOut
           End If
         End If
-        'Print "Placing " + SubNameOut + " at 0x" + Hex(CurrPagePos) + " (size:" + Str(CurrSubPtr->HexSize) + ")"
+        ' Print "Placing " + SubNameOut + " at 0x" + Hex(CurrPagePos) + " (size:" + Str(CurrSubPtr->HexSize) + ")"
         CurrPagePos += CurrSubPtr->HexSize
         StatsUsedProgram += CurrSubPtr->HexSize
 
@@ -19555,7 +19587,15 @@ Sub MergeSubroutines
         CurrLine = LinkedListInsert(CurrLine, "")
       End If
     Next
+
+    'This is needed as in there is NO GCB source.
+    If NonChipFamily16DataBlocksNotAdded Then 
+      AddDataBlocks ( CurrLine, CurrPage, CurrPagePos, DataBlockCount, NonChipFamily16DataBlocksNotAdded  )
+      NonChipFamily16DataBlocksNotAdded = 0
+    End If
+
   Next
+  
 
   'Add any subs that couldn't be located to end of file
   'User may be able to manually locate them
@@ -19601,8 +19641,12 @@ Sub MergeSubroutines
     End If
   Next
 
+  If ChipFamily = 16 or MODEAVR Then 
+    AddDataBlocks ( CurrLine, CurrPage, CurrPagePos, DataBlockCount, NonChipFamily16DataBlocksNotAdded )
+  End If
+
   'Add EEPROM data tables
-  Dim As Integer EPDataHeader, EPDataLoc, CurrEPTable, CurrEPItem, TableAddressState, AVRAddressState
+  Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState
   Dim As String EPTempData
   Dim As Integer EPAddress, DataTableSwapped
   Dim As DataTableType Temp_DataTableType
@@ -20437,4 +20481,179 @@ Sub CreateReservedWordsList
       LogError "Invalid Reservedwords.dat - reinstall GCBASIC toolchain"
   End If
   ReservedwordC = Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) )     
+End Sub
+
+Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage as Integer, ByRef CurrPagePos As Integer, ByRef DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer)
+
+  'Only do this once.
+  If NonChipFamily16DataBlocksNotAdded = 0 then Exit Sub
+  CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
+  
+  Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState, LogWarningCounter = 0, CurrEPTable, OrgPosOffset
+  Dim as String ASMInstruction, Prefix, EPTempData
+
+  For CurrEPTable = 1 TO DataTables
+    'Examine all tables
+
+    EPTempData = ""
+
+    With DataTable(CurrEPTable)
+      
+      If .Items > 0 AND .IsData = -1 and DataBlockCount > 0 Then              
+        'Get data. Where .items the number of items and ISDATA table
+        OrgPosOffset = 0
+
+        StatsUsedProgram = StatsUsedProgram + 1
+
+        If .Type = "BYTE" Then
+          'ORG counter
+          OrgPosOffset = OrgPosOffset + ( .Items * 2 )
+          If Instr(UCase(AsmExe), "GCASM") > 0 Then
+            ASMInstruction = "de"
+            ' GBASIC Assember needs 0x34 as the high byte
+            Prefix ="34"
+          ElseIf Instr(UCase(AsmExe), "MPASM") > 0 Then
+            ASMInstruction = "de"
+            Prefix ="00"
+          Else
+            ASMInstruction = "db"
+            Prefix = ""
+          End IF
+
+          'iterate the items
+          For CurrEPItem = 1 To .Items
+            ' process to create data strng as BYTE
+            EPTempData = EPTempData + ", 0x" + Prefix + Right("0"+HEX(.Item(CurrEPItem)),2)                  
+          Next
+        Else
+          'ORG counter
+          OrgPosOffset = OrgPosOffset + ( .Items * 1 )            
+          ASMInstruction = "dw"
+          'iterate the items
+          For CurrEPItem = 1 To .Items Step 1
+            ' process to check the data strng
+            If MODEPIC Then
+              If ChipFamily <> 16 Then
+                If .Item(CurrEPItem) > 16383 Then
+                    LogWarning message("DataBlockExceeds")
+                    LogWarningCounter = LogWarningCounter + 1
+                    If LogWarningCounter = 11 then
+                      LogError message("DataBlockExceedsTooMany")
+                    End If 
+                End If
+              End If
+            Else
+              ' AVR
+              'AVR Check needs to be added
+            End If
+            ' process to create data strng as BYTE
+            EPTempData = EPTempData + ", 0x" + Right("0000"+HEX(.Item(CurrEPItem)),4)
+          Next
+        End If
+
+        ' Tidy DATABlock string
+        If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
+        
+        'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
+        If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
+            EPDataLoc = EPDataLoc + 1
+        End If
+
+        ToAsmSymbols += 1
+        ToAsmSymbol(ToAsmSymbols, 2) = Str(CurrPagePos)
+        ToAsmSymbol(ToAsmSymbols, 1) = Trim(.Name)
+
+        AddConstant(Trim(.Name), Str(CurrPagePos))
+
+        'Create DATA block label
+        If ModePIC Then  
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name))
+          GetMetaData(Currline)->IsLabel = -1
+        Else
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)+":")
+          GetMetaData(Currline)->IsLabel = -1
+        End If
+
+        If trim(EPTempData) <> "" Then 
+          'Do not push out empty structure, as this will cause an error in MPASM etc
+
+          EPTempData = EPTempData +","  'add additional delimter to make this routine work as we use the "," in the instrev()
+
+          Dim as Integer FirstDelimiter, PosOfComma, LastValidPostOfComma, WordCounter, PageSize
+          Dim as String StringCut, StringOut
+
+          StringCut = EPTempData
+          PageSize = ProgMemPage(CurrPage-1).PageSize
+          StringOut = ""
+          FirstDelimiter = 1
+          WordCounter = 0
+          
+          'print "Address page", currpage, ProgMemPages, CurrPagePos
+
+          Do
+            ' Only output width that MPASM can cope with
+            PosOfComma = InStr( FirstDelimiter,  StringCut, "," )
+            ' Less the Maxsize AND not at end of string AND ( is NOT MPASM and LESS the 129 chars )
+            ' Print CurrPagePos + 1 , PosOfComma  
+            If PosOfComma <> 0 AND PosOfComma < 129 Then
+                'update outstring
+                StringOut = Mid ( StringCut, 1, PosOfComma )
+                  WordCounter = WordCounter + 1
+                'print "s1 = ",stringout +"| "+Str(PosOfComma)+"| "+ hex(CurrPagePos)
+                FirstDelimiter = PosOfComma + 1
+                LastValidPostOfComma = PosOfComma
+            Else
+  
+                'Current ORG
+                If PageSize <> 0 Then
+                  CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(CurrPagePos) )
+                End if
+                'Remove any comma at the end
+                If right( Trim(StringOut),1) = "," Then StringOut = Left( StringOut,Len(StringOut)-1)
+                'Insert into list
+                CurrLine = LinkedListInsert(CurrLine, "  " + ASMInstruction + " " + StringOut )
+
+                'Update the CurrPagePos            
+                CurrPagePos = CurrPagePos + WordCounter
+                StatsUsedProgram = StatsUsedProgram + WordCounter              
+                'Tidy the string
+                StringCut = trim(Mid ( StringCut, LastValidPostOfComma +1 ))
+
+                ' print CurrPagePos, CurrPagePos MOD .MaxSize, wordcounter, PosOfComma, Len(StringCut)
+                
+                FirstDelimiter = 1
+                WordCounter = 0
+                ' print CurrPagePos, Int ( CurrPagePos / PageSize ), CurrPage - 1 , Int ( CurrPagePos / PageSize ) <> CurrPage  - 1
+                If PageSize <> 0  and CurrPage > 0 Then
+                  If Int ( CurrPagePos / PageSize ) <> CurrPage - 1  Then
+                    If CurrPage <= ProgMemPages Then
+                      'Increment the page - this is required to page control and ORG statements ( later in this method)
+                      CurrPage = CurrPage + 1
+                      CurrLine = LinkedListInsert(CurrLine,  "; Page Increment ")
+                    End if
+                  End If
+                End If
+            End If
+          Loop While PosOfComma > 0 And Len(StringCut) <> 0
+        End If        
+        CurrLine = LinkedListInsert(CurrLine, "" )
+        EPDataLoc += (.Items + 1)
+      End IF
+    End With
+
+    'move down as we dont need to align on every table
+    IF AFISupport = 1 and ModePIC and ChipFamily = 16 Then
+      'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
+      CurrLine = LinkedListInsert(CurrLine, " ALIGN 2 ;X1")
+    End if
+    
+    ' Unset .IsData to ensure this is specific table is not handled again
+    If DataTable(CurrEPTable).IsData = -1 then 
+      DataTable(CurrEPTable).IsData = 0
+      DataTable(CurrEPTable).Used = 0
+    End If
+    ' We have processed a DataBlock, so, reduce the counter
+    DataBlockCount = DataBlockCount - 1
+  Next
+
 End Sub

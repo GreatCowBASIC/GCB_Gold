@@ -696,7 +696,7 @@ SUB PreProcessor
   Dim As OriginType Pointer LineOrigin
 
   Dim As Integer T, T2, ICCO, CE, PD, RF, S, LC, LCS, SID, CD, SL, NR, IgnoreFileCounter, LCCACHE, lableCounter
-  Dim As Integer ForceMain, LineTokens, FoundFunction, FoundMacro, CurrChar, ReadScript, CachedCmdPointer
+  Dim As Integer ForceMain, LineTokens, FoundFunction, FoundMacro, FoundData, CurrChar, ReadScript, CachedCmdPointer
   Dim As Integer CurrCharPos, ReadType, ConvertAgain, UnconvertedFiles, FileNo, HandlingInsert, HandledGLCDSelection
   Dim As Single CurrPerc, PercAdd, PercOld
   Dim As Double LastCompTime, StartTime
@@ -704,8 +704,10 @@ SUB PreProcessor
   Dim ConditionalStatus as Integer
   Dim As Single StartOfCommentBlock, EndOfCommentBlock
   Dim LibraryInclude as Integer = 0
-  Dim as Integer functionCounter, subCounter, endfunctionCounter, endsubCounter = 0, InlineRAWASM
+  Dim as Integer functionCounter, subCounter, endfunctionCounter, endsubCounter = 0, dataCounter, endDataCounter = 0, InlineRAWASM
   Dim as String firstSubEncountered = ""
+  Dim as String firstDataEncountered = ""
+  
 
   Dim As String CachedCmd( 20 )
   Dim As Integer CachedPMode( 20 )
@@ -1478,6 +1480,8 @@ SUB PreProcessor
 
           IF LaxSyntax = 0 THEN
 
+           ' start of handling missing sub/function/data structures
+ 
             If Left( DataSource,6) = "GOSUB " then
               LaxSyntax = -1
             End If
@@ -1546,12 +1550,45 @@ SUB PreProcessor
                 exit sub
               End if
             End if
-
+            
             If Left( DataSource,6) = "ELSEIF" Then
                 LogError Message("ElseIfNotSupported"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
                 Close
                 exit sub
             End If
+
+            If Left( DataSource,5) = "DATA " Then
+              If enddataCounter = 0 Then
+                firstDataEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                If dataCounter = 0 Then
+                  firstDataEncountered =   ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Else
+                  LogError Message("MissingEndDataDef"), firstDataEncountered
+                  Close
+                  exit sub  
+                End if
+                dataCounter = dataCounter + 1
+                enddataCounter = 0
+              else
+                LogError Message("MissingEndDataDef"), firstDataEncountered
+                Close
+                exit sub
+              end if
+            End if
+
+            If Left( DataSource,8) = "END DATA" Then
+              If dataCounter = 1 and Len(DataSource)  = 8 Then
+                enddataCounter = 0
+                dataCounter = 0
+                firstDataEncountered = ""                       
+              Else
+                LogError Message("MissingEndDataDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+                Close
+                exit sub
+              End if
+            End if
+          ' end of handling missing sub/function/data structures, there is a later inspection.
+
 
             If Left( DataSource,7) = "ELSE IF" Then
               If Instr( DataSource, " THEN" ) = 0 Then
@@ -1664,13 +1701,14 @@ SUB PreProcessor
           DO WHILE INSTR(DataSource, "  ") <> 0: Replace DataSource, "  ", " ": Loop
           DataSource = Trim(DataSource)
 
-          'Decide if the line read is part of a sub or not
+          'Decide if the line read is part of a sub, function, macro or data block
           IF Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO " Then
             S = 1
 
-            '0 = Sub, 1 = Function, 2 = Macro
+            '0 = Sub, 1 = Function, 2 = Macro, 3 = Data
             FoundFunction = 0
             FoundMacro = 0
+
             Do While Left(DataSource, 4) = "SUB " Or Left(DataSource, 9) = "FUNCTION " Or Left(DataSource, 6) = "MACRO "
               If Left(DataSource, 4) = "SUB " Then
                 DataSource = Trim(Mid(DataSource, 4))
@@ -1706,6 +1744,7 @@ SUB PreProcessor
                 End If
               Next
             End If
+
             'Get sub/function name
             CurrentSub = DataSource
             If INSTR(CurrentSub, "(") <> 0 Then CurrentSub = Trim(Left(CurrentSub, INSTR(CurrentSub, "(") - 1))
@@ -1721,12 +1760,15 @@ SUB PreProcessor
             Subroutine(SBC) = NewSubroutine(CurrentSub)
             CurrPos = Subroutine(SBC)->CodeStart
             With *Subroutine(SBC)
+
               .SourceFile = RF  'Source file
               .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC) + "?"
 
               'Function or macro?
               .IsMacro = FoundMacro
               .IsFunction = FoundFunction
+
+              ' 
               If FoundFunction Then
                 .ReturnType = NewFNType
                 'If length specified in type name, remove from function type
@@ -1794,7 +1836,7 @@ SUB PreProcessor
             GOTO LoadNextLine
           END IF
 
-          'Decide if the line read is part of a data table or not
+          'Decide if the line read is part of a data table/data or not
           IF Left(DataSource, 6) = "TABLE " THEN
             'Open new data table
             S = 2
@@ -1885,6 +1927,52 @@ SUB PreProcessor
 
           'End of table
           ElseIF Left(DataSource, 10) = "END EEPROM" THEN
+            S = 0
+            GOTO LoadNextLine
+          END IF
+
+          'Handle DATA data directly via table methods
+          IF Left(DataSource, 5) = "DATA " THEN
+            'New data set
+            S = 2
+
+            'Get data from line
+            GetTokens DataSource, LineToken(), LineTokens
+
+            'Create data table
+            DataTables += 1
+            With DataTable(DataTables)
+              .Origin = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
+              .Name = LineToken(2)
+              .FixedLoc = 0
+
+              .Type = "WORD"  'Default type
+
+              If LineTokens > 2 Then
+                ' Change the DATA Type
+                If LineToken(3) = "AS" Then
+                  If ( LineToken(4) = "BYTE" OR LineToken(4) = "WORD" ) then
+                    .Type = LineToken(4)
+                  Else
+                    LogError "Incorrect DATA Block type.  BYTE or WORD supported", .origin
+                  End if
+                Else
+                  LogError "Sytax Error:  AS missing", .origin  
+                End If
+              End If
+              
+              .Used = -1
+              .RawItems = LinkedListCreate
+              .CurrItem = .RawItems
+              .Items = 0
+              .StoreLoc = 1
+              .IsData = -1
+            End With
+
+            GOTO LoadNextLine
+
+          'End of DATA
+          ElseIF Left(DataSource, 8) = "END DATA" THEN
             S = 0
             GOTO LoadNextLine
           END IF
@@ -2263,7 +2351,25 @@ SUB PreProcessor
       S = 0
     END IF
     CLOSE
-    
+
+    ' Is the subs etc syntax correct?    
+    If subCounter <> 0 Then
+        LogError Message("MissingEndSubDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+        Close
+        exit sub
+    End If
+    If functionCounter <> 0 Then
+        LogError Message("MissingEndFuncDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+        Close
+        exit sub
+    End If
+    If dataCounter <> 0 Then
+        LogError Message("MissingEndDataDef"), ";?F" + Str(RF) + "L" + Str(LC) + "?"
+        Close
+        exit sub
+    End If
+
+
     IF VBS = 1 AND RF = 1 THEN PRINT SPC(5); Message("LoadSource");
 
     If VBS = 1 And ShowProgressCounters Then
@@ -2645,10 +2751,12 @@ Sub ReadTableValues
 
   'Search each table
   For CurrTable = 1 To DataTables
+    
     With DataTable(CurrTable)
 
       'Parse raw values
       CurrLine = .RawItems->Next
+
       Do While CurrLine <> 0
 
         Origin = CurrLine->MetaData
@@ -2712,6 +2820,7 @@ Sub ReadTableValues
 
             .Items += 1
             .Item(.Items) = MakeDec(Value)
+            
           Else
             OutMessage = Message("TableItemInvalid")
             Replace OutMessage, "%item%", Value
@@ -3585,12 +3694,15 @@ Sub TableString (DataSource As String, TF As String )  '( TF must persist!)
     'Only between "Table " --> "End Table"
     If UCase(Left(TempDS, 6)) = "TABLE " Then TF = "1"
     If UCase(Left(TempDS, 7)) = "EEPROM " Then TF = "1"
+    If UCase(Left(TempDS, 5)) = "DATA " Then TF = "1"
     
-    If UCase(Left(TempDS, 9)) = "END TABLE" THEN TF = "0"
+
+    If UCase(Left(TempDS, 9))  = "END TABLE" THEN TF = "0"
     If UCase(Left(TempDS, 10)) = "END EEPROM" THEN TF = "0"
+    If UCase(Left(TempDS, 8))  = "END DATA" THEN TF = "0"
+
 
      If TF = "1" Then
-
 
         'if chr(255) then we need to issue a warning. 255 is reserved.
         If instr(TempDS,chr(255)) <> 0 then

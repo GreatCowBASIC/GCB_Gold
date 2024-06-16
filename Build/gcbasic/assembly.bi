@@ -48,7 +48,6 @@ Sub AsmOptimiser (CompSub As SubType Pointer)
     CurrLine = CompSub->CodeStart->Next
     If CurrLine <> 0 Then
       Do While CurrLine->Next <> 0
-
         IF CurrLine->Value = " movlw 0" AND Left(CurrLine->Next->Value, 7) = " movwf " THEN
           ClearVar = Mid(CurrLine->Next->Value, 7)
           CurrLine->Value = " clrf" + ClearVar
