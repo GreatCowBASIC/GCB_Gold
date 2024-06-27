@@ -79,6 +79,7 @@
 ' 26/03/2024: Updated StringToSingle to optimise multiplications
 ' 27/03/2024: Updated StringToSingle for 12F/16F support
 ' 29/03/2024: Updated SingleToString for 12F/16F support
+' 25/05/2024: Updated to include StringToByte, StringToWord - both support commas in string
 
 
 'Length/position
@@ -360,45 +361,81 @@ Function Val(SysInString As String) As Word
   For SysStringTemp = 1 to SysCharCount
     SysStrData = SysInString(SysStringTemp)
     'Exit if non-digit encountered
-    If SysStrData < 48 Then Exit Sub
-    If SysStrData > 57 Then Exit Sub
-    'Add to output value
-    Val = Val * 10 + SysStrData - 48
+    If SysStrData <> "," Then
+      If SysStrData < 48 Then Exit Function
+      If SysStrData > 57 Then Exit Function
+      'Add to output value
+      Val = Val * 10 + SysStrData - 48
+    End If
   Next
 
 End Function
 
-'String > Integer
-Function StringToInteger(SysInString as String) as Integer
+#define StringToByte StringToWord
+Function StringToWord(SysInString As String) As Word
+  'Parse SysInString, convert to word
+  'Stop parsing and exit on any non-number character
+
+  'Clear output value
+  StringToWord = 0
+
+  'Get input length
+  SysCharCount = SysInString(0)
+  If SysCharCount = 0 Then Exit Function
+
+  'Parse
+  For SysStringTemp = 1 to SysCharCount
+    SysStrData = SysInString(SysStringTemp)
+    'Exit if non-digit encountered
+    If SysStrData <> "," Then
+      If SysStrData < 48 Then Exit Function
+      If SysStrData > 57 Then Exit Function
+      'Add to output value
+      StringToWord = StringToWord * 10 + SysStrData - 48
+    End If
+  Next
+
+End Function
+
+'String > Long
+#DEFINE VAL32 StringToLong
+Function StringToLong(SysInString as String * 14 ) as Long
 'Converts a string to Long
 'max in = "4294967295" (#4.294.967.295)
     StringToLong=0
     SysCharCount = SysInString(0)          'length of input string
     For SysStringTemp = 1 to SysCharCount
         SysStrData = SysInString(SysStringTemp)
-        StringToLong = StringToLong * 10 + SysStrData - 48
+        If SysStrData <> "," Then
+          StringToLong = StringToLong * 10 + SysStrData - 48
+        End If
     Next
 end Function
 
-'String > Long
-#DEFINE VAL32 StringToLong
-Function StringToLong(SysInString as String) as Long
-'Converts a string to Long
-'max in = "4294967295" (#4.294.967.295)
+'String > Integer
+Function StringToInteger(SysInString as String) as Integer
+'Converts a string to Integer
+
+    Dim _signValue as Bit
+    _signValue = 0
     SysInString = trim(SysInString)
     if SysInString(1)="-" Then 
       SysInString(1)=" "
+      _signValue = 1
       SysInString = trim(SysInString)
     End If
     
 
-    StringToLong=0
+    StringToInteger=0
     SysCharCount = SysInString(0)          'length of input string
     For SysStringTemp = 1 to SysCharCount 
         SysStrData = SysInString(SysStringTemp)
-        if SysStrData = 32 Then Exit Function
-        StringToLong = StringToLong * 10 + SysStrData - 48
+        If SysStrData <> "," Then
+          If SysStrData = 32 Then Exit For
+          StringToInteger = StringToInteger * 10 + SysStrData - 48
+        Next
     Next
+    If _signValue = 1 then StringToInteger = StringToInteger * -1
 end Function
 
 Function StringToSingle (in StrNum as String) as Single

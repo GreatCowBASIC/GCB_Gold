@@ -1224,7 +1224,7 @@ Function HasSFRBit(BitName As String) As Integer
 
 End Function
 
-Sub MakeSFR (UserVar As String, SFRAddress As Integer)
+Sub MakeSFR (UserVar As String, SFRAddress As Integer, AVRAlias As Integer = 0 )
   'Make UserVar an SFR, assign location
 
   'Create new sysvar
@@ -1233,6 +1233,7 @@ Sub MakeSFR (UserVar As String, SFRAddress As Integer)
 
   NewVar->Name = UserVar
   NewVar->Location = SFRAddress
+  NewVar->AVRAlias = AVRAlias
 
   HashMapSet(SysVars, UserVar, NewVar)
 

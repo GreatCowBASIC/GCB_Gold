@@ -266,6 +266,7 @@ Type SysVarType
   Name As String
   Location As Integer
   Parent As String
+  AVRAlias As Integer
 End Type
 
 Type AsmCommand
@@ -467,6 +468,8 @@ declare Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
 declare Function GetRealIOName(InName As String) As String
 declare Function GetRegisterLoc(RegName As String) As Integer
 declare Function GetSysVar(VarName As String) As SysVarType Pointer
+declare Function GetSysVarName(Address as Integer) As String
+declare Function GetSysVarAliasName(Address as Integer) As String
 declare FUNCTION GetSub(Origin As String) As String
 declare Function GetSubFullName(SubIndex As Integer) As String
 declare FUNCTION GetSubID(Origin As String) As Integer
@@ -479,6 +482,7 @@ declare Function IsNonBanked(Location As Integer) As Integer
 declare Function IsInAccessBank(VarNameIn As String) As Integer
 declare Function IsIOPinName(PinName As String) As Integer
 declare Function IsIOReg (RegNameIn As String) As Integer
+declare Function IsIORegDX (RegNameIn As String) As Integer
 declare Function IsLowIOReg (RegNameIn As String) As Integer
 declare Function IsLowRegister(VarName As String) As Integer
 declare Function IsRegister (VarName As String) As Integer
@@ -554,7 +558,7 @@ declare Function GetWholeSFR(BitName As String) As String
 declare Function GetSFRBitValue(BitName As String) As String
 declare Function HasSFR(SFRName As String) As Integer
 declare Function HasSFRBit(BitName As String) As Integer
-declare Sub MakeSFR (UserVar As String, SFRAddress As Integer)
+declare Sub MakeSFR (UserVar As String, SFRAddress As Integer, AVRAlias As Integer = 0 )
 declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
 declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
 
@@ -813,8 +817,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.6.12"
-buildVersion = "1388"
+Version = "2024.6.27"
+buildVersion = "1390"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -9906,7 +9910,7 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
   Dim As String SType, DType, Temp, DestTemp, SourceTemp, CSource, SCastType
   Dim As String LTemp, HTemp, UTemp, ETemp, STemp, Source, ReferencedSub
   Dim As Integer CurrVarByte, LastConst, ThisConst, DestIsDouble
-  Dim As Integer DestReg, DestIO, SourceReg, SourceIO, L, H, U, E, CD
+  Dim As Integer DestReg, DestIO, SourceReg, SourceIO, L, H, U, E, CD, DestIOAVRDx
   Dim As Integer RequiresGlitchFree, DestVarBitNo, UseIndirectBitSet
   Dim As LongInt S
   Dim As PinDirType Pointer CurrPinDir
@@ -9986,6 +9990,7 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     Return OutList
   End If
 
+  DestIOAVRDx = IsIORegDX(Dest)
   DestReg = IsRegister(Dest)
   DestIO = IsIOReg(Dest)
   SourceReg = IsRegister(Source)
@@ -10167,7 +10172,31 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
               LastConst = ThisConst
             End If
             If DestIO Then
-              CurrLine = LinkedListInsert(CurrLine, " out " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
+              If DestIOAVRDx Then
+                ' Delete the previous ldi
+                CurrLine = LinkedListDelete(CurrLine)
+
+                AddVar "syscalctempb_u", "BYTE", 1, 0, "REAL", "", , -1
+                AddVar "syscalctempb_e", "BYTE", 1, 0, "REAL", "", , -1
+                AddVar "SysValueCopy", "BYTE", 1, 0, "REAL", "", , -1
+
+                'Map legacy AVR register to DX register using the Alias Addressing
+                Dim j1 as Integer = GetSysVar(Dest)->location
+                ' A bit of complex maths essentials maps the range 0,1,2... to ( PortA, PortB, PortC ...) to DX range 1024, 1056, 1088...register addresses
+                ' like PORTA to PORTA_DIR 0 to 1024
+                j1 = 1024+((J1*8)-((J1 MOD 4)*8))+((J1 MOD 4)*4)
+
+                ' print GetSysVar(Dest)->location, j1, GetSysVarName(j1)
+                CurrLine = LinkedListInsert(CurrLine, "; IOAVRDX #1")
+
+                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_u, low(" +  GetSysVarName( j1) + ")")
+                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_e, high(" + GetSysVarName( j1 ) + ")")
+                CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy, Z")
+                CurrLine = LinkedListInsert(CurrLine, " ori SysValueCopy, " + STemp)
+                CurrLine = LinkedListInsert(CurrLine, " st z , SysValueCopy")
+              Else
+                CurrLine = LinkedListInsert(CurrLine, " out " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
+              End If
             Else
               CurrLine = LinkedListInsert(CurrLine, " sts " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
             End If
@@ -13052,8 +13081,29 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
     'Luckily the USART registers start with U
     ElseIf IsLowIOReg(VarName) and not ( ChipFamily = 121 and Ucase(left(trim(VarName),1)) = "U" ) Then
 
-      Temp = " sbi ": IF Status = "0" THEN Temp = " cbi "
-      CurrLine = LinkedListInsert(CurrLine, Temp + VarName + "," + VarBit)
+      If IsIORegDX(VarName) = 0 Then
+        Temp = " sbi ": IF Status = "0" THEN Temp = " cbi "
+        CurrLine = LinkedListInsert(CurrLine, Temp + VarName + "," + VarBit)
+      Else
+                'Map legacy AVR register to DX register using the Alias Addressing
+                Dim j1 as Integer = GetSysVar(VarName)->location
+                ' A bit of complex maths essentials maps the range 0,1,2... to ( PortA, PortB, PortC ...) to DX range 1024, 1056, 1088...register addresses
+                ' like PORTA to PORTA_DIR 0 to 1024
+                j1 = 1024+((J1*8)-((J1 MOD 4)*8))+((J1 MOD 4)*4)+1
+
+                ' print GetSysVar(VarName)->location, j1, GetSysVarName(j1)
+                CurrLine = LinkedListInsert(CurrLine, "; IOAVRDX #2")
+
+                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_u, low(" +  GetSysVarName( j1) + ")")
+                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_e, high(" + GetSysVarName( j1 ) + ")")
+                CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy, Z")
+                If Status = "1" Then 
+                  CurrLine = LinkedListInsert(CurrLine, " ori SysValueCopy, " + Str(2^VAL(VarBit)))
+                Else
+                  CurrLine = LinkedListInsert(CurrLine, " andi SysValueCopy, " + Str(255 - 2^VAL(VarBit)))
+                End If
+                CurrLine = LinkedListInsert(CurrLine, " st z , SysValueCopy")
+      End If
 
     ElseIf IsIOReg(VarName) Then
       Temp = " sbr ": IF Status = "0" THEN Temp = " cbr "
@@ -13969,8 +14019,53 @@ End Function
 Function GetSysVar(VarName As String) As SysVarType Pointer
   'Look up system variable in hash map
   Return CPtr(SysVarType Pointer, HashMapGet(SysVars, VarName))
-
 End Function
+
+Function GetSysVarAliasName(Address as Integer) As String
+  'Look up system variable in hash map
+  
+  Dim As LinkedListElement Pointer TempList, CurrItem
+  Dim As SysVarType Pointer SysVar
+  Dim As Integer TempVar
+
+  TempList = HashMapToList(SysVars, -1)
+  CurrItem = TempList->Next
+  Do While CurrItem <> 0
+    SysVar = CurrItem->MetaData
+    If SysVar->AVRAlias = -1 Then
+ '     print "ADDRESS:",address, SysVar->Location , SysVar->Name , SysVar->Location = Address
+      If SysVar->Location = Address Then
+        print "Return Alias" + SysVar->Name
+        Return SysVar->Name
+      End If
+    End If
+    CurrItem = CurrItem->Next
+  Loop
+  Return ""
+End Function
+
+Function GetSysVarName(Address as Integer) As String
+  'Look up system variable in hash map
+  
+  Dim As LinkedListElement Pointer TempList, CurrItem
+  Dim As SysVarType Pointer SysVar
+  Dim As Integer TempVar
+
+  TempList = HashMapToList(SysVars, -1)
+  CurrItem = TempList->Next
+  Do While CurrItem <> 0
+    SysVar = CurrItem->MetaData
+    ' print "ADDRESS:",address, SysVar->Location , SysVar->Name , SysVar->Location = Address
+    If SysVar->Location = Address and SysVar->AVRAlias = 0 Then
+      'print "Return" + SysVar->Name
+      Return SysVar->Name
+    End If
+
+    CurrItem = CurrItem->Next
+  Loop
+  Return ""
+End Function
+
 
 Function GetSub(Origin As String) As String
   Dim As String Temp
@@ -14916,6 +15011,26 @@ Function IsIOPinName(PinNameIn As String) As Integer
   End If
 
   Return -1
+End Function
+
+Function IsIORegDX (RegNameIn As String) As Integer
+  Dim RegName As String
+  Dim As Integer SD
+  Dim As SysVarType Pointer FoundVar
+
+  'Check if a register is in the IO space
+  RegName = TRIM(UCASE(RegNameIn))
+
+  'Search, return true if found
+  FoundVar = GetSysVar(RegName)
+  If FoundVar <> 0 Then
+    'print RegName, FoundVar->AVRAlias, FoundVar->Location, FoundVar->Name
+    If FoundVar->AVRAlias = -1 Then
+      Return -1
+    End If
+  End If
+
+  Return 0
 End Function
 
 Function IsIOReg (RegNameIn As String) As Integer
@@ -16773,12 +16888,19 @@ SUB ReadChipData
 
       End With
 
+    'AVR alaises
+    ElseIf ReadDataMode = "[avralias]" AND INSTR(InLine, "=") <> 0 THEN
+      InLine = UCase(InLine)
+      SFRName = Trim(Left(InLine, INSTR(InLine, "=") - 1))
+      SFRLoc = Val(Trim(Mid(InLine, INSTR(InLine, "=") + 1)))
+      MakeSFR(SFRName, SFRLoc, -1 )
+
     'Registers
     ElseIf ReadDataMode = "[registers]" AND INSTR(InLine, ",") <> 0 THEN
       InLine = UCase(InLine)
       SFRName = Trim(Left(InLine, INSTR(InLine, ",") - 1))
       SFRLoc = Val(Trim(Mid(InLine, INSTR(InLine, ",") + 1)))
-      MakeSFR(SFRName, SFRLoc)
+      MakeSFR(SFRName, SFRLoc, 0)
 
       'On 18F, need to find lowest SFR location
       If ChipFamily = 16 Then
