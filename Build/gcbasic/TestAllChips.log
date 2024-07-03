@@ -12,6 +12,8 @@ Error: DAT file error - probable `MaxAddress = 255` is incorrect/too small. Chec
 Processing 16cr926
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
+Processing 18lf46j13
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
 Processing 18macro
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
@@ -19,12 +21,59 @@ Processing 12f520
 Error: Excessive RAM usage! Delete some variables, reduce the size of arrays, or upgrade to a more powerful chip
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
+Processing 16f13113
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13114
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13115
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13123
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13124
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13125
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13143
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13144
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 16f13145
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
 Processing 16f527
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
 Processing 16f570
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
+Processing 18f44j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f44j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f45j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f45j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f46j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f46j13
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f46j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f46j53
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f47j13
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18f47j53
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
 Processing 18f65j94
 Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
@@ -53,64 +102,24 @@ Processing 18f96j99
 Error: Program is too large, cannot fit into available program memory
 Processing 18f97j72
 Error: Program is too large, cannot fit into available program memory
-Processing tiny15
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny25
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny26
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny261
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny261a
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny43u
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny45
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny461
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny461a
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny85
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny861
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
-Processing tiny861a
-timer.h ** (412): Error: IFDEF/Constant: PS_1_8 equates to 4 cannot reassigned to equate to 2 (System Include)
-timer.h ** (413): Error: IFDEF/Constant: PS_1_64 equates to 7 cannot reassigned to equate to 3 (System Include)
-timer.h ** (414): Error: IFDEF/Constant: PS_1_256 equates to 9 cannot reassigned to equate to 4 (System Include)
-timer.h ** (415): Error: IFDEF/Constant: PS_1_1024 equates to 11 cannot reassigned to equate to 5 (System Include)
+Processing 18lf44j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf44j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf45j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf45j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf46j11
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf46j13
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf46j50
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf46j53
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf47j13
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing 18lf47j53
+system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
 Completed

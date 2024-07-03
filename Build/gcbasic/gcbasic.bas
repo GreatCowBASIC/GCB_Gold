@@ -817,8 +817,12 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.6.27"
-buildVersion = "1390"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
+Version = "2024.6.29"
+buildVersion = "1393" ' : AVRDX Dev"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
+                       '1391 build isolates ASM message DATA-END DATA
+                       '1392 build resolves GCASM duplicate error message
+                       '1393 continuing AVRDX development
+                       
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -20609,7 +20613,7 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
 
   'Only do this once.
   If NonChipFamily16DataBlocksNotAdded = 0 then Exit Sub
-  CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
+  If DataBlockCount > 0 Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
   
   Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState, LogWarningCounter = 0, CurrEPTable, OrgPosOffset
   Dim as String ASMInstruction, Prefix, EPTempData
@@ -20681,9 +20685,10 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
             EPDataLoc = EPDataLoc + 1
         End If
 
-        ToAsmSymbols += 1
-        ToAsmSymbol(ToAsmSymbols, 2) = Str(CurrPagePos)
-        ToAsmSymbol(ToAsmSymbols, 1) = Trim(.Name)
+        'Remove ASMSymbol as this is not required.
+          'ToAsmSymbols += 1
+          'ToAsmSymbol(ToAsmSymbols, 2) = Str(CurrPagePos)
+          'ToAsmSymbol(ToAsmSymbols, 1) = Trim(.Name)
 
         AddConstant(Trim(.Name), Str(CurrPagePos))
 
