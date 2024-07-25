@@ -870,7 +870,16 @@ SUB AssembleProgram
               Else
                 'On AVR, need to add 32 to SFR addresses for LDS/STS
                 If ModeAVR And ((CD = 2 And CurrCmd = LDSLoc) Or (CD = 1 And CurrCmd = STSLoc)) Then
-                  If IsIOReg(ParamValues(CD)) Then ParamValue = Str(Val(ParamValue) + 32)
+                  If IsIOReg(ParamValues(CD)) Then
+                    If  GetSysVarAliasName ( ParamValues(CD) ) = "" Then  
+                      ParamValue = Str(Val(ParamValue) + 32)
+                    Else
+                      'AVRDX needs to handle specific SFR with the correct address like CPU_CCP
+                      If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+                        Print " 32 AVRDX : " + "GCASM: AVRDX GCASM skipping adding 32 to SFR address " + ParamValues(CD) + " : " +Str(AsmLine->Value) + " " + DataSource
+                      End If
+                    End If
+                  End If
                 End If
               End If
               ParamValues(CD) = ParamValue
@@ -1024,7 +1033,7 @@ SUB AssembleProgram
           'Add in binary parameter to binary command
           PSO = ParamStart 'Save original parameter, may be needed
           FP = 0
-          'Print #1, Chr(9) + CurrentParam + Chr(9) + Cmd + Chr(9) + ParamValues(CD)
+          Print #1, Chr(9) + CurrentParam + Chr(9) + Cmd + Chr(9) + ParamValues(CD)
           Do While FP <= LEN(Cmd)
             FP += 1
             IF Mid(Cmd, FP, 1) = CurrentParam THEN
@@ -1084,9 +1093,11 @@ SUB AssembleProgram
           End If
           Cmd = NewCmd
         LOOP
-
+        
         HT = 0
         PV = 1
+        
+        ' Calcualate the HEX value of the cmd, at this point it is a series of 1s and 0s
         FOR T = LEN(Cmd) TO 1 STEP -1
           HT = HT + VAL(Mid(Cmd, T, 1)) * PV
           PV = PV * 2
@@ -1100,10 +1111,14 @@ SUB AssembleProgram
         Do While Len(DebugLoc) < 6
           DebugLoc = "0" + DebugLoc
         Loop
-        Print #1, DebugLoc + Chr(9) + Trim(DebugOutput) + Chr(9) + DebugInput
+        'Print #1, DebugLoc + Chr(9) + Trim(DebugOutput) + Chr(9) + DebugInput
         CurrProgramLoc = LinkedListInsert(CurrProgramLoc, HTemp, CurrentLine)
 
-        'PRINT DataSource, Cmd, HTemp
+        If (( compilerdebug and cGCASMDEBUG ) = cGCASMDEBUG )  Then
+          Print "GCASM :" + left( DataSource+"                                                    ", 40) + ", " + Cmd + ", " + HTemp
+        End If
+        ' PRINT DataSource, Cmd, HTemp
+
 
         If RepeatBanksel = 1 THEN GOTO AddMoreBanksel
         If RepeatPagesel = 1 THEN GOTO AddMorePagesel

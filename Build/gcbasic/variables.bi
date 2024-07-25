@@ -676,7 +676,9 @@ SUB AllocateRAM
                 .Location = FinalRegLoc
               End If
               RegBytesLocated += 1
-              RegBytesUsed  += 1
+              ' Implemented at 1289, disabled at 1395 as this doubled mmemory counters!  
+              ' Left the variable RegBytesUsed as Dimensioned as I may remember how to reproduce the memory count issue in the future. 
+              '   RegBytesUsed  += 1
               'Then mark that shared bank location as off limits to other variables
               For SR = 1 To FreeRAM
                 If VarLoc(SR) = FinalRegLoc Then
@@ -1295,3 +1297,16 @@ Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
   End If
 
 End Sub
+
+Function IsNumberString(gstring As String) As Integer
+  Dim As Integer i
+
+  gstring = trim(gstring)
+
+  For i = 1 to Len(gstring)
+    If Asc(Mid(gstring, i, 1)) < Asc("(") Or Asc(Mid(gstring, i, 1)) > Asc("9") Then 
+      Return 0
+    End If
+  Next i
+  Return -1
+End Function

@@ -469,7 +469,7 @@ declare Function GetRealIOName(InName As String) As String
 declare Function GetRegisterLoc(RegName As String) As Integer
 declare Function GetSysVar(VarName As String) As SysVarType Pointer
 declare Function GetSysVarName(Address as Integer) As String
-declare Function GetSysVarAliasName(Address as Integer) As String
+declare Function GetSysVarAliasName(Lookup as String) As String
 declare FUNCTION GetSub(Origin As String) As String
 declare Function GetSubFullName(SubIndex As Integer) As String
 declare FUNCTION GetSubID(Origin As String) As Integer
@@ -558,6 +558,7 @@ declare Function GetWholeSFR(BitName As String) As String
 declare Function GetSFRBitValue(BitName As String) As String
 declare Function HasSFR(SFRName As String) As Integer
 declare Function HasSFRBit(BitName As String) As Integer
+declare Function IsNumberString(gstring As String) As Integer
 declare Sub MakeSFR (UserVar As String, SFRAddress As Integer, AVRAlias As Integer = 0 )
 declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
 declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
@@ -652,7 +653,7 @@ DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, C
 DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug
+Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
@@ -747,6 +748,7 @@ Dim Shared As Integer StoredGCASM = 0
 Dim Shared As Integer MakeHexMode = 1
 Dim Shared As Integer Columnwidth = 77
 Dim Shared As UByte   ReservedwordC = 0
+Dim Shared As Integer ChipMhzCalculated = 0
 
 'Config correct code
 Dim Shared as string adaptedConfigLine
@@ -781,7 +783,6 @@ const   ChipFamily18FxxQ84 as integer = 16106
 const   ChipFamily18FxxK83 as integer = 16107
 const   ChipFamily18FxxQ83 as integer = 16108
 const   ChipFamily18FxxQ71 as integer = 16109
-const   ChipFamily18FxxQ71 as integer = 16109
 const   ChipFamily18FxxQ20 as integer = 16110
 const   ChipFamily18FxxQ24 as integer = 16111
 
@@ -791,6 +792,10 @@ const   cVAR_SET            as integer = 2
 const   cCALCOPS            as integer = 4
 const   cCOMPILECALCMULT    as integer = 8
 const   cGENERATEAUTOPINDIR as integer = 16
+const   cAVRDXDEBUG         as integer = 32
+const   cGCASMDEBUG         as integer = 64
+
+
 
 const   INSERTFILENOTOPEN = 1
 const   INSERTFILEOPEN    = 2
@@ -817,11 +822,11 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.6.29"
-buildVersion = "1393" ' : AVRDX Dev"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
+Version = "2024.07.21"
+buildVersion = "1398 " ': AVRDX Dev"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
                        '1391 build isolates ASM message DATA-END DATA
                        '1392 build resolves GCASM duplicate error message
-                       '1393 continuing AVRDX development
+                       '1397 completed   AVRDX development
                        
 
 #ifdef __FB_DARWIN__  'OS X/macOS
@@ -886,7 +891,7 @@ MakeHexMode = 1
 Conditionaldebugfile = ""
 SelectedAssembler = "GCASM"
 VersionSuffix = ""
-
+ChipAVRDX = 0
 AddConstant("CHIPASSEMBLER", SelectedAssembler )
 
 ChipProgrammerName=""
@@ -1032,11 +1037,24 @@ If Not ErrorsFound Then
             OscType = " (" + Message("CRExtOsc") + ")"
           End If
         End If
+        If ChipAVRDX Then
+          If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
+            OscType = " (" + Message("CRIntOsc") + ")"
+          Else
+            OscType = " (" + Message("CRExtOsc") + ")"
+          End If
+        End If
+
         PRINT SPC(10);
         If ModePIC Then
-            Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType
+            Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType;
         Else
-            Print "OSC: " + Str(ChipMhz) + "Mhz"
+            Print "OSC: " + Str(ChipMhz) + "Mhz" + OscType;
+        End If
+        If ChipMhzCalculated = 0 Then
+          Print
+        Else
+          Print " : Frequency calculated by compiler"
         End If
       End If
   '  END IF
@@ -1902,21 +1920,32 @@ Sub AddMainInitCode
 
   'Set up stack (AVR and Z8)
   If ModeAVR Then
-
     CurrLine = LinkedListInsert(CurrLine, ";Initialise stack")
-    If HasSFR("SPH") Then
+    If CHIPAVRDX Then
+      'AVRDX support
+      If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+        CurrLine = LinkedListInsert(CurrLine, ";AVRDX #0 support")
+      End If
+
       CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,high(RAMEND)")
-
-      CurrLine = LinkedListInsert(CurrLine, " out SPH, SysValueCopy")
-    End If
-    If HasSFR("SPL") Then
+      CurrLine = LinkedListInsert(CurrLine, " out "+GetSysVarAliasName ("ALIAS_CPU_SPH")+", SysValueCopy")
       CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,low(RAMEND)")
-      CurrLine = LinkedListInsert(CurrLine, " out SPL, SysValueCopy")
-    ElseIf HasSFR("SP") Then
-      CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,low(RAMEND)")
-      CurrLine = LinkedListInsert(CurrLine, " out SP, SysValueCopy")
-    End If
+      CurrLine = LinkedListInsert(CurrLine, " out "+GetSysVarAliasName ("ALIAS_CPU_SPL")+", SysValueCopy") 
+    Else
+      'Pre AVRDX support code - unchanged
+      If HasSFR("SPH") Then
+        CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,high(RAMEND)")
 
+        CurrLine = LinkedListInsert(CurrLine, " out SPH, SysValueCopy")
+      End If
+      If HasSFR("SPL") Then
+        CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,low(RAMEND)")
+        CurrLine = LinkedListInsert(CurrLine, " out SPL, SysValueCopy")
+      ElseIf HasSFR("SP") Then
+        CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy,low(RAMEND)")
+        CurrLine = LinkedListInsert(CurrLine, " out SP, SysValueCopy")
+      End If
+    End If
   ElseIf ModeZ8 Then
     CurrLine = LinkedListInsert(CurrLine, ";Initialise stack")
     CurrLine = LinkedListInsert(CurrLine, " ldx SPH, #HIGH(RAMEND)")
@@ -2647,7 +2676,12 @@ SUB CalcConfig
   'Store required settings in OutConfig array
 
   'No config registers on AVR that can be set by GCBASIC
-  If ModeAVR Then Exit Sub
+  If ModeAVR Then
+    If NOT CHIPAVRDX Then
+      Exit Sub
+    End If
+  End If
+
   'Do not set CONFIG if TBL+
   If ConfigDisabled Then Exit Sub
 
@@ -2661,6 +2695,22 @@ SUB CalcConfig
   Dim As String ConfigReportFileName
   'Set default - this is needed as some dont use the same LF INT OSC
   LFINTOSCString = "LFINT"
+
+
+  'AVRDX Support
+    'Check for internal osc
+    If IntOscSpeeds <> 0 Then
+    For CurrSpeed = 1 To IntOscSpeeds
+      If CSng(ChipMhz) = CSng(IntOscSpeed(CurrSpeed)) Then
+        AddConstant("CHIPUSINGINTOSC", "TRUE")
+        Exit For
+      End If
+    Next
+    End If
+    If CHIPAVRDX Then 
+      Exit Sub
+    End If
+
 
   'Read config
   Do WHILE INSTR(CONFIG, "&") <> 0: Replace CONFIG, "&", ",": Loop
@@ -5381,6 +5431,17 @@ Function CompileConditions (Condition As String, IfTrue As String, Origin As Str
           End If
         ElseIf ModeAVR Then
           VarName = GetRealIOName(Left(BI, INSTR(BI, ",") - 1))
+
+          If ChipAVRDX Then
+            If IsIORegDX(VarName) Then
+              'Map legacy megaAVR register to DX register using the Alias Addressing
+              If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+                CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #3")
+              End if
+              VarName = GetSysVarAliasName ( VarName ) 
+            End If          
+          End If
+
           BI = Mid(BI, INSTR(BI, ",") + 1)
           If VarName = "SREG" Then
             IF INSTR(UCase(IfTrue), "TRUE") <> 0 THEN
@@ -5405,6 +5466,7 @@ Function CompileConditions (Condition As String, IfTrue As String, Origin As Str
             CurrLine = LinkedListInsert(CurrLine, Cmd + VarName + "," + BI)
 
           ElseIf IsLowIOReg(VarName) Then
+          
             IF INSTR(UCase(IfTrue), "TRUE") <> 0 THEN
               Cmd = " sbis "
               IF S = 1 THEN Cmd = " sbic "
@@ -6084,12 +6146,25 @@ SUB CompileDir (CompSub As SubType Pointer)
       'Check that a pin is being set
       'TrisPort should be a single letter or IO, no bits
       NotIOPort = 0
-      IF LEN(TrisPort) <> 1 AND TrisPort <> "IO" THEN NotIOPort = -1
-      If TrisPort < "A" Or TrisPort > "Z" Then NotIOPort = -1
+
+      IF LEN(TrisPort) <> 1 AND TrisPort <> "IO" THEN 
+        NotIOPort = -1
+      '  print 1
+      END IF
+      If TrisPort < "A" Or TrisPort > "Z" Then 
+        NotIOPort = -1
+       ' print 2
+      END IF
       'SFR for variable should exist, unless 12 bit core PIC
       Temp = VarName
-      If Instr(Temp, ".") <> 0 Then Temp = Left(Temp, Instr(Temp, ".") - 1)
-      If ChipFamily <> 12 And GetSysVar(Temp) = 0 Then NotIOPort = -1
+      If Instr(Temp, ".") <> 0 Then 
+        Temp = Left(Temp, Instr(Temp, ".") - 1)
+        'print 3
+      END IF
+      If ChipFamily <> 12 And GetSysVar(Temp) = 0 Then 
+        NotIOPort = -1
+        'print 4
+      END IF
       'Error if port is not valid
       If NotIOPort Then
         Temp = Message("NotIO")
@@ -9994,8 +10069,27 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     Return OutList
   End If
 
+  If ChipAVRDX Then
+    If IsIORegDX(Dest) Then
+    ' print dest, GetSysVarAliasName ( Dest ), IsIORegDX(Dest)
+      'Map legacy megaAVR register to DX register using the Alias Addressing
+      If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+        CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #5 Dest: " + Dest)
+      End if
+      Dest = GetSysVarAliasName ( Dest ) 
+    End If   
+
+    If IsIORegDX(Source) Then
+      'Map legacy megaAVR register to DX register using the Alias Addressing
+      If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+        CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #6 Source: " + Source)
+      End if
+      Source = GetSysVarAliasName ( Source ) 
+    End If   
+  End If
+
   DestIOAVRDx = IsIORegDX(Dest)
-  DestReg = IsRegister(Dest)
+  DestReg = IsRegister(Dest) or IsIORegDX(Dest)
   DestIO = IsIOReg(Dest)
   SourceReg = IsRegister(Source)
   SourceIO = IsIOReg(Source)
@@ -10165,7 +10259,15 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
           If DestReg Then
             AddVar "SysValueCopy", "BYTE", 1, 0, "REAL", "", , -1
             CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy," + STemp)
-            CurrLine = LinkedListInsert(CurrLine, " mov " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
+            If DestIOAVRDx Then
+              If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+                  CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #1")
+              End If  
+              CurrLine = LinkedListInsert(CurrLine, " sts " + GetByte(GetSysVarAliasName ( Dest), CurrVarByte) + ",SysValueCopy")
+            Else
+              ' CurrLine = LinkedListInsert(CurrLine, "; IOAVR #1")
+              CurrLine = LinkedListInsert(CurrLine, " mov " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
+            End If
           Else
             'Note: If writing to a register, ldi then mov must be used
             'This will be optimised to ldi only later
@@ -10176,34 +10278,10 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
               LastConst = ThisConst
             End If
             If DestIO Then
-              If DestIOAVRDx Then
-                ' Delete the previous ldi
-                CurrLine = LinkedListDelete(CurrLine)
-
-                AddVar "syscalctempb_u", "BYTE", 1, 0, "REAL", "", , -1
-                AddVar "syscalctempb_e", "BYTE", 1, 0, "REAL", "", , -1
-                AddVar "SysValueCopy", "BYTE", 1, 0, "REAL", "", , -1
-
-                'Map legacy AVR register to DX register using the Alias Addressing
-                Dim j1 as Integer = GetSysVar(Dest)->location
-                ' A bit of complex maths essentials maps the range 0,1,2... to ( PortA, PortB, PortC ...) to DX range 1024, 1056, 1088...register addresses
-                ' like PORTA to PORTA_DIR 0 to 1024
-                j1 = 1024+((J1*8)-((J1 MOD 4)*8))+((J1 MOD 4)*4)
-
-                ' print GetSysVar(Dest)->location, j1, GetSysVarName(j1)
-                CurrLine = LinkedListInsert(CurrLine, "; IOAVRDX #1")
-
-                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_u, low(" +  GetSysVarName( j1) + ")")
-                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_e, high(" + GetSysVarName( j1 ) + ")")
-                CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy, Z")
-                CurrLine = LinkedListInsert(CurrLine, " ori SysValueCopy, " + STemp)
-                CurrLine = LinkedListInsert(CurrLine, " st z , SysValueCopy")
-              Else
-                CurrLine = LinkedListInsert(CurrLine, " out " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
-              End If
+              CurrLine = LinkedListInsert(CurrLine, " out " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
             Else
               CurrLine = LinkedListInsert(CurrLine, " sts " + GetByte(Dest, CurrVarByte) + ",SysValueCopy")
-            End If
+             End If
           End If
         End If
 
@@ -10400,6 +10478,7 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
         End If
 
       ElseIf ModeAVR Then
+
         If UseIndirectBitSet Then
           If InvertBitCopy Then
             CurrLine = LinkedListInsert(CurrLine, " sbr SysByteTempB,1")
@@ -10521,6 +10600,17 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
         End If
       ElseIf ModeAVR Then
         SourceTemp = Source
+
+        If ChipAVRDX Then        
+          If IsIORegDX(DestVarName) Then
+            'Map legacy megaAVR register to DX register using the Alias Addressing
+            If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+              CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #4")
+            End if
+            DestVarName = GetSysVarAliasName ( DestVarName ) 
+          End If   
+        End If
+        
         If IsRegister(DestVarName) Then
           If InvertBitCopy Then
             CurrLine = LinkedListInsert(CurrLine, " sbr " + DestVarName + ",1<<" + DestVarBit)
@@ -13084,31 +13174,25 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
     'As chipfamily121 has USART registers that are NOT accessible using SBI and CBI instructions'
     'Luckily the USART registers start with U
     ElseIf IsLowIOReg(VarName) and not ( ChipFamily = 121 and Ucase(left(trim(VarName),1)) = "U" ) Then
+      Temp = " sbi ": IF Status = "0" THEN Temp = " cbi "
+      
+      If ChipAVRDX and IsIORegDX(VarName) Then
+        'AVRDX approach to set a bit
+        'Map legacy AVR register to DX register using the Alias Addressing
+        If (( compilerdebug and cAVRDXDEBUG ) = cAVRDXDEBUG )  Then
+          CurrLine = LinkedListInsert(CurrLine, ";IOAVRDX #2")
+        End if
 
-      If IsIORegDX(VarName) = 0 Then
-        Temp = " sbi ": IF Status = "0" THEN Temp = " cbi "
-        CurrLine = LinkedListInsert(CurrLine, Temp + VarName + "," + VarBit)
+        Temp = " sbr ": IF Status = "0" THEN Temp = " cbr "
+        AddVar "SysValueCopy", "BYTE", 1, 0, "REAL", "", , -1
+        'Get the current value in z, copy z into SysValueCopy, then write back from Z
+        CurrLine = LinkedListInsert(CurrLine, " lds SysValueCopy, " +  GetSysVarAliasName ( VarName ))
+        CurrLine = LinkedListInsert(CurrLine, Temp + "SysValueCopy" + ",1<<" + VarBit)
+        CurrLine = LinkedListInsert(CurrLine, " sts " + GetSysVarAliasName ( VarName ) + ", SysValueCopy")
       Else
-                'Map legacy AVR register to DX register using the Alias Addressing
-                Dim j1 as Integer = GetSysVar(VarName)->location
-                ' A bit of complex maths essentials maps the range 0,1,2... to ( PortA, PortB, PortC ...) to DX range 1024, 1056, 1088...register addresses
-                ' like PORTA to PORTA_DIR 0 to 1024
-                j1 = 1024+((J1*8)-((J1 MOD 4)*8))+((J1 MOD 4)*4)+1
-
-                ' print GetSysVar(VarName)->location, j1, GetSysVarName(j1)
-                CurrLine = LinkedListInsert(CurrLine, "; IOAVRDX #2")
-
-                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_u, low(" +  GetSysVarName( j1) + ")")
-                CurrLine = LinkedListInsert(CurrLine, " ldi syscalctempb_e, high(" + GetSysVarName( j1 ) + ")")
-                CurrLine = LinkedListInsert(CurrLine, " ldi SysValueCopy, Z")
-                If Status = "1" Then 
-                  CurrLine = LinkedListInsert(CurrLine, " ori SysValueCopy, " + Str(2^VAL(VarBit)))
-                Else
-                  CurrLine = LinkedListInsert(CurrLine, " andi SysValueCopy, " + Str(255 - 2^VAL(VarBit)))
-                End If
-                CurrLine = LinkedListInsert(CurrLine, " st z , SysValueCopy")
+        'Original MegaAVR approach to set a bit
+        CurrLine = LinkedListInsert(CurrLine, Temp + VarName + "," + VarBit)
       End If
-
     ElseIf IsIOReg(VarName) Then
       Temp = " sbr ": IF Status = "0" THEN Temp = " cbr "
       CurrLine = LinkedListInsert(CurrLine, " in SysValueCopy," + VarName)
@@ -14025,22 +14109,42 @@ Function GetSysVar(VarName As String) As SysVarType Pointer
   Return CPtr(SysVarType Pointer, HashMapGet(SysVars, VarName))
 End Function
 
-Function GetSysVarAliasName(Address as Integer) As String
-  'Look up system variable in hash map
+Function GetSysVarAliasName( Lookup as String ) As String
+  'Look up system alias in hash map, if the retrun string has leadng "ALIAS_" then remove
+  'This enables AVR DX return lookups
   
   Dim As LinkedListElement Pointer TempList, CurrItem
   Dim As SysVarType Pointer SysVar
   Dim As Integer TempVar
+  Dim As Integer Address
+  Dim As String ReturnString, Bits
+
+  'Remove BITs as bits are not part of the ALIAS
+  Bits = ""
+  If Instr( Lookup, ".") > 0 Then
+    Bits = Trim(Mid(Lookup, InStr(Lookup, ".") ))
+    Lookup = Trim(Left(Lookup, InStr(Lookup, ".") - 1))
+  End If
+
+  If GetSysVar( Lookup ) = 0 Then Return ""
+  
+
+  Address = GetSysVar( Lookup )->location
 
   TempList = HashMapToList(SysVars, -1)
   CurrItem = TempList->Next
   Do While CurrItem <> 0
     SysVar = CurrItem->MetaData
     If SysVar->AVRAlias = -1 Then
- '     print "ADDRESS:",address, SysVar->Location , SysVar->Name , SysVar->Location = Address
-      If SysVar->Location = Address Then
-        print "Return Alias" + SysVar->Name
-        Return SysVar->Name
+      ' print "ADDRESS:",address , CurrItem->Value, SysVar->Name , SysVar->Location, SysVar->AVRAlias
+      If SysVar->Location = Address and Trim(SysVar->Name) <> Trim(Lookup) Then
+        ReturnString = SysVar->Name
+        If Left( SysVar->Name, 6 ) = "ALIAS_" Then 
+          ReturnString =  Mid( SysVar->Name, 7)
+        End If
+        ' print "2 Return Alias" + ReturnString+Bits
+        Return ReturnString+Bits
+        Exit Function
       End If
     End If
     CurrItem = CurrItem->Next
@@ -15024,6 +15128,10 @@ Function IsIORegDX (RegNameIn As String) As Integer
 
   'Check if a register is in the IO space
   RegName = TRIM(UCASE(RegNameIn))
+  'Only check the register name not the bit
+  If Instr( RegName, ".") > 0 Then
+    RegName = Left(RegName, InStr(RegName, ".") - 1)
+  End If
 
   'Search, return true if found
   FoundVar = GetSysVar(RegName)
@@ -16845,6 +16953,7 @@ SUB ReadChipData
         Case "minimumbankselect": ChipMinimumBankSelect = Val(TempData)
 
         Case "memorylock": AddConstant("CHIP" + UCase(ConstName), ucase(ConstValue) )
+        Case "avrdx": AddConstant("CHIP" + UCase(ConstName), ucase(ConstValue) ): ChipAVRDX = -1
       End Select
 
       'Create constant for data item
@@ -19715,7 +19824,7 @@ Sub MergeSubroutines
     Next
 
     'This is needed as in there is NO GCB source.
-    If NonChipFamily16DataBlocksNotAdded Then 
+    If NonChipFamily16DataBlocksNotAdded And MaxDestPage = CurrPage - 1 Then 
       AddDataBlocks ( CurrLine, CurrPage, CurrPagePos, DataBlockCount, NonChipFamily16DataBlocksNotAdded  )
       NonChipFamily16DataBlocksNotAdded = 0
     End If

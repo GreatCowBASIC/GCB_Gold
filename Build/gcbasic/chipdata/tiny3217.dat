@@ -1,138 +1,664 @@
 'GCBASIC/GCGB Chip Data File
 'Chip: ATtiny3217
-'Generated 6/4/2019
-'Format last revised: 23/9/2007
 
 [ChipData]
-Prog=16384
-EEPROM=256
-RAM=2048
-I/O=0
-ADC=0
-MaxMHz=1
-Pins=20
-Family=120
-ConfigWords=0
-GPR=32
-MaxAddress=16384
-HardwareMult=n
+    Prog=16384
+    EEPROM=256
+    RAM=2048
+    I/O=18
+    ADC=2
+    MaxMHz=20
+    'This constant is exposed with only the first parameter (if more than one)
+    IntOsc=20, 10, 5, 2.5, 1.25, 0.625, 0.3125, 3.3333333, 2, 1.6666667, 0.8333333, 0.4166667
+
+    Pins=20
+    Family=140
+    ConfigWords=0
+    GPR=32
+    MaxAddress=16384
+    HardwareMult=n
+    AVRFamily=Series1
+    AVRGCC=avrxmega3
+    AVRDX=1
 
 [Pointers]
-XL:26
-XH:27
-YL:28
-YH:29
-ZL:30
-ZH:31
+    XL:26
+    XH:27
+    YL:28
+    YH:29
+    ZL:30
+    ZH:31
 
 [Interrupts]
-NMIfromCRC:CRCSCAN_NMI,2,,
-TBD:PORTA_PORT,6,,
-UsartRX1Ready:USART0_RXC,54,RXCIE0,RXC0
-UsartTX1Sent:USART0_TXC,58,TXCIE0,TXC0
-VoltageRegulator:BOD_VLM,4,,
+    NMIfromCRC:CRCSCAN_NMI,2,,
+    TBD:PORTA_PORT,6,,
+    UsartRX1Ready:USART0_RXC,54,RXCIE0,RXC0
+    UsartTX1Sent:USART0_TXC,58,TXCIE0,TXC0
+    VoltageRegulator:BOD_VLM,4,,
+    NVM:NVMCTRL_EE,60,,
+
+[AVRAlias]
+    'This section is for the AVRDX support
+    'The aliasing is megaAVR register = value = AVRDX register
+    ' example:          ALIAS_PORTA_DIR = 0 = DDRA
+    '
+    'Format is Strict: 
+    ' There must be two entries per alias, the order is not importand, the relatiionship as shown above is critical.
+    ' The value is NOT a register address value. The value MUST be unique
+    ' The assignment must be an equal sign `=`
+    '
+    'How does this all work?
+    ' The compiler will look up a megaAVR register ( ignoring any register.bits), and, using the returned number, lookup the AVRDX alias.
+    ' DDRA = 0, lookup the AVRDX alias of 0, returns ALIAS_PORTA_DIR
+    ' the compiler strips off the "ALIAS_"PORTA_DIR prefix as the register to be used.
+    '
+    'A deeper dive.
+    ' The compiler treats this list of AVRAlias(es) just like the [register] section of this file.
+    ' The compiler loads these AVRAlias(es) but with the attribute of .ALIAS set (true).
+    ' This means, using the example above, that DDRA is not a real register and it is has the .ALIAS attribute set. 
+    ' So, the compiler knows that DDRA for this specific chip and all AVRDX chips that DDRA is actually to be transformed to an AVRDX set of instructiions.
+
+    'PortA
+    ALIAS_PORTA_DIR=0                                      ; 0000             
+    DDRA=0                                          ; 0000 alias
+    ALIAS_PORTA_OUT=1                                      ; 0001             
+    PORTA=1                                         ; 0001 alias         
+    ALIAS_PORTA_IN=2                                       ; 0002   
+    PINA=2                                          ; 0002 alias
+
+    'Port B etv
+    ALIAS_PORTB_DIR=4                                      ; 0004            
+    DDRB=4                                          ; 0004 alias
+    ALIAS_PORTB_OUT=5                                      ; 0005              
+    PORTB=5                                         ; 0005 alias
+    ALIAS_PORTB_IN=6                                       ; 0006
+    PINB=6                                          ; 0006 alias
+
+    ALIAS_PORTC_DIR=8                                      ; 0008          
+    DDRC=8                                          ; 0008 alias
+    ALIAS_PORTC_OUT=9                                      ; 0009
+    PORTC=9                                         ; 0009 alias
+    ALIAS_PORTC_IN=10                                      ; 000A
+    PINC=10                                         ; 000A alias
+
+    'Additional Aliases are required
+    ALIAS_CPU_SPL=61    
+    CPU_SPL=61    
+    ALIAS_CPU_SPH=62                                                                                     
+    CPU_SPH=62 
+
+    'Additional lock register alias
+    ALIAS_CPU_CCP=52                                  ; 0034
+    CPU_CCP=52                                        ; 0034
+
+    'Required register
+    SREG=63                                           ; 003F alias
 
 [Registers]
-SYNCUSER0,2
-SYNCUSER1,3
-OSC16ERR3V,2
-OSC16ERR5V,3
-OSC20ERR3V,4
-OSC20ERR5V,5
-TEMPSENSE1,1
-CMP0L,8
-CMP0H,9
-CMP0BUFL,24
-CMP0BUFH,25
-CMP1L,10
-CMP1H,11
-CMP1BUFL,26
-CMP1BUFH,27
-CMP2L,12
-CMP2H,13
-CMP2BUFL,28
-CMP2BUFH,29
-PERL,6
-PERH,7
-PERBUFL,22
-PERBUFH,23
-HCMP0,9
-HCMP1,11
-HCMP2,13
-HCNT,1
-HPER,7
-LCMP0,8
-LCMP1,10
-LCMP2,12
-LPER,6
-CAPTUREAL,2
-CAPTUREAH,3
-CAPTUREBL,4
-CAPTUREBH,5
-CMPACLRL,10
-CMPACLRH,11
-CMPASETL,8
-CMPASETH,9
-CMPBCLRL,14
-CMPBCLRH,15
-CMPBSETL,12
-CMPBSETH,13
-USERROW33,1
-USERROW34,2
-USERROW35,3
-USERROW36,4
-USERROW37,5
-USERROW38,6
-USERROW39,7
-USERROW40,8
-USERROW41,9
-USERROW42,10
-USERROW43,11
-USERROW44,12
-USERROW45,13
-USERROW46,14
-USERROW47,15
-USERROW48,16
-USERROW49,17
-USERROW50,18
-USERROW51,19
-USERROW52,20
-USERROW53,21
-USERROW54,22
-USERROW55,23
-USERROW56,24
-USERROW57,25
-USERROW58,26
-USERROW59,27
-USERROW60,28
-USERROW61,29
-USERROW62,30
-USERROW63,31
+    SYNCUSER0,2
+    SYNCUSER1,3
+    OSC16ERR3V,2
+    OSC16ERR5V,3
+    OSC20ERR3V,4
+    OSC20ERR5V,5
+    TEMPSENSE1,1
+    CMP0L,8
+    CMP0H,9
+    CMP0BUFL,24
+    CMP0BUFH,25
+    CMP1L,10
+    CMP1H,11
+    CMP1BUFL,26
+    CMP1BUFH,27
+    CMP2L,12
+    CMP2H,13
+    CMP2BUFL,28
+    CMP2BUFH,29
+    PERL,6
+    PERH,7
+    PERBUFL,22
+    PERBUFH,23
+    HCMP0,9
+    HCMP1,11
+    HCMP2,13
+    HCNT,1
+    HPER,7
+    LCMP0,8
+    LCMP1,10
+    LCMP2,12
+    LPER,6
+    CAPTUREAL,2
+    CAPTUREAH,3
+    CAPTUREBL,4
+    CAPTUREBH,5
+    CMPACLRL,10
+    CMPACLRH,11
+    CMPASETL,8
+    CMPASETH,9
+    CMPBCLRL,14
+    CMPBCLRH,15
+    CMPBSETL,12
+    CMPBSETH,13
+    USERROW33,1
+    USERROW34,2
+    USERROW35,3
+    USERROW36,4
+    USERROW37,5
+    USERROW38,6
+    USERROW39,7
+    USERROW40,8
+    USERROW41,9
+    USERROW42,10
+    USERROW43,11
+    USERROW44,12
+    USERROW45,13
+    USERROW46,14
+    USERROW47,15
+    USERROW48,16
+    USERROW49,17
+    USERROW50,18
+    USERROW51,19
+    USERROW52,20
+    USERROW53,21
+    USERROW54,22
+    USERROW55,23
+    USERROW56,24
+    USERROW57,25
+    USERROW58,26
+    USERROW59,27
+    USERROW60,28
+    USERROW61,29
+    USERROW62,30
+    USERROW63,31
+
+
+    RSTCTRL_RSTFR,64                                  ; 0040
+    RSTCTRL_SWRR,65                                   ; 0041
+    SLPCTRL_CTRLA,80                                  ; 0050
+    CLKCTRL_MCLKCTRLA,96                              ; 0060
+    CLKCTRL_MCLKCTRLB,97                              ; 0061
+    CLKCTRL_MCLKLOCK,98                               ; 0062
+    CLKCTRL_MCLKSTATUS,99                             ; 0063
+    CLKCTRL_OSC20MCTRLA,112                           ; 0070
+    CLKCTRL_OSC20MCALIBA,113                          ; 0071
+    CLKCTRL_OSC20MCALIBB,114                          ; 0072
+    CLKCTRL_OSC32KCTRLA,120                           ; 0078
+    CLKCTRL_XOSC32KCTRLA,124                          ; 007C
+    BOD_CTRLA,128                                     ; 0080
+    BOD_CTRLB,129                                     ; 0081
+    BOD_VLMCTRLA,136                                  ; 0088
+    BOD_INTCTRL,137                                   ; 0089
+    BOD_INTFLAGS,138                                  ; 008A
+    BOD_STATUS,139                                    ; 008B
+    VREF_CTRLA,160                                    ; 00A0
+    VREF_CTRLB,161                                    ; 00A1
+    VREF_CTRLC,162                                    ; 00A2
+    VREF_CTRLD,163                                    ; 00A3
+    WDT_CTRLA,256                                     ; 0100
+    WDT_STATUS,257                                    ; 0101
+    CPUINT_CTRLA,272                                  ; 0110
+    CPUINT_STATUS,273                                 ; 0111
+    CPUINT_LVL0PRI,274                                ; 0112
+    CPUINT_LVL1VEC,275                                ; 0113
+    CRCSCAN_CTRLA,288                                 ; 0120
+    CRCSCAN_CTRLB,289                                 ; 0121
+    CRCSCAN_STATUS,290                                ; 0122
+    RTC_CTRLA,320                                     ; 0140
+    RTC_STATUS,321                                    ; 0141
+    RTC_INTCTRL,322                                   ; 0142
+    RTC_INTFLAGS,323                                  ; 0143
+    RTC_TEMP,324                                      ; 0144
+    RTC_DBGCTRL,325                                   ; 0145
+    RTC_CLKSEL,327                                    ; 0147
+    RTC_CNTL,328                                      ; 0148 byte alias LSB see WIO
+    RTC_CNTH,329                                      ; 0149 byte alias MSB see WIO
+    RTC_PERL,330                                      ; 014A byte alias LSB see WIO
+    RTC_PERH,331                                      ; 014B byte alias MSB see WIO
+    RTC_CMPL,332                                      ; 014C byte alias LSB see WIO
+    RTC_CMPH,333                                      ; 014D byte alias MSB see WIO
+    RTC_PITCTRLA,336                                  ; 0150
+    RTC_PITSTATUS,337                                 ; 0151
+    RTC_PITINTCTRL,338                                ; 0152
+    RTC_PITINTFLAGS,339                               ; 0153
+    RTC_PITDBGCTRL,341                                ; 0155
+    EVSYS_ASYNCSTROBE,384                             ; 0180
+    EVSYS_SYNCSTROBE,385                              ; 0181
+    EVSYS_ASYNCCH0,386                                ; 0182
+    EVSYS_ASYNCCH1,387                                ; 0183
+    EVSYS_ASYNCCH2,388                                ; 0184
+    EVSYS_ASYNCCH3,389                                ; 0185
+    EVSYS_SYNCCH0,394                                 ; 018A
+    EVSYS_SYNCCH1,395                                 ; 018B
+    EVSYS_ASYNCUSER0,402                              ; 0192
+    EVSYS_ASYNCUSER1,403                              ; 0193
+    EVSYS_ASYNCUSER2,404                              ; 0194
+    EVSYS_ASYNCUSER3,405                              ; 0195
+    EVSYS_ASYNCUSER4,406                              ; 0196
+    EVSYS_ASYNCUSER5,407                              ; 0197
+    EVSYS_ASYNCUSER6,408                              ; 0198
+    EVSYS_ASYNCUSER7,409                              ; 0199
+    EVSYS_ASYNCUSER8,410                              ; 019A
+    EVSYS_ASYNCUSER9,411                              ; 019B
+    EVSYS_ASYNCUSER10,412                             ; 019C
+    EVSYS_ASYNCUSER11,413                             ; 019D
+    EVSYS_ASYNCUSER12,414                             ; 019E
+    EVSYS_SYNCUSER0,418                               ; 01A2
+    EVSYS_SYNCUSER1,419                               ; 01A3
+    CCL_CTRLA,448                                     ; 01C0
+    CCL_SEQCTRL0,449                                  ; 01C1
+    CCL_LUT0CTRLA,453                                 ; 01C5
+    CCL_LUT0CTRLB,454                                 ; 01C6
+    CCL_LUT0CTRLC,455                                 ; 01C7
+    CCL_TRUTH0,456                                    ; 01C8
+    CCL_LUT1CTRLA,457                                 ; 01C9
+    CCL_LUT1CTRLB,458                                 ; 01CA
+    CCL_LUT1CTRLC,459                                 ; 01CB
+    CCL_TRUTH1,460                                    ; 01CC
+    PORTMUX_CTRLA,512                                 ; 0200
+    PORTMUX_CTRLB,513                                 ; 0201
+    PORTMUX_CTRLC,514                                 ; 0202
+    PORTMUX_CTRLD,515                                 ; 0203
+    PORTA_DIR,1024                                    ; 0400
+    PORTA_DIRSET,1025                                 ; 0401
+    PORTA_DIRCLR,1026                                 ; 0402
+    PORTA_DIRTGL,1027                                 ; 0403
+    PORTA_OUT,1028                                    ; 0404
+    PORTA_OUTSET,1029                                 ; 0405
+    PORTA_OUTCLR,1030                                 ; 0406
+    PORTA_OUTTGL,1031                                 ; 0407
+    PORTA_IN,1032                                     ; 0408
+    PORTA_INTFLAGS,1033                               ; 0409
+    PORTA_PIN0CTRL,1040                               ; 0410
+    PORTA_PIN1CTRL,1041                               ; 0411
+    PORTA_PIN2CTRL,1042                               ; 0412
+    PORTA_PIN3CTRL,1043                               ; 0413
+    PORTA_PIN4CTRL,1044                               ; 0414
+    PORTA_PIN5CTRL,1045                               ; 0415
+    PORTA_PIN6CTRL,1046                               ; 0416
+    PORTA_PIN7CTRL,1047                               ; 0417
+    PORTB_DIR,1056                                    ; 0420
+    PORTB_DIRSET,1057                                 ; 0421
+    PORTB_DIRCLR,1058                                 ; 0422
+    PORTB_DIRTGL,1059                                 ; 0423
+    PORTB_OUT,1060                                    ; 0424
+    PORTB_OUTSET,1061                                 ; 0425
+    PORTB_OUTCLR,1062                                 ; 0426
+    PORTB_OUTTGL,1063                                 ; 0427
+    PORTB_IN,1064                                     ; 0428
+    PORTB_INTFLAGS,1065                               ; 0429
+    PORTB_PIN0CTRL,1072                               ; 0430
+    PORTB_PIN1CTRL,1073                               ; 0431
+    PORTB_PIN2CTRL,1074                               ; 0432
+    PORTB_PIN3CTRL,1075                               ; 0433
+    PORTB_PIN4CTRL,1076                               ; 0434
+    PORTB_PIN5CTRL,1077                               ; 0435
+    PORTB_PIN6CTRL,1078                               ; 0436
+    PORTB_PIN7CTRL,1079                               ; 0437
+    PORTC_DIR,1088                                    ; 0440
+    PORTC_DIRSET,1089                                 ; 0441
+    PORTC_DIRCLR,1090                                 ; 0442
+    PORTC_DIRTGL,1091                                 ; 0443
+    PORTC_OUT,1092                                    ; 0444
+    PORTC_OUTSET,1093                                 ; 0445
+    PORTC_OUTCLR,1094                                 ; 0446
+    PORTC_OUTTGL,1095                                 ; 0447
+    PORTC_IN,1096                                     ; 0448
+    PORTC_INTFLAGS,1097                               ; 0449
+    PORTC_PIN0CTRL,1104                               ; 0450
+    PORTC_PIN1CTRL,1105                               ; 0451
+    PORTC_PIN2CTRL,1106                               ; 0452
+    PORTC_PIN3CTRL,1107                               ; 0453
+    PORTC_PIN4CTRL,1108                               ; 0454
+    PORTC_PIN5CTRL,1109                               ; 0455
+    PORTC_PIN6CTRL,1110                               ; 0456
+    PORTC_PIN7CTRL,1111                               ; 0457
+
+    ADC0_CTRLA,1536                                   ; 0600
+    ADC0_CTRLB,1537                                   ; 0601
+    ADC0_CTRLC,1538                                   ; 0602
+    ADC0_CTRLD,1539                                   ; 0603
+    ADC0_CTRLE,1540                                   ; 0604
+    ADC0_SAMPCTRL,1541                                ; 0605
+    ADC0_MUXPOS,1542                                  ; 0606
+    ADC0_COMMAND,1544                                 ; 0608
+    ADC0_EVCTRL,1545                                  ; 0609
+    ADC0_INTCTRL,1546                                 ; 060A
+    ADC0_INTFLAGS,1547                                ; 060B
+    ADC0_DBGCTRL,1548                                 ; 060C
+    ADC0_TEMP,1549                                    ; 060D
+    ADC0_RESL,1552                                    ; 0610 byte alias LSB see WIO
+    ADC0_RESH,1553                                    ; 0611 byte alias MSB see WIO
+    ADC0_WINLTL,1554                                  ; 0612 byte alias LSB see WIO
+    ADC0_WINLTH,1555                                  ; 0613 byte alias MSB see WIO
+    ADC0_WINHTL,1556                                  ; 0614 byte alias LSB see WIO
+    ADC0_WINHTH,1557                                  ; 0615 byte alias MSB see WIO
+    ADC0_CALIB,1558                                   ; 0616
+    ADC1_CTRLA,1600                                   ; 0640
+    ADC1_CTRLB,1601                                   ; 0641
+    ADC1_CTRLC,1602                                   ; 0642
+    ADC1_CTRLD,1603                                   ; 0643
+    ADC1_CTRLE,1604                                   ; 0644
+    ADC1_SAMPCTRL,1605                                ; 0645
+    ADC1_MUXPOS,1606                                  ; 0646
+    ADC1_COMMAND,1608                                 ; 0648
+    ADC1_EVCTRL,1609                                  ; 0649
+    ADC1_INTCTRL,1610                                 ; 064A
+    ADC1_INTFLAGS,1611                                ; 064B
+    ADC1_DBGCTRL,1612                                 ; 064C
+    ADC1_TEMP,1613                                    ; 064D
+    ADC1_RESL,1616                                    ; 0650 byte alias LSB see WIO
+    ADC1_RESH,1617                                    ; 0651 byte alias MSB see WIO
+    ADC1_WINLTL,1618                                  ; 0652 byte alias LSB see WIO
+    ADC1_WINLTH,1619                                  ; 0653 byte alias MSB see WIO
+    ADC1_WINHTL,1620                                  ; 0654 byte alias LSB see WIO
+    ADC1_WINHTH,1621                                  ; 0655 byte alias MSB see WIO
+    ADC1_CALIB,1622                                   ; 0656
+    AC0_CTRLA,1664                                    ; 0680
+    AC0_MUXCTRLA,1666                                 ; 0682
+    AC0_INTCTRL,1670                                  ; 0686
+    AC0_STATUS,1671                                   ; 0687
+    AC1_CTRLA,1672                                    ; 0688
+    AC1_MUXCTRLA,1674                                 ; 068A
+    AC1_INTCTRL,1678                                  ; 068E
+    AC1_STATUS,1679                                   ; 068F
+    AC2_CTRLA,1680                                    ; 0690
+    AC2_MUXCTRLA,1682                                 ; 0692
+    AC2_INTCTRL,1686                                  ; 0696
+    AC2_STATUS,1687                                   ; 0697
+    DAC0_CTRLA,1696                                   ; 06A0
+    DAC0_DATA,1697                                    ; 06A1
+    DAC1_CTRLA,1704                                   ; 06A8
+    DAC1_DATA,1705                                    ; 06A9
+    DAC2_CTRLA,1712                                   ; 06B0
+    DAC2_DATA,1713                                    ; 06B1
+    USART0_RXDATAL,2048                               ; 0800
+    UDRR,2048                                         ; 0800 alias
+    USART0_RXDATAH,2049                               ; 0801
+    USART0_TXDATAL,2050                               ; 0802
+    UDRW,2050                                         ; 0802 alias
+    USART0_TXDATAH,2051                               ; 0803
+    USART0_STATUS,2052                                ; 0804
+    USR,2052                                          ; 0804 alias
+    USART0_CTRLA,2053                                 ; 0805
+    USART0_CTRLB,2054                                 ; 0806
+    UCR,2054                                          ; 0806 alias
+    USART0_CTRLC,2055                                 ; 0807
+    USART0_BAUDL,2056                                 ; 0808 byte alias LSB see WIO
+    USART0_BAUDH,2057                                 ; 0809 byte alias MSB see WIO
+    USART0_DBGCTRL,2059                               ; 080B
+    USART0_EVCTRL,2060                                ; 080C
+    USART0_TXPLCTRL,2061                              ; 080D
+    USART0_RXPLCTRL,2062                              ; 080E
+    TWI0_CTRLA,2064                                   ; 0810
+    TWI0_DBGCTRL,2066                                 ; 0812
+    TWI0_MCTRLA,2067                                  ; 0813
+    TWI0_MCTRLB,2068                                  ; 0814
+    TWI0_MSTATUS,2069                                 ; 0815
+    TWI0_MBAUD,2070                                   ; 0816
+    TWI0_MADDR,2071                                   ; 0817
+    TWI0_MDATA,2072                                   ; 0818
+    TWI0_SCTRLA,2073                                  ; 0819
+    TWI0_SCTRLB,2074                                  ; 081A
+    TWI0_SSTATUS,2075                                 ; 081B
+    TWI0_SADDR,2076                                   ; 081C
+    TWI0_SDATA,2077                                   ; 081D
+    TWI0_SADDRMASK,2078                               ; 081E
+    SPI0_CTRLA,2080                                   ; 0820
+    SPI0_CTRLB,2081                                   ; 0821
+    SPI0_INTCTRL,2082                                 ; 0822
+    SPI0_INTFLAGS,2083                                ; 0823
+    SPI0_DATA,2084                                    ; 0824
+    TCA0_CTRLA,2560                                   ; 0A00
+    TCA0_SPLIT_CTRLA,2560                             ; 0A00 alias
+    TCA0_CTRLB,2561                                   ; 0A01
+    TCA0_SPLIT_CTRLB,2561                             ; 0A01 alias
+    TCA0_CTRLC,2562                                   ; 0A02
+    TCA0_SPLIT_CTRLC,2562                             ; 0A02 alias
+    TCA0_CTRLD,2563                                   ; 0A03
+    TCA0_SPLIT_CTRLD,2563                             ; 0A03 alias
+    TCA0_CTRLECLR,2564                                ; 0A04
+    TCA0_SPLIT_CTRLECLR,2564                          ; 0A04 alias
+    TCA0_CTRLESET,2565                                ; 0A05
+    TCA0_SPLIT_CTRLESET,2565                          ; 0A05 alias
+    TCA0_CTRLFCLR,2566                                ; 0A06
+    TCA0_SPLIT_CTRLFCLR,2566                          ; 0A06 alias
+    TCA0_CTRLFSET,2567                                ; 0A07
+    TCA0_SPLIT_CTRLFSET,2567                          ; 0A07 alias
+    TCA0_EVCTRL,2569                                  ; 0A09
+    TCA0_SPLIT_EVCTRL,2569                            ; 0A09 alias
+    TCA0_INTCTRL,2570                                 ; 0A0A
+    TCA0_SPLIT_INTCTRL,2570                           ; 0A0A alias
+    TCA0_INTFLAGS,2571                                ; 0A0B
+    TCA0_SPLIT_INTFLAGS,2571                          ; 0A0B alias
+    TCA0_DBGCTRL,2574                                 ; 0A0E
+    TCA0_SPLIT_DBGCTRL,2574                           ; 0A0E alias
+    TCA0_TEMP,2575                                    ; 0A0F
+    TCA0_CNTL,2592                                    ; 0A20 byte alias LSB see WIO
+    TCA0_CNTH,2593                                    ; 0A21 byte alias MSB see WIO
+    TCA0_PERL,2598                                    ; 0A26 byte alias LSB see WIO
+    TCA0_PERH,2599                                    ; 0A27 byte alias MSB see WIO
+    TCA0_CMP0L,2600                                   ; 0A28 byte alias LSB see WIO
+    TCA0_CMP0H,2601                                   ; 0A29 byte alias MSB see WIO
+    TCA0_CMP1L,2602                                   ; 0A2A byte alias LSB see WIO
+    TCA0_CMP1H,2603                                   ; 0A2B byte alias MSB see WIO
+    TCA0_CMP2L,2604                                   ; 0A2C byte alias LSB see WIO
+    TCA0_CMP2H,2605                                   ; 0A2D byte alias MSB see WIO
+    TCA0_PERBUFL,2614                                 ; 0A36 byte alias LSB see WIO
+    TCA0_PERBUFH,2615                                 ; 0A37 byte alias MSB see WIO
+    TCA0_CMP0BUFL,2616                                ; 0A38 byte alias LSB see WIO
+    TCA0_CMP0BUFH,2617                                ; 0A39 byte alias MSB see WIO
+    TCA0_CMP1BUFL,2618                                ; 0A3A byte alias LSB see WIO
+    TCA0_CMP1BUFH,2619                                ; 0A3B byte alias MSB see WIO
+    TCA0_CMP2BUFL,2620                                ; 0A3C byte alias LSB see WIO
+    TCA0_CMP2BUFH,2621                                ; 0A3D byte alias MSB see WIO
+    TCB0_CTRLA,2624                                   ; 0A40
+    TCB0_CTRLB,2625                                   ; 0A41
+    TCB0_EVCTRL,2628                                  ; 0A44
+    TCB0_INTCTRL,2629                                 ; 0A45
+    TCB0_INTFLAGS,2630                                ; 0A46
+    TCB0_STATUS,2631                                  ; 0A47
+    TCB0_DBGCTRL,2632                                 ; 0A48
+    TCB0_TEMP,2633                                    ; 0A49
+    TCB0_CNTL,2634                                    ; 0A4A byte alias LSB see WIO
+    TCB0_CNTH,2635                                    ; 0A4B byte alias MSB see WIO
+    TCB0_CCMPL,2636                                   ; 0A4C byte alias LSB see WIO
+    TCB0_CCMPH,2637                                   ; 0A4D byte alias MSB see WIO
+    TCB1_CTRLA,2640                                   ; 0A50
+    TCB1_CTRLB,2641                                   ; 0A51
+    TCB1_EVCTRL,2644                                  ; 0A54
+    TCB1_INTCTRL,2645                                 ; 0A55
+    TCB1_INTFLAGS,2646                                ; 0A56
+    TCB1_STATUS,2647                                  ; 0A57
+    TCB1_DBGCTRL,2648                                 ; 0A58
+    TCB1_TEMP,2649                                    ; 0A59
+    TCB1_CNTL,2650                                    ; 0A5A byte alias LSB see WIO
+    TCB1_CNTH,2651                                    ; 0A5B byte alias MSB see WIO
+    TCB1_CCMPL,2652                                   ; 0A5C byte alias LSB see WIO
+    TCB1_CCMPH,2653                                   ; 0A5D byte alias MSB see WIO
+    TCD0_CTRLA,2688                                   ; 0A80
+    TCD0_CTRLB,2689                                   ; 0A81
+    TCD0_CTRLC,2690                                   ; 0A82
+    TCD0_CTRLD,2691                                   ; 0A83
+    TCD0_CTRLE,2692                                   ; 0A84
+    TCD0_EVCTRLA,2696                                 ; 0A88
+    TCD0_EVCTRLB,2697                                 ; 0A89
+    TCD0_INTCTRL,2700                                 ; 0A8C
+    TCD0_INTFLAGS,2701                                ; 0A8D
+    TCD0_STATUS,2702                                  ; 0A8E
+    TCD0_INPUTCTRLA,2704                              ; 0A90
+    TCD0_INPUTCTRLB,2705                              ; 0A91
+    TCD0_FAULTCTRL,2706                               ; 0A92
+    TCD0_DLYCTRL,2708                                 ; 0A94
+    TCD0_DLYVAL,2709                                  ; 0A95
+    TCD0_DITCTRL,2712                                 ; 0A98
+    TCD0_DITVAL,2713                                  ; 0A99
+    TCD0_DBGCTRL,2718                                 ; 0A9E
+    TCD0_CAPTUREAL,2722                               ; 0AA2 byte alias LSB see WIO
+    TCD0_CAPTUREAH,2723                               ; 0AA3 byte alias MSB see WIO
+    TCD0_CAPTUREBL,2724                               ; 0AA4 byte alias LSB see WIO
+    TCD0_CAPTUREBH,2725                               ; 0AA5 byte alias MSB see WIO
+    TCD0_CMPASETL,2728                                ; 0AA8 byte alias LSB see WIO
+    TCD0_CMPASETH,2729                                ; 0AA9 byte alias MSB see WIO
+    TCD0_CMPACLRL,2730                                ; 0AAA byte alias LSB see WIO
+    TCD0_CMPACLRH,2731                                ; 0AAB byte alias MSB see WIO
+    TCD0_CMPBSETL,2732                                ; 0AAC byte alias LSB see WIO
+    TCD0_CMPBSETH,2733                                ; 0AAD byte alias MSB see WIO
+    TCD0_CMPBCLRL,2734                                ; 0AAE byte alias LSB see WIO
+    TCD0_CMPBCLRH,2735                                ; 0AAF byte alias MSB see WIO
+    SYSCFG_REVID,3841                                 ; 0F01
+    SYSCFG_EXTBRK,3842                                ; 0F02
+    NVMCTRL_CTRLA,4096                                ; 1000
+    NVMCTRL_CTRLB,4097                                ; 1001
+    NVMCTRL_STATUS,4098                               ; 1002
+    NVMCTRL_INTCTRL,4099                              ; 1003
+    NVMCTRL_INTFLAGS,4100                             ; 1004
+    NVMCTRL_DATAL,4102                                ; 1006 byte alias LSB see WIO
+    NVMCTRL_DATAH,4103                                ; 1007 byte alias MSB see WIO
+    NVMCTRL_ADDRL,4104                                ; 1008 byte alias LSB see WIO
+    NVMCTRL_ADDRH,4105                                ; 1009 byte alias MSB see WIO
+    SIGROW_DEVICEID0,4352                             ; 1100
+    SIGROW_DEVICEID1,4353                             ; 1101
+    SIGROW_DEVICEID2,4354                             ; 1102
+    SIGROW_SERNUM0,4355                               ; 1103
+    SIGROW_SERNUM1,4356                               ; 1104
+    SIGROW_SERNUM2,4357                               ; 1105
+    SIGROW_SERNUM3,4358                               ; 1106
+    SIGROW_SERNUM4,4359                               ; 1107
+    SIGROW_SERNUM5,4360                               ; 1108
+    SIGROW_SERNUM6,4361                               ; 1109
+    SIGROW_SERNUM7,4362                               ; 110A
+    SIGROW_SERNUM8,4363                               ; 110B
+    SIGROW_SERNUM9,4364                               ; 110C
+    SIGROW_TEMPSENSE0,4384                            ; 1120
+    SIGROW_TEMPSENSE1,4385                            ; 1121
+    SIGROW_OSC16ERR3V,4386                            ; 1122
+    SIGROW_OSC16ERR5V,4387                            ; 1123
+    SIGROW_OSC20ERR3V,4388                            ; 1124
+    SIGROW_OSC20ERR5V,4389                            ; 1125
+    FUSE_WDTCFG,4736                                  ; 1280
+    FUSE_BODCFG,4737                                  ; 1281
+    FUSE_OSCCFG,4738                                  ; 1282
+    FUSE_TCD0CFG,4740                                 ; 1284
+    FUSE_SYSCFG0,4741                                 ; 1285
+    FUSE_SYSCFG1,4742                                 ; 1286
+    FUSE_APPEND,4743                                  ; 1287
+    FUSE_BOOTEND,4744                                 ; 1288
+    LOCKBIT_LOCKBIT,4746                              ; 128A
+    USERROW_USERROW0,4864                             ; 1300
+    USERROW_USERROW1,4865                             ; 1301
+    USERROW_USERROW2,4866                             ; 1302
+    USERROW_USERROW3,4867                             ; 1303
+    USERROW_USERROW4,4868                             ; 1304
+    USERROW_USERROW5,4869                             ; 1305
+    USERROW_USERROW6,4870                             ; 1306
+    USERROW_USERROW7,4871                             ; 1307
+    USERROW_USERROW8,4872                             ; 1308
+    USERROW_USERROW9,4873                             ; 1309
+    USERROW_USERROW10,4874                            ; 130A
+    USERROW_USERROW11,4875                            ; 130B
+    USERROW_USERROW12,4876                            ; 130C
+    USERROW_USERROW13,4877                            ; 130D
+    USERROW_USERROW14,4878                            ; 130E
+    USERROW_USERROW15,4879                            ; 130F
+    USERROW_USERROW16,4880                            ; 1310
+    USERROW_USERROW17,4881                            ; 1311
+    USERROW_USERROW18,4882                            ; 1312
+    USERROW_USERROW19,4883                            ; 1313
+    USERROW_USERROW20,4884                            ; 1314
+    USERROW_USERROW21,4885                            ; 1315
+    USERROW_USERROW22,4886                            ; 1316
+    USERROW_USERROW23,4887                            ; 1317
+    USERROW_USERROW24,4888                            ; 1318
+    USERROW_USERROW25,4889                            ; 1319
+    USERROW_USERROW26,4890                            ; 131A
+    USERROW_USERROW27,4891                            ; 131B
+    USERROW_USERROW28,4892                            ; 131C
+    USERROW_USERROW29,4893                            ; 131D
+    USERROW_USERROW30,4894                            ; 131E
+    USERROW_USERROW31,4895                            ; 131F
+    USERROW_USERROW32,4896                            ; 1320
+    USERROW_USERROW33,4897                            ; 1321
+    USERROW_USERROW34,4898                            ; 1322
+    USERROW_USERROW35,4899                            ; 1323
+    USERROW_USERROW36,4900                            ; 1324
+    USERROW_USERROW37,4901                            ; 1325
+    USERROW_USERROW38,4902                            ; 1326
+    USERROW_USERROW39,4903                            ; 1327
+    USERROW_USERROW40,4904                            ; 1328
+    USERROW_USERROW41,4905                            ; 1329
+    USERROW_USERROW42,4906                            ; 132A
+    USERROW_USERROW43,4907                            ; 132B
+    USERROW_USERROW44,4908                            ; 132C
+    USERROW_USERROW45,4909                            ; 132D
+    USERROW_USERROW46,4910                            ; 132E
+    USERROW_USERROW47,4911                            ; 132F
+    USERROW_USERROW48,4912                            ; 1330
+    USERROW_USERROW49,4913                            ; 1331
+    USERROW_USERROW50,4914                            ; 1332
+    USERROW_USERROW51,4915                            ; 1333
+    USERROW_USERROW52,4916                            ; 1334
+    USERROW_USERROW53,4917                            ; 1335
+    USERROW_USERROW54,4918                            ; 1336
+    USERROW_USERROW55,4919                            ; 1337
+    USERROW_USERROW56,4920                            ; 1338
+    USERROW_USERROW57,4921                            ; 1339
+    USERROW_USERROW58,4922                            ; 133A
+    USERROW_USERROW59,4923                            ; 133B
+    USERROW_USERROW60,4924                            ; 133C
+    USERROW_USERROW61,4925                            ; 133D
+    USERROW_USERROW62,4926                            ; 133E
+    USERROW_USERROW63,4927                            ; 133F
 
 [Bits]
-SYNCUSER00,SYNCUSER0,0
-SYNCUSER01,SYNCUSER0,1
-SYNCUSER02,SYNCUSER0,2
-SYNCUSER03,SYNCUSER0,3
-SYNCUSER04,SYNCUSER0,4
-SYNCUSER05,SYNCUSER0,5
-SYNCUSER06,SYNCUSER0,6
-SYNCUSER07,SYNCUSER0,7
-SYNCUSER10,SYNCUSER1,0
-SYNCUSER11,SYNCUSER1,1
-SYNCUSER12,SYNCUSER1,2
-SYNCUSER13,SYNCUSER1,3
-SYNCUSER14,SYNCUSER1,4
-SYNCUSER15,SYNCUSER1,5
-SYNCUSER16,SYNCUSER1,6
-SYNCUSER17,SYNCUSER1,7
+    I,SREG,7
+    T,SREG,6
+    H,SREG,5
+    S,SREG,4
+    V,SREG,3
+    N,SREG,2
+    Z,SREG,1
+    C,SREG,0
+
+    PORTA0,PORTA,0
+    PB0,PORTA,0
+    PORTA1,PORTA,1
+    PB1,PORTA,1
+    PORTA2,PORTA,2
+    PB2,PORTA,2
+    PORTA3,PORTA,3
+    PB3,PORTA,3
+    PORTA4,PORTA,4
+    PB4,PORTA,4
+    PORTA5,PORTA,5
+    PB5,PORTA,5
+    PORTA6,PORTA,6
+    PB6,PORTA,6
+    PORTA7,PORTA,7
+    PB7,PORTA,7
+    SYNCUSER00,SYNCUSER0,0
+    SYNCUSER01,SYNCUSER0,1
+    SYNCUSER02,SYNCUSER0,2
+    SYNCUSER03,SYNCUSER0,3
+    SYNCUSER04,SYNCUSER0,4
+    SYNCUSER05,SYNCUSER0,5
+    SYNCUSER06,SYNCUSER0,6
+    SYNCUSER07,SYNCUSER0,7
+    SYNCUSER10,SYNCUSER1,0
+    SYNCUSER11,SYNCUSER1,1
+    SYNCUSER12,SYNCUSER1,2
+    SYNCUSER13,SYNCUSER1,3
+    SYNCUSER14,SYNCUSER1,4
+    SYNCUSER15,SYNCUSER1,5
+    SYNCUSER16,SYNCUSER1,6
+    SYNCUSER17,SYNCUSER1,7
 
 [FreeRAM]
-3800:4000
+    'This is the extent of the RAM.  Inclusive of start and end address
+    3800:4000
 
 [ConfigOps]
-NoConfig-PRG
+    NoConfig-PRG
 
 [Config]
-NoConfig-PRG
+    NoConfig-PRG
 

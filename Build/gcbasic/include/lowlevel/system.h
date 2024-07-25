@@ -94,6 +94,8 @@
 '    09032024 - Renamed all APPNOTE00575MEMORY variables and constants
 '    12032024 - Added development comments
 '    25042024 - Added forced creation of SysValTemp variable
+'    21072024 - Added AVRDX support to InitSys. Supports internal oscillator at 20 or 16 mHz
+'    24072024 - Added 18FxxQ10 type support to PFMWRITEBLOCK
 
 'Constants
 #define ON 1
@@ -1402,45 +1404,282 @@ Sub InitSys
   #ENDIF
 
 
+  #IFNDEF CHIPAVRDX
+  
+      'Turn off all ports
+      #IFDEF Var(GPIO)
+        GPIO = 0
+      #ENDIF
+      #IFDEF Var(PORTA)
+        PORTA = 0
+      #ENDIF
+      #IFDEF Var(PORTB)
+        PORTB = 0
+      #ENDIF
+      #IFDEF Var(PORTC)
+        PORTC = 0
+      #ENDIF
+      #IFDEF Var(PORTD)
+        PORTD = 0
+      #ENDIF
+      #IFDEF Var(PORTE)
+        PORTE = 0
+      #ENDIF
+      #IFDEF Var(PORTF)
+        PORTF = 0
+      #ENDIF
+      #IFDEF Var(PORTG)
+        PORTG = 0
+      #ENDIF
+      #IFDEF Var(PORTH)
+        PORTH = 0
+      #ENDIF
+      #IFDEF Var(PORTI)
+        PORTI = 0
+      #ENDIF
+      #IFDEF Var(PORTJ)
+        PORTJ = 0
+      #ENDIF
+  #ENDIF
+  
+  #IFDEF CHIPAVRDX
+    #IFDEF CHIPUSINGINTOSC
+      //~Set internal frequency
+      //~ frequencies for internal OSC follows.  See .DAT file
+      #IFDEF ChipMaxMHz 24
+        // IntOsc=24, 20, 16, 12, 8, 4, 3, 2, 1
+        #IFDEF ChipMHz 24
+          // ChipMHz 24
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 36)  
+        #ENDIF
+        #IFDEF ChipMHz 20
+          // ChipMHz 20
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 32)  
+        #ENDIF
+        #IFDEF ChipMHz 16
+          // ChipMHz 16
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 28) 
+        #ENDIF
+        #IFDEF ChipMHz 12
+          // ChipMHz 12
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 24)
+        #ENDIF
+        #IFDEF ChipMHz 8
+          // ChipMHz 8
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 20)
+        #ENDIF
+        #IFDEF ChipMHz 4
+          // ChipMHz 4
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 12)
+        #ENDIF
+        #IFDEF ChipMHz 3
+          // ChipMHz 3
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 8)
+        #ENDIF
+        #IFDEF ChipMHz 2
+          // ChipMHz 2
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 4)
+        #ENDIF
+        #IFDEF ChipMHz 1
+          // ChipMHz 1
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 0)
+        #ENDIF
+      #ENDIF
+
+      #IFDEF ChipMaxMHz 20
+        //~ 20, 10, 5, 2.5, 1.25, 0.625, 0.3125, 3.333333333, 2, 1.666667, 0.833333333, 0.416666667
+        #IFDEF ChipMHz 20
+          // ChipMHz 20
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 0)  
+        #ENDIF
+        #IFDEF ChipMHz 10
+          // ChipMHz 10
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 1)   //PEN
+        #ENDIF
+        #IFDEF ChipMHz 5
+          // ChipMHz 5
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 3)  //1
+        #ENDIF
+        #IFDEF ChipMHz 2.5
+          // ChipMHz 2.5
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 5)  //2
+        #ENDIF
+        #IFDEF ChipMHz 1.25
+          // ChipMHz 1.25
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 7)  //3
+        #ENDIF
+        #IFDEF ChipMHz 0.625
+          // ChipMHz 0.625
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 9)  //4
+        #ENDIF
+        #IFDEF ChipMHz 0.3125
+          // ChipMHz 0.3125
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 11) //5
+        #ENDIF
+        #IFDEF ChipMHz 3.333333
+          // ChipMHz 3.333333
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 17) //8
+        #ENDIF
+        #IFDEF ChipMHz 2
+          // ChipMHz 2
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 19)  //9
+        #ENDIF
+        #IFDEF ChipMHz 1.6666667
+          // ChipMHz 1.666667
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 21) //0x0A
+        #ENDIF
+        #IFDEF ChipMHz 0.8333333
+          // ChipMHz 0.833333
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 23) //0x0B
+        #ENDIF
+        #IFDEF ChipMHz 0.4166667
+          // ChipMHz 0.416667
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 25) //0x0C
+        #ENDIF
+      #ENDIF
+
+      #IFDEF ChipMaxMHz 16
+        //~ 16, 8	4	2	1	0.5	0.25	2.666667	1.6	1.333333	0.666667	0.333333
+        #IFDEF ChipMHz 16
+          // ChipMHz 16
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 0)  
+        #ENDIF
+        #IFDEF ChipMHz 8
+          // ChipMHz 8
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 1)   //PEN
+        #ENDIF
+        #IFDEF ChipMHz 4
+          // ChipMHz 4
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 3)  //1
+        #ENDIF
+        #IFDEF ChipMHz 2
+          // ChipMHz 2
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 5)  //2
+        #ENDIF
+        #IFDEF ChipMHz 1
+          // ChipMHz 1
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 7)  //3
+        #ENDIF
+        #IFDEF ChipMHz 0.5
+          // ChipMHz 0.5
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 9)  //4
+        #ENDIF
+        #IFDEF ChipMHz 0.25
+          // ChipMHz 0.25
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 11) //5
+        #ENDIF
+        #IFDEF ChipMHz 2.6666667
+          // ChipMHz 2.666667
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 17) //8
+        #ENDIF
+        #IFDEF ChipMHz 1.6
+          // ChipMHz 1.6
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 19)  //9
+        #ENDIF
+        #IFDEF ChipMHz 1.3333333
+          // ChipMHz 1.333333
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 21) //0x0A
+        #ENDIF
+        #IFDEF ChipMHz 0.6666667
+          // ChipMHz 0.666667
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 23) //0x0B
+        #ENDIF
+        #IFDEF ChipMHz 0.3333333
+          // 0.333333
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
+          AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 25) //0x0C
+        #ENDIF
+      #ENDIF
+    #ENDIF  'CHIPUSINGINTOSC
+    ;---------------------------------------------------------------------------
+    //~ fillmem:
+    //~ ldi r26, low(RAMEND-ChipRam) ; Load the X pointer with start address
+    //~ ldi r27, high(RAMEND-ChipRam) ;
+    //~ ldi r16,0 ; Load fill pattern to r16
+    //~ fill_lp:
+    //~ st X+,r16 ; Store a fill pattern, advance X pointer
+    //~ cpi r26, low(RAMEND-0x08) ; Repeat until XL = low(RAMSTART+0xFF0)
+    //~ brne fill_lp ;
+    //~ cpi r27, high(RAMEND-0x08) ; Repeat until XH = high(RAMSTART+0xFF0)
+    //~ brne fill_lp ; (executed only on every 256th loop cycle)
+          //~ ret ;
 
 
-  'Turn off all ports
-  #IFDEF Var(GPIO)
-    GPIO = 0
+    // AVR DX chips
+      #IFDEF Var(PORTA)
+        DDRA = 0
+        PORTA = 255
+      #ENDIF
+      #IFDEF Var(PORTB)
+        DDRB = 0
+        PORTB = 0
+      #ENDIF
+      #IFDEF Var(PORTC)
+        DDRC = 0
+        PORTC = 0
+      #ENDIF
+      #IFDEF Var(PORTD)
+        DDRD = 0
+        PORTD = 0
+      #ENDIF
+      #IFDEF Var(PORTE)
+        DDRE = 0
+        PORTE = 0
+      #ENDIF
+      #IFDEF Var(PORTF)
+        DDRF = 0
+        PORTF = 0
+      #ENDIF
+      #IFDEF Var(PORTG)
+        DDRG = 0
+        PORTG = 0
+      #ENDIF
+      #IFDEF Var(PORTH)
+        DDRH = 0
+        PORTH = 0
+      #ENDIF
+      #IFDEF Var(PORTI)
+        DDRI = 0
+        PORTI = 0
+      #ENDIF
+      #IFDEF Var(PORTJ)
+        DDRJ = 0
+        PORTJ = 0
+      #ENDIF
   #ENDIF
-  #IFDEF Var(PORTA)
-    PORTA = 0
-  #ENDIF
-  #IFDEF Var(PORTB)
-    PORTB = 0
-  #ENDIF
-  #IFDEF Var(PORTC)
-    PORTC = 0
-  #ENDIF
-  #IFDEF Var(PORTD)
-    PORTD = 0
-  #ENDIF
-  #IFDEF Var(PORTE)
-    PORTE = 0
-  #ENDIF
-  #IFDEF Var(PORTF)
-    PORTF = 0
-  #ENDIF
-  #IFDEF Var(PORTG)
-    PORTG = 0
-  #ENDIF
-  #IFDEF Var(PORTH)
-    PORTH = 0
-  #ENDIF
-  #IFDEF Var(PORTI)
-    PORTI = 0
-  #ENDIF
-  #IFDEF Var(PORTJ)
-    PORTJ = 0
-  #ENDIF
-
-
-
+  
 End Sub
 
 
@@ -5279,11 +5518,23 @@ Sub _PFMReadBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PF
       _PFM_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
       _TBL_ABS_ADDR = _PFM_BlockNum * SAF_ROWSIZE_BYTES
 
+      #IF BIT(SECRD)
+        // 18FxxQ10 type
+        NVMEN = 1
+        ChipMemorylock = 0xBB
+        ChipMemorylock = 0x44
+      #ENDIF
+
       ; Read memory to buffer
       For _PFM_LoopCounter = 1 to _PFM_Count
           TBLRD*+
           _PFM_Buffer( _PFM_LoopCounter  ) = TABLAT
       next
+
+      #IF BIT(SECRD)
+        // 18FxxQ10 type
+        NVMEN = 0
+      #ENDIF
 
 End Sub
 
@@ -5304,6 +5555,7 @@ End Sub
 
 Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _PFM_Count = SAF_ROWSIZE_BYTES )
     //~  Tested on 18F16Q41, Q43
+    //~  Test for 18FxxQ10 and similar chips
 
       Dim _PFM_Count as word
       Dim _PFM_LoopCounter as word
@@ -5321,14 +5573,30 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
         // Explicitly set for the 18FxxK40 family
         NVMCON1 = 0x94
       #ELSE
-        NVMCON1 = NVMCON1 and 0XF8 or 0x06
+        #IF BIT(SECER)
+          //~ Explicit for 18FxxQ4x chips
+          //~ Erase block
+          // 18FxxQ10 type
+          NVMEN = 1
+          NVMCON1.6  = 1
+        #ELSE
+          NVMCON1 = NVMCON1 and 0XF8 or 0x06
+        #ENDIF
       #ENDIF
 
       _GIE_SAVE = GIE    'Save interrupt
       GIE = 0           'disable INTERRUPTS
 
-      ChipMemorylock = 0x55
-      ChipMemorylock = 0xAA
+      #IF BIT(SECRD)
+        // 18FxxQ10 type
+        ChipMemorylock = 0xBB
+        ChipMemorylock = 0x44
+      #ELSE
+        // Unlock
+        ChipMemorylock = 0x55
+        ChipMemorylock = 0xAA
+      #ENDIF
+
 
       #IF ChipSubFamily=16104
         NVMCON1.WR = 1
@@ -5362,7 +5630,16 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
         NVMREG0 = 0
         WREN = 1    
       #ELSE
-        NVMCON1 = NVMCON1 and 0XF8 or 0x05
+        #IF BIT(SECER)
+          // Unlock
+          ChipMemorylock = 0xDD
+          ChipMemorylock = 0x22
+         //~ Write the block
+         // 18FxxQ10 type
+          NVMCON1.5 = 1
+        #ELSE
+          NVMCON1 = NVMCON1 and 0XF8 or 0x05
+        #ENDIF
       #ENDIF
 
       ChipMemorylock = 0x55
@@ -5382,8 +5659,18 @@ Sub _PFMwriteBlock ( in _PFM_BlockNum as Word, Out _PFM_Buffer(), Optional in _P
         wait while NVMGO = 1
       #ENDIF
 
-      'Set the NVMCMD control bits for Word Read operation to avoid accidental writes
-      NVMCON1 = NVMCON1 and 0XF8
+      #IF BIT(SECER)
+          // 18FxxQ10 type
+        NVMCON1.WR = 1
+        wait while NVMCON1.WR = 1
+        NVMEN = 0
+      #ENDIF
+
+      #IF NOBIT(SECER)
+        'Set the NVMCMD control bits for Word Read operation to avoid accidental writes
+        NVMCON1 = NVMCON1 and 0XF8
+      #ENDIF
+
       GIE = _GIE_SAVE     'restore saved interrupt
 
 End Sub
@@ -5411,3 +5698,8 @@ Sub SysModSubSingle
   // SysSingleTempX will have the result
 
 End Sub
+
+Macro AVRDX_PROTECTWRITECPP( in PROTECTED_REG, in REG_VALuE)
+    CPU_CCP = 216
+    PROTECTED_REG= REG_VALuE
+End Macro

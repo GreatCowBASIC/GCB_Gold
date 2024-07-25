@@ -2225,11 +2225,38 @@ SUB PreProcessor
                 ChipName = Trim(Mid(DataSource, 6))
                 ChipMhz = 0
                 If InStr(ChipName, ",") <> 0 Then
-                  ChipMhz = VAL(Mid(ChipName, INSTR(ChipName, ",") + 1))
 
+                  ' add new calcualtor for AVRDX
+                  ChipMhzCalculated = 0
+          
+                  If Instr(Mid(ChipName, INSTR(ChipName, ",") + 1),"/") Then
+                    dim value as string
+                    value = Mid(ChipName, INSTR(ChipName, ",") + 1)+"  "
+                    ReplaceAll( value, " ", "")
+                    If Not IsConst(value) Then
+                      value = ReplaceConstantsLine(value, 0)
+                    End If
+                    If IsNumberString(Value) Then
+                      Calculate(Value)
+                    Else
+                      Temp = Message("BadFreqCharacter")
+                      Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
+                      LogError Temp, ""
+                    End If
+                    If Val(Value) =  0 Then
+                          Temp = Message("BadFreqCharacter")
+                          Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
+                          LogError Temp, ""
+                    Else
+                      ' Print "Calculate(Value)",Value
+                      ChipMhz = Val(Value)
+                      ChipMhzCalculated = -1
+                    End If
+                  Else
+                    ChipMhz = VAL(Mid(ChipName, INSTR(ChipName, ",") + 1))
+                  End If
                   'Resolve the error condition when a user specifics 32k... and other k's
                   IF INSTR( Mid(ChipName, INSTR(ChipName, ",") + 1), "K" ) <> 0 THEN
-
                         Temp = Message("BadFreqCharacter")
                         Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
                         LogError Temp, ""
@@ -2627,7 +2654,7 @@ SUB PreProcessor
 
   'Determine the correct setting for the CONFIG directive
   'Do this once chip, config settings and programmer are known, but before replacing constants
-  If ConfWords > 0 Then
+  If ConfWords > 0 oR ChipFamily =  140 Then
     IF VBS = 1 THEN PRINT SPC(5); Message("CalcConfig")
     CalcConfig
   End If
