@@ -1,6 +1,5 @@
 This release is brought to you by, in no specific order:
 
-This release is brought to you by, in no specific order:
      Hugh Considine, Evan R. Venn, Angel Mier, Edward A Soard, ToniG,
      William Roth, Jim Giordano, Kent Schafer, Bernd Dau, Trevor Roydhouse, Pete Everett, Theo Loermans, 
      Giuseppe D'Elia, Mark Stevenson, Derek Gore,  Ian Smith, Bernd Dau, 
