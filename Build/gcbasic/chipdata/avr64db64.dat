@@ -1,0 +1,628 @@
+;        .DAT sections
+;==========================================================================
+;
+;  Built by GcBASIC converter on : 08-12-2024
+;  XC8 processor include for the chip shown below
+;
+; Microchip IDE version 6.05
+; C:\Users\admin\.mchp_packs\index.idx
+; C:\Users\admin\.mchp_packs\Microchip\AVR-Dx_DFP\2.6.303\avrasm\inc\AVR64DB64def.inc
+; avr chipdata.csv
+; C:\Users\admin\.mchp_packs\Microchip\AVR-Dx_DFP\2.6.303\edc\ATAVR64DB64.PIC
+; 
+;
+; Registers not processed: RTC_CMP,SREG,CPU_SPL, CPU_SPH 
+; Bits not processed: CPU_RAMPZ
+;==========================================================================
+;==========================================================================
+;
+;       Register Definitions
+;
+;==========================================================================
+
+;----- Register Files -----------------------------------------------------
+
+[ChipData]
+';All items in the ChipData section are available to user programs as constants
+';The constants have the prefix of Chip: See the details below
+
+'This constant is exposed as ChipWORDS
+Prog=32768
+
+'This constant is exposed as ChipEEPROM
+EEPROM=512
+
+'This constant is exposed as ChipRAM
+RAM=8192
+
+'This constant is exposed as ChipIO - sourced from `avr chipdata.csv`
+I/O=55
+
+'This constant is exposed as ChipADC - sourced from `avr chipdata.csv`
+ADC=22
+
+'This constant is exposed as ChipMhz
+This constant is exposed as ChipMaxMhz  - sourced from `avr chipdata.csv`
+MaxMHz=24
+'This constant is exposed with only the first parameter (if more than one)
+IntOsc=24, 20, 16, 12, 8, 4, 3, 2, 1
+
+'This constant is exposed as ChipPins - sourced from `avr chipdata.csv`
+Pins=64
+
+'This constant is exposed as ChipUSART - sourced from `avr chipdata.csv`
+USART=5
+
+'This constant is exposed as ChipFamily - sourced from `avr chipdata.csv`
+Family=140
+
+'This constant is exposed as ChipConfWords
+ConfigWords=0
+
+'This constant is exposed as ChipGPR
+GPR=32
+
+'This constant is exposed as ChipMaxAddress. This value is the maximum address of the internal SRAM.  SRAM is used for data storage and stack.
+MaxAddress=32768
+
+'This constant is exposed as ChipHardwareMult
+HardwareMult=y
+
+'This constant is exposed as ChipAVRFamily - sourced from `avr chipdata.csv`
+AVRFamily=AVRDA
+
+'This constant is exposed as ChipAVRGCC - sourced from `avr chipdata.csv`
+AVRGCC=avrxmega3
+
+'This constant is exposed as ChipAVRDX - sourced from `avr chipdata.csv`
+AVRDX=1
+
+'This constant is exposed as ChipNotTested - sourced from `avr chipdata.csv`
+' NotTested is a numeric bitwise value
+' 1 = Chip DAT file not tested and therefore no validated
+' 2 = Chip DAT file has an [interrupt] section that is incomplete
+NotTested=1
+
+[Pointers]
+'This section are the registers used by compilers
+XL:26
+XH:27
+YL:28
+YH:29
+ZL:30
+ZH:31
+
+[Interrupts]
+'For specific details of the interrupts see the microcontroller datasheet
+'The first parameter is the GCBASIC identifier used in user code to expose the specific interrupt
+; NMI interrupt vectors
+		NMI:NMI,2,,
+; BOD interrupt vectors
+	BOD_VLM:BOD_VLM,4,,
+; CLKCTRL interrupt vectors
+		CLKCTRL_CFD:CLKCTRL_CFD,6,,
+; MVIO interrupt vectors
+		MVIO_MVIO:MVIO_MVIO,8,,
+; RTC interrupt vectors
+		RTC_CNT:RTC_CNT,10,,
+		RTC_PIT:RTC_PIT,12,,
+; CCL interrupt vectors
+		CCL_CCL:CCL_CCL,14,,
+; PORTA interrupt vectors
+		PORTA_PORT:PORTA_PORT,16,,
+; TCA0 interrupt vectors
+		TCA0_LUNF:TCA0_LUNF,18,,
+		TCA0_HUNF:TCA0_HUNF,20,,
+		TCA0_CMP0:TCA0_CMP0,22,,
+		TCA0_CMP1:TCA0_CMP1,24,,
+		TCA0_CMP2:TCA0_CMP2,26,,
+; TCB0 interrupt vectors
+		TCB0_INT:TCB0_INT,28,,
+; TCB1 interrupt vectors
+		TCB1_INT:TCB1_INT,30,,
+; TCD0 interrupt vectors
+		TCD0_OVF:TCD0_OVF,32,,
+		TCD0_TRIG:TCD0_TRIG,34,,
+; TWI0 interrupt vectors
+		TWI0_TWIS:TWI0_TWIS,36,,
+		TWI0_TWIM:TWI0_TWIM,38,,
+; SPI0 interrupt vectors
+		SPI0_INT:SPI0_INT,40,,
+; USART0 interrupt vectors
+		USART0_RXC:USART0_RXC,42,,
+		USART0_DRE:USART0_DRE,44,,
+		USART0_TXC:USART0_TXC,46,,
+; PORTD interrupt vectors
+		PORTD_PORT:PORTD_PORT,48,,
+; AC0 interrupt vectors
+		AC0_AC:AC0_AC,50,,
+; ADC0 interrupt vectors
+		ADC0_RESRDY:ADC0_RESRDY,52,,
+		ADC0_WCMP:ADC0_WCMP,54,,
+; ZCD0 interrupt vectors
+		ZCD0_ZCD:ZCD0_ZCD,56,,
+; AC1 interrupt vectors
+		AC1_AC:AC1_AC,58,,
+; PORTC interrupt vectors
+		PORTC_PORT:PORTC_PORT,60,,
+; TCB2 interrupt vectors
+		TCB2_INT:TCB2_INT,62,,
+; USART1 interrupt vectors
+		USART1_RXC:USART1_RXC,64,,
+		USART1_DRE:USART1_DRE,66,,
+		USART1_TXC:USART1_TXC,68,,
+; PORTF interrupt vectors
+		PORTF_PORT:PORTF_PORT,70,,
+; NVMCTRL interrupt vectors
+		NVMCTRL_EE:NVMCTRL_EE,72,,
+; SPI1 interrupt vectors
+		SPI1_INT:SPI1_INT,74,,
+; USART2 interrupt vectors
+		USART2_RXC:USART2_RXC,76,,
+		USART2_DRE:USART2_DRE,78,,
+		USART2_TXC:USART2_TXC,80,,
+; AC2 interrupt vectors
+		AC2_AC:AC2_AC,82,,
+; TWI1 interrupt vectors
+		TWI1_TWIS:TWI1_TWIS,84,,
+		TWI1_TWIM:TWI1_TWIM,86,,
+; TCB3 interrupt vectors
+		TCB3_INT:TCB3_INT,88,,
+; PORTB interrupt vectors
+		PORTB_PORT:PORTB_PORT,90,,
+; PORTE interrupt vectors
+		PORTE_PORT:PORTE_PORT,92,,
+; TCA1 interrupt vectors
+		TCA1_LUNF:TCA1_LUNF,94,,
+		TCA1_HUNF:TCA1_HUNF,96,,
+		TCA1_CMP0:TCA1_CMP0,98,,
+		TCA1_CMP1:TCA1_CMP1,100,,
+		TCA1_CMP2:TCA1_CMP2,102,,
+; ZCD1 interrupt vectors
+		ZCD1_ZCD:ZCD1_ZCD,104,,
+; USART3 interrupt vectors
+		USART3_RXC:USART3_RXC,106,,
+		USART3_DRE:USART3_DRE,108,,
+		USART3_TXC:USART3_TXC,110,,
+; USART4 interrupt vectors
+		USART4_RXC:USART4_RXC,112,,
+		USART4_DRE:USART4_DRE,114,,
+		USART4_TXC:USART4_TXC,116,,
+; PORTG interrupt vectors
+		PORTG_PORT:PORTG_PORT,118,,
+; ZCD2 interrupt vectors
+		ZCD2_ZCD:ZCD2_ZCD,120,,
+; TCB4 interrupt vectors
+		TCB4_INT:TCB4_INT,122,,
+; USART5 interrupt vectors
+		USART5_RXC:USART5_RXC,124,,
+		USART5_DRE:USART5_DRE,126,,
+		USART5_TXC:USART5_TXC,128,,
+
+[AVRAlias]
+  'This section is for the AVRDX support
+  'The aliasing is megaAVR register = value = AVRDX register
+  ' example:          ALIAS_PORTA_DIR = 0 = DDRA
+  '
+ 'Format is Strict: 
+  ' There must be two entries per alias, the order is not importand, the relatiionship as shown above is critical.
+  ' The value is NOT a register address value. The value MUST be unique
+  ' The assignment must be an equal sign `=`
+   '
+ 'How does this all work?
+  ' The compiler will look up a megaAVR register ( ignoring any register.bits), and, using the returned number, lookup the AVRDX alias.
+  ' DDRA = 0, lookup the AVRDX alias of 0, returns ALIAS_PORTA_DIR
+  ' the compiler strips off the `ALIAS_`PORTA_DIR prefix as the register to be used.
+  '
+ 'A deeper dive.
+  ' The compiler treats this list of AVRAlias(es) just like the [register] section of this file.
+  ' The compiler loads these AVRAlias(es) but with the attribute of .ALIAS set (true).
+  ' This means, using the example above, that DDRA is not a real register and it is has the .ALIAS attribute set. 
+  ' So, the compiler knows that DDRA for this specific chip and all AVRDX chips that DDRA is actually to be transformed to an AVRDX set of instructiions.
+
+'PortA
+ALIAS_PORTA_DIR=0                                      ; 0000             
+DDRA=0                                          ; 0000 alias
+ALIAS_PORTA_OUT=1                                      ; 0001             
+PORTA=1                                         ; 0001 alias         
+ALIAS_PORTA_IN=2                                       ; 0002   
+PINA=2                                          ; 0002 alias
+
+'PortB
+ALIAS_PORTB_DIR=4                                      ; 0004            
+DDRB=4                                          ; 0004 alias
+ALIAS_PORTB_OUT=5                                      ; 0005              
+PORTB=5                                         ; 0005 alias
+ALIAS_PORTB_IN=6                                       ; 0006
+PINB=6                                          ; 0006 alias
+
+'PortC
+ALIAS_PORTC_DIR=8                                      ; 0008          
+DDRC=8                                          ; 0008 alias
+ALIAS_PORTC_OUT=9                                      ; 0009
+PORTC=9                                         ; 0009 alias
+ALIAS_PORTC_IN=10                                      ; 000A
+PINC=10                                         ; 000A alias
+
+'PortD
+ALIAS_PORTD_DIR=11
+DDRD=11
+ALIAS_PORTD_OUT=12
+PORTD=12
+ALIAS_PORTD_IN=13
+PIND=13
+
+'PortE
+ALIAS_PORTE_DIR=14
+DDRE=14
+ALIAS_PORTE_OUT=15
+PORTE=15
+ALIAS_PORTE_IN=16
+PINE=16
+
+'PortF
+ALIAS_PORTF_DIR=17
+DDRF=17
+ALIAS_PORTF_OUT=18
+PORTF=18
+ALIAS_PORTF_IN=19
+PINF=19
+
+'Additional Aliases are required
+ALIAS_CPU_SPL=61    
+CPU_SPL=61    
+ALIAS_CPU_SPH=62                                                                                     
+CPU_SPH=62 
+'Additional lock register alias
+ALIAS_CPU_CCP=52                                  ; 0034
+CPU_CCP=52                                        ; 0034
+'Required register
+SREG=63                                           ; 003F alias
+
+[Registers]
+'For specific details of the registers see the microcontroller datasheet
+'The first parameter is the GCBASIC register name used in user code to expose the specific register
+AC0_CTRLA,1664
+AC0_CTRLB,1665
+AC0_MUXCTRL,1666
+AC0_DACREF,1669
+AC0_INTCTRL,1670
+AC0_STATUS,1671
+AC1_CTRLA,1672
+AC1_CTRLB,1673
+AC1_MUXCTRL,1674
+AC1_DACREF,1677
+AC1_INTCTRL,1678
+AC1_STATUS,1679
+AC2_CTRLA,1680
+AC2_CTRLB,1681
+AC2_MUXCTRL,1682
+AC2_DACREF,1685
+AC2_INTCTRL,1686
+AC2_STATUS,1687
+ADC0_CTRLA,1536
+ADC0_CTRLB,1537
+ADC0_CTRLC,1538
+ADC0_CTRLD,1539
+ADC0_CTRLE,1540
+ADC0_SAMPCTRL,1541
+ADC0_MUXPOS,1544
+ADC0_MUXNEG,1545
+ADC0_COMMAND,1546
+ADC0_EVCTRL,1547
+ADC0_INTCTRL,1548
+ADC0_INTFLAGS,1549
+ADC0_DBGCTRL,1550
+ADC0_TEMP,1551
+ADC0_RES,1552
+ADC0_RESL,1552
+ADC0_RESH,1553
+ADC0_WINLT,1554
+ADC0_WINLTL,1554
+ADC0_WINLTH,1555
+ADC0_WINHT,1556
+ADC0_WINHTL,1556
+ADC0_WINHTH,1557
+BOD_CTRLA,160
+BOD_CTRLB,161
+BOD_VLMCTRLA,168
+BOD_INTCTRL,169
+BOD_INTFLAGS,170
+BOD_STATUS,171
+CCL_CTRLA,448
+CCL_SEQCTRL0,449
+CCL_SEQCTRL1,450
+CCL_SEQCTRL2,451
+CCL_INTCTRL0,453
+CCL_INTCTRL1,454
+CCL_INTFLAGS,455
+CCL_LUT0CTRLA,456
+CCL_LUT0CTRLB,457
+CCL_LUT0CTRLC,458
+CCL_TRUTH0,459
+CCL_LUT1CTRLA,460
+CCL_LUT1CTRLB,461
+CCL_LUT1CTRLC,462
+CCL_TRUTH1,463
+CCL_LUT2CTRLA,464
+CCL_LUT2CTRLB,465
+CCL_LUT2CTRLC,466
+CCL_TRUTH2,467
+CCL_LUT3CTRLA,468
+CCL_LUT3CTRLB,469
+CCL_LUT3CTRLC,470
+CCL_TRUTH3,471
+CCL_LUT4CTRLA,472
+CCL_LUT4CTRLB,473
+CCL_LUT4CTRLC,474
+CCL_TRUTH4,475
+CCL_LUT5CTRLA,476
+CCL_LUT5CTRLB,477
+CCL_LUT5CTRLC,478
+CCL_TRUTH5,479
+CLKCTRL_MCLKCTRLA,96
+CLKCTRL_MCLKCTRLB,97
+CLKCTRL_MCLKCTRLC,98
+CLKCTRL_MCLKINTCTRL,99
+CLKCTRL_MCLKINTFLAGS,100
+CLKCTRL_MCLKSTATUS,101
+CLKCTRL_OSCHFCTRLA,104
+CLKCTRL_OSCHFTUNE,105
+CLKCTRL_PLLCTRLA,112
+CLKCTRL_OSC32KCTRLA,120
+CLKCTRL_XOSC32KCTRLA,124
+CLKCTRL_XOSCHFCTRLA,128
+CPU_CCP,52
+CPU_RAMPZ,59
+CPU_SP,61
+; .equ CPU_SPL = 0x003D                    ; Stack Pointer low byte a duplicate or resevered register or ALIAS_
+; .equ CPU_SPH = 0x003E                    ; Stack Pointer hi byte a duplicate or resevered register or ALIAS_
+CPU_SREG,63
+CPUINT_CTRLA,272
+CPUINT_STATUS,273
+CPUINT_LVL0PRI,274
+CPUINT_LVL1VEC,275
+CRCSCAN_CTRLA,288
+CRCSCAN_CTRLB,289
+CRCSCAN_STATUS,290
+DAC0_CTRLA,1696
+DAC0_DATA,1698
+DAC0_DATAL,1698
+DAC0_DATAH,1699
+EVSYS_SWEVENTA,512
+EVSYS_SWEVENTB,513
+EVSYS_CHANNEL0,528
+EVSYS_CHANNEL1,529
+EVSYS_CHANNEL2,530
+EVSYS_CHANNEL3,531
+EVSYS_CHANNEL4,532
+EVSYS_CHANNEL5,533
+EVSYS_CHANNEL6,534
+EVSYS_CHANNEL7,535
+EVSYS_CHANNEL8,536
+EVSYS_CHANNEL9,537
+EVSYS_USERCCLLUT0A,544
+EVSYS_USERCCLLUT0B,545
+EVSYS_USERCCLLUT1A,546
+EVSYS_USERCCLLUT1B,547
+EVSYS_USERCCLLUT2A,548
+EVSYS_USERCCLLUT2B,549
+EVSYS_USERCCLLUT3A,550
+EVSYS_USERCCLLUT3B,551
+EVSYS_USERCCLLUT4A,552
+EVSYS_USERCCLLUT4B,553
+EVSYS_USERCCLLUT5A,554
+EVSYS_USERCCLLUT5B,555
+EVSYS_USERADC0START,556
+EVSYS_USEREVSYSEVOUTA,557
+EVSYS_USEREVSYSEVOUTB,558
+EVSYS_USEREVSYSEVOUTC,559
+EVSYS_USEREVSYSEVOUTD,560
+EVSYS_USEREVSYSEVOUTE,561
+EVSYS_USEREVSYSEVOUTF,562
+EVSYS_USEREVSYSEVOUTG,563
+EVSYS_USERUSART0IRDA,564
+EVSYS_USERUSART1IRDA,565
+EVSYS_USERUSART2IRDA,566
+EVSYS_USERUSART3IRDA,567
+EVSYS_USERUSART4IRDA,568
+EVSYS_USERUSART5IRDA,569
+EVSYS_USERTCA0CNTA,570
+EVSYS_USERTCA0CNTB,571
+EVSYS_USERTCA1CNTA,572
+EVSYS_USERTCA1CNTB,573
+EVSYS_USERTCB0CAPT,574
+EVSYS_USERTCB0COUNT,575
+EVSYS_USERTCB1CAPT,576
+EVSYS_USERTCB1COUNT,577
+EVSYS_USERTCB2CAPT,578
+EVSYS_USERTCB2COUNT,579
+EVSYS_USERTCB3CAPT,580
+EVSYS_USERTCB3COUNT,581
+EVSYS_USERTCB4CAPT,582
+EVSYS_USERTCB4COUNT,583
+EVSYS_USERTCD0INPUTA,584
+EVSYS_USERTCD0INPUTB,585
+EVSYS_USEROPAMP0ENABLE,586
+EVSYS_USEROPAMP0DISABLE,587
+EVSYS_USEROPAMP0DUMP,588
+EVSYS_USEROPAMP0DRIVE,589
+EVSYS_USEROPAMP1ENABLE,590
+EVSYS_USEROPAMP1DISABLE,591
+EVSYS_USEROPAMP1DUMP,592
+EVSYS_USEROPAMP1DRIVE,593
+EVSYS_USEROPAMP2ENABLE,594
+EVSYS_USEROPAMP2DISABLE,595
+EVSYS_USEROPAMP2DUMP,596
+EVSYS_USEROPAMP2DRIVE,597
+FUSE_WDTCFG,4176
+FUSE_BODCFG,4177
+FUSE_OSCCFG,4178
+FUSE_SYSCFG0,4181
+FUSE_SYSCFG1,4182
+FUSE_CODESIZE,4183
+FUSE_BOOTSIZE,4184
+GPR_GPR0,28
+GPR_GPR1,29
+GPR_GPR2,30
+GPR_GPR3,31
+LOCK_KEY,4160
+LOCK_KEY0,4160
+LOCK_KEY1,4161
+LOCK_KEY2,4162
+LOCK_KEY3,4163
+MVIO_INTCTRL,192
+MVIO_INTFLAGS,193
+MVIO_STATUS,194
+NVMCTRL_CTRLA,4096
+NVMCTRL_CTRLB,4097
+NVMCTRL_STATUS,4098
+NVMCTRL_INTCTRL,4099
+NVMCTRL_INTFLAGS,4100
+NVMCTRL_DATA,4102
+NVMCTRL_DATAL,4102
+NVMCTRL_DATAH,4103
+NVMCTRL_ADDR,4104
+NVMCTRL_ADDR0,4104
+NVMCTRL_ADDR1,4105
+NVMCTRL_ADDR2,4106
+NVMCTRL_ADDR3,4107
+OPAMP_CTRLA,1792
+OPAMP_DBGCTRL,1793
+OPAMP_TIMEBASE,1794
+OPAMP_PWRCTRL,1807
+OPAMP_OP0CTRLA,1808
+OPAMP_OP0STATUS,1809
+OPAMP_OP0RESMUX,1810
+OPAMP_OP0INMUX,1811
+OPAMP_OP0SETTLE,1812
+OPAMP_OP0CAL,1813
+OPAMP_OP1CTRLA,1816
+OPAMP_OP1STATUS,1817
+OPAMP_OP1RESMUX,1818
+OPAMP_OP1INMUX,1819
+OPAMP_OP1SETTLE,1820
+OPAMP_OP1CAL,1821
+OPAMP_OP2CTRLA,1824
+OPAMP_OP2STATUS,1825
+OPAMP_OP2RESMUX,1826
+OPAMP_OP2INMUX,1827
+OPAMP_OP2SETTLE,1828
+OPAMP_OP2CAL,1829
+PORTA_DIR,1024
+PORTA_DIRSET,1025
+PORTA_DIRCLR,1026
+PORTA_DIRTGL,1027
+PORTA_OUT,1028
+PORTA_OUTSET,1029
+PORTA_OUTCLR,1030
+PORTA_OUTTGL,1031
+PORTA_IN,1032
+PORTA_INTFLAGS,1033
+PORTA_PORTCTRL,1034
+PORTA_PINCONFIG,1035
+PORTA_PINCTRLUPD,1036
+PORTA_PINCTRLSET,1037
+PORTA_PINCTRLCLR,1038
+PORTA_PIN0CTRL,1040
+PORTA_PIN1CTRL,1041
+PORTA_PIN2CTRL,1042
+PORTA_PIN3CTRL,1043
+PORTA_PIN4CTRL,1044
+PORTA_PIN5CTRL,1045
+PORTA_PIN6CTRL,1046
+PORTA_PIN7CTRL,1047
+PORTB_DIR,1056
+PORTB_DIRSET,1057
+PORTB_DIRCLR,1058
+PORTB_DIRTGL,1059
+PORTB_OUT,1060
+PORTB_OUTSET,1061
+PORTB_OUTCLR,1062
+PORTB_OUTTGL,1063
+PORTB_IN,1064
+PORTB_INTFLAGS,1065
+PORTB_PORTCTRL,1066
+PORTB_PINCONFIG,1067
+PORTB_PINCTRLUPD,1068
+PORTB_PINCTRLSET,1069
+PORTB_PINCTRLCLR,1070
+PORTB_PIN0CTRL,1072
+PORTB_PIN1CTRL,1073
+PORTB_PIN2CTRL,1074
+PORTB_PIN3CTRL,1075
+PORTB_PIN4CTRL,1076
+PORTB_PIN5CTRL,1077
+PORTB_PIN6CTRL,1078
+PORTB_PIN7CTRL,1079
+PORTC_DIR,1088
+PORTC_DIRSET,1089
+PORTC_DIRCLR,1090
+PORTC_DIRTGL,1091
+PORTC_OUT,1092
+PORTC_OUTSET,1093
+PORTC_OUTCLR,1094
+PORTC_OUTTGL,1095
+PORTC_IN,1096
+PORTC_INTFLAGS,1097
+PORTC_PORTCTRL,1098
+PORTC_PINCONFIG,1099
+PORTC_PINCTRLUPD,1100
+PORTC_PINCTRLSET,1101
+PORTC_PINCTRLCLR,1102
+PORTC_PIN0CTRL,1104
+PORTC_PIN1CTRL,1105
+PORTC_PIN2CTRL,1106
+PORTC_PIN3CTRL,1107
+PORTC_PIN4CTRL,1108
+PORTC_PIN5CTRL,1109
+PORTC_PIN6CTRL,1110
+PORTC_PIN7CTRL,1111
+PORTD_DIR,1120
+PORTD_DIRSET,1121
+PORTD_DIRCLR,1122
+PORTD_DIRTGL,1123
+PORTD_OUT,1124
+PORTD_OUTSET,1125
+PORTD_OUTCLR,1126
+PORTD_OUTTGL,1127
+PORTD_IN,1128
+PORTD_INTFLAGS,1129
+PORTD_PORTCTRL,1130
+PORTD_PINCONFIG,1131
+PORTD_PINCTRLUPD,1132
+PORTD_PINCTRLSET,1133
+PORTD_PINCTRLCLR,1134
+PORTD_PIN0CTRL,1136
+PORTD_PIN1CTRL,1137
+PORTD_PIN2CTRL,1138
+PORTD_PIN3CTRL,1139
+PORTD_PIN4CTRL,1140
+PORTD_PIN5CTRL,1141
+PORTD_PIN6CTRL,1142
+PORTD_PIN7CTRL,1143
+PORTE_DIR,1152
+PORTE_DIRSET,1153
+PORTE_DIRCLR,1154
+PORTE_DIRTGL,1155
+PORTE_OUT,1156
+PORTE_OUTSET,1157
+PORTE_OUTCLR,1158
+PORTE_OUTTGL,1159
+PORTE_IN,1160
+PORTE_INTFLAGS,1161
+PORTE_PORTCTRL,1162
+PORTE_PINCONFIG,1163
+PORTE_PINCTRLUPD,1164
+PORTE_PINCTRLSET,1165
+PORTE_PINCTRLCLR,1166
+PORTE_PIN0CTRL,1168
+PORTE_PIN1CTRL,1169
+PORTE_PIN2CTRL,1170
+PORTE_PIN3CTRL,1171
+PORTE_PIN4CTRL,1172
+PORTE_PIN5CTRL,1173
+PORTE_PIN6CTRL,1174
+PORTE_PIN7CTRL,1175
+PORTF_DIR,1184
+PORTF_DIRSET,1

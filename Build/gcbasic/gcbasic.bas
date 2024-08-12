@@ -653,7 +653,7 @@ DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, C
 DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX
+Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX, overridelowleveldatfileextextension, overridelowleveldatfileextextensionmessage, overridetestdatfilemessage
 Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
@@ -822,11 +822,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.07.21"
-buildVersion = "1398 " ': AVRDX Dev"  'This build has code to support NewAVRs. None functional. Not tested. 1390 actually turns on ADDATABLOCKS which was accidentially turned off
-                       '1391 build isolates ASM message DATA-END DATA
-                       '1392 build resolves GCASM duplicate error message
-                       '1397 completed   AVRDX development
+Version = "2024.08.12"
+buildVersion = "1405"
                        
 
 #ifdef __FB_DARWIN__  'OS X/macOS
@@ -876,6 +873,9 @@ PICASdebug = false
 methodstructuredebug = false
 floatcapability =  0 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
 compilerdebug = 0
+overridelowleveldatfileextextension = 0
+overridelowleveldatfileextextensionmessage = 0
+overridetestdatfilemessage=0
 PICASDEBUGmessageShown = false
 DATfileinspection = true
 NoSummary = 0
@@ -13448,8 +13448,12 @@ Function GenerateVectorCode As LinkedListElement Pointer
     ISRC = 0
     Do While VectsAdded < IntCount
       CurrentVect += 1
-      'Print CurrentVect, IntCount, VectsAdded
-
+      ' Print CurrentVect, IntCount, VectsAdded
+      If CurrentVect > 1024 then 
+          LogError "Interrupt vectors are overloading compiler - check [Interrupt] section of DAT file for duplicates"
+          Return OutList
+          Exit Function
+      End If
       IntLoc = 0
       For PD = 1 to IntCount
         If Interrupts(PD).VectorLoc = CurrentVect Then IntLoc = PD: Exit For
@@ -14741,8 +14745,18 @@ SUB InitCompiler
                       floatcapability = val(msgval)
                       VersionSuffix = Str(floatcapability)
                     End if
+
                 Case "compilerdebug"
                     compilerdebug = val(msgval)
+
+                Case "overridelowleveldatfileextextension"
+                    overridelowleveldatfileextextension = val(msgval)
+                
+                Case "overridelowleveldatfileextextensionmessage"
+                    overridelowleveldatfileextextensionmessage = val(msgval)
+                
+                Case "overridetestdatfilemessage"
+                    overridetestdatfilemessage = val(msgval)
 
                 Case "datfileinspection"
                   if PrefIsYes(MsgVal, 1 ) = 1   Then
@@ -16870,6 +16884,8 @@ SUB ReadChipData
     InLine = Trim(LCase(InLine))
     IF InLine = "" THEN Goto ReadNextChipInfoLine
     IF Left(InLine, 1) = "'" THEN Goto ReadNextChipInfoLine
+    IF Left(InLine, 1) = ";" THEN Goto ReadNextChipInfoLine
+    IF Left(InLine, 2) = "\\" THEN Goto ReadNextChipInfoLine
 
     IF Left(InLine, 1) = "[" AND Right(InLine, 1) = "]" THEN
       ReadDataMode = InLine
@@ -16914,11 +16930,18 @@ SUB ReadChipData
         Case "hardwaremult":
           HMult = 0: If TempData = "y" Then HMult = -1
           ConstValue = Str(-HMult)
-        case "nottested"
-          If TempData = "1" Then
-            LogWarning "This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip."+chr(13)+chr(10)
+        Case "nottested"
+          If overridetestdatfilemessage = 0 then 
+            If ( val(TempData) and 1 ) = 1 Then
+              LogWarning "This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. "
+              LogWarning "    There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip."+chr(13)+chr(10)
+            End If
 
-          End If
+            If ( val(TempData) and 2 ) = 2 Then
+              LogWarning "This is a development chip definition file (.DAT) and the chip and the interrupt section of the DAT is not completed."
+              LogWarning "    Please resolve the interrupt section and contact the developers via the GCBASIC forum"+chr(13)+chr(10)
+            End If
+          End if
         Case "programmername":
           ChipProgrammerName = TempData
 
@@ -17954,6 +17977,7 @@ Sub WriteAssembly
       Print #2, ";or, email:"
       Print #2, ";   evanvennn at users dot sourceforge dot net"
       PRINT #2, Star80
+      Print #2, ";   Installation Dir : " + ID
       Print #2, ";   Source file      : " + SourceFile(1).FileName
       Print #2, ";   Setting file     : " + globalSettingsFile
       Print #2, ";   Preserve mode    : " + str(PreserveMode)
@@ -17965,7 +17989,7 @@ Sub WriteAssembly
   
   End if
 
-  
+  Print #1, ";   Installation Dir : " + ID
   Print #1, ";   Source file      : " + SourceFile(1).FileName
   Print #1, ";   Setting file     : " + globalSettingsFile
   Print #1, ";   Preserve mode    : " + str(PreserveMode)

@@ -28,7 +28,7 @@ REM  echo "%%F">>test.log
 
   findstr /i "#SKIPTEST" "%%F" >nul 2>nul
   if errorlevel 1 (
-    GCBASIC "%%F" /NP /O:compiled.asm /A:GCASM  /K:A /WX
+    GCBASIC "%%F" /NP /O:compiled.asm /A:GCASM  /K:A /WX /S:USE.INI /P:
   ) ELSE (
     echo Ignored from test >compiled.asm
     echo Ignored from test >compiled.hex

@@ -98,7 +98,7 @@
 ' 26/10/2023  Correct #IF Var() where is shoul have need #IFDEF Var() in USART2Receive. 2nd revision
 ' 13/11/2023  Resolve 18F1220 digital port setting
 ' 13/02/2024  Isolation of CREN by conditional test of RCSTA. Error encountered tested 18FxxQ20 as chip with I3CCON0.EN cause I3CCON0.EN = 1 in serial handler.
-
+' 10/08/2024  Added more #samevar and #samebit for USART1, and, add isolation for VAR(U1BRGH) 
 
 
 
@@ -159,6 +159,14 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 ; -----------------------------------------------------
 #samevar TXREG, TXREG1, U1TXB
 #samebit TXIF, TX1IF, U1TXIF
+
+#samevar SPBRG1, SPBRG
+#samevar SPBRGH, SPBRGH1
+#samevar TX1STA, TXSTA
+#samebit TXEN1, TXEN
+#samebit CREN1, CREN
+#samebit SPEN1, SPEN
+#samebit SYNC1, SYNC, SYNC_TX1STA
 
 #sameVar TXREG2, TX2REG, U2TXB
 #samevar TXSTA2, TX2STA
@@ -1127,32 +1135,36 @@ Sub InitUSART
 
           #endif
 
-          #ifdef Bit(TXEN1)
-            'Set baud rate
-            SPBRG1 = SPBRGL_TEMP
-            #ifdef Bit(BRG16)
-              SPBRGH1 = SPBRGH_TEMP
-              BAUDCON1.BRG16 = BRG16_TEMP
-            #endif
-
-            #ifdef Var(TX1STA)
-              //~chips with TXSTA1 instead of TX1STA
-              TX1STA.BRGH = BRGH_TEMP
-            #else
-              #ifdef  Var(TXSTA1)
-                TXSTA1.BRGH = BRGH_TEMP
-              #Else
-                RaiseCompilerError "Unhandled USART1 setup - report to GCBASIC Forum"
+          #ifndef VAR(U1BRGH)
+            #ifdef Bit(TXEN1)
+              'Set baud rate
+              SPBRG1 = SPBRGL_TEMP
+              #ifdef Bit(BRG16)
+                SPBRGH1 = SPBRGH_TEMP
+                BAUDCON1.BRG16 = BRG16_TEMP
               #endif
+
+              #ifdef Var(TX1STA)
+                //~chips with TXSTA1 instead of TX1STA
+                TX1STA.BRGH = BRGH_TEMP
+              #else
+                #ifdef  Var(TXSTA1)
+                  TXSTA1.BRGH = BRGH_TEMP
+                #Else
+                  
+                    RaiseCompilerError "Unhandled USART1 setup - report to GCBASIC Forum"
+                  
+                #endif
+              #endif
+
+              'Enable async mode
+              Set SYNC1 Off
+              Set SPEN1 On
+
+              'Enable Continuous Receive and Transmit Enable bit
+              Set CREN1 On
+              Set TXEN1 On
             #endif
-
-            'Enable async mode
-            Set SYNC1 Off
-            Set SPEN1 On
-
-            'Enable Continuous Receive and Transmit Enable bit
-            Set CREN1 On
-            Set TXEN1 On
           #endif
       #endif
 

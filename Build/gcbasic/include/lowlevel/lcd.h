@@ -60,6 +60,7 @@
 '***********************************************************************
 ' 14/08/22 Updated user changeable constants only - no functional change
 ' 14/08/23 Revisws to add SPI/LCD_IO 14 support
+' 08/08/24 Add Timeout counter / exit to CheckBusyFlag to resolve LCD_RW lockup
 
 
 #startup InitLCD
@@ -1116,8 +1117,9 @@ Sub CheckBusyFlag
              SET LCD_RW ON
 
             #IFDEF LCD_IO 4
-
+                LCDTEMPRWCount = 0
                 Do
+                    wait 1 us
                     Set LCD_Enable ON
                     wait 1 us
                     SysLCDTemp.7 = SCRIPT_LCD_BF
@@ -1125,20 +1127,22 @@ Sub CheckBusyFlag
                     Wait 1 us
                     PulseOut LCD_Enable, 1 us
                     Wait 1 us
-
-                Loop While SysLCDTemp.7 <> 0
-
+                    if LCDTEMPRWCount = 255 Then SysLCDTemp.7 = 0
+                    LCDTEMPRWCount++
+                Loop While SysLCDTemp.7 <> 0  
             #ENDIF
 
-            #IFDEF LCD_IO 8
 
+            #IFDEF LCD_IO 8
+                LCDTEMPRWCount = 0
                 Do
                    Wait 1 us
                    Set LCD_Enable ON
                    Wait 1 us
                    SysLCDTemp.7 = SCRIPT_LCD_BF
                    Set LCD_Enable OFF
-
+                    if LCDTEMPRWCount = 255 Then SysLCDTemp.7 = 0
+                    LCDTEMPRWCount++
 
                 Loop While SysLCDTemp.7 <> 0
 

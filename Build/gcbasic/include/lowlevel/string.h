@@ -80,6 +80,7 @@
 ' 27/03/2024: Updated StringToSingle for 12F/16F support
 ' 29/03/2024: Updated SingleToString for 12F/16F support
 ' 25/05/2024: Updated to include StringToByte, StringToWord - both support commas in string
+' 10/08/2024: Resolve error in StringToInteger() where an ENDIF was missing
 
 
 'Length/position
@@ -433,7 +434,7 @@ Function StringToInteger(SysInString as String) as Integer
         If SysStrData <> "," Then
           If SysStrData = 32 Then Exit For
           StringToInteger = StringToInteger * 10 + SysStrData - 48
-        Next
+        End If
     Next
     If _signValue = 1 then StringToInteger = StringToInteger * -1
 end Function

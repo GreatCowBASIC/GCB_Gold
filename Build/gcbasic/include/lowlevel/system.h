@@ -96,6 +96,8 @@
 '    25042024 - Added forced creation of SysValTemp variable
 '    21072024 - Added AVRDX support to InitSys. Supports internal oscillator at 20 or 16 mHz
 '    24072024 - Added 18FxxQ10 type support to PFMWRITEBLOCK
+'    07082024 - Added AVRDX support to InitSys. Supports internal oscillator at 24 mHz
+
 
 'Constants
 #define ON 1
@@ -1310,7 +1312,7 @@ Sub InitSys
           MCUSR = 0xFF
           MCUSR = 0xFF
 
-'          ' step 1. enable clock sources
+          'step 1. enable clock sources
           Dim _btmp as Byte alias DELAYTEMP
           _btmp = PMCR | 0x0F
           PMCR = 0x80
@@ -1447,177 +1449,184 @@ Sub InitSys
       //~Set internal frequency
       //~ frequencies for internal OSC follows.  See .DAT file
       #IFDEF ChipMaxMHz 24
-        // IntOsc=24, 20, 16, 12, 8, 4, 3, 2, 1
+        //~ IntOsc=24, 20, 16, 12, 8, 4, 3, 2, 1
+        ASM SHOWDEBUG OSCHFCTRLA with ChipMaxMHz 24
+        //~            proven on AVR128DA28/32/48/64
+        //~            proven on 
         #IFDEF ChipMHz 24
-          // ChipMHz 24
+          // Internal ChipMHz 24 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 36)  
         #ENDIF
         #IFDEF ChipMHz 20
-          // ChipMHz 20
+          // Internal ChipMHz 20 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 32)  
         #ENDIF
         #IFDEF ChipMHz 16
-          // ChipMHz 16
+          // Internal ChipMHz 16 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 28) 
         #ENDIF
         #IFDEF ChipMHz 12
-          // ChipMHz 12
+          // Internal ChipMHz 12 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 24)
         #ENDIF
         #IFDEF ChipMHz 8
-          // ChipMHz 8
+          // Internal ChipMHz 8 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 20)
         #ENDIF
         #IFDEF ChipMHz 4
-          // ChipMHz 4
+          // Internal ChipMHz 4 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 12)
         #ENDIF
         #IFDEF ChipMHz 3
-          // ChipMHz 3
+          // Internal ChipMHz 3 codified 
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 8)
         #ENDIF
         #IFDEF ChipMHz 2
-          // ChipMHz 2
+          // Internal ChipMHz 2 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 4)
         #ENDIF
         #IFDEF ChipMHz 1
-          // ChipMHz 1
+          // Internal ChipMHz 1 codified
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_OSCHFCTRLA, 0)
         #ENDIF
       #ENDIF
 
       #IFDEF ChipMaxMHz 20
+        ASM SHOWDEBUG 'CLKCTRL_MCLKCTRLB with ChipMaxMHz 20
         //~ 20, 10, 5, 2.5, 1.25, 0.625, 0.3125, 3.333333333, 2, 1.666667, 0.833333333, 0.416666667
+        // Proven on ATtiny212/214/412/414/416, ATtiny3216/3217, ATtiny1624/1626/1627
         #IFDEF ChipMHz 20
-          // ChipMHz 20
+          // Internal ChipMHz 20
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 0)  
         #ENDIF
         #IFDEF ChipMHz 10
-          // ChipMHz 10
+          // Internal ChipMHz 10
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 1)   //PEN
         #ENDIF
         #IFDEF ChipMHz 5
-          // ChipMHz 5
+          // Internal ChipMHz 5
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 3)  //1
         #ENDIF
         #IFDEF ChipMHz 2.5
-          // ChipMHz 2.5
+          // Internal ChipMHz 2.5
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 5)  //2
         #ENDIF
         #IFDEF ChipMHz 1.25
-          // ChipMHz 1.25
+          // Internal ChipMHz 1.25
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 7)  //3
         #ENDIF
         #IFDEF ChipMHz 0.625
-          // ChipMHz 0.625
+          // Internal ChipMHz 0.625
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 9)  //4
         #ENDIF
         #IFDEF ChipMHz 0.3125
-          // ChipMHz 0.3125
+          // Internal ChipMHz 0.3125
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 11) //5
         #ENDIF
         #IFDEF ChipMHz 3.333333
-          // ChipMHz 3.333333
+          // Internal ChipMHz 3.333333
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 17) //8
         #ENDIF
         #IFDEF ChipMHz 2
-          // ChipMHz 2
+          // Internal ChipMHz 2
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 19)  //9
         #ENDIF
         #IFDEF ChipMHz 1.6666667
-          // ChipMHz 1.666667
+          // Internal ChipMHz 1.666667
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 21) //0x0A
         #ENDIF
         #IFDEF ChipMHz 0.8333333
-          // ChipMHz 0.833333
+          // Internal ChipMHz 0.833333
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 23) //0x0B
         #ENDIF
         #IFDEF ChipMHz 0.4166667
-          // ChipMHz 0.416667
+          // Internal ChipMHz 0.416667
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 25) //0x0C
         #ENDIF
       #ENDIF
 
       #IFDEF ChipMaxMHz 16
+        ASM SHOWDEBUG 'CLKCTRL_MCLKCTRLB with ChipMaxMHz 
         //~ 16, 8	4	2	1	0.5	0.25	2.666667	1.6	1.333333	0.666667	0.333333
+        // Proven on ATtiny212/214/412/414/416, ATtiny3216/3217, ATtiny1624/1626/1627
         #IFDEF ChipMHz 16
-          // ChipMHz 16
+          // Internal ChipMHz 16
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 0)  
         #ENDIF
         #IFDEF ChipMHz 8
-          // ChipMHz 8
+          // Internal ChipMHz 8
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 1)   //PEN
         #ENDIF
         #IFDEF ChipMHz 4
-          // ChipMHz 4
+          // Internal ChipMHz 4
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 3)  //1
         #ENDIF
         #IFDEF ChipMHz 2
-          // ChipMHz 2
+          // Internal ChipMHz 2
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 5)  //2
         #ENDIF
         #IFDEF ChipMHz 1
-          // ChipMHz 1
+          // Internal ChipMHz 1
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 7)  //3
         #ENDIF
         #IFDEF ChipMHz 0.5
-          // ChipMHz 0.5
+          // Internal ChipMHz 0.5
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 9)  //4
         #ENDIF
         #IFDEF ChipMHz 0.25
-          // ChipMHz 0.25
+          // Internal ChipMHz 0.25
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 11) //5
         #ENDIF
         #IFDEF ChipMHz 2.6666667
-          // ChipMHz 2.666667
+          // Internal ChipMHz 2.666667
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 17) //8
         #ENDIF
         #IFDEF ChipMHz 1.6
-          // ChipMHz 1.6
+          // Internal ChipMHz 1.6
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 19)  //9
         #ENDIF
         #IFDEF ChipMHz 1.3333333
-          // ChipMHz 1.333333
+          // Internal ChipMHz 1.333333
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 21) //0x0A
         #ENDIF
         #IFDEF ChipMHz 0.6666667
-          // ChipMHz 0.666667
+          // Internal ChipMHz 0.666667
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 23) //0x0B
         #ENDIF
         #IFDEF ChipMHz 0.3333333
-          // 0.333333
+          // Internal ChipMHz 0.333333
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLA, 0)
           AVRDX_PROTECTWRITECPP( CLKCTRL_MCLKCTRLB, 25) //0x0C
         #ENDIF
