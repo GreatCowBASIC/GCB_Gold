@@ -846,12 +846,39 @@ SUB PreProcessor
   'IF ICCO < ICC THEN GOTO FindIncludeFiles
   Loop While ICCO < SourceFiles
   ICCO = SourceFiles
-
-  'Add standard include files to list
+  
+  'Select correct Master include file extension - this now supports changing Master include file.
+    Dim extension as String = ".dat"
+    If overridelowleveldatfileextextension = 0 Then
+      extension = ".dat"
+    Else 
+      extension = "."+str(overridelowleveldatfileextextension)
+      If overridelowleveldatfileextextensionmessage = 0 then
+        Logwarning "Master include file changed to lowlevel"+extension
+      End If
+    End If
+    
+  'Add the MASTER include file
     #IFDEF __FB_UNIX__
-      OPEN ID + "/include/lowlevel.dat" FOR INPUT AS #1
+      If fileexists(ID + "/include/lowlevel"+extension) then
+        OPEN ID + "/include/lowlevel"+extension FOR INPUT AS #1
+      Else
+        Print
+        Print "Critical error:"
+        Print "   Essential file missing `" + ID + "/include/lowlevel"+extension + "`"
+        Print "   Complier cannot continue, exiting"
+        End        
+      End If
     #ELSE
-      OPEN ID + "\include\lowlevel.dat" FOR INPUT AS #1
+      If fileexists( ID + "\include\lowlevel"+extension) then
+        OPEN ID + "\include\lowlevel"+extension FOR INPUT AS #1
+      Else
+        Print
+        Print "Critical error:"
+        Print "   Essential file missing `" + ID + "\include\lowlevel"+extension + "`"
+        Print "   Complier cannot continue, exiting"
+        End
+      End If
     #EndIf
 
   DO WHILE NOT EOF(1)
@@ -1369,8 +1396,9 @@ SUB PreProcessor
  
 
       ElseIf Left(DataSource, 4) = "ASM " and  instr(DataSource, "SHOWDEBUG") <> 0 Then
+        Replace ( DataSourceRaw, "ASM", "")
+        Replace ( DataSourceRaw, "SHOWDEBUG", "")
         PCC += 1: PreserveCode(PCC) = ";" + trim(DataSourceRaw)
-        ' Trim(Mid(DataSourceRaw, InStr(UCase(DataSourceRaw), "SHOWDEBUG") + 9))
         IF S = 0 THEN MainCurrPos = LinkedListInsert(MainCurrPos, "PRESERVE " + Str(PCC))
         IF S = 1 THEN CurrPos = LinkedListInsert(CurrPos, "PRESERVE " + Str(PCC))
 
@@ -2202,6 +2230,8 @@ SUB PreProcessor
             ElseIf Left(DataSource, 6) = "#CHIP " THEN
 
               If ChipName = "" THEN
+                ' Only processes first instant
+
                 IF INSTR( DataSource, "32.768K") > 0 Then
                     Replace DataSource, "32.768K", "0.03268"
                 End If
@@ -2224,11 +2254,11 @@ SUB PreProcessor
 
                 ChipName = Trim(Mid(DataSource, 6))
                 ChipMhz = 0
-                If InStr(ChipName, ",") <> 0 Then
 
-                  ' add new calcualtor for AVRDX
-                  ChipMhzCalculated = 0
-          
+                If InStr(ChipName, ",") <> 0 Then
+                  ' add new calculator introduction at AVRDX release, support all chips
+
+                  ChipMhzCalculated = 0          
                   If Instr(Mid(ChipName, INSTR(ChipName, ",") + 1),"/") Then
                     dim value as string
                     value = Mid(ChipName, INSTR(ChipName, ",") + 1)+"  "
@@ -2255,8 +2285,15 @@ SUB PreProcessor
                   Else
                     ChipMhz = VAL(Mid(ChipName, INSTR(ChipName, ",") + 1))
                   End If
+                  
                   'Resolve the error condition when a user specifics 32k... and other k's
                   IF INSTR( Mid(ChipName, INSTR(ChipName, ",") + 1), "K" ) <> 0 THEN
+                        Temp = Message("BadFreqCharacter")
+                        Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
+                        LogError Temp, ""
+                  End if
+
+                  IF ChipMhz = 0 THEN
                         Temp = Message("BadFreqCharacter")
                         Replace Temp, "%string%", ":"+MID(ChipName, INSTR(ChipName, ",") + 1)
                         LogError Temp, ""
@@ -2270,6 +2307,13 @@ SUB PreProcessor
                 IF Left(UCase(ChipName), 1) = "P" THEN ChipName = Mid(ChipName, 2)
 
                 if trim(ChipProgrammerName) = "" then ChipProgrammerName = ChipName
+              
+              Else
+
+                Dim TempData as String
+                TempData = Message("ChipIgnored")
+                Replace TempData, "%prevchipname%", chipname
+                LogWarning TempData, " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
 
               End If
               GoTo LoadNextLine
@@ -2283,7 +2327,6 @@ SUB PreProcessor
                     goto ValidWord
                 End if
               Next
-
 
               '            TempData = "not a valid command: " + DataSource 'Message("CannotUseReservedWords")
               TempData = Message("NotaValidDirective")
@@ -2435,7 +2478,7 @@ SUB PreProcessor
     Print #CDFFileHandle, "     SCRIPT/CurrentValue - constants already defined then redefined in another #script/#endscript construct"
     Print #CDFFileHandle, "     FINAL/CONSTANT - final constants defined"
     Print #CDFFileHandle, "     CHECKSYSVARDEF - expansion of a mutli-condition conditional test.  "
-    Print #CDFFileHandle, "     Remainder of report us the user program or libaries code remaining post conditional processing"
+    Print #CDFFileHandle, "     Remainder of report is the user program or libaries code remaining post conditional processing"
     Print #CDFFileHandle, "*********************************************************************************************************************************"
     Print #CDFFileHandle, ""
   End if

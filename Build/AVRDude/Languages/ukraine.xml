@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Українська (Ukrainian)</name>
 	<data>
 
 		<!-- Main form -->
@@ -76,15 +75,19 @@
 		<string name="SELECTMCU">Виберіть MCU ...</string>
 		<string name="FUSELOCKREADFAIL">Неможливо прочитати FUSE біти / LOCK біти</string>
 		<string name="READINGFUSES">Читання Fuse ...</string>
-		<string name="READINGLOCKBITS">Читання LOCK битов ...</string>
-		<string name="WRITINGINGFUSES">Writing fuses...</string>
-		<string name="WRITINGINGLOCKBITS">Writing lock bits...</string>
+		<string name="READINGLOCKBITS">Читання LOCK битів ...</string>
+		<string name="WRITINGINGFUSES">Записати FUSE запобіжники...</string>
+		<string name="WRITINGINGLOCKBITS">Записати lock ,snb...</string>
 		<string name="READHFUSE">Читання HI FUSES</string>
 		<string name="READLFUSE">Читання LOW FUSES</string>
 		<string name="READEFUSE">Читання EXT FUSES</string>
 		<string name="READFUSE">Read fuse</string>
-		<string name="READLOCKBITS">Читання LOCK битов</string>
+		<string name="READLOCKBITS">Читання LOCK бітів</string>
 		<string name="NOSUPPORTEDFUSES">{0} Не має Fuses, що підтримуються</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Преревірка оновлення ...</string>
 		<string name="UPDATE_FAILED">Помилка оновлення: {0}</string>
@@ -108,6 +111,7 @@
 		<string name="BROWSE_FILTER_ALL">Всі файли (*. *)</string>
 		<string name="BROWSE_FILTER_HEX">Файли в шіснятизначному форматі (* .hex)</string>
 		<string name="BROWSE_FILTER_EEP">Файли EEPROM (* .eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Форма менеджера пресетів -->
 		<string name="TITLE_PRESETMGR">Менеджер пресетів</string>
@@ -163,8 +167,8 @@
 		<string name="AVRDUDE_LOCATION">положення папки avrdude</string>
 		<string name="AVRDUDECONF_LOCATION">шлях папки avrdude.conf</string>
 		<string name="AVRSIZE_LOCATION">шлях папки avr-size</string>
-		<string name="CHECKFORUPDATES">Check for updates on startup</string>
-		<string name="CHK_UNCHK_ALL">Check/uncheck all</string>
+		<string name="CHECKFORUPDATES">Перевірте наявність оновлень під час запуску</string>
+		<string name="CHK_UNCHK_ALL">Вибрати все/ні</string>
 
 		<!-- Загальне -->
 		<string name="OK">OK</string>
@@ -179,8 +183,6 @@
 
 		<!-- Errors -->
 		<string name="XMLWRITEERROR">Помилка при збереженні {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">не вдається зкопіювати шаблон {0} в AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} відсутній!</string>
 		<string name="EXECFAIL">Неможливо запустити виконання: {0}</string>

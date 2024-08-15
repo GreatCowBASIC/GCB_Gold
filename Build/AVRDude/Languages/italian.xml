@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Italiano (Italian)</name>
 	<data>
 
 		<!-- Main form -->
@@ -85,6 +84,10 @@ Usa questo se vuoi solo aggiornare l'EEPROM</string>
 		<string name="READFUSE">Leggo fuse</string>
 		<string name="READLOCKBITS">Leggo lock bits</string>
 		<string name="NOSUPPORTEDFUSES">{0} non ha fuses supportati</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Controllo gli aggiornamenti...</string>
 		<string name="UPDATE_FAILED">Controllo aggiornamenti fallito: {0}</string>
@@ -108,6 +111,7 @@ Usa questo se vuoi solo aggiornare l'EEPROM</string>
 		<string name="BROWSE_FILTER_ALL">Tutti i files (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Hex files (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROM files (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Gestore Preset</string>
@@ -179,8 +183,6 @@ Usa questo se vuoi solo aggiornare l'EEPROM</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Errore provando a salvare {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Fallito copiare {0} template su AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} è mancante!</string>
 		<string name="EXECFAIL">Non posso avviare il processo: {0}</string>

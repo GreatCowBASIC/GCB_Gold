@@ -1,5 +1,5 @@
 'English messages.dat for GCBASIC
-'Translation last updated 2024.2.6 by Evan R. Venn
+'Translation last updated 2024.08.15 by Evan R. Venn
 
 'Common Messages
 AnyKey = "Press any key to continue"
@@ -48,7 +48,7 @@ End Block
 
 Block License
 GCBASIC - A BASIC Compiler for microcontrollers
-Copyright (C) 2006 - 2020 Hugh Considine and the GCBASIC team
+Copyright (C) 2006 - 2024 Evan R. Venn, Hugh Considine and the GCBASIC team
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -250,6 +250,7 @@ CannotUseReservedWords = "Reserved Words cannot be labels: %label%"
 CannotUseIncludeInsideInsert = "#INCLUDE not permitted within #INSERT, move to main program"
 CannotUseFloatforSelectOperation = "Error in Select operations. Unable to parse %varerror%"
 ChipNotSupported = "No chip data file found for %chipname%"
+ChipIgnored = "Addditional #chip ignored.  Using %prevchipname% as microcontroller"
 ConstantExists = "Constant: %constname% equates to %existingconstant_value% cannot reassigned to equate to %value%"
 ConstantReAssignemnt = "Constant: %constname% cannot reassigned to %value%"
 ConstantValueReAssignement = "Constant: %constname% exists with no value '%existingconstant_value%', cannot be reassigned with %value%"

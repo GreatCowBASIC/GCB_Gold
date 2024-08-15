@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Magyar (Hungarian)</name>
 	<!-- Tóth Roland / rendszergazdanyh@citromail.hu -->
 	<data>
 
@@ -86,6 +85,10 @@ Használja ezt, ha csak az EEPROM -ot akarja írni.</string>
 		<string name="READFUSE">FUSE bitek olvasása</string>
 		<string name="READLOCKBITS">LOCK bitek olvasása</string>
 		<string name="NOSUPPORTEDFUSES">{0} nincsenek támogatott biztosíték bitjei.</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Frissítések ellenőrzése...</string>
 		<string name="UPDATE_FAILED">A frissítés ellenőrzése nem sikerült: {0}</string>
@@ -109,6 +112,7 @@ Használja ezt, ha csak az EEPROM -ot akarja írni.</string>
 		<string name="BROWSE_FILTER_ALL">Minden fájl (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">HEX fájlok (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROM fájlok (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Konfiguráció szerkesztő</string>
@@ -180,8 +184,6 @@ Használja ezt, ha csak az EEPROM -ot akarja írni.</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Hiba történt a mentés közben {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Nem sikerült a(z) {0} sablon másolása az AppData mappába:
 {1}</string>
 		<string name="EXECMISSING">{0} hiányzik!</string>
 		<string name="EXECFAIL">Nem lehet elindítani a folyamatot: {0}</string>

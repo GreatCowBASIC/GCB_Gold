@@ -822,9 +822,9 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.08.12"
-buildVersion = "1405"
-                       
+Version = "2024.08.15"
+buildVersion = "1409"
+
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -11981,6 +11981,7 @@ Sub FindAssembly (CompSub As SubType Pointer)
       CurrLine->Value = Trim(Mid(CurrLine->Value, 5))
       'Allow use of ASM REM x for debugging
       If Left(CurrLine->Value, 10) = "SHOWDEBUG " Then
+        Replace ( CurrLine->Value, "SHOWDEBUG ", "")
         CurrLine->Value = ";" + LCase(Trim(Mid(CurrLine->Value, 11)))
       Else
         CurrLine->Value = " " + LCase(Left(CurrLine->Value, LEN(Temp))) + Mid(CurrLine->Value, LEN(Temp) + 1)
