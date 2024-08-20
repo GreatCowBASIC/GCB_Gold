@@ -1134,7 +1134,7 @@ Sub InitSys
           Set PCFG4 on
         #ENDIF
         #IFDEF BIT(PCFG5)
-          Set PCF5 on
+          Set PCFG5 on
         #ENDIF
         #IFDEF BIT(PCFG6)
           Set PCFG6 on

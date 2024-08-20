@@ -822,8 +822,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.08.15"
-buildVersion = "1409"
+Version = "2024.08.18"
+buildVersion = "1411"
 
 
 #ifdef __FB_DARWIN__  'OS X/macOS
@@ -7449,7 +7449,7 @@ SUB CompileOn (CompSub As SubType Pointer)
         'Get index
         IntIndex = 0
         FOR FindIndex = 1 to IntCount
-          If UCase(Interrupts(FindIndex).EventName) = OnCondition Then IntIndex = FindIndex: Exit For
+          If Trim(UCase(Interrupts(FindIndex).EventName)) = Trim(UCase(OnCondition)) Then IntIndex = FindIndex: Exit For
         Next
         If IntIndex = 0 Then
           TempData = Message("BadIntEvent")
@@ -13432,7 +13432,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
   'AVR vectors
   ElseIf ModeAVR Then
     CurrLine = LinkedListInsert(CurrLine, ";Interrupt vectors")
-    CurrLine = LinkedListInsert(CurrLine, ".ORG " + Str(Bootloader))
+    CurrLine = LinkedListInsert(CurrLine, Chr(9) + ".ORG " + Str(Bootloader))
     If ChipFamily <> 122 then
       CurrLine = LinkedListInsert(CurrLine, " rjmp BASPROGRAMSTART ;Reset")
     Else
@@ -13463,7 +13463,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
       If IntLoc <> 0 Then
         With Interrupts(IntLoc)
           VectsAdded += 1
-              CurrLine = LinkedListInsert(CurrLine, ".ORG " + Str(.VectorLoc + Bootloader))
+              CurrLine = LinkedListInsert(CurrLine, chr(9) + ".ORG " + Str(.VectorLoc + Bootloader))
               If .Handler = "" Then
                 IF UserInt THEN
                   If ChipFamily <> 122 then
@@ -16882,6 +16882,12 @@ SUB ReadChipData
   ReadDataMode = ""
   DO WHILE NOT EOF(1)
     LINE INPUT #1, InLine
+    
+    ' Remove leading TABs
+    Do While left(InLine,1) = Chr(9)
+      Replace( InLine, Chr(9), "")
+    Loop
+
     InLine = Trim(LCase(InLine))
     IF InLine = "" THEN Goto ReadNextChipInfoLine
     IF Left(InLine, 1) = "'" THEN Goto ReadNextChipInfoLine
@@ -16984,6 +16990,61 @@ SUB ReadChipData
       if ConstName <> "memorylock" then
               AddConstant("CHIP" + UCase(ConstName), ConstValue)
       end if
+
+      if Instr(ConstValue,"<<") or Instr(ConstValue,">>") Then
+        ConstValue = Ucase(ConstValue)
+        If InStr ( ConstValue, "0X" ) Then
+          Replace ( ConstValue, "0X", "&H")
+          Dim as Integer tmpValue, GtrPos, LesPos 
+          Dim tmpConstValue as String
+          If Instr(ConstValue,"<<") Then
+            tmpConstValue = Trim ( Mid( ConstValue, Instr(ConstValue, "&H"), Instr( ConstValue, "<<" ) ) )
+            LesPos = Instr( ConstValue, "<<" )
+            tmpConstValue = Left( tmpConstValue, LesPos - 2 )
+            replace ( ConstValue, tmpConstValue, Str(Val(tmpConstValue)) )
+          Else
+            LogError ( "Compiler does not support >> in [AVRMasks] section of the DAT file")
+          End If
+
+        End If
+
+        ConstValue = Trim( Left( ConstValue, Instr( ConstValue, ";")-1) )        
+        Calculate( ConstValue )
+        AddConstant( UCase(ConstName), ConstValue )
+      End if 
+
+    ElseIF ReadDataMode = "[avrmasks]" AND INSTR(InLine, "=") <> 0 THEN
+      'This reads the raw INC data and processes into constants.
+
+      TempData = Trim(Mid(InLine, INSTR(InLine, "=") + 1))
+      ConstName = Trim(Left(InLine, INSTR(InLine, "=") - 1))
+      ConstValue = TempData
+
+      if Instr(ConstValue,"<<") or Instr(ConstValue,">>") or Instr(ConstName,"bp") or Instr(ConstName,"bm") Then
+        ConstValue = Ucase(ConstValue)
+
+        Replace ( ConstValue, "0X", "&H")
+        Dim as Integer tmpValue, GtrPos, LesPos 
+        Dim tmpConstValue as String
+        If Instr(ConstValue,"<<") Then
+          tmpConstValue = Trim ( Mid( ConstValue, Instr(ConstValue, "&H"), Instr( ConstValue, "<<" ) ) )
+          LesPos = Instr( ConstValue, "<<" )
+          tmpConstValue = Left( tmpConstValue, LesPos - 2 )
+          replace ( ConstValue, tmpConstValue, Str(Val(tmpConstValue)) )
+          ConstValue = Trim( Left( ConstValue, Instr( ConstValue, ";")-1) ) 
+
+        ElseIf Instr(ConstValue,">>") then
+          LogError ( "Compiler does not support >> in [AVRMasks] section of the DAT file")
+        Else
+          If Instr(ConstValue, "0X") Then 
+            Replace ( ConstValue, "0X", "&H")
+          End If
+          ConstValue = Str(Val(ConstValue))
+        End If
+
+        Calculate( ConstValue )
+        AddConstant( UCase(ConstName), ConstValue )
+      End if 
 
     'Interrupts
     ElseIf ReadDataMode = "[interrupts]" AND INSTR(InLine, ":") <> 0 THEN

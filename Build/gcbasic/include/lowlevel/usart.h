@@ -99,7 +99,7 @@
 ' 13/11/2023  Resolve 18F1220 digital port setting
 ' 13/02/2024  Isolation of CREN by conditional test of RCSTA. Error encountered tested 18FxxQ20 as chip with I3CCON0.EN cause I3CCON0.EN = 1 in serial handler.
 ' 10/08/2024  Added more #samevar and #samebit for USART1, and, add isolation for VAR(U1BRGH) 
-
+' 19/08/2024  New: Added AVRDX Init and HserSend support.
 
 
 /*
@@ -221,18 +221,18 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
   END IF
 
   IF NODEF(DEFAULTUSARTRETURNVALUE) THEN
-    'WHEN NOT USING USART_BLOCKING THE RETURN VALUE IS DEFINED BY
-    DEFINE Defaultusartreturnvalue=255
+      'WHEN NOT USING USART_BLOCKING THE RETURN VALUE IS DEFINED BY
+      DEFAULTUSARTRETURNVALUE=255
   END IF
 
 
-  'Users may define USART1_BAUD_RATE as this makes logical sense, but, all the methods() use USART_BAUD_RATE for COM1.
-  'So, if they use USART1_BAUD_RATE then this will automatically create the correct CONSTANTs
-  If USART1_BAUD_RATE Then
-    USART_BAUD_RATE   = USART1_BAUD_RATE
-    USART_BLOCKING    = USART1_BLOCKING
-    USART_TX_BLOCKING = USART1_TX_BLOCKING
-    USART_BLOCKING    = USART1_BLOCKING
+  // 'Users may define USART1_BAUD_RATE as this makes logical sense, but, all the methods() use USART_BAUD_RATE for USART1.
+  // 'So, if they use USART1_BAUD_RATE then this will automatically create the correct CONSTANTs
+   If USART1_BAUD_RATE Then
+     USART_BAUD_RATE   = USART1_BAUD_RATE
+     USART_BLOCKING    = USART1_BLOCKING
+     USART_TX_BLOCKING = USART1_TX_BLOCKING
+     USART_BLOCKING    = USART1_BLOCKING
   End if
 
   //~There is SELECT-CASE in HSerSend() to improve performance and to only include the CASEs when more than one USART is use.
@@ -856,127 +856,257 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
   End If
 
   If AVR Then
+    //~There is SELECT-CASE in HSerSend() to improve performance and to only include the CASEs when more than one USART is use.
+    IF DEF(CHIPAVRDX) THEN
 
-    'Remap to the AVRrc methods()
-    IF ChipFamily = 121 Then
-        HSerGetNum = HSerGetNumRC
-        HSerGetString = HSerGetStringRC
-        HSerPrint = HSerPrintRC
-        HSerPrintByteCRLF =HSerPrintByteCRLFRC
-        HSerPrintCRLF = HSerPrintCRLFRC
-        HSerSend = HSerSendRC
-        HSerReceive = HSerReceiveRC
-    End If
+          // Interrup enablers
+          USART0HasData = "USART0_STATUS.USART_RXCIF_bp = On"
+          USART1HasData = "USART1_STATUS.USART_RXCIF_bp = On"
+          USART2HasData = "USART2_STATUS.USART_RXCIF_bp = On"
+          USART3HasData = "USART3_STATUS.USART_RXCIF_bp = On"
+          USART4HasData = "USART4_STATUS.USART_RXCIF_bp = On"
 
-    'AVR Usart has data flags setup
-    If Bit(RXC0) Then
-      USARTHasData = "RXC0 = On"
-    End If
-    If NoBit(RXC0) Then
-      USARTHasData = "RXC = On"
-    End If
-    If Bit(RXC1) Then
-      USART2HasData = "RXC1 = On"
-    End If
-    If Bit(RXC2) Then
-      USART3HasData = "RXC2 = On"
-    End If
-    If Bit(RXC3) Then
-      USART4HasData = "RXC3 = On"
-    End If
+        SCRIPT_USART_USAGE_CHECK = 0
+        IF USART_BAUD_RATE THEN
+        SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
+        END IF
+        IF USART1_BAUD_RATE THEN
+        SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
+        END IF
+        IF USART2_BAUD_RATE THEN
+        SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
+        END IF
+        IF USART3_BAUD_RATE THEN
+        SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
+        END IF
+        IF USART4_BAUD_RATE THEN
+        SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
+        END IF
 
-    'AVR USART 1 baud calc
-    If USART_BAUD_RATE Then
+        // Handle the user may use USART0_BAUD_RATE or USART_BAUD_RATE
+        If USART0_BAUD_RATE Then
+            USART_BAUD_RATE   = USART0_BAUD_RATE
+            IF DEF(USART0_BLOCKING) Then
+                USART_BLOCKING = USART0_BLOCKING
+            END IF
+            IF DEF(USART0_TX_BLOCKING) Then
+                USART_TX_BLOCKING = USART0_TX_BLOCKING
+            END IF
+            IF DEF(USART0_DELAY) Then
+                USART_DELAY = USART0_DELAY
+            END IF
+        End if
 
-      UBRR_TEMP = ChipMHz * 1000000 / (16 * USART_BAUD_RATE) - 1
-      U2X0_TEMP = 0
+        // These calculations do not use Double-Speed Operation RXMODE = 0x01
+        IF DEF(USART_BAUD_RATE) Then
+            SCRIPT_USART0_BAUD = INT(( 64 * ( ChipMHz * 1000000 ))/( 16 * USART_BAUD_RATE )+0.5)
+            IF SCRIPT_USART0_BAUD < 64 OR SCRIPT_USART0_BAUD > 65535 Then 
+                error "USART0_BAUD rate" USART0_BAUD_RATE "is not supported using" ChipMHz "mHz. Increase ChipMHz or decrease baudrate"
+            END IF
+        END IF
+        IF DEF(USART1_BAUD_RATE) Then
+            SCRIPT_USART1_BAUD = INT(( 64 * ( ChipMHz * 1000000 ))/( 16 * USART1_BAUD_RATE )+0.5)
+            IF SCRIPT_USART1_BAUD < 64 OR SCRIPT_USART1_BAUD > 65535 Then 
+                error "USART1_BAUD rate" USART1_BAUD_RATE "is not supported using" ChipMHz "mHz. Increase ChipMHz or decrease baudrate"
+            END IF
+        END IF
+        IF DEF(USART2_BAUD_RATE) Then
+            SCRIPT_USART2_BAUD = INT(( 64 * ( ChipMHz * 1000000 ))/( 16 * USART2_BAUD_RATE )+0.5)
+            IF SCRIPT_USART2_BAUD < 64 OR SCRIPT_USART2_BAUD > 65535 Then 
+                error "USART2_BAUD rate" USART2_BAUD_RATE "is not supported using" ChipMHz "mHz. Increase ChipMHz or decrease baudrate"
+            END IF
+        END IF
+        IF DEF(USART3_BAUD_RATE) Then
+            SCRIPT_USART3_BAUD = INT(( 64 * ( ChipMHz * 1000000 ))/( 16 * USART3_BAUD_RATE )+0.5)
+            IF SCRIPT_USART3_BAUD < 64 OR SCRIPT_USART3_BAUD > 65535 Then 
+                error "USART3_BAUD rate" USART3_BAUD_RATE "is not supported using" ChipMHz "mHz. Increase ChipMHz or decrease baudrate"
+            END IF
+        END IF
+        IF DEF(USART4_BAUD_RATE) Then
+            SCRIPT_USART4_BAUD = INT(( 64 * ( ChipMHz * 1000000 ))/( 16 * USART4_BAUD_RATE )+0.5)
+            IF SCRIPT_USART4_BAUD < 64 OR SCRIPT_USART4_BAUD > 65535 Then 
+                error "USART4_BAUD rate" USART4_BAUD_RATE "is not supported using" ChipMHz "mHz. Increase ChipMHz or decrease baudrate"
+            END IF        
+        END IF
 
-      'For 90S Series With 8-bit BRG
-      IF VAR(UBRR) Then
-         UBRR_TEMP = Int(UBRR_TEMP) And 255
-      END IF
+        // Setup default serial ports, uses USART Defaults from DAT file 
+        SCRIPTUSART0TXPIN = CHIPUSART0TXDEFAULT
+        SCRIPTUSART1TXPIN = CHIPUSART1TXDEFAULT
+        SCRIPTUSART2TXPIN = CHIPUSART2TXDEFAULT
+        SCRIPTUSART3TXPIN = CHIPUSART3TXDEFAULT
+        SCRIPTUSART4TXPIN = CHIPUSART4TXDEFAULT
 
-     'AVR Chips with 16-Bit BRG
-     ''If using a high speed, use double speed mode
-      IF NOVAR(UBRR) Then ' must have UBRRH or UBRRxH
-
-          If UBRR_TEMP < 16384 Then
-            UBRR_TEMP = ChipMHz * 1000000 / (8 * USART_BAUD_RATE) - 1
-            U2X0_TEMP = 1
-          End If
-
-          'Check that rate will work
-          If UBRR_TEMP > 65535 Then
-            Error Msg(UsartBaudTooLow)
-          End If
-
-          'Get high and low bytes
-          UBRRL_TEMP = Int(UBRR_TEMP) And 255
-          UBRRH_TEMP = Int(UBRR_TEMP / 256)
-      END IF
+        SCRIPTUSART0RXPIN = CHIPUSART0RXDEFAULT
+        SCRIPTUSART1RXPIN = CHIPUSART1RXDEFAULT
+        SCRIPTUSART2RXPIN = CHIPUSART2RXDEFAULT
+        SCRIPTUSART3RXPIN = CHIPUSART3RXDEFAULT
+        SCRIPTUSART4RXPIN = CHIPUSART4RXDEFAULT
 
 
-    End If
+        // USERS CAN CHANGE THE THE DEFAULT BY
+        //  #DEFINE USARTnTXPIN PORTn.n
+        //  #DEFINE USARTnRXPIN PORTn.n
+        
+        // This overwrites the defaults
+        // Set TX
+        IF DEF(USART0TXPIN) THEN
+            SCRIPTUSART0TXPIN = USART0TXPIN
+        END IF
+        IF DEF(USART1TXPIN) THEN
+            SCRIPTUSART1TXPIN = USART1TXPIN
+        END IF
+        IF DEF(USART2TXPIN) THEN
+            SCRIPTUSART2TXPIN = USART2TXPIN
+        END IF
+        IF DEF(USART3TXPIN) THEN
+            SCRIPTUSART3TXPIN = USART3TXPIN
+        END IF
+        IF DEF(USART4TXPIN) THEN
+            SCRIPTUSART4TXPIN = USART4TXPIN
+        END IF
+        // Set RX
+        IF DEF(USART0RXPIN) THEN
+            SCRIPTUSART0RXPIN = USART0RXPIN
+        END IF
+        IF DEF(USART1RXPIN) THEN
+            SCRIPTUSART1RXPIN = USART1RXPIN
+        END IF
+        IF DEF(USART2RXPIN) THEN
+            SCRIPTUSART2RXPIN = USART2RXPIN
+        END IF
+        IF DEF(USART3RXPIN) THEN
+            SCRIPTUSART3RXPIN = USART3RXPIN
+        END IF
+        IF DEF(USART4RXPIN) THEN
+            SCRIPTUSART4RXPIN = USART4RXPIN
+        END IF
+    END IF // DEF CHIPAVRDX 
 
-    'AVR USART 2 baud calc
-    If USART2_BAUD_RATE Then
-      UBRR2_TEMP = ChipMHz * 1000000 / (16 * USART2_BAUD_RATE) - 1
-      U2X02_TEMP = 0
-      'If using a high speed, use double speed mode
-      If UBRR2_TEMP < 16384 Then
-        UBRR2_TEMP = ChipMHz * 1000000 / (8 * USART2_BAUD_RATE) - 1
-        U2X02_TEMP = 1
+    IF NODEF(CHIPAVRDX) THEN
+      //~Support for legacy AVRs
+
+      'Remap to the AVRrc methods()
+      IF ChipFamily = 121 Then
+          HSerGetNum = HSerGetNumRC
+          HSerGetString = HSerGetStringRC
+          HSerPrint = HSerPrintRC
+          HSerPrintByteCRLF =HSerPrintByteCRLFRC
+          HSerPrintCRLF = HSerPrintCRLFRC
+          HSerSend = HSerSendRC
+          HSerReceive = HSerReceiveRC
       End If
 
-      'Check that rate will work
-      If UBRR2_TEMP > 65535 Then
-        Error Msg(UsartBaudTooLow)
+      'AVR Usart has data flags setup
+      If Bit(RXC0) Then
+        USARTHasData = "RXC0 = On"
+      End If
+      If NoBit(RXC0) Then
+        USARTHasData = "RXC = On"
+      End If
+      If Bit(RXC1) Then
+        USART2HasData = "RXC1 = On"
+      End If
+      If Bit(RXC2) Then
+        USART3HasData = "RXC2 = On"
+      End If
+      If Bit(RXC3) Then
+        USART4HasData = "RXC3 = On"
       End If
 
-      'Get high and low bytes
-      UBRRL2_TEMP = Int(UBRR2_TEMP) And 255
-      UBRRH2_TEMP = Int(UBRR2_TEMP / 256)
-    End If
+      'AVR USART 1 baud calc
+      If USART_BAUD_RATE Then
 
-    'Script support for AVR USART 3 baud calc
-    If USART3_BAUD_RATE Then
-      UBRR3_TEMP = ChipMHz * 1000000 / (16 * USART3_BAUD_RATE) - 1
-      U2X03_TEMP = 0
-      'If using a high speed, use double speed mode
-      If UBRR3_TEMP < 16384 Then
-        UBRR3_TEMP = ChipMHz * 1000000 / (8 * USART3_BAUD_RATE) - 1
-        U2X03_TEMP = 1
+        UBRR_TEMP = ChipMHz * 1000000 / (16 * USART_BAUD_RATE) - 1
+        U2X0_TEMP = 0
+
+        'For 90S Series With 8-bit BRG
+        IF VAR(UBRR) Then
+          UBRR_TEMP = Int(UBRR_TEMP) And 255
+        END IF
+
+        'AVR Chips with 16-Bit BRG
+        ''If using a high speed, use double speed mode
+        IF NOVAR(UBRR) Then ' must have UBRRH or UBRRxH
+
+            If UBRR_TEMP < 16384 Then
+              UBRR_TEMP = ChipMHz * 1000000 / (8 * USART_BAUD_RATE) - 1
+              U2X0_TEMP = 1
+            End If
+
+            'Check that rate will work
+            If UBRR_TEMP > 65535 Then
+              Error Msg(UsartBaudTooLow)
+            End If
+
+            'Get high and low bytes
+            UBRRL_TEMP = Int(UBRR_TEMP) And 255
+            UBRRH_TEMP = Int(UBRR_TEMP / 256)
+        END IF
+
+
       End If
 
-      'Check that rate will work
-      If UBRR3_TEMP > 65535 Then
-        Error Msg(UsartBaudTooLow)
+      'AVR USART 2 baud calc
+      If USART2_BAUD_RATE Then
+        UBRR2_TEMP = ChipMHz * 1000000 / (16 * USART2_BAUD_RATE) - 1
+        U2X02_TEMP = 0
+        'If using a high speed, use double speed mode
+        If UBRR2_TEMP < 16384 Then
+          UBRR2_TEMP = ChipMHz * 1000000 / (8 * USART2_BAUD_RATE) - 1
+          U2X02_TEMP = 1
+        End If
+
+        'Check that rate will work
+        If UBRR2_TEMP > 65535 Then
+          Error Msg(UsartBaudTooLow)
+        End If
+
+        'Get high and low bytes
+        UBRRL2_TEMP = Int(UBRR2_TEMP) And 255
+        UBRRH2_TEMP = Int(UBRR2_TEMP / 256)
       End If
 
-      'Get high and low bytes
-      UBRRL3_TEMP = Int(UBRR3_TEMP) And 255
-      UBRRH3_TEMP = Int(UBRR3_TEMP / 256)
-    End If
-    'AVR USART 4 baud clac
-    If USART4_BAUD_RATE Then
-      UBRR4_TEMP = ChipMHz * 1000000 / (16 * USART4_BAUD_RATE) - 1
-      U2X04_TEMP = 0
-      'If using a high speed, use double speed mode
-      If UBRR4_TEMP < 16384 Then
-        UBRR4_TEMP = ChipMHz * 1000000 / (8 * USART4_BAUD_RATE) - 1
-        U2X04_TEMP = 1
+      'Script support for AVR USART 3 baud calc
+      If USART3_BAUD_RATE Then
+        UBRR3_TEMP = ChipMHz * 1000000 / (16 * USART3_BAUD_RATE) - 1
+        U2X03_TEMP = 0
+        'If using a high speed, use double speed mode
+        If UBRR3_TEMP < 16384 Then
+          UBRR3_TEMP = ChipMHz * 1000000 / (8 * USART3_BAUD_RATE) - 1
+          U2X03_TEMP = 1
+        End If
+
+        'Check that rate will work
+        If UBRR3_TEMP > 65535 Then
+          Error Msg(UsartBaudTooLow)
+        End If
+
+        'Get high and low bytes
+        UBRRL3_TEMP = Int(UBRR3_TEMP) And 255
+        UBRRH3_TEMP = Int(UBRR3_TEMP / 256)
+      End If
+      'AVR USART 4 baud clac
+      If USART4_BAUD_RATE Then
+        UBRR4_TEMP = ChipMHz * 1000000 / (16 * USART4_BAUD_RATE) - 1
+        U2X04_TEMP = 0
+        'If using a high speed, use double speed mode
+        If UBRR4_TEMP < 16384 Then
+          UBRR4_TEMP = ChipMHz * 1000000 / (8 * USART4_BAUD_RATE) - 1
+          U2X04_TEMP = 1
+        End If
+
+        'Check that rate will work
+        If UBRR4_TEMP > 65535 Then
+          Error Msg(UsartBaudTooLow)
+        End If
+
+        'Get high and low bytes
+        UBRRL4_TEMP = Int(UBRR4_TEMP) And 255
+        UBRRH4_TEMP = Int(UBRR4_TEMP / 256)
       End If
 
-      'Check that rate will work
-      If UBRR4_TEMP > 65535 Then
-        Error Msg(UsartBaudTooLow)
-      End If
-
-      'Get high and low bytes
-      UBRRL4_TEMP = Int(UBRR4_TEMP) And 255
-      UBRRH4_TEMP = Int(UBRR4_TEMP / 256)
-    End If
-  End If
+    END IF // NDEF CHIPAVRDX`
+  End If // IF AVR
 
   'Figure out if SerData needs to be set by DefaultUsartReturnValue
   SCRIPT_SET_DEFAULTUSART1RETURNVALUE = 0
@@ -1011,20 +1141,11 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     End If
   End If
 
-
-
-
-
 #endscript
 
 #startup InitUSART, 90
 
 Sub InitUSART
-
-  #IF CHIPUSART > 1
-  'Set the default value for USART handler - required when more than one USART
-  comport = 1
-  #ENDIF
 
   #IFNDEF ONEOF(USART_BAUD_RATE,USART1_BAUD_RATE,USART2_BAUD_RATE,USART3_BAUD_RATE,USART4_BAUD_RATE,USART5_BAUD_RATE)
     #IFNDEF STOPCOMPILERERRORHANDLER
@@ -1069,6 +1190,12 @@ Sub InitUSART
   #ENDIF
 
   #ifdef PIC
+
+      #IF CHIPUSART > 1
+        'Set the default value for USART handler - required when more than one USART
+        comport = 1
+      #ENDIF
+
       #If USART_BAUD_RATE Then
         'PIC USART 1 Init
 
@@ -1382,93 +1509,308 @@ Sub InitUSART
   #endif
 
   #ifdef AVR
-    #If USART_BAUD_RATE Then
 
-      'Set baud rate
-      #ifndef Bit(U2X0)
+    #IFDEF CHIPAVRDX
 
-        #ifndef Bit(U2X1)       'Check for second usart? why
+        // Set the default value for USART handler - required when more than one USART
+        Dim comport as Byte
+        comport = 0
 
-          #IFDEF Bit(U2X)
-             U2X = U2X0_TEMP       'Set/Clear bit to double USART transmission speed
-             UBRRL = UBRRL_TEMP
-             UBRRH = UBRRH_TEMP
-          #ENDIF
+        #IFDEF USART_BAUD_RATE
+            
+            #IF DEF(ScriptUSART0TXpin)
+                //~ Set direction automatically
+                DIR ScriptUSART0TXpin OUT
+                DIR ScriptUSART0RXpin IN   
+            #ENDIF
+            
+            //~ Check the registers exists
+            #IF VAR( USART0_BAUDL) and VAR(USART0_BAUDH)
 
-          //~Added to support 90S Series AVR with no UBRRL/H or UBRRxL/xH
-          #IFDEF VAR(UBRR)
-             UBRR = UBRR_TEMP
-          #ENDIF
+                // Set baud rate
+                Dim USART0_BAUD_word as Word alias USART0_BAUDH, USART0_BAUDL
+                USART0_BAUD_word = SCRIPT_USART0_BAUD
 
+            #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+            #ENDIF
+
+            // Set the configuration bits
+            USART0_CTRLC = USART_NORMAL_PMODE_DISABLED_gc | USART_NORMAL_SBMODE_1BIT_gc | USART_NORMAL_CHSIZE_8BIT_gc  ; async 8bit no parity with one stop bit 
+            
+            // Enable TX and RX
+            USART0_CTRLB = USART_RXEN_bm | USART_TXEN_bm      
+
+        #ENDIF
+    
+        #IFDEF USART1_BAUD_RATE
+
+            #IF DEF(ScriptUSART1TXpin)
+                //~ Set direction automatically
+                DIR ScriptUSART1TXpin OUT
+                DIR ScriptUSART1RXpin IN  
+            #ENDIF
+
+            //~ Check the registers exists
+            #IF VAR( USART1_BAUDL) and VAR(USART1_BAUDH)
+
+                // Set baud rate
+                Dim USART1_BAUD_word as Word alias USART1_BAUDH, USART1_BAUDL
+                USART1_BAUD_word = SCRIPT_USART1_BAUD
+
+            #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+            #ENDIF
+
+            // Set the configuration bits
+            USART1_CTRLC = USART_NORMAL_PMODE_DISABLED_gc | USART_NORMAL_SBMODE_1BIT_gc | USART_NORMAL_CHSIZE_8BIT_gc  ; async 8bit no parity with one stop bit 
+            
+            // Enable TX and RX
+            USART1_CTRLB = USART_RXEN_bm | USART_TXEN_bm      
+
+        #ENDIF
+
+        #IFDEF USART2_BAUD_RATE
+
+            #IF DEF(ScriptUSART2TXpin)
+                //~ Set direction automatically
+                DIR ScriptUSART2TXpin OUT
+                DIR ScriptUSART2RXpin IN   
+            #ENDIF
+
+            //~ Check the registers exists
+            #IF VAR( USART2_BAUDL) and VAR(USART2_BAUDH)
+
+                // Set baud rate
+                Dim USART2_BAUD_word as Word alias USART2_BAUDH, USART2_BAUDL
+                USART2_BAUD_word = SCRIPT_USART2_BAUD
+
+            #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+            #ENDIF
+
+            // Set the configuration bits
+            USART2_CTRLC = USART_NORMAL_PMODE_DISABLED_gc | USART_NORMAL_SBMODE_1BIT_gc | USART_NORMAL_CHSIZE_8BIT_gc  ; async 8bit no parity with one stop bit 
+            
+            // Enable TX and RX
+            USART2_CTRLB = USART_RXEN_bm | USART_TXEN_bm      
+
+        #ENDIF
+
+        #IFDEF USART3_BAUD_RATE
+
+            #IF DEF(ScriptUSART3TXpin)
+                //~ Set direction automatically
+                DIR ScriptUSART3TXpin OUT
+                DIR ScriptUSART3RXpin IN   
+            #ENDIF
+
+            //~ Check the registers exists
+            #IF VAR( USART3_BAUDL) and VAR(USART3_BAUDH)
+
+                // Set baud rate
+                Dim USART3_BAUD_word as Word alias USART3_BAUDH, USART3_BAUDL
+                USART3_BAUD_word = SCRIPT_USART3_BAUD
+
+            #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+            #ENDIF
+
+            // Set the configuration bits
+            USART3_CTRLC = USART_NORMAL_PMODE_DISABLED_gc | USART_NORMAL_SBMODE_1BIT_gc | USART_NORMAL_CHSIZE_8BIT_gc  ; async 8bit no parity with one stop bit 
+            
+            // Enable TX and RX
+            USART3_CTRLB = USART_RXEN_bm | USART_TXEN_bm      
+
+        #ENDIF
+
+        #IFDEF USART4_BAUD_RATE
+
+            #IF DEF(ScriptUSART4TXpin)
+                //~ Set direction automatically
+                DIR ScriptUSART4TXpin OUT
+                DIR ScriptUSART4RXpin IN   
+            #ENDIF
+
+            //~ Check the registers exists
+            #IF VAR( USART4_BAUDL) and VAR(USART4_BAUDH)
+
+                // Set baud rate
+                Dim USART4_BAUD_word as Word alias USART4_BAUDH, USART4_BAUDL
+                USART4_BAUD_word = SCRIPT_USART4_BAUD
+
+            #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+            #ENDIF
+
+            // Set the configuration bits
+            USART4_CTRLC = USART_NORMAL_PMODE_DISABLED_gc | USART_NORMAL_SBMODE_1BIT_gc | USART_NORMAL_CHSIZE_8BIT_gc  ; async 8bit no parity with one stop bit 
+            
+            // Enable TX and RX
+            USART4_CTRLB = USART_RXEN_bm | USART_TXEN_bm      
+
+        #ENDIF
+
+    #ENDIF
+
+    #IFNDEF CHIPAVRDX
+
+      #IF CHIPUSART > 1
+        'Set the default value for USART handler - required when more than one USART
+        comport = 1
+      #ENDIF
+
+      #If USART_BAUD_RATE Then
+        'Set baud rate
+        #ifndef Bit(U2X0)
+
+          #ifndef Bit(U2X1)       'Check for second usart? why
+
+            #IFDEF Bit(U2X)
+              U2X = U2X0_TEMP       'Set/Clear bit to double USART transmission speed
+              UBRRL = UBRRL_TEMP
+              UBRRH = UBRRH_TEMP
+            #ENDIF
+
+            //~Added to support 90S Series AVR with no UBRRL/H or UBRRxL/xH
+            #IFDEF VAR(UBRR)
+              UBRR = UBRR_TEMP
+            #ENDIF
+
+          #endif
+        #endif
+
+
+        #ifdef Bit(U2X0)
+          U2X0 = U2X0_TEMP        'Set/Clear bit to double USART transmission speed
+          UBRR0L = UBRRL_TEMP
+          UBRR0H = UBRRH_TEMP
+        #endif
+
+        'Enable TX and RX
+        #ifndef Bit(RXEN0)
+          RXEN = On
+          TXEN = On
+        #endif
+        #ifdef Bit(RXEN0)
+          RXEN0 = On
+          TXEN0 = On
         #endif
       #endif
 
-
-      #ifdef Bit(U2X0)
-        U2X0 = U2X0_TEMP        'Set/Clear bit to double USART transmission speed
-        UBRR0L = UBRRL_TEMP
-        UBRR0H = UBRRH_TEMP
+      #If USART2_BAUD_RATE Then
+          ' set baud reg
+        #ifdef Bit(U2X1)           'multiple port chips
+            U2X1 = U2X02_TEMP       'speed doubling bit ex:Mega 128,2560
+            UBRR1L = UBRRL2_TEMP    'baudrate register low
+            UBRR1H = UBRRH2_TEMP    'baudrate register h
+        #endif
+        'Enable TX and RX
+        #ifdef Bit(RXEN1)
+          RXEN1 = On
+          TXEN1 = On
+        #endif
       #endif
 
-      'Enable TX and RX
-      #ifndef Bit(RXEN0)
-        RXEN = On
-        TXEN = On
+      #If USART3_BAUD_RATE Then
+          ' set baud reg
+        #ifdef Bit(U2X2)       'Multiple port chips
+            U2X2 = U2X03_TEMP     'speed doubling bit ex:Mega 128,2560
+            UBRR2L = UBRRL3_TEMP    'baudrate register low
+            UBRR2H = UBRRH3_TEMP    'baudrate register h
+        #endif
+        'Enable TX and RX
+        #ifdef Bit(RXEN2)
+          RXEN2 = On
+          TXEN2 = On
+        #endif
       #endif
-      #ifdef Bit(RXEN0)
-        RXEN0 = On
-        TXEN0 = On
+
+      #If USART4_BAUD_RATE Then
+          ' set baud reg
+        #ifdef Bit(U2X3)       'Multiple port chips
+            U2X3 = U2X04_TEMP     'speed doubling bit ex:Mega 128,2560
+            UBRR3L = UBRRL4_TEMP    'baudrate register low
+            UBRR3H = UBRRH4_TEMP    'baudrate register h
+        #endif
+        'Enable TX and RX
+        #ifdef Bit(RXEN3)
+          RXEN3 = On
+          TXEN3 = On
+        #endif
       #endif
-    #endif
-
-    #If USART2_BAUD_RATE Then
-        ' set baud reg
-       #ifdef Bit(U2X1)           'multiple port chips
-          U2X1 = U2X02_TEMP       'speed doubling bit ex:Mega 128,2560
-          UBRR1L = UBRRL2_TEMP    'baudrate register low
-          UBRR1H = UBRRH2_TEMP    'baudrate register h
-       #endif
-       'Enable TX and RX
-       #ifdef Bit(RXEN1)
-        RXEN1 = On
-        TXEN1 = On
-       #endif
-    #endif
-
-    #If USART3_BAUD_RATE Then
-        ' set baud reg
-       #ifdef Bit(U2X2)       'Multiple port chips
-          U2X2 = U2X03_TEMP     'speed doubling bit ex:Mega 128,2560
-          UBRR2L = UBRRL3_TEMP    'baudrate register low
-          UBRR2H = UBRRH3_TEMP    'baudrate register h
-       #endif
-       'Enable TX and RX
-       #ifdef Bit(RXEN2)
-        RXEN2 = On
-        TXEN2 = On
-       #endif
-    #endif
-
-    #If USART4_BAUD_RATE Then
-        ' set baud reg
-       #ifdef Bit(U2X3)       'Multiple port chips
-          U2X3 = U2X04_TEMP     'speed doubling bit ex:Mega 128,2560
-          UBRR3L = UBRRL4_TEMP    'baudrate register low
-          UBRR3H = UBRRH4_TEMP    'baudrate register h
-       #endif
-       'Enable TX and RX
-       #ifdef Bit(RXEN3)
-        RXEN3 = On
-        TXEN3 = On
-       #endif
-    #endif
-
+    #ENDIF
   #endif
 End Sub
 
 sub HSerSend (In SerData)
 
- #ifdef PIC
+  #ifdef PIC
     #If USART_BAUD_RATE Then
 
       //~Ensure specific 18F are set to digital port prior to USART usage
@@ -1542,8 +1884,6 @@ sub HSerSend (In SerData)
   #ifdef AVR
    'AVR USART1 Send
     #If USART_BAUD_RATE Then
-
-
         #ifdef USART_BLOCKING
           #ifdef Bit(UDRE0)
             Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
@@ -1581,7 +1921,7 @@ end sub
 
 sub HSerSend (In SerData, optional In comport = 1)
 
- #ifdef PIC
+  #ifdef PIC
 
     //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
     #if SCRIPT_USART_USAGE_CHECK > 1 Then
@@ -1832,115 +2172,329 @@ sub HSerSend (In SerData, optional In comport = 1)
 
   #endif
 
-
-
   #ifdef AVR
-   //~ AVR USART1 Send
-    #If USART_BAUD_RATE Then
-      if comport = 1 Then
 
-        #ifdef USART_BLOCKING
-          #ifdef Bit(UDRE0)
-            Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
+    #IFDEF CHIPAVRDX
+
+        //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
+        #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Select Case comport
+        #ENDIF
+
+        #IFDEF USART_BAUD_RATE
+
+            #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Case 0
+            #ENDIF
+
+            #IFDEF OneOf(USART_TX_BLOCKING, USART_BLOCKING)
+            
+                //~ Checked both the register and the bit exist - then we know if the AVRDx chip has different registers and bit/masks
+                #IF  VAR(USART0_STATUS) AND DEF(USART_DREIF_bp )
+                    Wait While USART0_STATUS.USART_DREIF_bp = Off
+                #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+                #ENDIF
+
+            #ENDIF
+
+            // Send data
+            USART0_TXDATAL = SerData
+
+            #IF USART_DELAY <> OFF
+                //~ All bits shifted out on TX Pin
+                Wait USART_DELAY
+            #ENDIF
+
+        #ENDIF
+
+        #IFDEF USART1_BAUD_RATE
+
+            #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Case 1
+            #ENDIF
+            
+            #IFDEF OneOf(USART1_TX_BLOCKING, USART1_BLOCKING)
+            
+                //~ Checked both the register and the bit exist - then we know if the AVRDx chip has different registers and bit/masks
+                #IF  VAR(USART1_STATUS) AND DEF(USART_DREIF_bp )
+                    Wait While USART1_STATUS.USART_DREIF_bp = Off
+                #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+                #ENDIF
+
+            #ENDIF
+
+            // Send data
+            USART1_TXDATAL = SerData
+
+            #IF USART1_DELAY <> OFF
+                //~ All bits shifted out on TX Pin
+                Wait USART1_DELAY
+            #ENDIF
+
+        #ENDIF
+
+        #IFDEF USART2_BAUD_RATE
+
+            #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Case 2
+            #ENDIF
+            
+            #IFDEF OneOf(USART2_TX_BLOCKING, USART2_BLOCKING)
+            
+                //~ Checked both the register and the bit exist - then we know if the AVRDx chip has different registers and bit/masks
+                #IF  VAR(USART2_STATUS) AND DEF(USART_DREIF_bp )
+                    Wait While USART2_STATUS.USART_DREIF_bp = Off
+                #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+                #ENDIF
+
+            #ENDIF
+
+            // Send data
+            USART2_TXDATAL = SerData
+
+            #IF USART2_DELAY <> OFF
+                //~ All bits shifted out on TX Pin
+                Wait USART2_DELAY
+            #ENDIF
+
+        #ENDIF
+
+        #IFDEF USART3_BAUD_RATE
+
+            #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Case 3
+            #ENDIF
+            
+            #IFDEF OneOf(USART3_TX_BLOCKING, USART3_BLOCKING)
+            
+                //~ Checked both the register and the bit exist - then we know if the AVRDx chip has different registers and bit/masks
+                #IF  VAR(USART3_STATUS) AND DEF(USART_DREIF_bp )
+                    Wait While USART3_STATUS.USART_DREIF_bp = Off
+                #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+                #ENDIF
+
+            #ENDIF
+
+            // Send data
+            USART3_TXDATAL = SerData
+
+            #IF USART3_DELAY <> OFF
+                //~ All bits shifted out on TX Pin
+                Wait USART3_DELAY
+            #ENDIF
+
+        #ENDIF
+
+        #IFDEF USART4_BAUD_RATE
+
+            #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            Case 4
+            #ENDIF
+            
+            #IFDEF OneOf(USART4_TX_BLOCKING, USART4_BLOCKING)
+            
+                //~ Checked both the register and the bit exist - then we know if the AVRDx chip has different registers and bit/masks
+                #IF  VAR(USART4_STATUS) AND DEF(USART_DREIF_bp )
+                    Wait While USART4_STATUS.USART_DREIF_bp = Off
+                #ELSE
+                    #IFNDEF STOPCOMPILERERRORHANDLER
+                    //! Your program has a references to Hardware Serial Operations for the AVRDx microcontrolllers.
+                    //!
+                    //! However, the compiler has not recognised the Registers for this specific microcontrolller.
+                    //!
+                    //! Please contact support
+                    //! 
+                    //! See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,
+                    //! Check the documentation and Help at http://gcbasic.sourceforge.net/help/,
+                    //! or, email us:
+                    //! evanvennn at users dot sourceforge dot net
+                    //! 
+                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    #ENDIF
+                #ENDIF
+
+            #ENDIF
+
+            // Send data
+            USART4_TXDATAL = SerData
+
+            #IF USART4_DELAY <> OFF
+                //~ All bits shifted out on TX Pin
+                Wait USART4_DELAY
+            #ENDIF
+
+        #ENDIF
+
+        #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+            End Select
+        #ENDIF
+
+    #ENDIF
+
+    #ifndef CHIPAVRDX
+      /~ AVR USART1 Send
+      #If USART_BAUD_RATE Then
+        if comport = 1 Then
+
+          #ifdef USART_BLOCKING
+            #ifdef Bit(UDRE0)
+              Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
+            #endif
+
+            #ifndef Bit(UDRE0)
+              Wait While UDRE = Off
+            #endif
           #endif
 
-          #ifndef Bit(UDRE0)
-            Wait While UDRE = Off
+          #ifdef  USART_TX_BLOCKING
+            #ifdef Bit(UDRE0)
+              Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+            #endif
+
+            #ifndef Bit(UDRE0)
+              Wait While UDRE = Off
+            #endif
           #endif
-        #endif
 
-        #ifdef  USART_TX_BLOCKING
-          #ifdef Bit(UDRE0)
-            Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+          #ifdef Var(UDR) ' ***************
+            UDR = SerData
           #endif
 
-          #ifndef Bit(UDRE0)
-            Wait While UDRE = Off
+          #ifdef Var(HIDETHESECOMMENTEDCODE)
+          '#ifndef Var(UDR0)
+          ' #ifdef Var(UDR1)
+          '   UDR1 = SerData    '? second comport
+          ' #endif
+          '#endif
           #endif
-        #endif
-
-        #ifdef Var(UDR) ' ***************
-          UDR = SerData
-        #endif
-
-        #ifdef Var(HIDETHESECOMMENTEDCODE)
-        '#ifndef Var(UDR0)
-        ' #ifdef Var(UDR1)
-        '   UDR1 = SerData    '? second comport
-        ' #endif
-        '#endif
-        #endif
-        #ifdef Var(UDR0)
-          UDR0 = SerData ' *******************
-        #endif
-      End If
-    #endif
-
-  ;----------------------------------------------------
-
-    #If USART2_BAUD_RATE Then
-   'AVR USART 2 send
-      if comport = 2 Then
-        #ifdef USART2_BLOCKING
-          #ifdef Bit(UDRE1)       'comport 2 TX and Rxblocker
-              Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+          #ifdef Var(UDR0)
+            UDR0 = SerData ' *******************
           #endif
-        #endif
+        End If
+      #endif
 
-        #ifdef USART2_TX_BLOCKING
-          #ifdef Bit(UDRE1)       'comport 2 TX blocker
-              Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+      ;----------------------------------------------------
+
+      #If USART2_BAUD_RATE Then
+        'AVR USART 2 send
+        if comport = 2 Then
+          #ifdef USART2_BLOCKING
+            #ifdef Bit(UDRE1)       'comport 2 TX and Rxblocker
+                Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+            #endif
           #endif
-        #endif
 
-        #ifdef Var(UDR1)
-          UDR1 = SerData ' *****************
-        #endif
-
-      End If
-    #endif
-
-    #If USART3_BAUD_RATE Then
-   'AVR USART 3 send
-      if comport = 3 Then
-        #ifdef USART3_BLOCKING
-          #ifdef Bit(UDRE2)       'comport 3 TX and Rx blocker
-            Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+          #ifdef USART2_TX_BLOCKING
+            #ifdef Bit(UDRE1)       'comport 2 TX blocker
+                Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
+            #endif
           #endif
-        #endif
 
-        #ifdef USART3_TX_BLOCKING
-          #ifdef Bit(UDRE2)       'comport 3 TX blocker
-            Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+          #ifdef Var(UDR1)
+            UDR1 = SerData ' *****************
           #endif
-        #endif
 
-        #ifdef Var(UDR2)
-            UDR2 = SerData
-        #endif
-      End If
-    #endif
+        End If
+      #endif
 
-    #If USART4_BAUD_RATE Then
-  'AVR USART 3 send
-      if comport = 4 Then
-        #ifdef USART4_BLOCKING
-          #ifdef Bit(UDRE3)       'comport 4 TX and RX  blocker
-            Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+      #If USART3_BAUD_RATE Then
+       'AVR USART 3 send
+        if comport = 3 Then
+          #ifdef USART3_BLOCKING
+            #ifdef Bit(UDRE2)       'comport 3 TX and Rx blocker
+              Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+            #endif
           #endif
-        #endif
 
-        #ifdef USART4_TX_BLOCKING
-          #ifdef Bit(UDRE3)       'comport 4 TX blocker
-            Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+          #ifdef USART3_TX_BLOCKING
+            #ifdef Bit(UDRE2)       'comport 3 TX blocker
+              Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
+            #endif
           #endif
-        #endif
 
-        #ifdef Var(UDR3)
-            UDR3 = SerData
-        #endif
+          #ifdef Var(UDR2)
+              UDR2 = SerData
+          #endif
+        End If
+      #endif
 
-      End If
+      #If USART4_BAUD_RATE Then
+        'AVR USART 3 send
+        if comport = 4 Then
+          #ifdef USART4_BLOCKING
+            #ifdef Bit(UDRE3)       'comport 4 TX and RX  blocker
+              Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+            #endif
+          #endif
+
+          #ifdef USART4_TX_BLOCKING
+            #ifdef Bit(UDRE3)       'comport 4 TX blocker
+              Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
+            #endif
+          #endif
+
+          #ifdef Var(UDR3)
+              UDR3 = SerData
+          #endif
+
+        End If
+      #endif
     #endif
   #endif
 end sub

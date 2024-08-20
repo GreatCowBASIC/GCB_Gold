@@ -26,6 +26,8 @@
 ' 13/6/2018: Updated to include USBBufferWrite()
 ' 30/10/201: Added USB_INTERFACE_PROTOCOL
 ' 14/08/22 Updated user changeable constants only - no functional change
+' 08/18/2024: Fixed allocation of ram for low memory parts (18F13K50, 18F14K50, 18F2450 and 18F4450) Angel Mier
+' 08/18/2024: Changed DIM to ALLOC to clarify usage
 
 ' Example User code for SetupHandler_CallBack showing usage of USBBufferWrite
 '
@@ -99,10 +101,7 @@
 '''@hardware All; Product Name; USB_PRODUCT_NAME; string
 
 'Constants
-#define USB_VID 0x1209
-#define USB_PID 0x2006
-'The default USB_REV ID.  DO NOT USE THIS ID! See https://sourceforge.net/p/gcbasic/discussion/579125/thread/1e7daf8a/#0034/d2d3
-#define USB_REV 0x0000
+
 
 #define USB_ENDPOINTS 1
 #define USB_CURRENT_MA 50
@@ -139,7 +138,7 @@
 
 
 #define USB_RAM_START USB_RAM_START_MEMORY_ADDRESS
-#define USB_RAM_SIZE 512
+#define USB_RAM_SIZE USB_RAM_SIZE_BYTES
 #define USB_MAX_PACKET 128
 
 'PID values
@@ -183,7 +182,8 @@
 'Endpoint buffers
 Dim USBTempBuffer(16)
 Dim USBTempString As String
-Dim USBRam(USB_RAM_SIZE) At USB_RAM_START
+// Dim USBRam(USB_RAM_SIZE - 1 ) At USB_RAM_START
+Dim USBRam as Alloc * USB_RAM_SIZE At USB_RAM_START // change to ALLOC to clarify usage
 
 ''Buffer descriptors
 Dim USB_OUT0_STAT Alias USBRAM(0)
@@ -204,6 +204,19 @@ Dim USB_CNT_POINTER as byte
 
 'Script to check clock speed
 #script
+
+  // Set the defaults in the case the user forgets!
+  IF NODEF(USB_VID) THEN
+    USB_VID = 0x1209
+  END IF
+  IF NODEF(USB_PID) THEN
+    USB_PID = 0x2006
+  END IF
+  IF NODEF(USB_VID) THEN
+    'The default USB_REV ID.  DO NOT USE THIS ID! See https://sourceforge.net/p/gcbasic/discussion/579125/thread/1e7daf8a/#0034/d2d3
+    USB_REV = 0x0000
+  END IF
+
   If ChipMHz = 6 Then
     USB_LOWSPEED = True
   End If
@@ -219,10 +232,24 @@ Dim USB_CNT_POINTER as byte
 
   if ChipFamily = 15 then
       USB_RAM_START_MEMORY_ADDRESS = 0x2000
+      USB_RAM_SIZE_BYTES = 512
   end if
 
   if ChipFamily = 16 then
       USB_RAM_START_MEMORY_ADDRESS = 0x400
+      USB_RAM_SIZE_BYTES = 512
+  end if
+
+  if ChipRam < 1024 and ChipEEprom <> 0 then
+    'Setting for current low ram parts (ie 18F14k50, 18F13K50)
+      USB_RAM_START_MEMORY_ADDRESS = 0x200
+      USB_RAM_SIZE_BYTES = 256
+  end if
+
+  if ChipRam < 1024 and ChipEEprom = 0  then
+    'Settings for old low ram parts (ie 18F2450 18F4450)
+      USB_RAM_START_MEMORY_ADDRESS = 0x400
+      USB_RAM_SIZE_BYTES = 256
   end if
 
 
@@ -357,16 +384,20 @@ Sub USBInterruptHandler
     Select Case USBPID
       Case USB_PID_OUT
         'Out transfer
+        #IF SCRIPT_USART_USAGE_CHECK > 0
         'HSerPrint "OUT"
         'HSerPrintCRLF
+        #ENDIF 
 
         USB_OUT0_CNT = USB_MAX_PACKET
         USB_OUT0_STAT.UOWN = 1
 
       Case USB_PID_IN
         'In transfer completed
+        #IF SCRIPT_USART_USAGE_CHECK > 0
         'HSerPrint "IN"
         'HSerPrintCRLF
+        #ENDIF
         Select Case USBLastControl
           'Set address completed
           Case USB_SET_ADDRESS
@@ -398,13 +429,17 @@ Sub USBInterruptHandler
 
         USBProcessSetup
         'USBDumpControlIn
+        #IF SCRIPT_USART_USAGE_CHECK > 0
         'HSerPrint "S"
         'HSerPrintCRLF
+        #ENDIF
 
       Case Else
+        #IF SCRIPT_USART_USAGE_CHECK > 0
         'HSerPrint "PID Err "
         'HSerPrint USBPID
         'HSerPrintCRLF
+        #ENDIF
 
     End Select
 
@@ -738,8 +773,10 @@ End Table
 '''Dump control transfer. Debugging only
 '''@hide
 Sub USBDumpControlIn
-  HSerPrint "PID: "
-  HSerPrint USBPID
+  #IF SCRIPT_USART_USAGE_CHECK > 0
+  HSerPrint "PID: 0x"
+  HSerPrint Hex([BYTE]USBPID_H)
+  HSerPrint Hex([BYTE]USBPID)
   HSerPrint " bmRequestType: "
   HSerPrint Hex(USBTempBuffer(0))
   HSerPrint " bRequest: "
@@ -754,6 +791,7 @@ Sub USBDumpControlIn
   HSerPrint Hex(USBTempBuffer(7))
   HSerPrint Hex(USBTempBuffer(6))
   HSerPrintCRLF
+  #ENDIF
 End Sub
 
 Macro USBSendAcknowledge
