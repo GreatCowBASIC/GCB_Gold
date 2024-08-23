@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <translation>
+	<name>Русский (Russian)</name>
 	<data>
 
 		<!-- Main form -->
@@ -84,10 +85,6 @@
 		<string name="READFUSE">Прочитать фьюзы</string>
 		<string name="READLOCKBITS">Чтение LOCK битов</string>
 		<string name="NOSUPPORTEDFUSES">{0} не имеет поддерживаемых фьюзов</string>
-		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
-		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
-		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
-		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Проверка обновлений ...</string>
 		<string name="UPDATE_FAILED">Ошибка обновления: {0}</string>
@@ -111,7 +108,6 @@
 		<string name="BROWSE_FILTER_ALL">Все файлы (*. *)</string>
 		<string name="BROWSE_FILTER_HEX">Шестнадцатеричные файлы (* .hex)</string>
 		<string name="BROWSE_FILTER_EEP">Файлы EEPROM (* .eep)</string>
-		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Форма менеджера пресетов -->
 		<string name="TITLE_PRESETMGR">Редактор настроек МК</string>
@@ -183,6 +179,8 @@
 
 		<!-- Ошибки и прочее -->
 		<string name="XMLWRITEERROR">Произошла ошибка при попытке сохранить {0}:
+{1}</string>
+		<string name="XMLCOPYERROR">Не удалось скопировать шаблон {0} в AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} отсутствует!</string>
 		<string name="EXECFAIL">Невозможно запустить процесс: {0}</string>

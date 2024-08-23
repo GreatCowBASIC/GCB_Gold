@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
+	<name>日本語 (Japanese)</name>
 	<data>
 
 		<!-- Main form -->
@@ -84,10 +85,6 @@ EEPROMのみを更新する場合に使用します</string>
 		<string name="READFUSE">ヒューズを読む</string>
 		<string name="READLOCKBITS">ロックビットを読む</string>
 		<string name="NOSUPPORTEDFUSES">{0} にはサポートされているヒューズがありません</string>
-		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
-		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
-		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
-		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">アップデートの確認...</string>
 		<string name="UPDATE_FAILED">更新チェックに失敗しました: {0}</string>
@@ -111,7 +108,6 @@ EEPROMのみを更新する場合に使用します</string>
 		<string name="BROWSE_FILTER_ALL">すべてのファイル (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Hexファイル (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROMファイル (*.eep)</string>
-		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">プリセットマネージャー</string>
@@ -183,6 +179,8 @@ EEPROMのみを更新する場合に使用します</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">{0} を保存しようとしてエラーが発生しました:
+{1}</string>
+		<string name="XMLCOPYERROR">{0} テンプレートをAppDataにコピーできませんでした:
 {1}</string>
 		<string name="EXECMISSING">{0} がありません！</string>
 		<string name="EXECFAIL">プロセスを開始できません: {0}</string>

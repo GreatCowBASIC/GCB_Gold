@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
+	<name>简体中文 (Simplified Chinese)</name>
 	<data>
 
 		<!-- Main form -->
@@ -84,10 +85,6 @@
 		<string name="READFUSE">Read fuse</string>
 		<string name="READLOCKBITS">Read lock bits</string>
 		<string name="NOSUPPORTEDFUSES">{0} does not have any supported fuses</string>
-		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
-		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
-		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
-		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">检查更新...</string>
 		<string name="UPDATE_FAILED">检查更新失败: {0}</string>
@@ -111,7 +108,6 @@
 		<string name="BROWSE_FILTER_ALL">所有文件 (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Hex 文件 (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROM 文件 (*.eep)</string>
-		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">预设管理器</string>
@@ -183,6 +179,8 @@
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">发生错误，尝试写入 {0}:
+{1}</string>
+		<string name="XMLCOPYERROR">复制 {0} 模板到应用数据出错:
 {1}</string>
 		<string name="EXECMISSING">{0} 丢失</string>
 		<string name="EXECFAIL">无法启动进程: {0}</string>

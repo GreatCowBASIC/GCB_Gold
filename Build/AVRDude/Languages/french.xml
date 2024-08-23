@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
+	<name>Français (French)</name>
 	<data>
 
 		<!-- Main form -->
@@ -84,10 +85,6 @@ Utilisez cette option uniquement si vous souhaitez mettre à jour l'EEPROM.</str
 		<string name="READFUSE">Read fuse</string>
 		<string name="READLOCKBITS">Bits de verrouillage en lecture</string>
 		<string name="NOSUPPORTEDFUSES">{0} does not have any supported fuses</string>
-		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
-		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
-		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
-		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Recherche de mises à jour ...</string>
 		<string name="UPDATE_FAILED">La vérification de la mise à jour a échoué: {0}</string>
@@ -111,7 +108,6 @@ Utilisez cette option uniquement si vous souhaitez mettre à jour l'EEPROM.</str
 		<string name="BROWSE_FILTER_ALL">Tous les fichiers (*.*)</string>
 		<string name="BROWSE_FILTER_HEX"> Fichiers hexadécimaux (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">Fichiers EEPROM (*.eep)</string>
-		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Gestionnaire de préréglages</string>
@@ -183,6 +179,8 @@ Utilisez cette option uniquement si vous souhaitez mettre à jour l'EEPROM.</str
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Une erreur s'est produite lors de la tentative d'enregistrement de {0}:
+{1}</string>
+		<string name="XMLCOPYERROR">Échec de la copie du modèle {0} vers AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} est manquant!</string>
 		<string name="EXECFAIL">Impossible de démarrer le processus: {0}</string>
