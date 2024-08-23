@@ -2388,7 +2388,7 @@ sub HSerSend (In SerData, optional In comport = 1)
     #ENDIF
 
     #ifndef CHIPAVRDX
-      /~ AVR USART1 Send
+      //~ AVR USART1 Send
       #If USART_BAUD_RATE Then
         if comport = 1 Then
 
