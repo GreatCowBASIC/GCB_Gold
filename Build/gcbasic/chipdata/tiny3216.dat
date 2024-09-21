@@ -53,8 +53,8 @@ Pins=20
 USART=1
 
 'These USART constants are exposed with the prefix of CHIP - sourced from `avr chipdata.csv`
-USART0TXDefault=PORTA.0
-USART0RXDefault=PORTA.1
+USART0TXDefault=PORTB.2
+USART0RXDefault=PORTB.3
 
 'This constant is exposed as ChipFamily - sourced from `avr chipdata.csv`
 Family=140
@@ -80,11 +80,48 @@ AVRGCC=avrxmega3
 'This constant is exposed as ChipAVRDX - sourced from `avr chipdata.csv`
 AVRDX=1
 
-'This constant is exposed as ChipNotTested - sourced from `avr chipdata.csv`
-' NotTested is a numeric bitwise value
-' 1 = Chip DAT file not tested and therefore no validated
-' 2 = Chip DAT file has an [interrupt] section that is incomplete
-NotTested=2
+'For details of microcontroller specifications see the microcontroller datasheet
+_DATAMEM_START = 0x0000
+_DATAMEM_SIZE = 0x10000
+_DATAMEM_END = (0x0000 + 0x10000 - 1)
+_IO_START = 0x0000
+_IO_SIZE = 0x1100
+_IO_END = (0x0000 + 0x1100 - 1)
+_SIGNATURES_START = 0x1100
+_SIGNATURES_SIZE = 0x0003
+_SIGNATURES_END = (0x1100 + 0x0003 - 1)
+_SIGNATURES_PAGE_SIZE = 0x80
+_PROD_SIGNATURES_START = 0x1103
+_PROD_SIGNATURES_SIZE = 0x003D
+_PROD_SIGNATURES_END = (0x1103 + 0x003D - 1)
+_PROD_SIGNATURES_PAGE_SIZE = 0x80
+_FUSES_START = 0x1280
+_FUSES_SIZE = 0x000A
+_FUSES_END = (0x1280 + 0x000A - 1)
+_FUSES_PAGE_SIZE = 0x40
+_LOCKBITS_START = 0x128A
+_LOCKBITS_SIZE = 0x0001
+_LOCKBITS_END = (0x128A + 0x0001 - 1)
+_LOCKBITS_PAGE_SIZE = 0x40
+_USER_SIGNATURES_START = 0x1300
+_USER_SIGNATURES_SIZE = 0x0040
+_USER_SIGNATURES_END = (0x1300 + 0x0040 - 1)
+_USER_SIGNATURES_PAGE_SIZE = 0x40
+_EEPROM_START = 0x1400
+_EEPROM_SIZE = 0x0100
+_EEPROM_END = (0x1400 + 0x0100 - 1)
+_EEPROM_PAGE_SIZE = 0x40
+_INTERNAL_SRAM_START = 0x3800
+_INTERNAL_SRAM_SIZE = 0x0800
+_INTERNAL_SRAM_END = (0x3800 + 0x0800 - 1)
+_MAPPED_PROGMEM_START = 0x8000
+_MAPPED_PROGMEM_SIZE = 0x8000
+_MAPPED_PROGMEM_END = (0x8000 + 0x8000 - 1)
+_MAPPED_PROGMEM_PAGE_SIZE = 0x80
+_PROGMEM_START = 0x0000
+_PROGMEM_SIZE = 0x8000
+_PROGMEM_END = (0x0000 + 0x8000 - 1)
+_PROGMEM_PAGE_SIZE = 0x80
 
 [Pointers]
 'This section are the registers used by compilers
@@ -98,55 +135,66 @@ ZH:31
 [Interrupts]
 'For specific details of the interrupts see the microcontroller datasheet
 'The first parameter is the GCBASIC identifier used in user code to expose the specific interrupt
+'
+' Specific to AVRDX chips - an explaination - the entries
+' GCBASIC friendly name:Source Interrupt Name,vector,register.bit to enable the interrupt,register.bit or !register.bit to clear the interrupt
+'   name     interrupt   #    enable reg.bit(s)                  clear reg.bit(s)
+' NMIfromCRC:CRCSCAN_NMI,2,CRCSCAN_CTRLA.CRCSCAN_NMIEN_bp,!CRCSCAN_CTRLA.CRCSCAN_RESET_bp
+'
+' The enable reg.bit(s) can be a single bit or bits will be used to set the register
+' The clear reg.bit(s) can be a single bit or bits will be used to set the register
+' ! (eqautes to NOT ) inverts the bit
+'
 ; CRCSCAN interrupt vectors
-	NMIfromCRC:CRCSCAN_NMI,2,,
+	NMIfromCRC:CRCSCAN_NMI,2,CRCSCAN_CTRLA.CRCSCAN_NMIEN_bp,!CRCSCAN_CTRLA.CRCSCAN_RESET_bp
 ; BOD interrupt vectors
-	BOD_VLM:BOD_VLM,4,,
+	BOD_VLM:BOD_VLM,4,BOD_INTCTRL.BOD_VLMIE_bp,!BOD_INTFLAGS.BOD_VLMIF_bp
 ; PORTA interrupt vectors
-		PORTA_PORT:PORTA_PORT,6,,
+	PortAChange:PORTA_PORT,6, PORTA_PORTCTRL.PORT_INT_gm,PORTA_INTFLAGS.PORT_INT_gm
 ; PORTB interrupt vectors
-		PORTB_PORT:PORTB_PORT,8,,
+	PORTBChange:PORTB_PORT,8,PORTB_PORTCTRL.PORT_INT_gm,PORTB_INTFLAGS.PORT_INT_gm
 ; PORTC interrupt vectors
-		PORTC_PORT:PORTC_PORT,10,,
+	PORTCChange:PORTC_PORT,10,PORTC_PORTCTRL.PORT_INT_gm,PORTC_INTFLAGS.PORT_INT_gm
 ; RTC interrupt vectors
-		RTC_CNT:RTC_CNT,12,,
-		RTC_PIT:RTC_PIT,14,,
+	RTCOverflow:RTC_CNT,12,RTC_INTCTRL.RTC_OVF_bp,RTC_INTFLAGS.RTC_OVF_bp
+	PITOverflow:RTC_PIT,14,RTC_PITINTCTRL.RTC_PI_bp,RTC_PITINTFLAGS.RTC_PI_bp
 ; TCA0 interrupt vectors
-		TCA0_LUNF:TCA0_LUNF,16,,
-		TCA0_HUNF:TCA0_HUNF,18,,
-		TCA0_CMP0:TCA0_CMP0,20,,
-		TCA0_CMP1:TCA0_CMP1,22,,
-		TCA0_CMP2:TCA0_CMP2,24,,
+	Timer0Overflow:TCA0_LUNF,16,TCA0_SINGLE_INTCTRL.TCA_SINGLE_OVF_bp,!TCA0_SINGLE_INTFLAGS.TCA_SINGLE_OVF_bp
+	Timer0Underflow:TCA0_HUNF,18,TCA_SPLIT_HUNF_bp,!TCA0_SPLIT_INTFLAGS.TCA_SPLIT_HUNF_bp 
+	Timer0Match0:TCA0_CMP0,20,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP0_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP0_bp
+	Timer0Match1:TCA0_CMP1,22,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP1_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP1_bp
+	Timer0Match2:TCA0_CMP2,24,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP2_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP0_bp
 ; TCB0 interrupt vectors
-		TCB0_INT:TCB0_INT,26,,
+	Timer0Capture:TCB0_INT,26,TCB0_INTCTRL.TCB_CAPT_bp,TCB0_INTFLAGS.TCB_CAPT_bp
 ; TCB1 interrupt vectors
-		TCB1_INT:TCB1_INT,28,,
+	Timer1Capture:TCB1_INT,28,TCB1_INTCTRL.TCB_CAPT_bp,TCB1_INTFLAGS.TCB_CAPT_bp
 ; TCD0 interrupt vectors
 		TCD0_OVF:TCD0_OVF,30,,
 		TCD0_TRIG:TCD0_TRIG,32,,
 ; AC0 interrupt vectors
-		AC0_AC:AC0_AC,34,,
+	AC0Compare:AC0_AC,34,AC0_INTCTRL.AC_CMP_bp,AC0_STATUS.AC_CMP_bp 
 ; AC1 interrupt vectors
 		AC1_AC:AC1_AC,36,,
 ; AC2 interrupt vectors
 		AC2_AC:AC2_AC,38,,
 ; ADC0 interrupt vectors
 		ADC0_RESRDY:ADC0_RESRDY,40,,
-		ADC0_WCOMP:ADC0_WCOMP,42,,
+	ADC0_WindowCompare:ADC0_WCOMP,42,ADC0_INTCTRL.ADC_WCMP_bp,ADC0_INTFLAGS.ADC_WCMP_bp
 ; ADC1 interrupt vectors
 		ADC1_RESRDY:ADC1_RESRDY,44,,
 		ADC1_WCOMP:ADC1_WCOMP,46,,
 ; TWI0 interrupt vectors
-		TWI0_TWIS:TWI0_TWIS,48,,
-		TWI0_TWIM:TWI0_TWIM,50,,
+	TWISlaveReady:TWI0_TWIS,48,TWI0_SCTRLA.TWI_DIEN_bp ,TWI0_SSTATUS.TWI_DIF_bp
+	TWIMasterReady:TWI0_TWIM,50,TWI0_MCTRLA.TWI_RIEN_bp,TWI0_MSTATUS.TWI_RIF_bp
 ; SPI0 interrupt vectors
-		SPI0_INT:SPI0_INT,52,,
+	SPIReady:SPI0_INT,52,SPI0_INTCTRL.SPI_IE_bp,SPI0_INTFLAGS.SPI_IF_bp
 ; USART0 interrupt vectors
-		USART0_RXC:USART0_RXC,54,,
-		USART0_DRE:USART0_DRE,56,,
-		USART0_TXC:USART0_TXC,58,,
+	Usart0RXReady:USART0_RXC,54, USART0_CTRLA.USART_RXCIE_bp, USART0_STATUS.USART_RXCIF_bp
+	UsartTX0Ready:USART0_DRE,56,USART0_CTRLA.USART_DREIE_bp,USART0_STATUS.USART_DREIF_bp
+	UsartTX0Sent:USART0_TXC,58,USART0_CTRLA.USART_TXCIE_bp,USART0_STATUS.USART_TXCIF_bp
 ; NVMCTRL interrupt vectors
-		NVMCTRL_EE:NVMCTRL_EE,60,,
+	;EEREADY Interrupt Flag.  This flag is set continuously as long as the EEPROM is not busy. This flag is cleared by writing a '1' to it.
+	NVMCTRLReady:NVMCTRL_EE,60,NVMCTRL_INTCTRL.NVMCTRL_EEREADY_bp ,NVMCTRL_INTFLAGS.NVMCTRL_EEREADY_bp
 
 [AVRAlias]
   'This section is for the AVRDX support

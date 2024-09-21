@@ -88,6 +88,7 @@ Type ProgLineMeta
 
   isLabel as Integer
   isPICAS as Integer
+  IsESEG  as Integer
 
   OrgLine as String
 
@@ -654,7 +655,7 @@ DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, S
 DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
 DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
 Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX, overridelowleveldatfileextextension, overridelowleveldatfileextextensionmessage, overridetestdatfilemessage
-Dim Shared As Integer MainProgramSize, StatsUsedRam, StatsUsedProgram, RegBytesUsed = 0
+Dim Shared As Integer MainProgramSize, StatsUsedRam, RegBytesUsed = 0
 DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
 DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
 Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages, MuteDonate
@@ -662,13 +663,13 @@ DIM SHARED As Integer SubSizeCount, PCUpper, Bootloader, HighFSR, NoBankLocs
 DIM SHARED As Integer RegCount, IntCount, AllowOverflow, SysInt, HMult, AllowInterrupt
 Dim Shared As Integer ToolCount, ChipEEPROM, DataTables, ProgMemPages, PauseAfterCompile
 Dim Shared As Integer gUSDelaysInaccurate, IntOscSpeeds, PinDirShadows, CompileSkipped
-Dim Shared As Integer PauseTimeout, OldSBC, ReserveHighProg, HighTBLPTRBytes
+Dim Shared As Integer PauseTimeout, OldSBC, ReserveHighProg, HighTBLPTRBytes, FirstESEG
 Dim Shared As Single ChipMhz, ChipMaxSpeed, FileConverters
 Dim Shared As Single StartTime, CompEndTime, AsmEndTime, ProgEndTime
-Dim Shared As Double DebugTime
+Dim Shared As Double DebugTime, StatsUsedProgram
 Dim Shared As String ChipPICASDataFile,ChipPICASConfigFile,ChipPICASRoot, Conditionaldebugfile
 Dim Shared As Integer StringConCatLengthAdapted = 0
-dim shared As integer WholeINSTRdebug = 0 
+dim shared As integer WholeINSTRdebug = 0
 
 'Assembler vars
 DIM SHARED As Integer ToAsmSymbols
@@ -822,8 +823,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.08.18"
-buildVersion = "1411"
+Version = "2024.09.17"
+buildVersion = "1428"
 
 
 #ifdef __FB_DARWIN__  'OS X/macOS
@@ -892,6 +893,7 @@ Conditionaldebugfile = ""
 SelectedAssembler = "GCASM"
 VersionSuffix = ""
 ChipAVRDX = 0
+FirstESEG = 0      'Used to ensure only one .ESEG AVR control is added to AVR ASM
 AddConstant("CHIPASSEMBLER", SelectedAssembler )
 
 ChipProgrammerName=""
@@ -2439,7 +2441,13 @@ Sub AddInterruptCode
       CurrLine = LinkedListInsert(CurrLine, ";Store SysValueCopy")
       CurrLine = LinkedListInsert(CurrLine, " sts SaveSysValueCopy,SysValueCopy")
       CurrLine = LinkedListInsert(CurrLine, ";Store SREG")
-      CurrLine = LinkedListInsert(CurrLine, " in SysValueCopy,SREG")
+      
+      If ChipAVRDX Then
+        CurrLine = LinkedListInsert(CurrLine, " in SysValueCopy,CPU_SREG")
+      Else
+        CurrLine = LinkedListInsert(CurrLine, " in SysValueCopy,SREG")
+      End If
+
       CurrLine = LinkedListInsert(CurrLine, " sts SaveSREG,SysValueCopy")
       'Store all registers
       CurrLine = LinkedListInsert(CurrLine, ";Store registers")
@@ -2471,7 +2479,14 @@ Sub AddInterruptCode
       Loop
       CurrLine = LinkedListInsert(CurrLine, ";Restore SREG")
       CurrLine = LinkedListInsert(CurrLine, " lds SysValueCopy,SaveSREG")
-      CurrLine = LinkedListInsert(CurrLine, " out SREG,SysValueCopy")
+      
+      If ChipAVRDX Then
+        CurrLine = LinkedListInsert(CurrLine, " out CPU_SREG,SysValueCopy")
+      Else
+        CurrLine = LinkedListInsert(CurrLine, " out SREG,SysValueCopy")
+      End If
+
+
       CurrLine = LinkedListInsert(CurrLine, ";Restore SysValueCopy")
       CurrLine = LinkedListInsert(CurrLine, " lds SysValueCopy,SaveSysValueCopy")
       CurrLine = LinkedListInsert(CurrLine, " reti")
@@ -2493,7 +2508,42 @@ Sub AddInterruptCode
           If AutoContextSave Then CurrLine = LinkedListInsert(CurrLine, " rcall SysIntContextSave")
           CurrLine = LinkedListInsert(CurrLine, " rcall " + .Handler)
           If .FlagBit <> "" Then
-            CurrLine = LinkedListInsertList(CurrLine, GenerateBitSet(.FlagBit, "0", ""))
+
+            'AVRDx resolve setting all BITS
+            IF CHIPAVRDX Then
+              Dim tempbit as String
+              Dim bitvalue as Integer = 0
+              Dim as Integer bitcounter, bitsset 
+
+              bitsset = 0
+              tempbit = ucase(mid(.FlagBit, instr(.FlagBit, ".")+1))
+              If Instr( tempbit, "0X" ) > 0 then replace ( tempbit, "0X","&H")
+              bitvalue = val(tempbit)
+
+              For bitcounter = 0 to 7
+                  If Bit( bitvalue, bitcounter ) = -1 then bitsset = bitsset + 1
+              Next
+              
+              If bitsset = 0  then  
+                'So we know this is an AVR BIT must be a register as there is ONE one bit
+                If Left(.FlagBit,1)="!" Then 
+                  CurrLine = LinkedListInsertList(CurrLine, GenerateBitSet(Mid(.FlagBit,2), "1", ""))
+                Else
+                  ' else set the AVR register
+                  CurrLine = LinkedListInsertList(CurrLine, GenerateBitSet(.FlagBit, "0", ""))
+                End If
+              Else
+                ' set the register value            
+                CurrLine = LinkedListInsert(CurrLine, " ldi	SysValueCopy," + str(bitvalue))
+                CurrLine = LinkedListInsert(CurrLine, " sts " + left(.FlagBit, instr(.FlagBit, ".")-1) + ",SysValueCopy" )
+              End If
+            Else
+              If Left(.FlagBit,1)="!" Then 
+                CurrLine = LinkedListInsertList(CurrLine, GenerateBitSet(Mid(.FlagBit,2), "1", ""))
+              Else
+                CurrLine = LinkedListInsertList(CurrLine, GenerateBitSet(.FlagBit, "0", ""))
+              End If
+            End if
           End If
           If AutoContextSave Then
             CurrLine = LinkedListInsert(CurrLine," rjmp SysIntContextRestore")
@@ -7553,7 +7603,15 @@ SUB CompileOn (CompSub As SubType Pointer)
             Else
               'Prog(PD) = "SET " + GetWholeSFR(.EnableBit) + " 1"
               If .EnableBit <> "" Then
-                CurrLine->Value = "SET " + GetWholeSFR(.EnableBit) + " 1"
+                If Val(Mid(.EnableBit,Instr(.EnableBit,".")+1)) < 8 Then
+                  ' original bit code
+                  CurrLine->Value = "SET " + GetWholeSFR(.EnableBit) + " 1"
+                Else
+                  'This is AVRDX specific but this sets the register to the bit value, rather than the set the one bit
+                  'This enable the DAT to set the whole of a register ie for PORTACHANGE usage                
+                  CurrLine->Value= " ldi SysValueCopy,"+ Trim(Mid(.EnableBit,Instr(.EnableBit,".")+1))
+                  CurrLine = LinkedListInsert( CurrLine, "sts " + GetWholeSFR(Left(.EnableBit, Instr(.EnableBit,".")-1)) + ",SysValueCopy" )
+                End If
               Else
                 CurrLine = LinkedListDelete(CurrLine)
                 TempData = Message("WarningNoIntEnable")
@@ -7673,7 +7731,7 @@ SUB CompileReadTable (CompSub As SubType Pointer)
         'Check that table exists
         TableID = 0
         FOR CD = 1 to DataTables
-		' Improved isolation for EEPROM datasets
+		  ' Improved isolation for EEPROM datasets
           IF DataTable(CD).Name = UCase(Trim(TableName)) Then
             IF DataTable(CD).IsEEPromData = 0 Then
               TableID =CD
@@ -7767,11 +7825,11 @@ SUB CompileReadTable (CompSub As SubType Pointer)
 
               ElseIf DataTable(TableID).StoreLoc = 1 Then
                 'Store in EEPROM
-  '                RequestSub(CompSub, "SysEPRead")
-  '                CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@Table" + TableName)
-  '                CurrLine = LinkedListInsert(CurrLine, " call SysEPRead")
-  '                CurrLine = LinkedListInsert(CurrLine, OutVar + "=EEDataValue")
-                'Change SysEPRead to read the CONSTANT as this may have been redefined to an alternative method() ie K42, Q43 to NVMADR_EPREAD
+      '                RequestSub(CompSub, "SysEPRead")
+      '                CurrLine = LinkedListInsert(CurrLine, "EEAddress=" + TableLoc + "+@Table" + TableName)
+      '                CurrLine = LinkedListInsert(CurrLine, " call SysEPRead")
+      '                CurrLine = LinkedListInsert(CurrLine, OutVar + "=EEDataValue")
+                    'Change SysEPRead to read the CONSTANT as this may have been redefined to an alternative method() ie K42, Q43 to NVMADR_EPREAD
 
                 RequestSub(CompSub, ReplaceConstantsLine ( "SysEPRead", 0 ))
 				'This ensures chip that require NVMADRH:NVMADRL use the WORD address
@@ -13447,13 +13505,11 @@ Function GenerateVectorCode As LinkedListElement Pointer
     VectsAdded = 0
     CurrentVect = 0
     ISRC = 0
-    Do While VectsAdded < IntCount
+    Do While VectsAdded < IntCount and  CurrentVect < 1024  'add < 1025 test reverting change 1664
       CurrentVect += 1
       ' Print CurrentVect, IntCount, VectsAdded
-      If CurrentVect > 1024 then 
-          LogError "Interrupt vectors are overloading compiler - check [Interrupt] section of DAT file for duplicates"
-          Return OutList
-          Exit Function
+      If CurrentVect = 1024 then 
+          LogWarning "Interrupt vectors are overloading compiler - check [Interrupt] section of DAT file for duplicates"
       End If
       IntLoc = 0
       For PD = 1 to IntCount
@@ -16988,8 +17044,19 @@ SUB ReadChipData
 
       'Create constant for data item
       if ConstName <> "memorylock" then
-              AddConstant("CHIP" + UCase(ConstName), ConstValue)
+
+        If Instr(ConstValue, "0x") <> 0 Then 
+          Replace ( ConstValue, "0x", "&H")
+          ConstValue = Str(Val(ConstValue))
+          Calculate( ConstValue )
+          AddConstant("CHIP" + UCase(ConstName), ConstValue)
+        Else
+          AddConstant("CHIP" + UCase(ConstName), ConstValue)
+        End If
+
       end if
+
+
 
       if Instr(ConstValue,"<<") or Instr(ConstValue,">>") Then
         ConstValue = Ucase(ConstValue)
@@ -17020,9 +17087,9 @@ SUB ReadChipData
       ConstName = Trim(Left(InLine, INSTR(InLine, "=") - 1))
       ConstValue = TempData
 
-      if Instr(ConstValue,"<<") or Instr(ConstValue,">>") or Instr(ConstName,"bp") or Instr(ConstName,"bm") Then
+      if Instr(ConstValue,"<<") or Instr(ConstValue,">>") or Instr(Ucase(ConstName),"BP") > 0 or Instr(Ucase(ConstName),"BM") > 0 or Instr(Ucase(ConstName),"GM") > 0 Then
         ConstValue = Ucase(ConstValue)
-
+        
         Replace ( ConstValue, "0X", "&H")
         Dim as Integer tmpValue, GtrPos, LesPos 
         Dim tmpConstValue as String
@@ -17059,6 +17126,10 @@ SUB ReadChipData
         Loop
         If TempData <> "" Then
           TDC += 1: TempList(TDC) = TempData
+        else
+          'This may need constraining to MODEAVR with AVRDX
+          'Added 1404 - prior to this.. if an interrupt had empty data then the old data was copied across
+          TDC += 1: TempList(TDC) = ""
         End If
 
         If ModePIC Then
@@ -17222,8 +17293,37 @@ SUB ReadChipData
   LOOP
   CLOSE
 
-
-
+  'From the AVRDx release the user can define interrupt as USART3_CTRLA.7 OR USART3_STATUS.USART_RXSIF_bp not just the BIT value
+  'This routine changes USART3_STATUS.USART_RXSIF_bp to the bit value like USART3_STATUS.4
+  'This may need constraining to ModeAVR
+  'But, this now means the DAT file can support REGISTER_CONSTANT.BIT_CONSTANT
+    Dim CurrVect as Integer
+    For CurrVect = 1 to Ubound(Interrupts)
+      With Interrupts(CurrVect)
+          'Does the .EnableBit has a `.`
+          If Instr(.EnableBit,".") > 0 Then
+            If Trim(Mid( .EnableBit, Instr(.EnableBit,".")+1 )) = Str(Val(Trim(Mid( .EnableBit, Instr(.EnableBit,".")+1 )))) Then 'A numberic value that is ok
+              'Ensure a numeric constant is correct
+              .EnableBit = Left( .EnableBit, Instr(.EnableBit,".")) + Str(Val(Trim(Mid( .EnableBit, Instr(.EnableBit,".")+1 ))))
+            ElseIF HashMapGet(Constants, UCase( Mid( .EnableBit, Instr(.EnableBit,".")+1 ) )) <> 0 Then
+              ' If the BIT_CONSTANT exists then transform to numeric.  
+              ' We know the BIT_CONSTANT exists as HashMapGet() returns 0 when non existant CONSTANT string is passed
+              ' So, now do a HashMapGetStr() to get the value of the specific .EnableConstant
+              ' All these constants are in the DAT file
+              .EnableBit =   Left( .EnableBit, Instr(.EnableBit,".")) + Str(Val(HashMapGetStr(Constants, UCase( Mid( .EnableBit, Instr(.EnableBit,".")+1 ) ))))
+            End if
+          End If
+          
+          '.FlagBit - treated same as 'EnableBit
+          If Instr(.FlagBit,".") > 0 Then
+            If Trim(Mid( .FlagBit, Instr(.FlagBit,".")+1 )) = Str(Val(Trim(Mid( .FlagBit, Instr(.FlagBit,".")+1 )))) Then
+              .FlagBit = Left( .FlagBit, Instr(.FlagBit,".")) + Str(Val(Trim(Mid( .FlagBit, Instr(.FlagBit,".")+1 ))))
+            ElseIf  HashMapGet(Constants, UCase( Mid( .FlagBit, Instr(.FlagBit,".")+1 ) )) <> 0 Then
+              .FlagBit = Left( .FlagBit, Instr(.FlagBit,".")) + Str(Val(HashMapGetStr(Constants, UCase( Mid( .FlagBit, Instr(.FlagBit,".")+1 ) ))))
+            End If
+          End If
+      End With
+    Next
 
   'Misc initialisation
   If ModePIC Then
@@ -19966,6 +20066,7 @@ Sub MergeSubroutines
     AddDataBlocks ( CurrLine, CurrPage, CurrPagePos, DataBlockCount, NonChipFamily16DataBlocksNotAdded )
   End If
 
+  ' *WRITE EEPROM* *WRITE TABLE*
   'Add EEPROM data tables
   Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState
   Dim As String EPTempData
@@ -20077,8 +20178,11 @@ Sub MergeSubroutines
             If AVRAddressState = 0 or .IsEEPromData Then
               'only show the ORG for table address once.
               AVRAddressState = - 1
-              CurrLine = LinkedListInsert(CurrLine, ".ESEG")
-              CurrLine = LinkedListInsert(CurrLine, ".ORG 0x"+Right("0"+HEX(EETempVal),2))
+              If FirstESEG = 0 Then 
+                CurrLine = LinkedListInsert(CurrLine, ".ESEG")
+                FirstESEG = 1
+              End If
+              CurrLine = LinkedListInsert(CurrLine, ".ORG 0x"+Right("0"+HEX(EETempVal),2))              
             End If
           End If
 
@@ -20121,6 +20225,11 @@ Sub MergeSubroutines
               If trim(EPTempData) <> "" Then 
                 'Do not push out empty structure, as this will cause an error in MPASM etc
                 If Instr(UCase(AsmExe), "MPASM") > 0 Then
+
+                  If ModeAVR Then
+                    LogWarning "Using MPASM with AVR - GCBASIC will produce incorrect ASM"
+                  End If
+
                   If Len(EPTempData) < 129 Then
                     CurrLine = LinkedListInsert(CurrLine, "  de " + EPTempData)
                   Else
@@ -20144,13 +20253,25 @@ Sub MergeSubroutines
               End If
             else
               If .IsEEPromData = 0 then
-                CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name))
-              Else
-                CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name))
+                If MODEPIC Then
+                  CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name))
+                Else
+                  CurrLine = LinkedListInsert(CurrLine, " TABLE" + Trim(.Name)+":")
+                End if
+              Else       
+                If MODEPIC Then
+                  CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name))
+                Else
+                  CurrLine = LinkedListInsert(CurrLine, " DATA" + Trim(.Name)+":")
+                End If
               End If
-
               GetMetaData(Currline)->IsLabel = -1
-              CurrLine = LinkedListInsert(CurrLine, "  db " + EPTempData)
+
+              If MODEPIC Then
+                CurrLine = LinkedListInsert(CurrLine, "  db " + EPTempData)
+              Else
+                CurrLine = LinkedListInsert(CurrLine, "  .db " + EPTempData)
+              End If
             end if
 
             EPDataLoc += (.Items + 1)
@@ -20806,10 +20927,12 @@ End Sub
 
 Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage as Integer, ByRef CurrPagePos As Integer, ByRef DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer)
 
+  '*WRITE DATA* *WRITE DATABLOCK*
+
   'Only do this once.
   If NonChipFamily16DataBlocksNotAdded = 0 then Exit Sub
-  If DataBlockCount > 0 Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
-  
+  If DataBlockCount > 0 and ModePIC Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
+  If DataBlockCount > 0 and ModeAVR Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous." )
   Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState, LogWarningCounter = 0, CurrEPTable, OrgPosOffset
   Dim as String ASMInstruction, Prefix, EPTempData
 
@@ -20824,32 +20947,56 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
         'Get data. Where .items the number of items and ISDATA table
         OrgPosOffset = 0
 
-        StatsUsedProgram = StatsUsedProgram + 1
-
         If .Type = "BYTE" Then
+
           'ORG counter
           OrgPosOffset = OrgPosOffset + ( .Items * 2 )
-          If Instr(UCase(AsmExe), "GCASM") > 0 Then
-            ASMInstruction = "de"
-            ' GBASIC Assember needs 0x34 as the high byte
-            Prefix ="34"
-          ElseIf Instr(UCase(AsmExe), "MPASM") > 0 Then
-            ASMInstruction = "de"
-            Prefix ="00"
-          Else
-            ASMInstruction = "db"
-            Prefix = ""
-          End IF
 
+          If ModePIC Then
+            ' determine prefix
+            If Instr(UCase(AsmExe), "GCASM") > 0 Then
+              ASMInstruction = "de"
+              ' GBASIC Assember needs 0x34 as the high byte
+              Prefix ="34"
+            ElseIf Instr(UCase(AsmExe), "MPASM") > 0 Then
+              ASMInstruction = "de"
+              Prefix ="00"
+            Else
+              ASMInstruction = "db"
+              Prefix = ""
+            End IF
+          Else
+              ' All AVR use .db prefix
+              ASMInstruction = ".db"
+              Prefix = ""
+          End If
+
+          StatsUsedProgram = StatsUsedProgram + Int( ( .items / 2 ) + 0.5 )
           'iterate the items
           For CurrEPItem = 1 To .Items
             ' process to create data strng as BYTE
             EPTempData = EPTempData + ", 0x" + Prefix + Right("0"+HEX(.Item(CurrEPItem)),2)                  
           Next
-        Else
+          If ModeAVR Then
+            'Add additional data to ensure 'Warning		.cseg .db misalignment - padding zero byte' is resolved
+            If ( .Items MOD 2 ) = 1 Then
+              EPTempData = EPTempData + ", 0x00 ; .db alignment pad"
+            End If
+          End If
+
+
+        Else  ' Therefore, WORD
+
           'ORG counter
-          OrgPosOffset = OrgPosOffset + ( .Items * 1 )            
-          ASMInstruction = "dw"
+          OrgPosOffset = OrgPosOffset + ( .Items * 1 )
+          If ModePIC Then           
+            ASMInstruction = "dw"
+          Else
+            ASMInstruction = ".dw"
+          End If
+
+          StatsUsedProgram = StatsUsedProgram + .items
+
           'iterate the items
           For CurrEPItem = 1 To .Items Step 1
             ' process to check the data strng
@@ -20864,13 +21011,19 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
                 End If
               End If
             Else
-              ' AVR
-              'AVR Check needs to be added
+              ' AVR - is this too big?
+              If .Item(CurrEPItem) > 65535 Then
+                LogWarning message("DataBlockExceedsAVR")
+                LogWarningCounter = LogWarningCounter + 1
+                If LogWarningCounter = 11 then
+                  LogError message("DataBlockExceedsTooManyAVR")
+                End If 
+              End If
             End If
             ' process to create data strng as BYTE
             EPTempData = EPTempData + ", 0x" + Right("0000"+HEX(.Item(CurrEPItem)),4)
           Next
-        End If
+        End If   ' End of Word / If..
 
         ' Tidy DATABlock string
         If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
@@ -20880,19 +21033,18 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
             EPDataLoc = EPDataLoc + 1
         End If
 
-        'Remove ASMSymbol as this is not required.
-          'ToAsmSymbols += 1
-          'ToAsmSymbol(ToAsmSymbols, 2) = Str(CurrPagePos)
-          'ToAsmSymbol(ToAsmSymbols, 1) = Trim(.Name)
-
-        AddConstant(Trim(.Name), Str(CurrPagePos))
+        If HashMapGet(Constants, Trim(.Name) ) = 0 Then
+          AddConstant(Trim(.Name), Str(CurrPagePos))
+        Else
+          LogError "Duplicate DATA label: '" + Ucase(Trim(.Name)) + "'"
+        End If
 
         'Create DATA block label
         If ModePIC Then  
-          CurrLine = LinkedListInsert(CurrLine, Trim(.Name))
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name) + "   ;" + str(.items) )
           GetMetaData(Currline)->IsLabel = -1
         Else
-          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)+":")
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)+":"  + "   ;" + str(.items) )
           GetMetaData(Currline)->IsLabel = -1
         End If
 
@@ -20915,9 +21067,9 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
           Do
             ' Only output width that MPASM can cope with
             PosOfComma = InStr( FirstDelimiter,  StringCut, "," )
-            ' Less the Maxsize AND not at end of string AND ( is NOT MPASM and LESS the 129 chars )
+            ' Less the Maxsize AND not at end of string AND ( is NOT MPASM and LESS the 120 chars )
             ' Print CurrPagePos + 1 , PosOfComma  
-            If PosOfComma <> 0 AND PosOfComma < 129 Then
+            If PosOfComma <> 0 AND PosOfComma < 120 Then
                 'update outstring
                 StringOut = Mid ( StringCut, 1, PosOfComma )
                   WordCounter = WordCounter + 1
@@ -20932,12 +21084,13 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
                 End if
                 'Remove any comma at the end
                 If right( Trim(StringOut),1) = "," Then StringOut = Left( StringOut,Len(StringOut)-1)
+                
                 'Insert into list
                 CurrLine = LinkedListInsert(CurrLine, "  " + ASMInstruction + " " + StringOut )
 
                 'Update the CurrPagePos            
                 CurrPagePos = CurrPagePos + WordCounter
-                StatsUsedProgram = StatsUsedProgram + WordCounter              
+
                 'Tidy the string
                 StringCut = trim(Mid ( StringCut, LastValidPostOfComma +1 ))
 
@@ -20958,7 +21111,7 @@ Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage 
             End If
           Loop While PosOfComma > 0 And Len(StringCut) <> 0
         End If        
-        CurrLine = LinkedListInsert(CurrLine, "" )
+        CurrLine = LinkedListInsert(CurrLine, "		; End of DATA_BLOCK" )
         EPDataLoc += (.Items + 1)
       End IF
     End With

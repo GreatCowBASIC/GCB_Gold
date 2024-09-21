@@ -1115,7 +1115,13 @@ SUB PreProcessor
       CurrCharPos = 1
       Do While CurrCharPos <= Len(DataSource)
         CurrChar = Asc(DataSource, CurrCharPos)
-
+        If CurrChar = 194 Then
+          If Asc(Cast(String,DataSource), CurrCharPos+1) = 169  and ReadType = 1 Then
+            LogWarning "File Encoding mismatch - change file to ASCII or Windows 1252 encoding", ";?F" + Str(RF) + "L" + Str(LC) + "?"
+            CurrCharPos += 1
+            Continue Do
+          End If
+        End If
         If CurrChar = Asc("""") Then
           'Start or end of string
           If ReadType = 0 Then
@@ -1937,6 +1943,7 @@ SUB PreProcessor
 
                 'Is fixed location given as a constant?./
                 If IsConst(LineToken(3)) Then
+                  ' This is used to set ORG for EEPROM dataset
                   .FixedLoc = MakeDec(LineToken(3))
                 End If
               End If
@@ -1988,7 +1995,6 @@ SUB PreProcessor
                   LogError "Sytax Error:  AS missing", .origin  
                 End If
               End If
-              
               .Used = -1
               .RawItems = LinkedListCreate
               .CurrItem = .RawItems
@@ -2875,8 +2881,8 @@ Sub ReadTableValues
 
           If IsConst(Value) Then
             'Check that data can be stored in table, upgrade table if it can't
-            ' Print .Type, DataSource, TypeOfValue(DataSource, 0)
-            If CastOrder(TypeOfValue(Value, 0)) > CastOrder(.Type) Then
+            ' Print .Type, Value, TypeOfValue(Value, 0)
+            If CastOrder(TypeOfValue(Value, 0)) > CastOrder(.Type)  AND NOT .IsData Then
               .Type = TypeOfValue(Value, 0)
             End If
   

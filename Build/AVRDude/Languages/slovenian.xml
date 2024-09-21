@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Slovenščina (Slovenian)</name>
 	<data>
 
 		<!-- Main form -->
@@ -85,6 +84,10 @@ Sem lahko tudi povlečeš datoteko</string>
 		<string name="READFUSE">Branje fuse bitov</string>
 		<string name="READLOCKBITS">Branje lock bitov</string>
 		<string name="NOSUPPORTEDFUSES">{0} nima nobenih podprtih fuse bitov!</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Preverjam za posodobitve...</string>
 		<string name="UPDATE_FAILED">Preverjanje posodobitev ni uspelo: {0}</string>
@@ -108,6 +111,7 @@ Sem lahko tudi povlečeš datoteko</string>
 		<string name="BROWSE_FILTER_ALL">Vse datoteke (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Hex datoteke (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROM datoteke (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Urejevalnik presetov</string>
@@ -179,8 +183,6 @@ Sem lahko tudi povlečeš datoteko</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Napaka pri poskusu shranjevanja {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Napaka pri kopiranju predloge {0} v AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} manjka!</string>
 		<string name="EXECFAIL">Ne morem zagnati procesa: {0}</string>

@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Polski (Polish)</name>
 	<data>
 
 		<!-- Main form -->
@@ -85,6 +84,10 @@ Użyj tej opcji jeśli chcesz zaprogramować tylko EEPROM</string>
 		<string name="READFUSE">Odczytałem bezpieczniki </string>
 		<string name="READLOCKBITS">Odczytałem bity blokujące</string>
 		<string name="NOSUPPORTEDFUSES">{0} nie posiada obsługiwanych bezpieczników</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Plik konfigu {0} jest za duży</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nie znaleziono w pliku konfigu {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Załadowano {0} programatorów i {1} mikrokontrolerów</string>
+		<string name="IN_PORTABLE_MODE">Pracuję w trybie przenośnym</string>
 
 		<string name="UPDATE_CHECK">Sprawdzam aktualizację...</string>
 		<string name="UPDATE_FAILED">Sprawdzenie nieudane: {0}</string>
@@ -108,6 +111,7 @@ Użyj tej opcji jeśli chcesz zaprogramować tylko EEPROM</string>
 		<string name="BROWSE_FILTER_ALL">Wszystkie pliki (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Pliki hex (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">Pliki EEPROM (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">Pliki XML (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Menedżer profili</string>
@@ -160,11 +164,11 @@ Użyj tej opcji jeśli chcesz zaprogramować tylko EEPROM</string>
 		<string name="LANGUAGE">Język</string>
 		<string name="SHOWTOOLTIPS">Pokaż podpowiedzi</string>
 		<string name="USEPREVSETTINGS">Ładuj ostatnie ustawienia na starcie</string>
-		<string name="AVRDUDE_LOCATION">Folder z avrdude.exe</string>
-		<string name="AVRDUDECONF_LOCATION">Folder z avrdude.conf</string>
-		<string name="AVRSIZE_LOCATION">Folder z avr-size.exe</string>
-		<string name="CHECKFORUPDATES">Sprawdź dostępność aktualizacji podczas uruchamiania</string>
-		<string name="CHK_UNCHK_ALL">Check/uncheck all</string>
+		<string name="AVRDUDE_LOCATION">Lokalizacja avrdude</string>
+		<string name="AVRDUDECONF_LOCATION">Lokalizacja konfiguracji avrdude</string>
+		<string name="AVRSIZE_LOCATION">Lokalizacja avr-size</string>
+		<string name="CHECKFORUPDATES">Sprawdź aktualizację podczas uruchamiania</string>
+		<string name="CHK_UNCHK_ALL">Zazn./odzn. wszystko</string>
 
 		<!-- General stuff -->
 		<string name="OK">OK</string>
@@ -179,8 +183,6 @@ Użyj tej opcji jeśli chcesz zaprogramować tylko EEPROM</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Wystąpił błąd podczas zapisu {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Błąd kopiowania {0} formatki do AppData:
 {1}</string>
 		<string name="EXECMISSING">Brakuje {0} !</string>
 		<string name="EXECFAIL">Nie można uruchomić: {0}</string>

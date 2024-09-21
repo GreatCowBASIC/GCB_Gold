@@ -89,11 +89,48 @@ AVRGCC=avrxmega3
 'This constant is exposed as ChipAVRDX - sourced from `avr chipdata.csv`
 AVRDX=1
 
-'This constant is exposed as ChipNotTested - sourced from `avr chipdata.csv`
-' NotTested is a numeric bitwise value
-' 1 = Chip DAT file not tested and therefore no validated
-' 2 = Chip DAT file has an [interrupt] section that is incomplete
-NotTested=1
+'For details of microcontroller specifications see the microcontroller datasheet
+_DATAMEM_START = 0x0000
+_DATAMEM_SIZE = 0x10000
+_DATAMEM_END = (0x0000 + 0x10000 - 1)
+_IO_START = 0x0000
+_IO_SIZE = 0x103F
+_IO_END = (0x0000 + 0x103F - 1)
+_LOCKBITS_START = 0x1040
+_LOCKBITS_SIZE = 0x0004
+_LOCKBITS_END = (0x1040 + 0x0004 - 1)
+_LOCKBITS_PAGE_SIZE = 0x01
+_FUSES_START = 0x1050
+_FUSES_SIZE = 0x0010
+_FUSES_END = (0x1050 + 0x0010 - 1)
+_FUSES_PAGE_SIZE = 0x01
+_USER_SIGNATURES_START = 0x1080
+_USER_SIGNATURES_SIZE = 0x0020
+_USER_SIGNATURES_END = (0x1080 + 0x0020 - 1)
+_USER_SIGNATURES_PAGE_SIZE = 0x20
+_SIGNATURES_START = 0x1100
+_SIGNATURES_SIZE = 0x0003
+_SIGNATURES_END = (0x1100 + 0x0003 - 1)
+_SIGNATURES_PAGE_SIZE = 0x80
+_PROD_SIGNATURES_START = 0x1103
+_PROD_SIGNATURES_SIZE = 0x007D
+_PROD_SIGNATURES_END = (0x1103 + 0x007D - 1)
+_PROD_SIGNATURES_PAGE_SIZE = 0x80
+_EEPROM_START = 0x1400
+_EEPROM_SIZE = 0x0200
+_EEPROM_END = (0x1400 + 0x0200 - 1)
+_EEPROM_PAGE_SIZE = 0x01
+_INTERNAL_SRAM_START = 0x7000
+_INTERNAL_SRAM_SIZE = 0x1000
+_INTERNAL_SRAM_END = (0x7000 + 0x1000 - 1)
+_MAPPED_PROGMEM_START = 0x8000
+_MAPPED_PROGMEM_SIZE = 0x8000
+_MAPPED_PROGMEM_END = (0x8000 + 0x8000 - 1)
+_MAPPED_PROGMEM_PAGE_SIZE = 0x200
+_PROGMEM_START = 0x0000
+_PROGMEM_SIZE = 0x8000
+_PROGMEM_END = (0x0000 + 0x8000 - 1)
+_PROGMEM_PAGE_SIZE = 0x200
 
 [Pointers]
 'This section are the registers used by compilers
@@ -107,83 +144,94 @@ ZH:31
 [Interrupts]
 'For specific details of the interrupts see the microcontroller datasheet
 'The first parameter is the GCBASIC identifier used in user code to expose the specific interrupt
+'
+' Specific to AVRDX chips - an explaination - the entries
+' GCBASIC friendly name:Source Interrupt Name,vector,register.bit to enable the interrupt,register.bit or !register.bit to clear the interrupt
+'   name     interrupt   #    enable reg.bit(s)                  clear reg.bit(s)
+' NMIfromCRC:CRCSCAN_NMI,2,CRCSCAN_CTRLA.CRCSCAN_NMIEN_bp,!CRCSCAN_CTRLA.CRCSCAN_RESET_bp
+'
+' The enable reg.bit(s) can be a single bit or bits will be used to set the register
+' The clear reg.bit(s) can be a single bit or bits will be used to set the register
+' ! (eqautes to NOT ) inverts the bit
+'
 ; NMI interrupt vectors
 		NMI:NMI,2,,
 ; BOD interrupt vectors
-	BOD_VLM:BOD_VLM,4,,
+	BOD_VLM:BOD_VLM,4,BOD_INTCTRL.BOD_VLMIE_bp,!BOD_INTFLAGS.BOD_VLMIF_bp
 ; CLKCTRL interrupt vectors
 		CLKCTRL_CFD:CLKCTRL_CFD,6,,
 ; MVIO interrupt vectors
 		MVIO_MVIO:MVIO_MVIO,8,,
 ; RTC interrupt vectors
-		RTC_CNT:RTC_CNT,10,,
-		RTC_PIT:RTC_PIT,12,,
+	RTCOverflow:RTC_CNT,10,RTC_INTCTRL.RTC_OVF_bp,RTC_INTFLAGS.RTC_OVF_bp
+	PITOverflow:RTC_PIT,12,RTC_PITINTCTRL.RTC_PI_bp,RTC_PITINTFLAGS.RTC_PI_bp
 ; CCL interrupt vectors
-		CCL_CCL:CCL_CCL,14,,
+	CCL_CCL:CCL_CCL,14,CCL_INTCTRL0.CCL_INTMODE0_gp,!CCL_INTFLAGS.CCL_INT_gp
 ; PORTA interrupt vectors
-		PORTA_PORT:PORTA_PORT,16,,
+	PortAChange:PORTA_PORT,16, PORTA_PORTCTRL.PORT_INT_gm,PORTA_INTFLAGS.PORT_INT_gm
 ; TCA0 interrupt vectors
-		TCA0_LUNF:TCA0_LUNF,18,,
-		TCA0_HUNF:TCA0_HUNF,20,,
-		TCA0_CMP0:TCA0_CMP0,22,,
-		TCA0_CMP1:TCA0_CMP1,24,,
-		TCA0_CMP2:TCA0_CMP2,26,,
+	Timer0Overflow:TCA0_LUNF,18,TCA0_SINGLE_INTCTRL.TCA_SINGLE_OVF_bp,!TCA0_SINGLE_INTFLAGS.TCA_SINGLE_OVF_bp
+	Timer0Underflow:TCA0_HUNF,20,TCA_SPLIT_HUNF_bp,!TCA0_SPLIT_INTFLAGS.TCA_SPLIT_HUNF_bp 
+	Timer0Match0:TCA0_CMP0,22,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP0_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP0_bp
+	Timer0Match1:TCA0_CMP1,24,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP1_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP1_bp
+	Timer0Match2:TCA0_CMP2,26,TCA0_SINGLE_INTCTRL.TCA_SINGLE_CMP2_bp,TCA0_SINGLE_INTFLAGS.TCA_SINGLE_CMP0_bp
 ; TCB0 interrupt vectors
-		TCB0_INT:TCB0_INT,28,,
+	Timer0Capture:TCB0_INT,28,TCB0_INTCTRL.TCB_CAPT_bp,TCB0_INTFLAGS.TCB_CAPT_bp
 ; TCB1 interrupt vectors
-		TCB1_INT:TCB1_INT,30,,
+	Timer1Capture:TCB1_INT,30,TCB1_INTCTRL.TCB_CAPT_bp,TCB1_INTFLAGS.TCB_CAPT_bp
 ; TCD0 interrupt vectors
 		TCD0_OVF:TCD0_OVF,32,,
 		TCD0_TRIG:TCD0_TRIG,34,,
 ; TWI0 interrupt vectors
-		TWI0_TWIS:TWI0_TWIS,36,,
-		TWI0_TWIM:TWI0_TWIM,38,,
+	TWISlaveReady:TWI0_TWIS,36,TWI0_SCTRLA.TWI_DIEN_bp ,TWI0_SSTATUS.TWI_DIF_bp
+	TWIMasterReady:TWI0_TWIM,38,TWI0_MCTRLA.TWI_RIEN_bp,TWI0_MSTATUS.TWI_RIF_bp
 ; SPI0 interrupt vectors
-		SPI0_INT:SPI0_INT,40,,
+	SPIReady:SPI0_INT,40,SPI0_INTCTRL.SPI_IE_bp,SPI0_INTFLAGS.SPI_IF_bp
 ; USART0 interrupt vectors
-		USART0_RXC:USART0_RXC,42,,
-		USART0_DRE:USART0_DRE,44,,
-		USART0_TXC:USART0_TXC,46,,
+	Usart0RXReady:USART0_RXC,42, USART0_CTRLA.USART_RXCIE_bp, USART0_STATUS.USART_RXCIF_bp
+	UsartTX0Ready:USART0_DRE,44,USART0_CTRLA.USART_DREIE_bp,USART0_STATUS.USART_DREIF_bp
+	UsartTX0Sent:USART0_TXC,46,USART0_CTRLA.USART_TXCIE_bp,USART0_STATUS.USART_TXCIF_bp
 ; PORTD interrupt vectors
-		PORTD_PORT:PORTD_PORT,48,,
+	PORTDChange:PORTD_PORT,48,PORTD_PORTCTRL.PORT_INT_gm,PORTD_INTFLAGS.PORT_INT_gm
 ; AC0 interrupt vectors
-		AC0_AC:AC0_AC,50,,
+	AC0Compare:AC0_AC,50,AC0_INTCTRL.AC_CMP_bp,AC0_STATUS.AC_CMP_bp 
 ; ADC0 interrupt vectors
 		ADC0_RESRDY:ADC0_RESRDY,52,,
-		ADC0_WCMP:ADC0_WCMP,54,,
+	ADC0_WindowCompare:ADC0_WCMP,54,ADC0_INTCTRL.ADC_WCMP_bp,ADC0_INTFLAGS.ADC_WCMP_bp
 ; ZCD0 interrupt vectors
 		ZCD0_ZCD:ZCD0_ZCD,56,,
 ; AC1 interrupt vectors
 		AC1_AC:AC1_AC,58,,
 ; PORTC interrupt vectors
-		PORTC_PORT:PORTC_PORT,60,,
+	PORTCChange:PORTC_PORT,60,PORTC_PORTCTRL.PORT_INT_gm,PORTC_INTFLAGS.PORT_INT_gm
 ; TCB2 interrupt vectors
-		TCB2_INT:TCB2_INT,62,,
+	Timer2Capture:TCB2_INT,62,TCB2_INTCTRL.TCB_CAPT_bp,TCB2_INTFLAGS.TCB_CAPT_bp
 ; USART1 interrupt vectors
-		USART1_RXC:USART1_RXC,64,,
-		USART1_DRE:USART1_DRE,66,,
-		USART1_TXC:USART1_TXC,68,,
+	Usart1RXReady:USART1_RXC,64,USART1_CTRLA.USART_RXCIE_bp,USART1_STATUS.USART_RXCIF_bp
+	UsartTX1Ready:USART1_DRE,66,USART1_CTRLA.USART_DREIE_bp,USART1_STATUS.USART_DREIF_bp
+	UsartTX1Sent:USART1_TXC,68,USART1_CTRLA.USART_TXCIE_bp,USART1_STATUS.USART_TXCIF_bp
 ; PORTF interrupt vectors
-		PORTF_PORT:PORTF_PORT,70,,
+	PORTFChange:PORTF_PORT,70,PORTF_PORTCTRL.PORT_INT_gm,PORTF_INTFLAGS.PORT_INT_gm
 ; NVMCTRL interrupt vectors
-		NVMCTRL_EE:NVMCTRL_EE,72,,
+	;EEREADY Interrupt Flag.  This flag is set continuously as long as the EEPROM is not busy. This flag is cleared by writing a '1' to it.
+	NVMCTRLReady:NVMCTRL_EE,72,NVMCTRL_INTCTRL.NVMCTRL_EEREADY_bp ,NVMCTRL_INTFLAGS.NVMCTRL_EEREADY_bp
 ; SPI1 interrupt vectors
 		SPI1_INT:SPI1_INT,74,,
 ; USART2 interrupt vectors
-		USART2_RXC:USART2_RXC,76,,
-		USART2_DRE:USART2_DRE,78,,
-		USART2_TXC:USART2_TXC,80,,
+	Usart2RXReady:USART2_RXC,76,USART2_CTRLA.USART_RXCIE_bp,USART2_STATUS.USART_RXCIF_bp
+	UsartTX2Ready:USART2_DRE,78,USART2_CTRLA.USART_DREIE_bp,USART2_STATUS.USART_DREIF_bp
+	UsartTX2Sent:USART2_TXC,80,USART2_CTRLA.USART_TXCIE_bp,USART2_STATUS.USART_TXCIF_bp
 ; AC2 interrupt vectors
 		AC2_AC:AC2_AC,82,,
 ; TWI1 interrupt vectors
 		TWI1_TWIS:TWI1_TWIS,84,,
 		TWI1_TWIM:TWI1_TWIM,86,,
 ; TCB3 interrupt vectors
-		TCB3_INT:TCB3_INT,88,,
+	Timer3Capture:TCB3_INT,88,TCB3_INTCTRL.TCB_CAPT_bp,TCB3_INTFLAGS.TCB_CAPT_bp
 ; PORTB interrupt vectors
-		PORTB_PORT:PORTB_PORT,90,,
+	PORTBChange:PORTB_PORT,90,PORTB_PORTCTRL.PORT_INT_gm,PORTB_INTFLAGS.PORT_INT_gm
 ; PORTE interrupt vectors
-		PORTE_PORT:PORTE_PORT,92,,
+	PORTEChange:PORTE_PORT,92,PORTE_PORTCTRL.PORT_INT_gm,PORTE_INTFLAGS.PORT_INT_gm
 ; TCA1 interrupt vectors
 		TCA1_LUNF:TCA1_LUNF,94,,
 		TCA1_HUNF:TCA1_HUNF,96,,
@@ -193,9 +241,9 @@ ZH:31
 ; ZCD1 interrupt vectors
 		ZCD1_ZCD:ZCD1_ZCD,104,,
 ; USART3 interrupt vectors
-		USART3_RXC:USART3_RXC,106,,
-		USART3_DRE:USART3_DRE,108,,
-		USART3_TXC:USART3_TXC,110,,
+	Usart3RXReady:USART3_RXC,106,USART3_CTRLA.USART_RXCIE_bp,USART3_STATUS.USART_RXCIF_bp
+	UsartTX3Ready:USART3_DRE,108,USART3_CTRLA.USART_DREIE_bp,USART3_STATUS.USART_DREIF_bp
+	UsartTX3Sent:USART3_TXC,110,USART3_CTRLA.USART_TXCIE_bp,USART3_STATUS.USART_TXCIF_bp
 ; USART4 interrupt vectors
 		USART4_RXC:USART4_RXC,112,,
 		USART4_DRE:USART4_DRE,114,,
@@ -1746,1348 +1794,1467 @@ ALIAS_SREG=63
   
   ; EVSYS_CHANNEL7 masks
   EVSYS_CHANNEL7_gm = 0xFF            ; Channel 7 generator select group mask
-  EVSYS_CHANNEL7_gp = 0               ; Channel 7 generator select group position
-  EVSYS_CHANNEL7_0_bm = (1<<0)        ; Channel 7 generator select bit 0 mask
-  EVSYS_CHANNEL7_0_bp = 0             ; Channel 7 generator select bit 0 position
-  EVSYS_CHANNEL7_1_bm = (1<<1)        ; Channel 7 generator select bit 1 mask
-  EVSYS_CHANNEL7_1_bp = 1             ; Channel 7 generator select bit 1 position
-  EVSYS_CHANNEL7_2_bm = (1<<2)        ; Channel 7 generator select bit 2 mask
-  EVSYS_CHANNEL7_2_bp = 2             ; Channel 7 generator select bit 2 position
-  EVSYS_CHANNEL7_3_bm = (1<<3)        ; Channel 7 generator select bit 3 mask
-  EVSYS_CHANNEL7_3_bp = 3             ; Channel 7 generator select bit 3 position
-  EVSYS_CHANNEL7_4_bm = (1<<4)        ; Channel 7 generator select bit 4 mask
-  EVSYS_CHANNEL7_4_bp = 4             ; Channel 7 generator select bit 4 position
-  EVSYS_CHANNEL7_5_bm = (1<<5)        ; Channel 7 generator select bit 5 mask
-  EVSYS_CHANNEL7_5_bp = 5             ; Channel 7 generator select bit 5 position
-  EVSYS_CHANNEL7_6_bm = (1<<6)        ; Channel 7 generator select bit 6 mask
-  EVSYS_CHANNEL7_6_bp = 6             ; Channel 7 generator select bit 6 position
-  EVSYS_CHANNEL7_7_bm = (1<<7)        ; Channel 7 generator select bit 7 mask
-  EVSYS_CHANNEL7_7_bp = 7             ; Channel 7 generator select bit 7 position
-  
-  ; EVSYS_CHANNEL8 masks
-  EVSYS_CHANNEL8_gm = 0xFF            ; Channel 8 generator select group mask
-  EVSYS_CHANNEL8_gp = 0               ; Channel 8 generator select group position
-  EVSYS_CHANNEL8_0_bm = (1<<0)        ; Channel 8 generator select bit 0 mask
-  EVSYS_CHANNEL8_0_bp = 0             ; Channel 8 generator select bit 0 position
-  EVSYS_CHANNEL8_1_bm = (1<<1)        ; Channel 8 generator select bit 1 mask
-  EVSYS_CHANNEL8_1_bp = 1             ; Channel 8 generator select bit 1 position
-  EVSYS_CHANNEL8_2_bm = (1<<2)        ; Channel 8 generator select bit 2 mask
-  EVSYS_CHANNEL8_2_bp = 2             ; Channel 8 generator select bit 2 position
-  EVSYS_CHANNEL8_3_bm = (1<<3)        ; Channel 8 generator select bit 3 mask
-  EVSYS_CHANNEL8_3_bp = 3             ; Channel 8 generator select bit 3 position
-  EVSYS_CHANNEL8_4_bm = (1<<4)        ; Channel 8 generator select bit 4 mask
-  EVSYS_CHANNEL8_4_bp = 4             ; Channel 8 generator select bit 4 position
-  EVSYS_CHANNEL8_5_bm = (1<<5)        ; Channel 8 generator select bit 5 mask
-  EVSYS_CHANNEL8_5_bp = 5             ; Channel 8 generator select bit 5 position
-  EVSYS_CHANNEL8_6_bm = (1<<6)        ; Channel 8 generator select bit 6 mask
-  EVSYS_CHANNEL8_6_bp = 6             ; Channel 8 generator select bit 6 position
-  EVSYS_CHANNEL8_7_bm = (1<<7)        ; Channel 8 generator select bit 7 mask
-  EVSYS_CHANNEL8_7_bp = 7             ; Channel 8 generator select bit 7 position
-  
-  ; EVSYS_CHANNEL9 masks
-  EVSYS_CHANNEL9_gm = 0xFF            ; Channel 9 generator select group mask
-  EVSYS_CHANNEL9_gp = 0               ; Channel 9 generator select group position
-  EVSYS_CHANNEL9_0_bm = (1<<0)        ; Channel 9 generator select bit 0 mask
-  EVSYS_CHANNEL9_0_bp = 0             ; Channel 9 generator select bit 0 position
-  EVSYS_CHANNEL9_1_bm = (1<<1)        ; Channel 9 generator select bit 1 mask
-  EVSYS_CHANNEL9_1_bp = 1             ; Channel 9 generator select bit 1 position
-  EVSYS_CHANNEL9_2_bm = (1<<2)        ; Channel 9 generator select bit 2 mask
-  EVSYS_CHANNEL9_2_bp = 2             ; Channel 9 generator select bit 2 position
-  EVSYS_CHANNEL9_3_bm = (1<<3)        ; Channel 9 generator select bit 3 mask
-  EVSYS_CHANNEL9_3_bp = 3             ; Channel 9 generator select bit 3 position
-  EVSYS_CHANNEL9_4_bm = (1<<4)        ; Channel 9 generator select bit 4 mask
-  EVSYS_CHANNEL9_4_bp = 4             ; Channel 9 generator select bit 4 position
-  EVSYS_CHANNEL9_5_bm = (1<<5)        ; Channel 9 generator select bit 5 mask
-  EVSYS_CHANNEL9_5_bp = 5             ; Channel 9 generator select bit 5 position
-  EVSYS_CHANNEL9_6_bm = (1<<6)        ; Channel 9 generator select bit 6 mask
-  EVSYS_CHANNEL9_6_bp = 6             ; Channel 9 generator select bit 6 position
-  EVSYS_CHANNEL9_7_bm = (1<<7)        ; Channel 9 generator select bit 7 mask
-  EVSYS_CHANNEL9_7_bp = 7             ; Channel 9 generator select bit 7 position
-  
-  ; EVSYS_USERCCLLUT0A masks
-  EVSYS_USER_gm = 0xFF                ; User channel select group mask
-  EVSYS_USER_gp = 0                   ; User channel select group position
-  EVSYS_USER_0_bm = (1<<0)            ; User channel select bit 0 mask
-  EVSYS_USER_0_bp = 0                 ; User channel select bit 0 position
-  EVSYS_USER_1_bm = (1<<1)            ; User channel select bit 1 mask
-  EVSYS_USER_1_bp = 1                 ; User channel select bit 1 position
-  EVSYS_USER_2_bm = (1<<2)            ; User channel select bit 2 mask
-  EVSYS_USER_2_bp = 2                 ; User channel select bit 2 position
-  EVSYS_USER_3_bm = (1<<3)            ; User channel select bit 3 mask
-  EVSYS_USER_3_bp = 3                 ; User channel select bit 3 position
-  EVSYS_USER_4_bm = (1<<4)            ; User channel select bit 4 mask
-  EVSYS_USER_4_bp = 4                 ; User channel select bit 4 position
-  EVSYS_USER_5_bm = (1<<5)            ; User channel select bit 5 mask
-  EVSYS_USER_5_bp = 5                 ; User channel select bit 5 position
-  EVSYS_USER_6_bm = (1<<6)            ; User channel select bit 6 mask
-  EVSYS_USER_6_bp = 6                 ; User channel select bit 6 position
-  EVSYS_USER_7_bm = (1<<7)            ; User channel select bit 7 mask
-  EVSYS_USER_7_bp = 7                 ; User channel select bit 7 position
-  
-  ; EVSYS_USERCCLLUT0B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT1A masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT1B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT2A masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT2B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT3A masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT3B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT4A masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT4B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT5A masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERCCLLUT5B masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERADC0START masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTB masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTC masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTD masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEREVSYSEVOUTF masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERUSART0IRDA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERUSART1IRDA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERUSART2IRDA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERUSART3IRDA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERUSART4IRDA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCA0CNTA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCA0CNTB masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCA1CNTA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCA1CNTB masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB0CAPT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB0COUNT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB1CAPT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB1COUNT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB2CAPT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB2COUNT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB3CAPT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCB3COUNT masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCD0INPUTA masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USERTCD0INPUTB masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP0ENABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP0DISABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP0DUMP masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP0DRIVE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP1ENABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP1DISABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP1DUMP masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP1DRIVE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP2ENABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP2DISABLE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP2DUMP masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; EVSYS_USEROPAMP2DRIVE masks
-  ; Masks for EVSYS_USER already defined
-  
-  ; Channel 0 generator select
-  EVSYS_CHANNEL0_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL0_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL0_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL0_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL0_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL0_RTC_PIT_DIV8192_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL0_RTC_PIT_DIV4096_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL0_RTC_PIT_DIV2048_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL0_RTC_PIT_DIV1024_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL0_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL0_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL0_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL0_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL0_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL0_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL0_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL0_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL0_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL0_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL0_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL0_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL0_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL0_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL0_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL0_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL0_PORTA_PIN0_gc = (0x40<<0) ; Port A Pin 0
-  EVSYS_CHANNEL0_PORTA_PIN1_gc = (0x41<<0) ; Port A Pin 1
-  EVSYS_CHANNEL0_PORTA_PIN2_gc = (0x42<<0) ; Port A Pin 2
-  EVSYS_CHANNEL0_PORTA_PIN3_gc = (0x43<<0) ; Port A Pin 3
-  EVSYS_CHANNEL0_PORTA_PIN4_gc = (0x44<<0) ; Port A Pin 4
-  EVSYS_CHANNEL0_PORTA_PIN5_gc = (0x45<<0) ; Port A Pin 5
-  EVSYS_CHANNEL0_PORTA_PIN6_gc = (0x46<<0) ; Port A Pin 6
-  EVSYS_CHANNEL0_PORTA_PIN7_gc = (0x47<<0) ; Port A Pin 7
-  EVSYS_CHANNEL0_PORTB_PIN0_gc = (0x48<<0) ; Port B Pin 0
-  EVSYS_CHANNEL0_PORTB_PIN1_gc = (0x49<<0) ; Port B Pin 1
-  EVSYS_CHANNEL0_PORTB_PIN2_gc = (0x4A<<0) ; Port B Pin 2
-  EVSYS_CHANNEL0_PORTB_PIN3_gc = (0x4B<<0) ; Port B Pin 3
-  EVSYS_CHANNEL0_PORTB_PIN4_gc = (0x4C<<0) ; Port B Pin 4
-  EVSYS_CHANNEL0_PORTB_PIN5_gc = (0x4D<<0) ; Port B Pin 5
-  EVSYS_CHANNEL0_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL0_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL0_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL0_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL0_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL0_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL0_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL0_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL0_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL0_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL0_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL0_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL0_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL0_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL0_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL0_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL0_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL0_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL0_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL0_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL0_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL0_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL0_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL0_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL0_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL0_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL0_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL0_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL0_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 1 generator select
-  EVSYS_CHANNEL1_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL1_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL1_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL1_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL1_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL1_RTC_PIT_DIV512_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL1_RTC_PIT_DIV256_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL1_RTC_PIT_DIV128_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL1_RTC_PIT_DIV64_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL1_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL1_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL1_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL1_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL1_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL1_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL1_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL1_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL1_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL1_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL1_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL1_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL1_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL1_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL1_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL1_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL1_PORTA_PIN0_gc = (0x40<<0) ; Port A Pin 0
-  EVSYS_CHANNEL1_PORTA_PIN1_gc = (0x41<<0) ; Port A Pin 1
-  EVSYS_CHANNEL1_PORTA_PIN2_gc = (0x42<<0) ; Port A Pin 2
-  EVSYS_CHANNEL1_PORTA_PIN3_gc = (0x43<<0) ; Port A Pin 3
-  EVSYS_CHANNEL1_PORTA_PIN4_gc = (0x44<<0) ; Port A Pin 4
-  EVSYS_CHANNEL1_PORTA_PIN5_gc = (0x45<<0) ; Port A Pin 5
-  EVSYS_CHANNEL1_PORTA_PIN6_gc = (0x46<<0) ; Port A Pin 6
-  EVSYS_CHANNEL1_PORTA_PIN7_gc = (0x47<<0) ; Port A Pin 7
-  EVSYS_CHANNEL1_PORTB_PIN0_gc = (0x48<<0) ; Port B Pin 0
-  EVSYS_CHANNEL1_PORTB_PIN1_gc = (0x49<<0) ; Port B Pin 1
-  EVSYS_CHANNEL1_PORTB_PIN2_gc = (0x4A<<0) ; Port B Pin 2
-  EVSYS_CHANNEL1_PORTB_PIN3_gc = (0x4B<<0) ; Port B Pin 3
-  EVSYS_CHANNEL1_PORTB_PIN4_gc = (0x4C<<0) ; Port B Pin 4
-  EVSYS_CHANNEL1_PORTB_PIN5_gc = (0x4D<<0) ; Port B Pin 5
-  EVSYS_CHANNEL1_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL1_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL1_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL1_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL1_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL1_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL1_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL1_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL1_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL1_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL1_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL1_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL1_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL1_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL1_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL1_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL1_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL1_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL1_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL1_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL1_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL1_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL1_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL1_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL1_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL1_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL1_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL1_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL1_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 2 generator select
-  EVSYS_CHANNEL2_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL2_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL2_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL2_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL2_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL2_RTC_PIT_DIV8192_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL2_RTC_PIT_DIV4096_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL2_RTC_PIT_DIV2048_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL2_RTC_PIT_DIV1024_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL2_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL2_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL2_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL2_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL2_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL2_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL2_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL2_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL2_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL2_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL2_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL2_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL2_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL2_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL2_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL2_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL2_PORTC_PIN0_gc = (0x40<<0) ; Port C Pin 0
-  EVSYS_CHANNEL2_PORTC_PIN1_gc = (0x41<<0) ; Port C Pin 1
-  EVSYS_CHANNEL2_PORTC_PIN2_gc = (0x42<<0) ; Port C Pin 2
-  EVSYS_CHANNEL2_PORTC_PIN3_gc = (0x43<<0) ; Port C Pin 3
-  EVSYS_CHANNEL2_PORTC_PIN4_gc = (0x44<<0) ; Port C Pin 4
-  EVSYS_CHANNEL2_PORTC_PIN5_gc = (0x45<<0) ; Port C Pin 5
-  EVSYS_CHANNEL2_PORTC_PIN6_gc = (0x46<<0) ; Port C Pin 6
-  EVSYS_CHANNEL2_PORTC_PIN7_gc = (0x47<<0) ; Port C Pin 7
-  EVSYS_CHANNEL2_PORTD_PIN0_gc = (0x48<<0) ; Port D Pin 0
-  EVSYS_CHANNEL2_PORTD_PIN1_gc = (0x49<<0) ; Port D Pin 1
-  EVSYS_CHANNEL2_PORTD_PIN2_gc = (0x4A<<0) ; Port D Pin 2
-  EVSYS_CHANNEL2_PORTD_PIN3_gc = (0x4B<<0) ; Port D Pin 3
-  EVSYS_CHANNEL2_PORTD_PIN4_gc = (0x4C<<0) ; Port D Pin 4
-  EVSYS_CHANNEL2_PORTD_PIN5_gc = (0x4D<<0) ; Port D Pin 5
-  EVSYS_CHANNEL2_PORTD_PIN6_gc = (0x4E<<0) ; Port D Pin 6
-  EVSYS_CHANNEL2_PORTD_PIN7_gc = (0x4F<<0) ; Port D Pin 7
-  EVSYS_CHANNEL2_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL2_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL2_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL2_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL2_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL2_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL2_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL2_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL2_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL2_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL2_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL2_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL2_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL2_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL2_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL2_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL2_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL2_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL2_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL2_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL2_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL2_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL2_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL2_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL2_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL2_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL2_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL2_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL2_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 3 generator select
-  EVSYS_CHANNEL3_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL3_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL3_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL3_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL3_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL3_RTC_PIT_DIV512_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL3_RTC_PIT_DIV256_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL3_RTC_PIT_DIV128_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL3_RTC_PIT_DIV64_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL3_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL3_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL3_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL3_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL3_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL3_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL3_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL3_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL3_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL3_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL3_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL3_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL3_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL3_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL3_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL3_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL3_PORTC_PIN0_gc = (0x40<<0) ; Port C Pin 0
-  EVSYS_CHANNEL3_PORTC_PIN1_gc = (0x41<<0) ; Port C Pin 1
-  EVSYS_CHANNEL3_PORTC_PIN2_gc = (0x42<<0) ; Port C Pin 2
-  EVSYS_CHANNEL3_PORTC_PIN3_gc = (0x43<<0) ; Port C Pin 3
-  EVSYS_CHANNEL3_PORTC_PIN4_gc = (0x44<<0) ; Port C Pin 4
-  EVSYS_CHANNEL3_PORTC_PIN5_gc = (0x45<<0) ; Port C Pin 5
-  EVSYS_CHANNEL3_PORTC_PIN6_gc = (0x46<<0) ; Port C Pin 6
-  EVSYS_CHANNEL3_PORTC_PIN7_gc = (0x47<<0) ; Port C Pin 7
-  EVSYS_CHANNEL3_PORTD_PIN0_gc = (0x48<<0) ; Port D Pin 0
-  EVSYS_CHANNEL3_PORTD_PIN1_gc = (0x49<<0) ; Port D Pin 1
-  EVSYS_CHANNEL3_PORTD_PIN2_gc = (0x4A<<0) ; Port D Pin 2
-  EVSYS_CHANNEL3_PORTD_PIN3_gc = (0x4B<<0) ; Port D Pin 3
-  EVSYS_CHANNEL3_PORTD_PIN4_gc = (0x4C<<0) ; Port D Pin 4
-  EVSYS_CHANNEL3_PORTD_PIN5_gc = (0x4D<<0) ; Port D Pin 5
-  EVSYS_CHANNEL3_PORTD_PIN6_gc = (0x4E<<0) ; Port D Pin 6
-  EVSYS_CHANNEL3_PORTD_PIN7_gc = (0x4F<<0) ; Port D Pin 7
-  EVSYS_CHANNEL3_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL3_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL3_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL3_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL3_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL3_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL3_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL3_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL3_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL3_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL3_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL3_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL3_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL3_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL3_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL3_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL3_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL3_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL3_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL3_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL3_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL3_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL3_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL3_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL3_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL3_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL3_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL3_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL3_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 4 generator select
-  EVSYS_CHANNEL4_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL4_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL4_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL4_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL4_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL4_RTC_PIT_DIV8192_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL4_RTC_PIT_DIV4096_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL4_RTC_PIT_DIV2048_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL4_RTC_PIT_DIV1024_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL4_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL4_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL4_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL4_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL4_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL4_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL4_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL4_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL4_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL4_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL4_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL4_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL4_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL4_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL4_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL4_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL4_PORTE_PIN0_gc = (0x40<<0) ; Port E Pin 0
-  EVSYS_CHANNEL4_PORTE_PIN1_gc = (0x41<<0) ; Port E Pin 1
-  EVSYS_CHANNEL4_PORTE_PIN2_gc = (0x42<<0) ; Port E Pin 2
-  EVSYS_CHANNEL4_PORTE_PIN3_gc = (0x43<<0) ; Port E Pin 3
-  EVSYS_CHANNEL4_PORTF_PIN0_gc = (0x48<<0) ; Port F Pin 0
-  EVSYS_CHANNEL4_PORTF_PIN1_gc = (0x49<<0) ; Port F Pin 1
-  EVSYS_CHANNEL4_PORTF_PIN2_gc = (0x4A<<0) ; Port F Pin 2
-  EVSYS_CHANNEL4_PORTF_PIN3_gc = (0x4B<<0) ; Port F Pin 3
-  EVSYS_CHANNEL4_PORTF_PIN4_gc = (0x4C<<0) ; Port F Pin 4
-  EVSYS_CHANNEL4_PORTF_PIN5_gc = (0x4D<<0) ; Port F Pin 5
-  EVSYS_CHANNEL4_PORTF_PIN6_gc = (0x4E<<0) ; Port F Pin 6
-  EVSYS_CHANNEL4_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL4_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL4_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL4_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL4_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL4_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL4_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL4_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL4_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL4_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL4_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL4_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL4_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL4_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL4_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL4_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL4_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL4_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL4_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL4_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL4_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL4_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL4_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL4_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL4_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL4_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL4_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL4_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL4_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 5 generator select
-  EVSYS_CHANNEL5_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL5_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL5_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL5_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL5_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL5_RTC_PIT_DIV512_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL5_RTC_PIT_DIV256_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL5_RTC_PIT_DIV128_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL5_RTC_PIT_DIV64_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL5_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL5_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL5_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL5_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL5_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL5_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL5_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL5_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL5_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL5_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL5_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL5_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL5_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL5_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL5_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL5_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL5_PORTE_PIN0_gc = (0x40<<0) ; Port E Pin 0
-  EVSYS_CHANNEL5_PORTE_PIN1_gc = (0x41<<0) ; Port E Pin 1
-  EVSYS_CHANNEL5_PORTE_PIN2_gc = (0x42<<0) ; Port E Pin 2
-  EVSYS_CHANNEL5_PORTE_PIN3_gc = (0x43<<0) ; Port E Pin 3
-  EVSYS_CHANNEL5_PORTF_PIN0_gc = (0x48<<0) ; Port F Pin 0
-  EVSYS_CHANNEL5_PORTF_PIN1_gc = (0x49<<0) ; Port F Pin 1
-  EVSYS_CHANNEL5_PORTF_PIN2_gc = (0x4A<<0) ; Port F Pin 2
-  EVSYS_CHANNEL5_PORTF_PIN3_gc = (0x4B<<0) ; Port F Pin 3
-  EVSYS_CHANNEL5_PORTF_PIN4_gc = (0x4C<<0) ; Port F Pin 4
-  EVSYS_CHANNEL5_PORTF_PIN5_gc = (0x4D<<0) ; Port F Pin 5
-  EVSYS_CHANNEL5_PORTF_PIN6_gc = (0x4E<<0) ; Port F Pin 6
-  EVSYS_CHANNEL5_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL5_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL5_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL5_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL5_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL5_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL5_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL5_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL5_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL5_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL5_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL5_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL5_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL5_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL5_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL5_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL5_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL5_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL5_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL5_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL5_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL5_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL5_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL5_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL5_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL5_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL5_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL5_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL5_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 6 generator select
-  EVSYS_CHANNEL6_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL6_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL6_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL6_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL6_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL6_RTC_PIT_DIV8192_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL6_RTC_PIT_DIV4096_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL6_RTC_PIT_DIV2048_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL6_RTC_PIT_DIV1024_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL6_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL6_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL6_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL6_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL6_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL6_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL6_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL6_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL6_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL6_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL6_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL6_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL6_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL6_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL6_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL6_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL6_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL6_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL6_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL6_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL6_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL6_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL6_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL6_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL6_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL6_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL6_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL6_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL6_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL6_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL6_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL6_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL6_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL6_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL6_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL6_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL6_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL6_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL6_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL6_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL6_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL6_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL6_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL6_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL6_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 7 generator select
-  EVSYS_CHANNEL7_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL7_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL7_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL7_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL7_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL7_RTC_PIT_DIV512_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL7_RTC_PIT_DIV256_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL7_RTC_PIT_DIV128_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL7_RTC_PIT_DIV64_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL7_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL7_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL7_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL7_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL7_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL7_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL7_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL7_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL7_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL7_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL7_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL7_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL7_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL7_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL7_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL7_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL7_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL7_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL7_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL7_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL7_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL7_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL7_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL7_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL7_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL7_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL7_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL7_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL7_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL7_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL7_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL7_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL7_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL7_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL7_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL7_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL7_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL7_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL7_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL7_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL7_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL7_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL7_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL7_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL7_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 8 generator select
-  EVSYS_CHANNEL8_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL8_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL8_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL8_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL8_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL8_RTC_PIT_DIV8192_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL8_RTC_PIT_DIV4096_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL8_RTC_PIT_DIV2048_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL8_RTC_PIT_DIV1024_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL8_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL8_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL8_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL8_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL8_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL8_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL8_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL8_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL8_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL8_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL8_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL8_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL8_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL8_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL8_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL8_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL8_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL8_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL8_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL8_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL8_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL8_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL8_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL8_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL8_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL8_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL8_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL8_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL8_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL8_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL8_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL8_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL8_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL8_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL8_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL8_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL8_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL8_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL8_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL8_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL8_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL8_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL8_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL8_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL8_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Channel 9 generator select
-  EVSYS_CHANNEL9_OFF_gc = (0x00<<0)   ; Off
-  EVSYS_CHANNEL9_UPDI_SYNCH_gc = (0x01<<0) ; UPDI SYNCH character
-  EVSYS_CHANNEL9_MVIO_gc = (0x05<<0)  ; MVIO VDDIO2 OK
-  EVSYS_CHANNEL9_RTC_OVF_gc = (0x06<<0) ; Real Time Counter overflow
-  EVSYS_CHANNEL9_RTC_CMP_gc = (0x07<<0) ; Real Time Counter compare
-  EVSYS_CHANNEL9_RTC_PIT_DIV512_gc = (0x08<<0) ; Periodic Interrupt Timer output 0
-  EVSYS_CHANNEL9_RTC_PIT_DIV256_gc = (0x09<<0) ; Periodic Interrupt Timer output 1
-  EVSYS_CHANNEL9_RTC_PIT_DIV128_gc = (0x0A<<0) ; Periodic Interrupt Timer output 2
-  EVSYS_CHANNEL9_RTC_PIT_DIV64_gc = (0x0B<<0) ; Periodic Interrupt Timer output 3
-  EVSYS_CHANNEL9_CCL_LUT0_gc = (0x10<<0) ; Configurable Custom Logic LUT0
-  EVSYS_CHANNEL9_CCL_LUT1_gc = (0x11<<0) ; Configurable Custom Logic LUT1
-  EVSYS_CHANNEL9_CCL_LUT2_gc = (0x12<<0) ; Configurable Custom Logic LUT2
-  EVSYS_CHANNEL9_CCL_LUT3_gc = (0x13<<0) ; Configurable Custom Logic LUT3
-  EVSYS_CHANNEL9_CCL_LUT4_gc = (0x14<<0) ; Configurable Custom Logic LUT4
-  EVSYS_CHANNEL9_CCL_LUT5_gc = (0x15<<0) ; Configurable Custom Logic LUT5
-  EVSYS_CHANNEL9_AC0_OUT_gc = (0x20<<0) ; Analog Comparator 0 out
-  EVSYS_CHANNEL9_AC1_OUT_gc = (0x21<<0) ; Analog Comparator 1 out
-  EVSYS_CHANNEL9_AC2_OUT_gc = (0x22<<0) ; Analog Comparator 2 out
-  EVSYS_CHANNEL9_ADC0_RESRDY_gc = (0x24<<0) ; ADC 0 Result Ready
-  EVSYS_CHANNEL9_ZCD0_gc = (0x30<<0)  ; Zero Cross Detect 0 out
-  EVSYS_CHANNEL9_ZCD1_gc = (0x31<<0)  ; Zero Cross Detect 1 out
-  EVSYS_CHANNEL9_ZCD2_gc = (0x32<<0)  ; Zero Cross Detect 2 out
-  EVSYS_CHANNEL9_OPAMP0_READY_gc = (0x34<<0) ; OPAMP0 Ready
-  EVSYS_CHANNEL9_OPAMP1_READY_gc = (0x35<<0) ; OPAMP1 Ready
-  EVSYS_CHANNEL9_OPAMP2_READY_gc = (0x36<<0) ; OPAMP2 Ready
-  EVSYS_CHANNEL9_USART0_XCK_gc = (0x60<<0) ; USART 0 XCK
-  EVSYS_CHANNEL9_USART1_XCK_gc = (0x61<<0) ; USART 1 XCK
-  EVSYS_CHANNEL9_USART2_XCK_gc = (0x62<<0) ; USART 2 XCK
-  EVSYS_CHANNEL9_USART3_XCK_gc = (0x63<<0) ; USART 3 XCK
-  EVSYS_CHANNEL9_USART4_XCK_gc = (0x64<<0) ; USART 4 XCK
-  EVSYS_CHANNEL9_SPI0_SCK_gc = (0x68<<0) ; SPI 0 SCK
-  EVSYS_CHANNEL9_SPI1_SCK_gc = (0x69<<0) ; SPI 1 SCK
-  EVSYS_CHANNEL9_TCA0_OVF_LUNF_gc = (0x80<<0) ; Timer/Counter A0 overflow / low byte timer underflow
-  EVSYS_CHANNEL9_TCA0_HUNF_gc = (0x81<<0) ; Timer/Counter A0 high byte timer underflow
-  EVSYS_CHANNEL9_TCA0_CMP0_LCMP0_gc = (0x84<<0) ; Timer/Counter A0 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL9_TCA0_CMP1_LCMP1_gc = (0x85<<0) ; Timer/Counter A0 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL9_TCA0_CMP2_LCMP2_gc = (0x86<<0) ; Timer/Counter A0 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL9_TCA1_OVF_LUNF_gc = (0x88<<0) ; Timer/Counter A1 overflow / low byte timer underflow
-  EVSYS_CHANNEL9_TCA1_HUNF_gc = (0x89<<0) ; Timer/Counter A1 high byte timer underflow
-  EVSYS_CHANNEL9_TCA1_CMP0_LCMP0_gc = (0x8C<<0) ; Timer/Counter A1 compare 0 / low byte timer compare 0
-  EVSYS_CHANNEL9_TCA1_CMP1_LCMP1_gc = (0x8D<<0) ; Timer/Counter A1 compare 1 / low byte timer compare 1
-  EVSYS_CHANNEL9_TCA1_CMP2_LCMP2_gc = (0x8E<<0) ; Timer/Counter A1 compare 2 / low byte timer compare 2
-  EVSYS_CHANNEL9_TCB0_CAPT_gc = (0xA0<<0) ; Timer/Counter B0 capture
-  EVSYS_CHANNEL9_TCB0_OVF_gc = (0xA1<<0) ; Timer/Counter B0 overflow
-  EVSYS_CHANNEL9_TCB1_CAPT_gc = (0xA2<<0) ; Timer/Counter B1 capture
-  EVSYS_CHANNEL9_TCB1_OVF_gc = (0xA3<<0) ; Timer/Counter B1 overflow
-  EVSYS_CHANNEL9_TCB2_CAPT_gc = (0xA4<<0) ; Timer/Counter B2 capture
-  EVSYS_CHANNEL9_TCB2_OVF_gc = (0xA5<<0) ; Timer/Counter B2 overflow
-  EVSYS_CHANNEL9_TCB3_CAPT_gc = (0xA6<<0) ; Timer/Counter B3 capture
-  EVSYS_CHANNEL9_TCB3_OVF_gc = (0xA7<<0) ; Timer/Counter B3 overflow
-  EVSYS_CHANNEL9_TCD0_CMPBCLR_gc = (0xB0<<0) ; Timer/Counter D0 event 0
-  EVSYS_CHANNEL9_TCD0_CMPASET_gc = (0xB1<<0) ; Timer/Counter D0 event 1
-  EVSYS_CHANNEL9_TCD0_CMPBSET_gc = (0xB2<<0) ; Timer/Counter D0 event 2
-  EVSYS_CHANNEL9_TCD0_PROGEV_gc = (0xB3<<0) ; Timer/Counter D0 event 3
-  
-  ; Software event on channel select
-  EVSYS_SWEVENTA_CH0_gc = (0x01<<0)   ; Software event on channel 0
-  EVSYS_SWEVENTA_CH1_gc = (0x02<<0)   ; Software event on channel 1
-  EVSYS_SWEVENTA_CH2_gc = (0x04<<0)   ; Software event on channel 2
-  EVSYS_SWEVENTA_CH3_gc = (0x08<<0)   ; Software event on channel 3
-  EVSYS_SWEVENTA_CH4_gc = (0x10<<0)   ; Software event on channel 4
-  EVSYS_SWEVENTA_CH5_gc = (0x20<<0)   ; Software event on channel 5
-  EVSYS_SWEVENTA_CH6_gc = (0x40<<0)   ; Software event on channel 6
-  EVSYS_SWEVENTA_CH7_gc = (0x80<<0)   ; Software event on channel 7
-  
-  ; Software event on channel select
-  EVSYS_SWEVENTB_CH8_gc = (0x01<<0)   ; Software event on channel 8
-  EVSYS_SWEVENTB_CH9_gc = (0x02<<0)   ; Software event on channel 9
-  
-  ; User channel select
-  EVSYS_USER_OFF_gc = (0x00<<0)       ; Off
-  EVSYS_USER_CHANNEL0_gc = (0x01<<0)  ; Connect user to event channel 0
-  EVSYS_USER_CHANNEL1_gc = (0x02<<0)  ; Connect user to event channel 1
-  EVSYS_USER_CHANNEL2_gc = (0x03<<0)  ; Connect user to event channel 2
-  EVSYS_USER_CHANNEL3_gc = (0x04<<0)  ; Connect user to event channel 3
-  EVSYS_USER_CHANNEL4_gc = (0x05<<0)  ; Connect user to event channel 4
-  EVSYS_USER_CHANNEL5_gc = (0x06<<0)  ; Connect user to event channel 5
-  EVSYS_USER_CHANNEL6_gc = (0x07<<0)  ; Connect user to event channel 6
-  EVSYS_USER_CHANNEL7_gc = (0x08<<0)  ; Connect user to event channel 7
-  EVSYS_USER_CHANNEL8_gc = (0x09<<0)  ; Connect user to event channel 8
-  EVSYS_USER_CHANNEL9_gc = (0x0A<<0)  ; Connect user to event channel 9
+ RT_INVEN already defined
+  
+  ; Input/Sense Configuration select
+  PORT_ISC_INTDISABLE_gc = (0x00<<0)  ; Interrupt disabled but input buffer enabled
+  PORT_ISC_BOTHEDGES_gc = (0x01<<0)   ; Sense Both Edges
+  PORT_ISC_RISING_gc = (0x02<<0)      ; Sense Rising Edge
+  PORT_ISC_FALLING_gc = (0x03<<0)     ; Sense Falling Edge
+  PORT_ISC_INPUT_DISABLE_gc = (0x04<<0) ; Digital Input Buffer disabled
+  PORT_ISC_LEVEL_gc = (0x05<<0)       ; Sense low Level
   
   
   ;*************************************************************************
-  ;** FUSE - Fuses
+  ;** PORTMUX - Port Multiplexer
   ;*************************************************************************
   
-  ; FUSE_WDTCFG masks
-  FUSE_PERIOD_gm = 0x0F               ; Watchdog Timeout Period group mask
-  FUSE_PERIOD_gp = 0                  ; Watchdog Timeout Period group position
-  FUSE_PERIOD_0_bm = (1<<0)           ; Watchdog Timeout Period bit 0 mask
-  FUSE_PERIOD_0_bp = 0                ; Watchdog Timeout Period bit 0 position
-  FUSE_PERIOD_1_bm = (1<<1)           ; Watchdog Timeout Period bit 1 mask
-  FUSE_PERIOD_1_bp = 1                ; Watchdog Timeout Period bit 1 position
-  FUSE_PERIOD_2_bm = (1<<2)           ; Watchdog Timeout Period bit 2 mask
-  FUSE_PERIOD_2_bp = 2                ; Watchdog Timeout Period bit 2 position
-  FUSE_PERIOD_3_bm = (1<<3)           ; Watchdog Timeout Period bit 3 mask
-  FUSE_PERIOD_3_bp = 3                ; Watchdog Timeout Period bit 3 position
-  FUSE_WINDOW_gm = 0xF0               ; Watchdog Window Timeout Period group mask
-  FUSE_WINDOW_gp = 4                  ; Watchdog Window Timeout Period group position
-  FUSE_WINDOW_0_bm = (1<<4)           ; Watchdog Window Timeout Period bit 0 mask
-  FUSE_WINDOW_0_bp = 4                ; Watchdog Window Timeout Period bit 0 position
-  FUSE_WINDOW_1_bm = (1<<5)           ; Watchdog Window Timeout Period bit 1 mask
-  FUSE_WINDOW_1_bp = 5                ; Watchdog Window Timeout Period bit 1 position
-  FUSE_WINDOW_2_bm = (1<<6)           ; Watchdog Window Timeout Period bit 2 mask
-  FUSE_WINDOW_2_bp = 6                ; Watchdog Window Timeout Period bit 2 position
-  FUSE_WINDOW_3_bm = (1<<7)           ; Watchdog Window Timeout Period bit 3 mask
-  FUSE_WINDOW_3_bp = 7                ; Watchdog Window Timeout Period bit 3 position
+  ; PORTMUX_EVSYSROUTEA masks
+  PORTMUX_EVOUTA_bm = 0x01            ; Event Output A bit mask
+  PORTMUX_EVOUTA_bp = 0               ; Event Output A bit position
+  PORTMUX_EVOUTB_bm = 0x02            ; Event Output B bit mask
+  PORTMUX_EVOUTB_bp = 1               ; Event Output B bit position
+  PORTMUX_EVOUTC_bm = 0x04            ; Event Output C bit mask
+  PORTMUX_EVOUTC_bp = 2               ; Event Output C bit position
+  PORTMUX_EVOUTD_bm = 0x08            ; Event Output D bit mask
+  PORTMUX_EVOUTD_bp = 3               ; Event Output D bit position
+  PORTMUX_EVOUTE_bm = 0x10            ; Event Output E bit mask
+  PORTMUX_EVOUTE_bp = 4               ; Event Output E bit position
+  PORTMUX_EVOUTF_bm = 0x20            ; Event Output F bit mask
+  PORTMUX_EVOUTF_bp = 5               ; Event Output F bit position
   
-  ; FUSE_BODCFG masks
-  FUSE_SLEEP_gm = 0x03                ; BOD Operation in Sleep Mode group mask
-  FUSE_SLEEP_gp = 0                   ; BOD Operation in Sleep Mode group position
-  FUSE_SLEEP_0_bm = (1<<0)            ; BOD Operation in Sleep Mode bit 0 mask
-  FUSE_SLEEP_0_bp = 0                 ; BOD Operation in Sleep Mode bit 0 position
-  FUSE_SLEEP_1_bm = (1<<1)            ; BOD Operation in Sleep Mode bit 1 mask
-  FUSE_SLEEP_1_bp = 1                 ; BOD Operation in Sleep Mode bit 1 position
-  FUSE_ACTIVE_gm = 0x0C               ; BOD Operation in Active Mode group mask
-  FUSE_ACTIVE_gp = 2                  ; BOD Operation in Active Mode group position
-  FUSE_ACTIVE_0_bm = (1<<2)           ; BOD Operation in Active Mode bit 0 mask
-  FUSE_ACTIVE_0_bp = 2                ; BOD Operation in Active Mode bit 0 position
-  FUSE_ACTIVE_1_bm = (1<<3)           ; BOD Operation in Active Mode bit 1 mask
-  FUSE_ACTIVE_1_bp = 3                ; BOD Operation in Active Mode bit 1 position
-  FUSE_SAMPFREQ_bm = 0x10             ; BOD Sample Frequency bit mask
-  FUSE_SAMPFREQ_bp = 4                ; BOD Sample Frequency bit position
-  FUSE_LVL_gm = 0xE0                  ; BOD Level group mask
-  FUSE_LVL_gp = 5                     ; BOD Level group position
-  FUSE_LVL_0_bm = (1<<5)              ; BOD Level bit 0 mask
-  FUSE_LVL_0_bp = 5                   ; BOD Level bit 0 position
-  FUSE_LVL_1_bm = (1<<6)              ; BOD Level bit 1 mask
-  FUSE_LVL_1_bp = 6                   ; BOD Level bit 1 position
-  FUSE_LVL_2_bm = (1<<7)              ; BOD Level bit 2 mask
-  FUSE_LVL_2_bp = 7                   ; BOD Level bit 2 position
+  ; PORTMUX_CCLROUTEA masks
+  PORTMUX_LUT0_bm = 0x01              ; CCL Look-Up Table 0 Signals bit mask
+  PORTMUX_LUT0_bp = 0                 ; CCL Look-Up Table 0 Signals bit position
+  PORTMUX_LUT1_bm = 0x02              ; CCL Look-Up Table 1 Signals bit mask
+  PORTMUX_LUT1_bp = 1                 ; CCL Look-Up Table 1 Signals bit position
+  PORTMUX_LUT2_bm = 0x04              ; CCL Look-Up Table 2 Signals bit mask
+  PORTMUX_LUT2_bp = 2                 ; CCL Look-Up Table 2 Signals bit position
+  PORTMUX_LUT3_bm = 0x08              ; CCL Look-Up Table 3 Signals bit mask
+  PORTMUX_LUT3_bp = 3                 ; CCL Look-Up Table 3 Signals bit position
+  PORTMUX_LUT4_bm = 0x10              ; CCL Look-Up Table 4 Signals bit mask
+  PORTMUX_LUT4_bp = 4                 ; CCL Look-Up Table 4 Signals bit position
   
-  ; FUSE_OSCCFG masks
-  FUSE_CLKSEL_gm = 0x07               ; Frequency Select group mask
-  FUSE_CLKSEL_gp = 0                  ; Frequency Select group position
-  FUSE_CLKSEL_0_bm = (1<<0)           ; Frequency Select bit 0 mask
-  FUSE_CLKSEL_0_bp = 0                ; Frequency Select bit 0 position
-  FUSE_CLKSEL_1_bm = (1<<1)           ; Frequency Select bit 1 mask
-  FUSE_CLKSEL_1_bp = 1                ; Frequency Select bit 1 position
-  FUSE_CLKSEL_2_bm = (1<<2)           ; Frequency Select bit 2 mask
-  FUSE_CLKSEL_2_bp = 2                ; Frequency Select bit 2 position
+  ; PORTMUX_USARTROUTEA masks
+  PORTMUX_USART0_gm = 0x03            ; USART0 Signals group mask
+  PORTMUX_USART0_gp = 0               ; USART0 Signals group position
+  PORTMUX_USART0_0_bm = (1<<0)        ; USART0 Signals bit 0 mask
+  PORTMUX_USART0_0_bp = 0             ; USART0 Signals bit 0 position
+  PORTMUX_USART0_1_bm = (1<<1)        ; USART0 Signals bit 1 mask
+  PORTMUX_USART0_1_bp = 1             ; USART0 Signals bit 1 position
+  PORTMUX_USART1_gm = 0x0C            ; USART1 Signals group mask
+  PORTMUX_USART1_gp = 2               ; USART1 Signals group position
+  PORTMUX_USART1_0_bm = (1<<2)        ; USART1 Signals bit 0 mask
+  PORTMUX_USART1_0_bp = 2             ; USART1 Signals bit 0 position
+  PORTMUX_USART1_1_bm = (1<<3)        ; USART1 Signals bit 1 mask
+  PORTMUX_USART1_1_bp = 3             ; USART1 Signals bit 1 position
+  PORTMUX_USART2_gm = 0x30            ; USART2 Signals group mask
+  PORTMUX_USART2_gp = 4               ; USART2 Signals group position
+  PORTMUX_USART2_0_bm = (1<<4)        ; USART2 Signals bit 0 mask
+  PORTMUX_USART2_0_bp = 4             ; USART2 Signals bit 0 position
+  PORTMUX_USART2_1_bm = (1<<5)        ; USART2 Signals bit 1 mask
+  PORTMUX_USART2_1_bp = 5             ; USART2 Signals bit 1 position
+  PORTMUX_USART3_gm = 0xC0            ; USART3  Signals group mask
+  PORTMUX_USART3_gp = 6               ; USART3  Signals group position
+  PORTMUX_USART3_0_bm = (1<<6)        ; USART3  Signals bit 0 mask
+  PORTMUX_USART3_0_bp = 6             ; USART3  Signals bit 0 position
+  PORTMUX_USART3_1_bm = (1<<7)        ; USART3  Signals bit 1 mask
+  PORTMUX_USART3_1_bp = 7             ; USART3  Signals bit 1 position
   
-  ; FUSE_SYSCFG0 masks
-  FUSE_EESAVE_bm = 0x01               ; EEPROM Save bit mask
-  FUSE_EESAVE_bp = 0                  ; EEPROM Save bit position
-  FUSE_RSTPINCFG_gm = 0x0C            ; Reset Pin Configuration group mask
-  FUSE_RSTPINCFG_gp = 2               ; Reset Pin Configuration group position
-  FUSE_RSTPINCFG_0_bm = (1<<2)        ; Reset Pin Configuration bit 0 mask
-  FUSE_RSTPINCFG_0_bp = 2             ; Reset Pin Configuration bit 0 position
-  FUSE_RSTPINCFG_1_bm = (1<<3)        ; Reset Pin Configuration bit 1 mask
-  FUSE_RSTPINCFG_1_bp = 3             ; Reset Pin Configuration bit 1 position
-  FUSE_CRCSEL_bm = 0x20               ; CRC Select bit mask
-  FUSE_CRCSEL_bp = 5                  ; CRC Select bit position
-  FUSE_CRCSRC_gm = 0xC0               ; CRC Source group mask
-  FUSE_CRCSRC_gp = 6                  ; CRC Source group position
-  FUSE_CRCSRC_0_bm = (1<<6)           ; CRC Source bit 0 mask
-  FUSE_CRCSRC_0_bp = 6                ; CRC Source bit 0 position
-  FUSE_CRCSRC_1_bm = (1<<7)           ; CRC Source bit 1 mask
-  FUSE_CRCSRC_1_bp = 7                ; CRC Source bit 1 position
+  ; PORTMUX_USARTROUTEB masks
+  PORTMUX_USART4_gm = 0x03            ; USART4 Signals group mask
+  PORTMUX_USART4_gp = 0               ; USART4 Signals group position
+  PORTMUX_USART4_0_bm = (1<<0)        ; USART4 Signals bit 0 mask
+  PORTMUX_USART4_0_bp = 0             ; USART4 Signals bit 0 position
+  PORTMUX_USART4_1_bm = (1<<1)        ; USART4 Signals bit 1 mask
+  PORTMUX_USART4_1_bp = 1             ; USART4 Signals bit 1 position
   
-  ; FUSE_SYSCFG1 masks
-  FUSE_SUT_gm = 0x07                  ; Startup Time group mask
-  FUSE_SUT_gp = 0                     ; Startup Time group position
-  FUSE_SUT_0_bm = (1<<0)              ; Startup Time bit 0 mask
-  FUSE_SUT_0_bp = 0                   ; Startup Time bit 0 position
-  FUSE_SUT_1_bm = (1<<1)              ; Startup Time bit 1 mask
-  FUSE_SUT_1_bp = 1                   ; Startup Time bit 1 position
-  FUSE_SUT_2_bm = (1<<2)              ; Startup Time bit 2 mask
-  FUSE_SUT_2_bp = 2                   ; Startup Time bit 2 position
-  FUSE_MVSYSCFG_gm = 0x18             ; MVIO System Configuration group mask
-  FUSE_MVSYSCFG_gp = 3                ; MVIO System Configuration group position
-  FUSE_MVSYSCFG_0_bm = (1<<3)         ; MVIO System Configuration bit 0 mask
-  FUSE_MVSYSCFG_0_bp = 3              ; MVIO System Configuration bit 0 position
-  FUSE_MVSYSCFG_1_bm = (1<<4)         ; MVIO System Configuration bit 1 mask
-  FUSE_MVSYSCFG_1_bp = 4              ; MVIO System Configuration bit 1 position
+  ; PORTMUX_SPIROUTEA masks
+  PORTMUX_SPI0_gm = 0x03              ; SPI0 Signals group mask
+  PORTMUX_SPI0_gp = 0                 ; SPI0 Signals group position
+  PORTMUX_SPI0_0_bm = (1<<0)          ; SPI0 Signals bit 0 mask
+  PORTMUX_SPI0_0_bp = 0               ; SPI0 Signals bit 0 position
+  PORTMUX_SPI0_1_bm = (1<<1)          ; SPI0 Signals bit 1 mask
+  PORTMUX_SPI0_1_bp = 1               ; SPI0 Signals bit 1 position
+  PORTMUX_SPI1_gm = 0x0C              ; SPI1 Signals group mask
+  PORTMUX_SPI1_gp = 2                 ; SPI1 Signals group position
+  PORTMUX_SPI1_0_bm = (1<<2)          ; SPI1 Signals bit 0 mask
+  PORTMUX_SPI1_0_bp = 2               ; SPI1 Signals bit 0 position
+  PORTMUX_SPI1_1_bm = (1<<3)          ; SPI1 Signals bit 1 mask
+  PORTMUX_SPI1_1_bp = 3               ; SPI1 Signals bit 1 position
   
-  ; BOD Operation in Active Mode select
-  FUSE_ACTIVE_DISABLE_gc = (0x00<<2)  ; BOD disabled
-  FUSE_ACTIVE_ENABLE_gc = (0x01<<2)   ; BOD enabled in continuous mode
-  FUSE_ACTIVE_SAMPLE_gc = (0x02<<2)   ; BOD enabled in sampled mode
-  FUSE_ACTIVE_ENABLEWAIT_gc = (0x03<<2) ; BOD enabled in continuous mode. Execution is halted at wake-up until BOD is running.
+  ; PORTMUX_TWIROUTEA masks
+  PORTMUX_TWI0_gm = 0x03              ; TWI0 Signals group mask
+  PORTMUX_TWI0_gp = 0                 ; TWI0 Signals group position
+  PORTMUX_TWI0_0_bm = (1<<0)          ; TWI0 Signals bit 0 mask
+  PORTMUX_TWI0_0_bp = 0               ; TWI0 Signals bit 0 position
+  PORTMUX_TWI0_1_bm = (1<<1)          ; TWI0 Signals bit 1 mask
+  PORTMUX_TWI0_1_bp = 1               ; TWI0 Signals bit 1 position
+  PORTMUX_TWI1_gm = 0x0C              ; TWI1 Signals group mask
+  PORTMUX_TWI1_gp = 2                 ; TWI1 Signals group position
+  PORTMUX_TWI1_0_bm = (1<<2)          ; TWI1 Signals bit 0 mask
+  PORTMUX_TWI1_0_bp = 2               ; TWI1 Signals bit 0 position
+  PORTMUX_TWI1_1_bm = (1<<3)          ; TWI1 Signals bit 1 mask
+  PORTMUX_TWI1_1_bp = 3               ; TWI1 Signals bit 1 position
   
-  ; BOD Level select
-  FUSE_LVL_BODLEVEL0_gc = (0x00<<5)   ; 1.9V
-  FUSE_LVL_BODLEVEL1_gc = (0x01<<5)   ; 2.45V
-  FUSE_LVL_BODLEVEL2_gc = (0x02<<5)   ; 2.7V
-  FUSE_LVL_BODLEVEL3_gc = (0x03<<5)   ; 2.85V
+  ; PORTMUX_TCAROUTEA masks
+  PORTMUX_TCA0_gm = 0x07              ; TCA0 Signals group mask
+  PORTMUX_TCA0_gp = 0                 ; TCA0 Signals group position
+  PORTMUX_TCA0_0_bm = (1<<0)          ; TCA0 Signals bit 0 mask
+  PORTMUX_TCA0_0_bp = 0               ; TCA0 Signals bit 0 position
+  PORTMUX_TCA0_1_bm = (1<<1)          ; TCA0 Signals bit 1 mask
+  PORTMUX_TCA0_1_bp = 1               ; TCA0 Signals bit 1 position
+  PORTMUX_TCA0_2_bm = (1<<2)          ; TCA0 Signals bit 2 mask
+  PORTMUX_TCA0_2_bp = 2               ; TCA0 Signals bit 2 position
+  PORTMUX_TCA1_gm = 0x38              ; TCA1 Signals group mask
+  PORTMUX_TCA1_gp = 3                 ; TCA1 Signals group position
+  PORTMUX_TCA1_0_bm = (1<<3)          ; TCA1 Signals bit 0 mask
+  PORTMUX_TCA1_0_bp = 3               ; TCA1 Signals bit 0 position
+  PORTMUX_TCA1_1_bm = (1<<4)          ; TCA1 Signals bit 1 mask
+  PORTMUX_TCA1_1_bp = 4               ; TCA1 Signals bit 1 position
+  PORTMUX_TCA1_2_bm = (1<<5)          ; TCA1 Signals bit 2 mask
+  PORTMUX_TCA1_2_bp = 5               ; TCA1 Signals bit 2 position
   
-  ; BOD Sample Frequency select
-  FUSE_SAMPFREQ_128Hz_gc = (0x00<<4)  ; Sample frequency is 128 Hz
-  FUSE_SAMPFREQ_32Hz_gc = (0x01<<4)   ; Sample frequency is 32 Hz
+  ; PORTMUX_TCBROUTEA masks
+  PORTMUX_TCB0_bm = 0x01              ; TCB0 Output bit mask
+  PORTMUX_TCB0_bp = 0                 ; TCB0 Output bit position
+  PORTMUX_TCB1_bm = 0x02              ; TCB1 Output bit mask
+  PORTMUX_TCB1_bp = 1                 ; TCB1 Output bit position
+  PORTMUX_TCB2_bm = 0x04              ; TCB2 Output bit mask
+  PORTMUX_TCB2_bp = 2                 ; TCB2 Output bit position
+  PORTMUX_TCB3_bm = 0x08              ; TCB3 Output bit mask
+  PORTMUX_TCB3_bp = 3                 ; TCB3 Output bit position
   
-  ; BOD Operation in Sleep Mode select
-  FUSE_SLEEP_DISABLE_gc = (0x00<<0)   ; BOD disabled
-  FUSE_SLEEP_ENABLE_gc = (0x01<<0)    ; BOD enabled in continuous mode
-  FUSE_SLEEP_SAMPLE_gc = (0x02<<0)    ; BOD enabled in sampled mode
+  ; PORTMUX_TCDROUTEA masks
+  PORTMUX_TCD0_gm = 0x07              ; TCD0 Signals group mask
+  PORTMUX_TCD0_gp = 0                 ; TCD0 Signals group position
+  PORTMUX_TCD0_0_bm = (1<<0)          ; TCD0 Signals bit 0 mask
+  PORTMUX_TCD0_0_bp = 0               ; TCD0 Signals bit 0 position
+  PORTMUX_TCD0_1_bm = (1<<1)          ; TCD0 Signals bit 1 mask
+  PORTMUX_TCD0_1_bp = 1               ; TCD0 Signals bit 1 position
+  PORTMUX_TCD0_2_bm = (1<<2)          ; TCD0 Signals bit 2 mask
+  PORTMUX_TCD0_2_bp = 2               ; TCD0 Signals bit 2 position
   
-  ; Frequency Select
-  FUSE_CLKSEL_OSCHF_gc = (0x00<<0)    ; 1-32MHz internal oscillator
-  FUSE_CLKSEL_OSC32K_gc = (0x01<<0)   ; 32.768kHz internal oscillator
+  ; PORTMUX_ACROUTEA masks
+  PORTMUX_AC0_bm = 0x01               ; Analog Comparator 0 Output bit mask
+  PORTMUX_AC0_bp = 0                  ; Analog Comparator 0 Output bit position
+  PORTMUX_AC1_bm = 0x02               ; Analog Comparator 1 Output bit mask
+  PORTMUX_AC1_bp = 1                  ; Analog Comparator 1 Output bit position
+  PORTMUX_AC2_bm = 0x04               ; Analog Comparator 2 Output bit mask
+  PORTMUX_AC2_bp = 2                  ; Analog Comparator 2 Output bit position
   
-  ; CRC Select
-  FUSE_CRCSEL_CRC16_gc = (0x00<<5)    ; Enable CRC16
-  FUSE_CRCSEL_CRC32_gc = (0x01<<5)    ; Enable CRC32
+  ; PORTMUX_ZCDROUTEA masks
+  PORTMUX_ZCD0_bm = 0x01              ; Zero Cross Detector 0 Output bit mask
+  PORTMUX_ZCD0_bp = 0                 ; Zero Cross Detector 0 Output bit position
+  PORTMUX_ZCD1_bm = 0x02              ; Zero Cross Detector 1 Output bit mask
+  PORTMUX_ZCD1_bp = 1                 ; Zero Cross Detector 1 Output bit position
+  PORTMUX_ZCD2_bm = 0x04              ; Zero Cross Detector 2 Output bit mask
+  PORTMUX_ZCD2_bp = 2                 ; Zero Cross Detector 2 Output bit position
   
-  ; CRC Source select
-  FUSE_CRCSRC_FLASH_gc = (0x00<<6)    ; CRC of full Flash (boot, application code and application data)
-  FUSE_CRCSRC_BOOT_gc = (0x01<<6)     ; CRC of boot section
-  FUSE_CRCSRC_BOOTAPP_gc = (0x02<<6)  ; CRC of application code and boot sections
-  FUSE_CRCSRC_NOCRC_gc = (0x03<<6)    ; No CRC
+  ; Analog Comparator 0 Output select
+  PORTMUX_AC0_DEFAULT_gc = (0x00<<0)  ; OUT: PA7
+  PORTMUX_AC0_ALT1_gc = (0x01<<0)     ; OUT: PC6
   
-  ; Reset Pin Configuration select
-  FUSE_RSTPINCFG_GPIO_gc = (0x00<<2)  ; GPIO mode
-  FUSE_RSTPINCFG_RST_gc = (0x02<<2)   ; Reset mode
+  ; Analog Comparator 1 Output select
+  PORTMUX_AC1_DEFAULT_gc = (0x00<<1)  ; OUT: PA7
+  PORTMUX_AC1_ALT1_gc = (0x01<<1)     ; OUT: PC6
   
-  ; MVIO System Configuration select
-  FUSE_MVSYSCFG_DUAL_gc = (0x01<<3)   ; Device used in a dual supply configuration
-  FUSE_MVSYSCFG_SINGLE_gc = (0x02<<3) ; Device used in a single supply configuration
+  ; Analog Comparator 2 Output select
+  PORTMUX_AC2_DEFAULT_gc = (0x00<<2)  ; OUT: PA7
+  PORTMUX_AC2_ALT1_gc = (0x01<<2)     ; OUT: PC6
   
-  ; Startup Time select
-  FUSE_SUT_0MS_gc = (0x00<<0)         ; 0 ms
-  FUSE_SUT_1MS_gc = (0x01<<0)         ; 1 ms
-  FUSE_SUT_2MS_gc = (0x02<<0)         ; 2 ms
-  FUSE_SUT_4MS_gc = (0x03<<0)         ; 4 ms
-  FUSE_SUT_8MS_gc = (0x04<<0)         ; 8 ms
-  FUSE_SUT_16MS_gc = (0x05<<0)        ; 16 ms
-  FUSE_SUT_32MS_gc = (0x06<<0)        ; 32 ms
-  FUSE_SUT_64MS_gc = (0x07<<0)        ; 64 ms
+  ; CCL Look-Up Table 0 Signals select
+  PORTMUX_LUT0_DEFAULT_gc = (0x00<<0) ; In: PA0, PA1, PA2 Out: PA3
+  PORTMUX_LUT0_ALT1_gc = (0x01<<0)    ; In: PA0, PA1, PA2 Out: PA6
   
-  ; Watchdog Timeout Period select
-  FUSE_PERIOD_OFF_gc = (0x00<<0)      ; Watch-Dog timer Off
-  FUSE_PERIOD_8CLK_gc = (0x01<<0)     ; 8 cycles (8ms)
-  FUSE_PERIOD_16CLK_gc = (0x02<<0)    ; 16 cycles (16ms)
-  FUSE_PERIOD_32CLK_gc = (0x03<<0)    ; 32 cycles (32ms)
-  FUSE_PERIOD_64CLK_gc = (0x04<<0)    ; 64 cycles (64ms)
-  FUSE_PERIOD_128CLK_gc = (0x05<<0)   ; 128 cycles (0.128s)
-  FUSE_PERIOD_256CLK_gc = (0x06<<0)   ; 256 cycles (0.256s)
-  FUSE_PERIOD_512CLK_gc = (0x07<<0)   ; 512 cycles (0.512s)
-  FUSE_PERIOD_1KCLK_gc = (0x08<<0)    ; 1K cycles (1.0s)
-  FUSE_PERIOD_2KCLK_gc = (0x09<<0)    ; 2K cycles (2.0s)
-  FUSE_PERIOD_4KCLK_gc = (0x0A<<0)    ; 4K cycles (4.0s)
-  FUSE_PERIOD_8KCLK_gc = (0x0B<<0)    ; 8K cycles (8.0s)
+  ; CCL Look-Up Table 1 Signals select
+  PORTMUX_LUT1_DEFAULT_gc = (0x00<<1) ; In: PC0, PC1, PC2 Out: PC3
+  PORTMUX_LUT1_ALT1_gc = (0x01<<1)    ; In: PC0, PC1, PC2 Out: PC6
   
-  ; Watchdog Window Timeout Period select
-  FUSE_WINDOW_OFF_gc = (0x00<<4)      ; Window mode off
-  FUSE_WINDOW_8CLK_gc = (0x01<<4)     ; 8 cycles (8ms)
-  FUSE_WINDOW_16CLK_gc = (0x02<<4)    ; 16 cycles (16ms)
-  FUSE_WINDOW_32CLK_gc = (0x03<<4)    ; 32 cycles (32ms)
-  FUSE_WINDOW_64CLK_gc = (0x04<<4)    ; 64 cycles (64ms)
-  FUSE_WINDOW_128CLK_gc = (0x05<<4)   ; 128 cycles (0.128s)
-  FUSE_WINDOW_256CLK_gc = (0x06<<4)   ; 256 cycles (0.256s)
-  FUSE_WINDOW_512CLK_gc = (0x07<<4)   ; 512 cycles (0.512s)
-  FUSE_WINDOW_1KCLK_gc = (0x08<<4)    ; 1K cycles (1.0s)
-  FUSE_WINDOW_2KCLK_gc = (0x09<<4)    ; 2K cycles (2.0s)
-  FUSE_WINDOW_4KCLK_gc = (0x0A<<4)    ; 4K cycles (4.0s)
-  FUSE_WINDOW_8KCLK_gc = (0x0B<<4)    ; 8K cycles (8.0s)
+  ; CCL Look-Up Table 2 Signals select
+  PORTMUX_LUT2_DEFAULT_gc = (0x00<<2) ; In: PD0, PD1, PD2 Out: PD3
+  PORTMUX_LUT2_ALT1_gc = (0x01<<2)    ; In: PD0, PD1, PD2 Out: PD6
+  
+  ; CCL Look-Up Table 3 Signals select
+  PORTMUX_LUT3_DEFAULT_gc = (0x00<<3) ; In: PF0, PF1, PF2 Out: PF3
+  
+  ; CCL Look-Up Table 4 Signals select
+  PORTMUX_LUT4_DEFAULT_gc = (0x00<<4) ; In: PB0, PB1, PB2 Out: PB3
+  PORTMUX_LUT4_ALT1_gc = (0x01<<4)    ; In: PB0, PB1, PB2 Out: -
+  
+  ; Event Output A select
+  PORTMUX_EVOUTA_DEFAULT_gc = (0x00<<0) ; EVOUTA: PA2
+  PORTMUX_EVOUTA_ALT1_gc = (0x01<<0)  ; EVOUTA: PA7
+  
+  ; Event Output B select
+  PORTMUX_EVOUTB_DEFAULT_gc = (0x00<<1) ; EVOUTB: PB2
+  
+  ; Event Output C select
+  PORTMUX_EVOUTC_DEFAULT_gc = (0x00<<2) ; EVOUTC: PC2
+  PORTMUX_EVOUTC_ALT1_gc = (0x01<<2)  ; EVOUTC: PC7
+  
+  ; Event Output D select
+  PORTMUX_EVOUTD_DEFAULT_gc = (0x00<<3) ; EVOUTD: PD2
+  PORTMUX_EVOUTD_ALT1_gc = (0x01<<3)  ; EVOUTD: PD7
+  
+  ; Event Output E select
+  PORTMUX_EVOUTE_DEFAULT_gc = (0x00<<4) ; EVOUTE: PE2
+  
+  ; Event Output F select
+  PORTMUX_EVOUTF_DEFAULT_gc = (0x00<<5) ; EVOUTF: PF2
+  
+  ; SPI0 Signals select
+  PORTMUX_SPI0_DEFAULT_gc = (0x00<<0) ; MOSI: PA4, MISO: PA5, SCK: PA6, SS: PA7
+  PORTMUX_SPI0_ALT1_gc = (0x01<<0)    ; MOSI: PE0, MISO: PE1, SCK: PE2, SS: PE3
+  PORTMUX_SPI0_NONE_gc = (0x03<<0)    ; Not connected to any pins
+  
+  ; SPI1 Signals select
+  PORTMUX_SPI1_DEFAULT_gc = (0x00<<2) ; MOSI: PC0, MISO: PC1, SCK: PC2, SS: PC3
+  PORTMUX_SPI1_ALT1_gc = (0x01<<2)    ; MOSI: PC4, MISO: PC5, SCK: PC6, SS: PC7
+  PORTMUX_SPI1_ALT2_gc = (0x02<<2)    ; MOSI: PB4, MISO: PB5, SCK: -, SS: -
+  PORTMUX_SPI1_NONE_gc = (0x03<<2)    ; Not connected to any pins
+  
+  ; TCA0 Signals select
+  PORTMUX_TCA0_PORTA_gc = (0x00<<0)   ; WOn: PA0, PA1, PA2, PA3, PA4, PA5
+  PORTMUX_TCA0_PORTB_gc = (0x01<<0)   ; WOn: PB0, PB1, PB2, PB3, PB4, PB5
+  PORTMUX_TCA0_PORTC_gc = (0x02<<0)   ; WOn: PC0, PC1, PC2, PC3, PC4, PC5
+  PORTMUX_TCA0_PORTD_gc = (0x03<<0)   ; WOn: PD0, PD1, PD2, PD3, PD4, PD5
+  PORTMUX_TCA0_PORTE_gc = (0x04<<0)   ; WOn: PE0, PE1, PE2, PE3, -, -
+  PORTMUX_TCA0_PORTF_gc = (0x05<<0)   ; WOn: PF0, PF1, PF2, PF3, PF4, PF5
+  
+  ; TCA1 Signals select
+  PORTMUX_TCA1_PORTB_gc = (0x00<<3)   ; WOn: PB0, PB1, PB2, PB3, PB4, PB5
+  PORTMUX_TCA1_PORTC_gc = (0x01<<3)   ; WOn: PC4, PC5, PC6
+  
+  ; TCB0 Output select
+  PORTMUX_TCB0_DEFAULT_gc = (0x00<<0) ; WO: PA2
+  PORTMUX_TCB0_ALT1_gc = (0x01<<0)    ; WO: PF4
+  
+  ; TCB1 Output select
+  PORTMUX_TCB1_DEFAULT_gc = (0x00<<1) ; WO: PA3
+  PORTMUX_TCB1_ALT1_gc = (0x01<<1)    ; WO: PF5
+  
+  ; TCB2 Output select
+  PORTMUX_TCB2_DEFAULT_gc = (0x00<<2) ; WO: PC0
+  PORTMUX_TCB2_ALT1_gc = (0x01<<2)    ; WO: PB4
+  
+  ; TCB3 Output select
+  PORTMUX_TCB3_DEFAULT_gc = (0x00<<3) ; WO: PB5
+  PORTMUX_TCB3_ALT1_gc = (0x01<<3)    ; WO: PC1
+  
+  ; TCD0 Signals select
+  PORTMUX_TCD0_DEFAULT_gc = (0x00<<0) ; WOx: PA4, PA5, PA6, PA7
+  PORTMUX_TCD0_ALT1_gc = (0x01<<0)    ; WOx: PB4, PB5, -, -
+  PORTMUX_TCD0_ALT2_gc = (0x02<<0)    ; WOx: PF0, PF1, PF2, PF3
+  
+  ; TWI0 Signals select
+  PORTMUX_TWI0_DEFAULT_gc = (0x00<<0) ; SDA: PA2, SCL: PA3. Dual mode: SDA: PC2, SCL: PC3.
+  PORTMUX_TWI0_ALT1_gc = (0x01<<0)    ; SDA: PA2, SCL: PA3. Dual mode: SDA: PC6, SCL: PC7.
+  PORTMUX_TWI0_ALT2_gc = (0x02<<0)    ; SDA: PC2, SCL: PC3. Dual mode: SDA: PC6, SCL: PC7.
+  
+  ; TWI1 Signals select
+  PORTMUX_TWI1_DEFAULT_gc = (0x00<<2) ; SDA: PF2, SCL: PF3. Dual mode: SDA: PB2, SCL: PB3.
+  PORTMUX_TWI1_ALT1_gc = (0x01<<2)    ; SDA: PF2, SCL: PF3. Dual mode: SDA: -, SCL: -.
+  PORTMUX_TWI1_ALT2_gc = (0x02<<2)    ; SDA: PB2, SCL: PB3. Dual mode: SDA: -, SCL: -.
+  
+  ; USART0 Signals select
+  PORTMUX_USART0_DEFAULT_gc = (0x00<<0) ; TxD: PA0, RxD: PA1, XCK: PA2, XDIR: PA3
+  PORTMUX_USART0_ALT1_gc = (0x01<<0)  ; TxD: PA4, RxD: PA5, XCK: PA6, XDIR: PA7
+  PORTMUX_USART0_NONE_gc = (0x03<<0)  ; Not connected to any pins
+  
+  ; USART1 Signals select
+  PORTMUX_USART1_DEFAULT_gc = (0x00<<2) ; TxD: PC0, RxD: PC1, XCK: PC2, XDIR: PC3
+  PORTMUX_USART1_ALT1_gc = (0x01<<2)  ; TxD: PC4, RxD: PC5, XCK: PC6, XDIR: PC7
+  PORTMUX_USART1_NONE_gc = (0x03<<2)  ; Not connected to any pins
+  
+  ; USART2 Signals select
+  PORTMUX_USART2_DEFAULT_gc = (0x00<<4) ; TxD: PF0, RxD: PF1, XCK: PF2, XDIR: PF3
+  PORTMUX_USART2_ALT1_gc = (0x01<<4)  ; TxD: PF4, RxD: PF5, XDIR: PF3
+  PORTMUX_USART2_NONE_gc = (0x03<<4)  ; Not connected to any pins
+  
+  ; USART3  Signals select
+  PORTMUX_USART3_DEFAULT_gc = (0x00<<6) ; TxD: PB0, RxD: PB1, XCK: PB2, XDIR: PB3
+  PORTMUX_USART3_ALT1_gc = (0x01<<6)  ; TxD: PB4, RxD: PB5, XCK: -, XDIR: -
+  PORTMUX_USART3_NONE_gc = (0x03<<6)  ; Not connected to any pins
+  
+  ; USART4 Signals select
+  PORTMUX_USART4_DEFAULT_gc = (0x00<<0) ; TxD: PE0, RxD: PE1, XCK: PE2, XDIR: PE3
+  PORTMUX_USART4_NONE_gc = (0x03<<0)  ; Not connected to any pins
+  
+  ; Zero Cross Detector 0 Output select
+  PORTMUX_ZCD0_DEFAULT_gc = (0x00<<0) ; OUT: PA7
+  PORTMUX_ZCD0_ALT1_gc = (0x01<<0)    ; OUT: PC7
+  
+  ; Zero Cross Detector 1 Output select
+  PORTMUX_ZCD1_DEFAULT_gc = (0x00<<1) ; OUT: PA7
+  PORTMUX_ZCD1_ALT1_gc = (0x01<<1)    ; OUT: PC7
+  
+  ; Zero Cross Detector 2 Output select
+  PORTMUX_ZCD2_DEFAULT_gc = (0x00<<2) ; OUT: PA7
+  PORTMUX_ZCD2_ALT1_gc = (0x01<<2)    ; OUT: PC7
   
   
   ;*************************************************************************
-  ;** GPR - General Purpose Registers
+  ;** RSTCTRL - Reset controller
   ;*************************************************************************
   
+  ; RSTCTRL_RSTFR masks
+  RSTCTRL_PORF_bm = 0x01              ; Power on Reset flag bit mask
+  RSTCTRL_PORF_bp = 0                 ; Power on Reset flag bit position
+  RSTCTRL_BORF_bm = 0x02              ; Brown out detector Reset flag bit mask
+  RSTCTRL_BORF_bp = 1                 ; Brown out detector Reset flag bit position
+  RSTCTRL_EXTRF_bm = 0x04             ; External Reset flag bit mask
+  RSTCTRL_EXTRF_bp = 2                ; External Reset flag bit position
+  RSTCTRL_WDRF_bm = 0x08              ; Watch dog Reset flag bit mask
+  RSTCTRL_WDRF_bp = 3                 ; Watch dog Reset flag bit position
+  RSTCTRL_SWRF_bm = 0x10              ; Software Reset flag bit mask
+  RSTCTRL_SWRF_bp = 4                 ; Software Reset flag bit position
+  RSTCTRL_UPDIRF_bm = 0x20            ; UPDI Reset flag bit mask
+  RSTCTRL_UPDIRF_bp = 5               ; UPDI Reset flag bit position
   
-  ;*************************************************************************
-  ;** LOCK - Lockbits
-  ;*************************************************************************
-  
-  ; LOCK_KEY masks
-  LOCK_KEY_gm = 0xFFFFFFFF            ; Lock Key group mask
-  LOCK_KEY_gp = 0                     ; Lock Key group position
-  LOCK_KEY_0_bm = (1<<0)              ; Lock Key bit 0 mask
-  LOCK_KEY_0_bp = 0                   ; Lock Key bit 0 position
-  LOCK_KEY_1_bm = (1<<1)              ; Lock Key bit 1 mask
-  LOCK_KEY_1_bp = 1                   ; Lock Key bit 1 position
-  LOCK_KEY_2_bm = (1<<2)              ; Lock Key bit 2 mask
-  LOCK_KEY_2_bp = 2                   ; Lock Key bit 2 position
-  LOCK_KEY_3_bm = (1<<3)              ; Lock Key bit 3 mask
-  LOCK_KEY_3_bp = 3                   ; Lock Key bit 3 position
-  LOCK_KEY_4_bm = (1<<4)              ; Lock Key bit 4 mask
-  LOCK_KEY_4_bp = 4                   ; Lock Key bit 4 position
-  LOCK_KEY_5_bm = (1<<5)              ; Lock Key bit 5 mask
-  LOCK_KEY_5_bp = 5                   ; Lock Key bit 5 position
-  LOCK_KEY_6_bm = (1<<6)              ; Lock Key bit 6 mask
-  LOCK_KEY_6_bp = 6                   ; Lock Key bit 6 position
-  LOCK_KEY_7_bm = (1<<7)              ; Lock Key bit 7 mask
-  LOCK_KEY_7_bp = 7                   ; Lock Key bit 7 position
-  LOCK_KEY_8_bm = (1<<8)              ; Lock Key bit 8 mask
-  LOCK_KEY_8_bp = 8                   ; Lock Key bit 8 position
-  LOCK_KEY_9_bm = (1<<9)              ; Lock Key bit 9 mask
-  LOCK_KEY_9_bp = 9                   ; Lock Key bit 9 position
-  LOCK_KEY_10_bm = (1<<10)            ; Lock Key bit 10 mask
-  LOCK_KEY_10_bp = 10                 ; Lock Key bit 10 position
-  LOCK_KEY_11_bm = (1<<11)            ; Lock Key bit 11 mask
-  LOCK_KEY_11_bp = 11                 ; Lock Key bit 11 position
-  LOCK_KEY_12_bm = (1<<12)            ; Lock Key bit 12 mask
-  LOCK_KEY_12_bp = 12                 ; Lock Key bit 12 position
-  LOCK_KEY_13_bm = (1<<13)            ; Lock Key bit 13 mask
-  LOCK_KEY_13_bp = 13                 ; Lock Key bit 13 position
-  LOCK_KEY_14_bm = (1<<14)            ; Lock Key bit 14 mask
-  LOCK_KEY_14_bp = 14                 ; Lock Key bit 14 position
-  LOCK_KEY_15_bm = (1<<15)            ; Lock Key bit 15 mask
-  LOCK_KEY_15_bp = 15                 ; Lock Key bit 15 position
-  LOCK_KEY_16_bm = (1<<16)            ; Lock Key bit 16 mask
-  LOCK_KEY_16_bp = 16                 ; Lock Key bit 16 position
-  LOCK_KEY_17_bm = (1<<17)            ; Lock Key bit 17 mask
-  LOCK_KEY_17_bp = 17                 ; Lock Key bit 17 position
-  LOCK_KEY_18_bm = (1<<18)            ; Lock Key bit 18 mask
-  LOCK_KEY_18_bp = 18                 ; Lock Key bit 18 position
-  LOCK_KEY_19_bm = (1<<19)            ; Lock Key bit 19 mask
-  LOCK_KEY_19_bp = 19                 ; Lock Key bit 19 position
-  LOCK_KEY_20_bm = (1<<20)            ; Lock Key bit 20 mask
-  LOCK_KEY_20_bp = 20                 ; Lock Key bit 20 position
-  LOCK_KEY_21_bm = (1<<21)            ; Lock Key bit 21 mask
-  LOCK_KEY_21_bp = 21                 ; Lock Key bit 21 position
-  LOCK_KEY_22_bm = (1<<22)            ; Lock Key bit 22 mask
-  LOCK_KEY_22_bp = 22                 ; Lock Key bit 22 position
-  LOCK_KEY_23_bm = (1<<23)            ; Lock Key bit 23 mask
-  LOCK_KEY_23_bp = 23                 ; Lock Key bit 23 position
-  LOCK_KEY_24_bm = (1<<24)            ; Lock Key bit 24 mask
-  LOCK_KEY_24_bp = 24                 ; Lock Key bit 24 position
-  LOCK_KEY_25_bm = (1<<25)            ; Lock Key bit 25 mask
-  LOCK_KEY_25_bp = 25                 ; Lock Key bit 25 position
-  LOCK_KEY_26_bm = (1<<26)            ; Lock Key bit 26 mask
-  LOCK_KEY_26_bp = 26                 ; Lock Key bit 26 position
-  LOCK_KEY_27_bm = (1<<27)            ; Lock Key bit 27 mask
-  LOCK_KEY_27_bp = 27                 ; Lock Key bit 27 position
-  LOCK_KEY_28_bm = (1<<28)            ; Lock Key bit 28 mask
-  LOCK_KEY_28_bp = 28                 ; Lock Key bit 28 position
-  LOCK_KEY_29_bm = (1<<29)            ; Lock Key bit 29 mask
-  LOCK_KEY_29_bp = 29                 ; Lock Key bit 29 position
-  LOCK_KEY_30_bm = (1<<30)            ; Lock Key bit 30 mask
-  LOCK_KEY_30_bp = 30                 ; Lock Key bit 30 position
-  LOCK_KEY_31_bm = (1<<31)            ; Lock Key bit 31 mask
-  LOCK_KEY_31_bp = 31                 ; Lock Key bit 31 position
-  
-  ; Lock Key select
-  LOCK_KEY_NOLOCK_gc = (0x5CC5C55C<<0) ; No locks
-  LOCK_KEY_RWLOCK_gc = (0xA33A3AA3<<0) ; Read and write lock
+  ; RSTCTRL_SWRR masks
+  RSTCTRL_SWRST_bm = 0x01             ; Software reset enable bit mask
+  RSTCTRL_SWRST_bp = 0                ; Software reset enable bit position
   
   
   ;*************************************************************************
-  ;** MVIO - Multi-Voltage I/O
+  ;** RTC - Real-Time Counter
   ;*************************************************************************
   
-  ; MVIO_INTCTRL masks
-  MVIO_VDDIO2IE_bm = 0x01             ; VDDIO2 Interrupt Enable bit mask
-  MVIO_VDDIO2IE_bp = 0                ; VDDIO2 Interrupt Enable bit position
+  ; RTC_CTRLA masks
+  RTC_RTCEN_bm = 0x01                 ; Enable bit mask
+  RTC_RTCEN_bp = 0                    ; Enable bit position
+  RTC_CORREN_bm = 0x04                ; Correction enable bit mask
+  RTC_CORREN_bp = 2                   ; Correction enable bit position
+  RTC_PRESCALER_gm = 0x78             ; Prescaling Factor group mask
+  RTC_PRESCALER_gp = 3                ; Prescaling Factor group position
+  RTC_PRESCALER_0_bm = (1<<3)         ; Prescaling Factor bit 0 mask
+  RTC_PRESCALER_0_bp = 3              ; Prescaling Factor bit 0 position
+  RTC_PRESCALER_1_bm = (1<<4)         ; Prescaling Factor bit 1 mask
+  RTC_PRESCALER_1_bp = 4              ; Prescaling Factor bit 1 position
+  RTC_PRESCALER_2_bm = (1<<5)         ; Prescaling Factor bit 2 mask
+  RTC_PRESCALER_2_bp = 5              ; Prescaling Factor bit 2 position
+  RTC_PRESCALER_3_bm = (1<<6)         ; Prescaling Factor bit 3 mask
+  RTC_PRESCALER_3_bp = 6              ; Prescaling Factor bit 3 position
+  RTC_RUNSTDBY_bm = 0x80              ; Run In Standby bit mask
+  RTC_RUNSTDBY_bp = 7                 ; Run In Standby bit position
   
-  ; MVIO_INTFLAGS masks
-  MVIO_VDDIO2IF_bm = 0x01             ; VDDIO2 Interrupt Flag bit mask
-  MVIO_VDDIO2IF_bp = 0                ; VDDIO2 Interrupt Flag bit position
+  ; RTC_STATUS masks
+  RTC_CTRLABUSY_bm = 0x01             ; CTRLA Synchronization Busy Flag bit mask
+  RTC_CTRLABUSY_bp = 0                ; CTRLA Synchronization Busy Flag bit position
+  RTC_CNTBUSY_bm = 0x02               ; Count Synchronization Busy Flag bit mask
+  RTC_CNTBUSY_bp = 1                  ; Count Synchronization Busy Flag bit position
+  RTC_PERBUSY_bm = 0x04               ; Period Synchronization Busy Flag bit mask
+  RTC_PERBUSY_bp = 2                  ; Period Synchronization Busy Flag bit position
+  RTC_CMPBUSY_bm = 0x08               ; Comparator Synchronization Busy Flag bit mask
+  RTC_CMPBUSY_bp = 3                  ; Comparator Synchronization Busy Flag bit position
   
-  ; MVIO_STATUS masks
-  MVIO_VDDIO2S_bm = 0x01              ; VDDIO2 Status bit mask
-  MVIO_VDDIO2S_bp = 0                 ; VDDIO2 Status bit position
+  ; RTC_INTCTRL masks
+  RTC_OVF_bm = 0x01                   ; Overflow Interrupt enable bit mask
+  RTC_OVF_bp = 0                      ; Overflow Interrupt enable bit position
+  RTC_CMP_bm = 0x02                   ; Compare Match Interrupt enable bit mask
+  RTC_CMP_bp = 1                      ; Compare Match Interrupt enable bit position
+  
+  ; RTC_INTFLAGS masks
+  ; Masks for RTC_OVF already defined
+  ; Masks for RTC_CMP already defined
+  
+  ; RTC_DBGCTRL masks
+  RTC_DBGRUN_bm = 0x01                ; Run in debug bit mask
+  RTC_DBGRUN_bp = 0                   ; Run in debug bit position
+  
+  ; RTC_CALIB masks
+  RTC_ERROR_gm = 0x7F                 ; Error Correction Value group mask
+  RTC_ERROR_gp = 0                    ; Error Correction Value group position
+  RTC_ERROR_0_bm = (1<<0)             ; Error Correction Value bit 0 mask
+  RTC_ERROR_0_bp = 0                  ; Error Correction Value bit 0 position
+  RTC_ERROR_1_bm = (1<<1)             ; Error Correction Value bit 1 mask
+  RTC_ERROR_1_bp = 1                  ; Error Correction Value bit 1 position
+  RTC_ERROR_2_bm = (1<<2)             ; Error Correction Value bit 2 mask
+  RTC_ERROR_2_bp = 2                  ; Error Correction Value bit 2 position
+  RTC_ERROR_3_bm = (1<<3)             ; Error Correction Value bit 3 mask
+  RTC_ERROR_3_bp = 3                  ; Error Correction Value bit 3 position
+  RTC_ERROR_4_bm = (1<<4)             ; Error Correction Value bit 4 mask
+  RTC_ERROR_4_bp = 4                  ; Error Correction Value bit 4 position
+  RTC_ERROR_5_bm = (1<<5)             ; Error Correction Value bit 5 mask
+  RTC_ERROR_5_bp = 5                  ; Error Correction Value bit 5 position
+  RTC_ERROR_6_bm = (1<<6)             ; Error Correction Value bit 6 mask
+  RTC_ERROR_6_bp = 6                  ; Error Correction Value bit 6 position
+  RTC_SIGN_bm = 0x80                  ; Error Correction Sign Bit bit mask
+  RTC_SIGN_bp = 7                     ; Error Correction Sign Bit bit position
+  
+  ; RTC_CLKSEL masks
+  RTC_CLKSEL_gm = 0x03                ; Clock Select group mask
+  RTC_CLKSEL_gp = 0                   ; Clock Select group position
+  RTC_CLKSEL_0_bm = (1<<0)            ; Clock Select bit 0 mask
+  RTC_CLKSEL_0_bp = 0                 ; Clock Select bit 0 position
+  RTC_CLKSEL_1_bm = (1<<1)            ; Clock Select bit 1 mask
+  RTC_CLKSEL_1_bp = 1                 ; Clock Select bit 1 position
+  
+  ; RTC_PITCTRLA masks
+  RTC_PITEN_bm = 0x01                 ; Enable bit mask
+  RTC_PITEN_bp = 0                    ; Enable bit position
+  RTC_PERIOD_gm = 0x78                ; Period group mask
+  RTC_PERIOD_gp = 3                   ; Period group position
+  RTC_PERIOD_0_bm = (1<<3)            ; Period bit 0 mask
+  RTC_PERIOD_0_bp = 3                 ; Period bit 0 position
+  RTC_PERIOD_1_bm = (1<<4)            ; Period bit 1 mask
+  RTC_PERIOD_1_bp = 4                 ; Period bit 1 position
+  RTC_PERIOD_2_bm = (1<<5)            ; Period bit 2 mask
+  RTC_PERIOD_2_bp = 5                 ; Period bit 2 position
+  RTC_PERIOD_3_bm = (1<<6)            ; Period bit 3 mask
+  RTC_PERIOD_3_bp = 6                 ; Period bit 3 position
+  
+  ; RTC_PITSTATUS masks
+  RTC_CTRLBUSY_bm = 0x01              ; CTRLA Synchronization Busy Flag bit mask
+  RTC_CTRLBUSY_bp = 0                 ; CTRLA Synchronization Busy Flag bit position
+  
+  ; RTC_PITINTCTRL masks
+  RTC_PI_bm = 0x01                    ; Periodic Interrupt bit mask
+  RTC_PI_bp = 0                       ; Periodic Interrupt bit position
+  
+  ; RTC_PITINTFLAGS masks
+  ; Masks for RTC_PI already defined
+  
+  ; RTC_PITDBGCTRL masks
+  ; Masks for RTC_DBGRUN already defined
+  
+  ; Clock Select
+  RTC_CLKSEL_OSC32K_gc = (0x00<<0)    ; 32.768 kHz from OSC32K
+  RTC_CLKSEL_OSC1K_gc = (0x01<<0)     ; 1.024 kHz from OSC32K
+  RTC_CLKSEL_XOSC32K_gc = (0x02<<0)   ; 32.768 kHz from XOSC32K
+  RTC_CLKSEL_EXTCLK_gc = (0x03<<0)    ; External Clock
+  
+  ; Prescaling Factor select
+  RTC_PRESCALER_DIV1_gc = (0x00<<3)   ; RTC Clock / 1
+  RTC_PRESCALER_DIV2_gc = (0x01<<3)   ; RTC Clock / 2
+  RTC_PRESCALER_DIV4_gc = (0x02<<3)   ; RTC Clock / 4
+  RTC_PRESCALER_DIV8_gc = (0x03<<3)   ; RTC Clock / 8
+  RTC_PRESCALER_DIV16_gc = (0x04<<3)  ; RTC Clock / 16
+  RTC_PRESCALER_DIV32_gc = (0x05<<3)  ; RTC Clock / 32
+  RTC_PRESCALER_DIV64_gc = (0x06<<3)  ; RTC Clock / 64
+  RTC_PRESCALER_DIV128_gc = (0x07<<3) ; RTC Clock / 128
+  RTC_PRESCALER_DIV256_gc = (0x08<<3) ; RTC Clock / 256
+  RTC_PRESCALER_DIV512_gc = (0x09<<3) ; RTC Clock / 512
+  RTC_PRESCALER_DIV1024_gc = (0x0A<<3) ; RTC Clock / 1024
+  RTC_PRESCALER_DIV2048_gc = (0x0B<<3) ; RTC Clock / 2048
+  RTC_PRESCALER_DIV4096_gc = (0x0C<<3) ; RTC Clock / 4096
+  RTC_PRESCALER_DIV8192_gc = (0x0D<<3) ; RTC Clock / 8192
+  RTC_PRESCALER_DIV16384_gc = (0x0E<<3) ; RTC Clock / 16384
+  RTC_PRESCALER_DIV32768_gc = (0x0F<<3) ; RTC Clock / 32768
+  
+  ; Period select
+  RTC_PERIOD_OFF_gc = (0x00<<3)       ; Off
+  RTC_PERIOD_CYC4_gc = (0x01<<3)      ; RTC Clock Cycles 4
+  RTC_PERIOD_CYC8_gc = (0x02<<3)      ; RTC Clock Cycles 8
+  RTC_PERIOD_CYC16_gc = (0x03<<3)     ; RTC Clock Cycles 16
+  RTC_PERIOD_CYC32_gc = (0x04<<3)     ; RTC Clock Cycles 32
+  RTC_PERIOD_CYC64_gc = (0x05<<3)     ; RTC Clock Cycles 64
+  RTC_PERIOD_CYC128_gc = (0x06<<3)    ; RTC Clock Cycles 128
+  RTC_PERIOD_CYC256_gc = (0x07<<3)    ; RTC Clock Cycles 256
+  RTC_PERIOD_CYC512_gc = (0x08<<3)    ; RTC Clock Cycles 512
+  RTC_PERIOD_CYC1024_gc = (0x09<<3)   ; RTC Clock Cycles 1024
+  RTC_PERIOD_CYC2048_gc = (0x0A<<3)   ; RTC Clock Cycles 2048
+  RTC_PERIOD_CYC4096_gc = (0x0B<<3)   ; RTC Clock Cycles 4096
+  RTC_PERIOD_CYC8192_gc = (0x0C<<3)   ; RTC Clock Cycles 8192
+  RTC_PERIOD_CYC16384_gc = (0x0D<<3)  ; RTC Clock Cycles 16384
+  RTC_PERIOD_CYC32768_gc = (0x0E<<3)  ; RTC Clock Cycles 32768
   
   
   ;*************************************************************************
-  ;** NVMCTRL - Non-volatile Memory Controller
+  ;** SIGROW - Signature row
   ;*************************************************************************
   
-  ; NVMCTRL_CTRLA masks
-  NVMCTRL_CMD_gm = 0x7F               ; Command group mask
-  NVMCTRL_CMD_gp = 0                  ; Command group position
-  NVMCTRL_CMD_0_bm = (1<<0)           ; Command bit 0 mask
-  NVMCTRL_CMD_0_bp = 0                ; Command bit 0 position
-  NVMCTRL_CMD_1_bm = (1<<1)           ; Command bit 1 mask
-  NVMCTRL_CMD_1_bp = 1                ; Command bit 1 position
-  NVMCTRL_CMD_2_bm = (1<<2)           ; Command bit 2 mask
-  NVMCTRL_CMD_2_bp = 2                ; Command bit 2 position
-  NVMCTRL_CMD_3_bm = (1<<3)           ; Command bit 3 mask
-  NVMCTRL_CMD_3_bp = 3                ; Command bit 3 position
-  NVMCTRL_CMD_4_bm = (1<<4)           ; Command bit 4 mask
-  NVMCTRL_CMD_4_bp = 4                ; Command bit 4 position
-  NVMCTRL_CMD_5_bm = (1<<5)           ; Command bit 5 mask
-  NVMCTRL_CMD_5_bp = 5                ; Command bit 5 position
-  NVMCTRL_CMD_6_bm = (1<<6)           ; Command bit 6 mask
-  NVMCTRL_CMD_6_bp = 6                ; Command bit 6 position
+  ; SIGROW_TEMPSENSE0 masks
+  SIGROW_TEMPSENSE0_gm = 0xFFFF       ; Temperature Calibration 0 group mask
+  SIGROW_TEMPSENSE0_gp = 0            ; Temperature Calibration 0 group position
+  SIGROW_TEMPSENSE0_0_bm = (1<<0)     ; Temperature Calibration 0 bit 0 mask
+  SIGROW_TEMPSENSE0_0_bp = 0          ; Temperature Calibration 0 bit 0 position
+  SIGROW_TEMPSENSE0_1_bm = (1<<1)     ; Temperature Calibration 0 bit 1 mask
+  SIGROW_TEMPSENSE0_1_bp = 1          ; Temperature Calibration 0 bit 1 position
+  SIGROW_TEMPSENSE0_2_bm = (1<<2)     ; Temperature Calibration 0 bit 2 mask
+  SIGROW_TEMPSENSE0_2_bp = 2          ; Temperature Calibration 0 bit 2 position
+  SIGROW_TEMPSENSE0_3_bm = (1<<3)     ; Temperature Calibration 0 bit 3 mask
+  SIGROW_TEMPSENSE0_3_bp = 3          ; Temperature Calibration 0 bit 3 position
+  SIGROW_TEMPSENSE0_4_bm = (1<<4)     ; Temperature Calibration 0 bit 4 mask
+  SIGROW_TEMPSENSE0_4_bp = 4          ; Temperature Calibration 0 bit 4 position
+  SIGROW_TEMPSENSE0_5_bm = (1<<5)     ; Temperature Calibration 0 bit 5 mask
+  SIGROW_TEMPSENSE0_5_bp = 5          ; Temperature Calibration 0 bit 5 position
+  SIGROW_TEMPSENSE0_6_bm = (1<<6)     ; Temperature Calibration 0 bit 6 mask
+  SIGROW_TEMPSENSE0_6_bp = 6          ; Temperature Calibration 0 bit 6 position
+  SIGROW_TEMPSENSE0_7_bm = (1<<7)     ; Temperature Calibration 0 bit 7 mask
+  SIGROW_TEMPSENSE0_7_bp = 7          ; Temperature Calibration 0 bit 7 position
+  SIGROW_TEMPSENSE0_8_bm = (1<<8)     ; Temperature Calibration 0 bit 8 mask
+  SIGROW_TEMPSENSE0_8_bp = 8          ; Temperature Calibration 0 bit 8 position
+  SIGROW_TEMPSENSE0_9_bm = (1<<9)     ; Temperature Calibration 0 bit 9 mask
+  SIGROW_TEMPSENSE0_9_bp = 9          ; Temperature Calibration 0 bit 9 position
+  SIGROW_TEMPSENSE0_10_bm = (1<<10)   ; Temperature Calibration 0 bit 10 mask
+  SIGROW_TEMPSENSE0_10_bp = 10        ; Temperature Calibration 0 bit 10 position
+  SIGROW_TEMPSENSE0_11_bm = (1<<11)   ; Temperature Calibration 0 bit 11 mask
+  SIGROW_TEMPSENSE0_11_bp = 11        ; Temperature Calibration 0 bit 11 position
+  SIGROW_TEMPSENSE0_12_bm = (1<<12)   ; Temperature Calibration 0 bit 12 mask
+  SIGROW_TEMPSENSE0_12_bp = 12        ; Temperature Calibration 0 bit 12 position
+  SIGROW_TEMPSENSE0_13_bm = (1<<13)   ; Temperature Calibration 0 bit 13 mask
+  SIGROW_TEMPSENSE0_13_bp = 13        ; Temperature Calibration 0 bit 13 position
+  SIGROW_TEMPSENSE0_14_bm = (1<<14)   ; Temperature Calibration 0 bit 14 mask
+  SIGROW_TEMPSENSE0_14_bp = 14        ; Temperature Calibration 0 bit 14 position
+  SIGROW_TEMPSENSE0_15_bm = (1<<15)   ; Temperature Calibration 0 bit 15 mask
+  SIGROW_TEMPSENSE0_15_bp = 15        ; Temperature Calibration 0 bit 15 position
   
-  ; NVMCTRL_CTRLB masks
-  NVMCTRL_APPCODEWP_bm = 0x01         ; Application Code Write Protect bit mask
-  NVMCTRL_APPCODEWP_bp = 0            ; Application Code Write Protect bit position
-  NVMCTRL_BOOTRP_bm = 0x02            ; Boot Read Protect bit mask
-  NVMCTRL_BOOTRP_bp = 1               ; Boot Read Protect bit position
-  NVMCTRL_APPDATAWP_bm = 0x04         ; Application Data Write Protect bit mask
-  NVMCTRL_APPDATAWP_bp = 2            ; Application Data Write Protect bit position
-  NVMCTRL_FLMAP_gm = 0x30             ; Flash Mapping in Data space group mask
-  NVMCTRL_FLMAP_gp = 4                ; Flash Mapping in Data space group position
-  NVMCTRL_FLMAP_0_bm = (1<<4)         ; Flash Mapping in Data space bit 0 mask
-  NVMCTRL_FLMAP_0_bp = 4              ; Flash Mapping in Data space bit 0 position
-  NVMCTRL_FLMAP_1_bm = (1<<5)         ; Flash Mapping in Data space bit 1 mask
-  NVMCTRL_FLMAP_1_bp = 5              ; Flash Mapping in Data space bit 1 position
-  NVMCTRL_FLMAPLOCK_bm = 0x80         ; Flash Mapping Lock bit mask
-  NVMCTRL_FLMAPLOCK_bp = 7            ; Flash Mapping Lock bit position
+  ; SIGROW_TEMPSENSE1 masks
+  SIGROW_TEMPSENSE1_gm = 0xFFFF       ; Temperature Calibration 1 group mask
+  SIGROW_TEMPSENSE1_gp = 0            ; Temperature Calibration 1 group position
+  SIGROW_TEMPSENSE1_0_bm = (1<<0)     ; Temperature Calibration 1 bit 0 mask
+  SIGROW_TEMPSENSE1_0_bp = 0          ; Temperature Calibration 1 bit 0 position
+  SIGROW_TEMPSENSE1_1_bm = (1<<1)     ; Temperature Calibration 1 bit 1 mask
+  SIGROW_TEMPSENSE1_1_bp = 1          ; Temperature Calibration 1 bit 1 position
+  SIGROW_TEMPSENSE1_2_bm = (1<<2)     ; Temperature Calibration 1 bit 2 mask
+  SIGROW_TEMPSENSE1_2_bp = 2          ; Temperature Calibration 1 bit 2 position
+  SIGROW_TEMPSENSE1_3_bm = (1<<3)     ; Temperature Calibration 1 bit 3 mask
+  SIGROW_TEMPSENSE1_3_bp = 3          ; Temperature Calibration 1 bit 3 position
+  SIGROW_TEMPSENSE1_4_bm = (1<<4)     ; Temperature Calibration 1 bit 4 mask
+  SIGROW_TEMPSENSE1_4_bp = 4          ; Temperature Calibration 1 bit 4 position
+  SIGROW_TEMPSENSE1_5_bm = (1<<5)     ; Temperature Calibration 1 bit 5 mask
+  SIGROW_TEMPSENSE1_5_bp = 5          ; Temperature Calibration 1 bit 5 position
+  SIGROW_TEMPSENSE1_6_bm = (1<<6)     ; Temperature Calibration 1 bit 6 mask
+  SIGROW_TEMPSENSE1_6_bp = 6          ; Temperature Calibration 1 bit 6 position
+  SIGROW_TEMPSENSE1_7_bm = (1<<7)     ; Temperature Calibration 1 bit 7 mask
+  SIGROW_TEMPSENSE1_7_bp = 7          ; Temperature Calibration 1 bit 7 position
+  SIGROW_TEMPSENSE1_8_bm = (1<<8)     ; Temperature Calibration 1 bit 8 mask
+  SIGROW_TEMPSENSE1_8_bp = 8          ; Temperature Calibration 1 bit 8 position
+  SIGROW_TEMPSENSE1_9_bm = (1<<9)     ; Temperature Calibration 1 bit 9 mask
+  SIGROW_TEMPSENSE1_9_bp = 9          ; Temperature Calibration 1 bit 9 position
+  SIGROW_TEMPSENSE1_10_bm = (1<<10)   ; Temperature Calibration 1 bit 10 mask
+  SIGROW_TEMPSENSE1_10_bp = 10        ; Temperature Calibration 1 bit 10 position
+  SIGROW_TEMPSENSE1_11_bm = (1<<11)   ; Temperature Calibration 1 bit 11 mask
+  SIGROW_TEMPSENSE1_11_bp = 11        ; Temperature Calibration 1 bit 11 position
+  SIGROW_TEMPSENSE1_12_bm = (1<<12)   ; Temperature Calibration 1 bit 12 mask
+  SIGROW_TEMPSENSE1_12_bp = 12        ; Temperature Calibration 1 bit 12 position
+  SIGROW_TEMPSENSE1_13_bm = (1<<13)   ; Temperature Calibration 1 bit 13 mask
+  SIGROW_TEMPSENSE1_13_bp = 13        ; Temperature Calibration 1 bit 13 position
+  SIGROW_TEMPSENSE1_14_bm = (1<<14)   ; Temperature Calibration 1 bit 14 mask
+  SIGROW_TEMPSENSE1_14_bp = 14        ; Temperature Calibration 1 bit 14 position
+  SIGROW_TEMPSENSE1_15_bm = (1<<15)   ; Temperature Calibration 1 bit 15 mask
+  SIGROW_TEMPSENSE1_15_bp = 15        ; Temperature Calibration 1 bit 15 position
   
-  ; NVMCTRL_STATUS masks
-  NVMCTRL_FBUSY_bm = 0x01             ; Flash busy bit mask
-  NVMCTRL_FBUSY_bp = 0                ; Flash busy bit position
-  NVMCTRL_EEBUSY_bm = 0x02            ; EEPROM busy bit mask
-  NVMCTRL_EEBUSY_bp = 1               ; EEPROM busy bit position
-  NVMCTRL_ERROR_gm = 0x70             ; Write error group mask
-  NVMCTRL_ERROR_gp = 4                ; Write error group position
-  NVMCTRL_ERROR_0_bm = (1<<4)         ; Write error bit 0 mask
-  NVMCTRL_ERROR_0_bp = 4              ; Write error bit 0 position
-  NVMCTRL_ERROR_1_bm = (1<<5)         ; Write error bit 1 mask
-  NVMCTRL_ERROR_1_bp = 5              ; Write error bit 1 position
-  NVMCTRL_ERROR_2_bm = (1<<6)         ; Write error bit 2 mask
-  NVMCTRL_ERROR_2_bp = 6              ; Write error bit 2 position
   
-  ; NVMCTRL_INTCTRL masks
-  NVMCTRL_EEREADY_bm = 0x01           ; EEPROM Ready bit mask
-  NVMCTRL_EEREADY_bp = 0              ; EEPROM Ready bit position
+  ;*************************************************************************
+  ;** SLPCTRL - Sleep Controller
+  ;*************************************************************************
   
-  ; NVMCTRL_INTFLAGS masks
-  ; Masks for NVMCTRL_EEREADY already defined
+  ; SLPCTRL_CTRLA masks
+  SLPCTRL_SEN_bm = 0x01               ; Sleep enable bit mask
+  SLPCTRL_SEN_bp = 0                  ; Sleep enable bit position
+  SLPCTRL_SMODE_gm = 0x06             ; Sleep mode group mask
+  SLPCTRL_SMODE_gp = 1                ; Sleep mode group position
+  SLPCTRL_SMODE_0_bm = (1<<1)         ; Sleep mode bit 0 mask
+  SLPCTRL_SMODE_0_bp = 1              ; Sleep mode bit 0 position
+  SLPCTRL_SMODE_1_bm = (1<<2)         ; Sleep mode bit 1 mask
+  SLPCTRL_SMODE_1_bp = 2              ; Sleep mode bit 1 position
+  
+  ; SLPCTRL_VREGCTRL masks
+  SLPCTRL_PMODE_gm = 0x07             ; Performance Mode group mask
+  SLPCTRL_PMODE_gp = 0                ; Performance Mode group position
+  SLPCTRL_PMODE_0_bm = (1<<0)         ; Performance Mode bit 0 mask
+  SLPCTRL_PMODE_0_bp = 0              ; Performance Mode bit 0 position
+  SLPCTRL_PMODE_1_bm = (1<<1)         ; Performance Mode bit 1 mask
+  SLPCTRL_PMODE_1_bp = 1              ; Performance Mode bit 1 position
+  SLPCTRL_PMODE_2_bm = (1<<2)         ; Performance Mode bit 2 mask
+  SLPCTRL_PMODE_2_bp = 2              ; Performance Mode bit 2 position
+  SLPCTRL_HTLLEN_bm = 0x10            ; High Temperature Low Leakage Enable bit mask
+  SLPCTRL_HTLLEN_bp = 4               ; High Temperature Low Leakage Enable bit position
+  
+  ; Sleep mode select
+  SLPCTRL_SMODE_IDLE_gc = (0x00<<1)   ; Idle mode
+  SLPCTRL_SMODE_STDBY_gc = (0x01<<1)  ; Standby Mode
+  SLPCTRL_SMODE_PDOWN_gc = (0x02<<1)  ; Power-down Mode
+  
+  ; High Temperature Low Leakage Enable select
+  SLPCTRL_HTLLEN_OFF_gc = (0x00<<4)   ; Disabled
+  SLPCTRL_HTLLEN_ON_gc = (0x01<<4)    ; Enabled
+  
+  ; Performance Mode select
+  SLPCTRL_PMODE_AUTO_gc = (0x00<<0)   ;
+  SLPCTRL_PMODE_FULL_gc = (0x01<<0)   ;
+  
+  
+  ;*************************************************************************
+  ;** SPI - Serial Peripheral Interface
+  ;*************************************************************************
+  
+  ; SPI_CTRLA masks
+  SPI_ENABLE_bm = 0x01                ; Enable Module bit mask
+  SPI_ENABLE_bp = 0                   ; Enable Module bit position
+  SPI_PRESC_gm = 0x06                 ; Prescaler group mask
+  SPI_PRESC_gp = 1                    ; Prescaler group position
+  SPI_PRESC_0_bm = (1<<1)             ; Prescaler bit 0 mask
+  SPI_PRESC_0_bp = 1                  ; Prescaler bit 0 position
+  SPI_PRESC_1_bm = (1<<2)             ; Prescaler bit 1 mask
+  SPI_PRESC_1_bp = 2                  ; Prescaler bit 1 position
+  SPI_CLK2X_bm = 0x10                 ; Enable Double Speed bit mask
+  SPI_CLK2X_bp = 4                    ; Enable Double Speed bit position
+  SPI_MASTER_bm = 0x20                ; Host Operation Enable bit mask
+  SPI_MASTER_bp = 5                   ; Host Operation Enable bit position
+  SPI_DORD_bm = 0x40                  ; Data Order Setting bit mask
+  SPI_DORD_bp = 6                     ; Data Order Setting bit position
+  
+  ; SPI_CTRLB masks
+  SPI_MODE_gm = 0x03                  ; SPI Mode group mask
+  SPI_MODE_gp = 0                     ; SPI Mode group position
+  SPI_MODE_0_bm = (1<<0)              ; SPI Mode bit 0 mask
+  SPI_MODE_0_bp = 0                   ; SPI Mode bit 0 position
+  SPI_MODE_1_bm = (1<<1)              ; SPI Mode bit 1 mask
+  SPI_MODE_1_bp = 1                   ; SPI Mode bit 1 position
+  SPI_SSD_bm = 0x04                   ; SPI Select Disable bit mask
+  SPI_SSD_bp = 2                      ; SPI Select Disable bit position
+  SPI_BUFWR_bm = 0x40                 ; Buffer Mode Wait for Receive bit mask
+  SPI_BUFWR_bp = 6                    ; Buffer Mode Wait for Receive bit position
+  SPI_BUFEN_bm = 0x80                 ; Buffer Mode Enable bit mask
+  SPI_BUFEN_bp = 7                    ; Buffer Mode Enable bit position
+  
+  ; SPI_INTCTRL masks
+  SPI_IE_bm = 0x01                    ; Interrupt Enable bit mask
+  SPI_IE_bp = 0                       ; Interrupt Enable bit position
+  SPI_SSIE_bm = 0x10                  ; SPI Select Trigger Interrupt Enable bit mask
+  SPI_SSIE_bp = 4                     ; SPI Select Trigger Interrupt Enable bit position
+  SPI_DREIE_bm = 0x20                 ; Data Register Empty Interrupt Enable bit mask
+  SPI_DREIE_bp = 5                    ; Data Register Empty Interrupt Enable bit position
+  SPI_TXCIE_bm = 0x40                 ; Transfer Complete Interrupt Enable bit mask
+  SPI_TXCIE_bp = 6                    ; Transfer Complete Interrupt Enable bit position
+  SPI_RXCIE_bm = 0x80                 ; Receive Complete Interrupt Enable bit mask
+  SPI_RXCIE_bp = 7                    ; Receive Complete Interrupt Enable bit position
+  
+  ; SPI_INTFLAGS masks
+  SPI_BUFOVF_bm = 0x01                ; Buffer Overflow bit mask
+  SPI_BUFOVF_bp = 0                   ; Buffer Overflow bit position
+  SPI_SSIF_bm = 0x10                  ; SPI Select Trigger Interrupt Flag bit mask
+  SPI_SSIF_bp = 4                     ; SPI Select Trigger Interrupt Flag bit position
+  SPI_DREIF_bm = 0x20                 ; Data Register Empty Interrupt Flag bit mask
+  SPI_DREIF_bp = 5                    ; Data Register Empty Interrupt Flag bit position
+  SPI_TXCIF_bm = 0x40                 ; Transfer Complete Interrupt Flag bit mask
+  SPI_TXCIF_bp = 6                    ; Transfer Complete Interrupt Flag bit position
+  SPI_WRCOL_bm = 0x40                 ; Write Collision bit mask
+  SPI_WRCOL_bp = 6                    ; Write Collision bit position
+  SPI_RXCIF_bm = 0x80                 ; Receive Complete Interrupt Flag bit mask
+  SPI_RXCIF_bp = 7                    ; Receive Complete Interrupt Flag bit position
+  SPI_IF_bm = 0x80                    ; Interrupt Flag bit mask
+  SPI_IF_bp = 7                       ; Interrupt Flag bit position
+  
+  ; Prescaler select
+  SPI_PRESC_DIV4_gc = (0x00<<1)       ; CLK_PER / 4
+  SPI_PRESC_DIV16_gc = (0x01<<1)      ; CLK_PER / 16
+  SPI_PRESC_DIV64_gc = (0x02<<1)      ; CLK_PER / 64
+  SPI_PRESC_DIV128_gc = (0x03<<1)     ; CLK_PER / 128
+  
+  ; SPI Mode select
+  SPI_MODE_0_gc = (0x00<<0)           ; SPI Mode 0
+  SPI_MODE_1_gc = (0x01<<0)           ; SPI Mode 1
+  SPI_MODE_2_gc = (0x02<<0)           ; SPI Mode 2
+  SPI_MODE_3_gc = (0x03<<0)           ; SPI Mode 3
+  
+  
+  ;*************************************************************************
+  ;** SYSCFG - System Configuration Registers
+  ;*************************************************************************
+  
+  ; SYSCFG_OCDMSTATUS masks
+  SYSCFG_OCDMR_bm = 0x01              ; OCD Message Read bit mask
+  SYSCFG_OCDMR_bp = 0                 ; OCD Message Read bit position
+  
+  
+  ;*************************************************************************
+  ;** TCA - 16-bit Timer/Counter Type A
+  ;*************************************************************************
+  
+  ; TCA_SINGLE_CTRLA masks
+  TCA_SINGLE_ENABLE_bm = 0x01         ; Module Enable bit mask
+  TCA_SINGLE_ENABLE_bp = 0            ; Module Enable bit position
+  TCA_SINGLE_CLKSEL_gm = 0x0E         ; Clock Selection group mask
+  TCA_SINGLE_CLKSEL_gp = 1            ; Clock Selection group position
+  TCA_SINGLE_CLKSEL_0_bm = (1<<1)     ; Clock Selection bit 0 mask
+  TCA_SINGLE_CLKSEL_0_bp = 1          ; Clock Selection bit 0 position
+  TCA_SINGLE_CLKSEL_1_bm = (1<<2)     ; Clock Selection bit 1 mask
+  TCA_SINGLE_CLKSEL_1_bp = 2          ; Clock Selection bit 1 position
+  TCA_SINGLE_CLKSEL_2_bm = (1<<3)     ; Clock Selection bit 2 mask
+  TCA_SINGLE_CLKSEL_2_bp = 3          ; Clock Selection bit 2 position
+  TCA_SINGLE_RUNSTDBY_bm = 0x80       ; Run in Standby bit mask
+  TCA_SINGLE_RUNSTDBY_bp = 7          ; Run in Standby bit position
+  
+  ; TCA_SINGLE_CTRLB masks
+  TCA_SINGLE_WGMODE_gm = 0x07         ; Waveform generation mode group mask
+  TCA_SINGLE_WGMODE_gp = 0            ; Waveform generation mode group position
+  TCA_SINGLE_WGMODE_0_bm = (1<<0)     ; Waveform generation mode bit 0 mask
+  TCA_SINGLE_WGMODE_0_bp = 0          ; Waveform generation mode bit 0 position
+  TCA_SINGLE_WGMODE_1_bm = (1<<1)     ; Waveform generation mode bit 1 mask
+  TCA_SINGLE_WGMODE_1_bp = 1          ; Waveform generation mode bit 1 position
+  TCA_SINGLE_WGMODE_2_bm = (1<<2)     ; Waveform generation mode bit 2 mask
+  TCA_SINGLE_WGMODE_2_bp = 2          ; Waveform generation mode bit 2 position
+  TCA_SINGLE_ALUPD_bm = 0x08          ; Auto Lock Update bit mask
+  TCA_SINGLE_ALUPD_bp = 3             ; Auto Lock Update bit position
+  TCA_SINGLE_CMP0EN_bm = 0x10         ; Compare 0 Enable bit mask
+  TCA_SINGLE_CMP0EN_bp = 4            ; Compare 0 Enable bit position
+  TCA_SINGLE_CMP1EN_bm = 0x20         ; Compare 1 Enable bit mask
+  TCA_SINGLE_CMP1EN_bp = 5            ; Compare 1 Enable bit position
+  TCA_SINGLE_CMP2EN_bm = 0x40         ; Compare 2 Enable bit mask
+  TCA_SINGLE_CMP2EN_bp = 6            ; Compare 2 Enable bit position
+  
+  ; TCA_SINGLE_CTRLC masks
+  TCA_SINGLE_CMP0OV_bm = 0x01         ; Compare 0 Waveform Output Value bit mask
+  TCA_SINGLE_CMP0OV_bp = 0            ; Compare 0 Waveform Output Value bit position
+  TCA_SINGLE_CMP1OV_bm = 0x02         ; Compare 1 Waveform Output Value bit mask
+  TCA_SINGLE_CMP1OV_bp = 1            ; Compare 1 Waveform Output Value bit position
+  TCA_SINGLE_CMP2OV_bm = 0x04         ; Compare 2 Waveform Output Value bit mask
+  TCA_SINGLE_CMP2OV_bp = 2            ; Compare 2 Waveform Output Value bit position
+  
+  ; TCA_SINGLE_CTRLD masks
+  TCA_SINGLE_SPLITM_bm = 0x01         ; Split Mode Enable bit mask
+  TCA_SINGLE_SPLITM_bp = 0            ; Split Mode Enable bit position
+  
+  ; TCA_SINGLE_CTRLECLR masks
+  TCA_SINGLE_DIR_bm = 0x01            ; Direction bit mask
+  TCA_SINGLE_DIR_bp = 0               ; Direction bit position
+  TCA_SINGLE_LUPD_bm = 0x02           ; Lock Update bit mask
+  TCA_SINGLE_LUPD_bp = 1              ; Lock Update bit position
+  TCA_SINGLE_CMD_gm = 0x0C            ; Command group mask
+  TCA_SINGLE_CMD_gp = 2               ; Command group position
+  TCA_SINGLE_CMD_0_bm = (1<<2)        ; Command bit 0 mask
+  TCA_SINGLE_CMD_0_bp = 2             ; Command bit 0 position
+  TCA_SINGLE_CMD_1_bm = (1<<3)        ; Command bit 1 mask
+  TCA_SINGLE_CMD_1_bp = 3             ; Command bit 1 position
+  
+  ; TCA_SINGLE_CTRLESET masks
+  ; Masks for TCA_SINGLE_DIR already defined
+  ; Masks for TCA_SINGLE_LUPD already defined
+  ; Masks for TCA_SINGLE_CMD already defined
+  
+  ; TCA_SINGLE_CTRLFCLR masks
+  TCA_SINGLE_PERBV_bm = 0x01          ; Period Buffer Valid bit mask
+  TCA_SINGLE_PERBV_bp = 0             ; Period Buffer Valid bit position
+  TCA_SINGLE_CMP0BV_bm = 0x02         ; Compare 0 Buffer Valid bit mask
+  TCA_SINGLE_CMP0BV_bp = 1            ; Compare 0 Buffer Valid bit position
+  TCA_SINGLE_CMP1BV_bm = 0x04         ; Compare 1 Buffer Valid bit mask
+  TCA_SINGLE_CMP1BV_bp = 2            ; Compare 1 Buffer Valid bit position
+  TCA_SINGLE_CMP2BV_bm = 0x08         ; Compare 2 Buffer Valid bit mask
+  TCA_SINGLE_CMP2BV_bp = 3            ; Compare 2 Buffer Valid bit position
+  
+  ; TCA_SINGLE_CTRLFSET masks
+  ; Masks for TCA_SINGLE_PERBV already defined
+  ; Masks for TCA_SINGLE_CMP0BV already defined
+  ; Masks for TCA_SINGLE_CMP1BV already defined
+  ; Masks for TCA_SINGLE_CMP2BV already defined
+  
+  ; TCA_SINGLE_EVCTRL masks
+  TCA_SINGLE_CNTAEI_bm = 0x01         ; Count on Event Input A bit mask
+  TCA_SINGLE_CNTAEI_bp = 0            ; Count on Event Input A bit position
+  TCA_SINGLE_EVACTA_gm = 0x0E         ; Event Action A group mask
+  TCA_SINGLE_EVACTA_gp = 1            ; Event Action A group position
+  TCA_SINGLE_EVACTA_0_bm = (1<<1)     ; Event Action A bit 0 mask
+  TCA_SINGLE_EVACTA_0_bp = 1          ; Event Action A bit 0 position
+  TCA_SINGLE_EVACTA_1_bm = (1<<2)     ; Event Action A bit 1 mask
+  TCA_SINGLE_EVACTA_1_bp = 2          ; Event Action A bit 1 position
+  TCA_SINGLE_EVACTA_2_bm = (1<<3)     ; Event Action A bit 2 mask
+  TCA_SINGLE_EVACTA_2_bp = 3          ; Event Action A bit 2 position
+  TCA_SINGLE_CNTBEI_bm = 0x10         ; Count on Event Input B bit mask
+  TCA_SINGLE_CNTBEI_bp = 4            ; Count on Event Input B bit position
+  TCA_SINGLE_EVACTB_gm = 0xE0         ; Event Action B group mask
+  TCA_SINGLE_EVACTB_gp = 5            ; Event Action B group position
+  TCA_SINGLE_EVACTB_0_bm = (1<<5)     ; Event Action B bit 0 mask
+  TCA_SINGLE_EVACTB_0_bp = 5          ; Event Action B bit 0 position
+  TCA_SINGLE_EVACTB_1_bm = (1<<6)     ; Event Action B bit 1 mask
+  TCA_SINGLE_EVACTB_1_bp = 6          ; Event Action B bit 1 position
+  TCA_SINGLE_EVACTB_2_bm = (1<<7)     ; Event Action B bit 2 mask
+  TCA_SINGLE_EVACTB_2_bp = 7          ; Event Action B bit 2 position
+  
+  ; TCA_SINGLE_INTCTRL masks
+  TCA_SINGLE_OVF_bm = 0x01            ; Overflow Interrupt bit mask
+  TCA_SINGLE_OVF_bp = 0               ; Overflow Interrupt bit position
+  TCA_SINGLE_CMP0_bm = 0x10           ; Compare 0 Interrupt bit mask
+  TCA_SINGLE_CMP0_bp = 4              ; Compare 0 Interrupt bit position
+  TCA_SINGLE_CMP1_bm = 0x20           ; Compare 1 Interrupt bit mask
+  TCA_SINGLE_CMP1_bp = 5              ; Compare 1 Interrupt bit position
+  TCA_SINGLE_CMP2_bm = 0x40           ; Compare 2 Interrupt bit mask
+  TCA_SINGLE_CMP2_bp = 6              ; Compare 2 Interrupt bit position
+  
+  ; TCA_SINGLE_INTFLAGS masks
+  ; Masks for TCA_SINGLE_OVF already defined
+  ; Masks for TCA_SINGLE_CMP0 already defined
+  ; Masks for TCA_SINGLE_CMP1 already defined
+  ; Masks for TCA_SINGLE_CMP2 already defined
+  
+  ; TCA_SINGLE_DBGCTRL masks
+  TCA_SINGLE_DBGRUN_bm = 0x01         ; Debug Run bit mask
+  TCA_SINGLE_DBGRUN_bp = 0            ; Debug Run bit position
+  
+  ; Masks for CTRLA already defined
+  ; Masks for CTRLB already defined
+  ; Masks for CTRLC already defined
+  ; Masks for CTRLD already defined
+  ; Masks for CTRLECLR already defined
+  ; Masks for CTRLESET already defined
+  ; Masks for INTCTRL already defined
+  ; Masks for INTFLAGS already defined
+  ; Masks for DBGCTRL already defined
+  ; TCA_SPLIT_CTRLA masks
+  TCA_SPLIT_ENABLE_bm = 0x01          ; Module Enable bit mask
+  TCA_SPLIT_ENABLE_bp = 0             ; Module Enable bit position
+  TCA_SPLIT_CLKSEL_gm = 0x0E          ; Clock Selection group mask
+  TCA_SPLIT_CLKSEL_gp = 1             ; Clock Selection group position
+  TCA_SPLIT_CLKSEL_0_bm = (1<<1)      ; Clock Selection bit 0 mask
+  TCA_SPLIT_CLKSEL_0_bp = 1           ; Clock Selection bit 0 position
+  TCA_SPLIT_CLKSEL_1_bm = (1<<2)      ; Clock Selection bit 1 mask
+  TCA_SPLIT_CLKSEL_1_bp = 2           ; Clock Selection bit 1 position
+  TCA_SPLIT_CLKSEL_2_bm = (1<<3)      ; Clock Selection bit 2 mask
+  TCA_SPLIT_CLKSEL_2_bp = 3           ; Clock Selection bit 2 position
+  TCA_SPLIT_RUNSTDBY_bm = 0x80        ; Run in Standby bit mask
+  TCA_SPLIT_RUNSTDBY_bp = 7           ; Run in Standby bit position
+  
+  ; TCA_SPLIT_CTRLB masks
+  TCA_SPLIT_LCMP0EN_bm = 0x01         ; Low Compare 0 Enable bit mask
+  TCA_SPLIT_LCMP0EN_bp = 0            ; Low Compare 0 Enable bit position
+  TCA_SPLIT_LCMP1EN_bm = 0x02         ; Low Compare 1 Enable bit mask
+  TCA_SPLIT_LCMP1EN_bp = 1            ; Low Compare 1 Enable bit position
+  TCA_SPLIT_LCMP2EN_bm = 0x04         ; Low Compare 2 Enable bit mask
+  TCA_SPLIT_LCMP2EN_bp = 2            ; Low Compare 2 Enable bit position
+  TCA_SPLIT_HCMP0EN_bm = 0x10         ; High Compare 0 Enable bit mask
+  TCA_SPLIT_HCMP0EN_bp = 4            ; High Compare 0 Enable bit position
+  TCA_SPLIT_HCMP1EN_bm = 0x20         ; High Compare 1 Enable bit mask
+  TCA_SPLIT_HCMP1EN_bp = 5            ; High Compare 1 Enable bit position
+  TCA_SPLIT_HCMP2EN_bm = 0x40         ; High Compare 2 Enable bit mask
+  TCA_SPLIT_HCMP2EN_bp = 6            ; High Compare 2 Enable bit position
+  
+  ; TCA_SPLIT_CTRLC masks
+  TCA_SPLIT_LCMP0OV_bm = 0x01         ; Low Compare 0 Output Value bit mask
+  TCA_SPLIT_LCMP0OV_bp = 0            ; Low Compare 0 Output Value bit position
+  TCA_SPLIT_LCMP1OV_bm = 0x02         ; Low Compare 1 Output Value bit mask
+  TCA_SPLIT_LCMP1OV_bp = 1            ; Low Compare 1 Output Value bit position
+  TCA_SPLIT_LCMP2OV_bm = 0x04         ; Low Compare 2 Output Value bit mask
+  TCA_SPLIT_LCMP2OV_bp = 2            ; Low Compare 2 Output Value bit position
+  TCA_SPLIT_HCMP0OV_bm = 0x10         ; High Compare 0 Output Value bit mask
+  TCA_SPLIT_HCMP0OV_bp = 4            ; High Compare 0 Output Value bit position
+  TCA_SPLIT_HCMP1OV_bm = 0x20         ; High Compare 1 Output Value bit mask
+  TCA_SPLIT_HCMP1OV_bp = 5            ; High Compare 1 Output Value bit position
+  TCA_SPLIT_HCMP2OV_bm = 0x40         ; High Compare 2 Output Value bit mask
+  TCA_SPLIT_HCMP2OV_bp = 6            ; High Compare 2 Output Value bit position
+  
+  ; TCA_SPLIT_CTRLD masks
+  TCA_SPLIT_SPLITM_bm = 0x01          ; Split Mode Enable bit mask
+  TCA_SPLIT_SPLITM_bp = 0             ; Split Mode Enable bit position
+  
+  ; TCA_SPLIT_CTRLECLR masks
+  TCA_SPLIT_CMDEN_gm = 0x03           ; Command Enable group mask
+  TCA_SPLIT_CMDEN_gp = 0              ; Command Enable group position
+  TCA_SPLIT_CMDEN_0_bm = (1<<0)       ; Command Enable bit 0 mask
+  TCA_SPLIT_CMDEN_0_bp = 0            ; Command Enable bit 0 position
+  TCA_SPLIT_CMDEN_1_bm = (1<<1)       ; Command Enable bit 1 mask
+  TCA_SPLIT_CMDEN_1_bp = 1            ; Command Enable bit 1 position
+  TCA_SPLIT_CMD_gm = 0x0C             ; Command group mask
+  TCA_SPLIT_CMD_gp = 2                ; Command group position
+  TCA_SPLIT_CMD_0_bm = (1<<2)         ; Command bit 0 mask
+  TCA_SPLIT_CMD_0_bp = 2              ; Command bit 0 position
+  TCA_SPLIT_CMD_1_bm = (1<<3)         ; Command bit 1 mask
+  TCA_SPLIT_CMD_1_bp = 3              ; Command bit 1 position
+  
+  ; TCA_SPLIT_CTRLESET masks
+  ; Masks for TCA_SPLIT_CMDEN already defined
+  ; Masks for TCA_SPLIT_CMD already defined
+  
+  ; TCA_SPLIT_INTCTRL masks
+  TCA_SPLIT_LUNF_bm = 0x01            ; Low Underflow Interrupt Enable bit mask
+  TCA_SPLIT_LUNF_bp = 0               ; Low Underflow Interrupt Enable bit position
+  TCA_SPLIT_HUNF_bm = 0x02            ; High Underflow Interrupt Enable bit mask
+  TCA_SPLIT_HUNF_bp = 1               ; High Underflow Interrupt Enable bit position
+  TCA_SPLIT_LCMP0_bm = 0x10           ; Low Compare 0 Interrupt Enable bit mask
+  TCA_SPLIT_LCMP0_bp = 4              ; Low Compare 0 Interrupt Enable bit position
+  TCA_SPLIT_LCMP1_bm = 0x20           ; Low Compare 1 Interrupt Enable bit mask
+  TCA_SPLIT_LCMP1_bp = 5              ; Low Compare 1 Interrupt Enable bit position
+  TCA_SPLIT_LCMP2_bm = 0x40           ; Low Compare 2 Interrupt Enable bit mask
+  TCA_SPLIT_LCMP2_bp = 6              ; Low Compare 2 Interrupt Enable bit position
+  
+  ; TCA_SPLIT_INTFLAGS masks
+  ; Masks for TCA_SPLIT_LUNF already defined
+  ; Masks for TCA_SPLIT_HUNF already defined
+  ; Masks for TCA_SPLIT_LCMP0 already defined
+  ; Masks for TCA_SPLIT_LCMP1 already defined
+  ; Masks for TCA_SPLIT_LCMP2 already defined
+  
+  ; TCA_SPLIT_DBGCTRL masks
+  TCA_SPLIT_DBGRUN_bm = 0x01          ; Debug Run bit mask
+  TCA_SPLIT_DBGRUN_bp = 0             ; Debug Run bit position
+  
+  ; Clock Selection
+  TCA_SINGLE_CLKSEL_DIV1_gc = (0x00<<1) ; CLK_PER
+  TCA_SINGLE_CLKSEL_DIV2_gc = (0x01<<1) ; CLK_PER / 2
+  TCA_SINGLE_CLKSEL_DIV4_gc = (0x02<<1) ; CLK_PER / 4
+  TCA_SINGLE_CLKSEL_DIV8_gc = (0x03<<1) ; CLK_PER / 8
+  TCA_SINGLE_CLKSEL_DIV16_gc = (0x04<<1) ; CLK_PER / 16
+  TCA_SINGLE_CLKSEL_DIV64_gc = (0x05<<1) ; CLK_PER / 64
+  TCA_SINGLE_CLKSEL_DIV256_gc = (0x06<<1) ; CLK_PER / 256
+  TCA_SINGLE_CLKSEL_DIV1024_gc = (0x07<<1) ; CLK_PER / 1024
+  
+  ; Waveform generation mode select
+  TCA_SINGLE_WGMODE_NORMAL_gc = (0x00<<0) ; Normal Mode
+  TCA_SINGLE_WGMODE_FRQ_gc = (0x01<<0) ; Frequency Generation Mode
+  TCA_SINGLE_WGMODE_SINGLESLOPE_gc = (0x03<<0) ; Single Slope PWM
+  TCA_SINGLE_WGMODE_DSTOP_gc = (0x05<<0) ; Dual Slope PWM, overflow on TOP
+  TCA_SINGLE_WGMODE_DSBOTH_gc = (0x06<<0) ; Dual Slope PWM, overflow on TOP and BOTTOM
+  TCA_SINGLE_WGMODE_DSBOTTOM_gc = (0x07<<0) ; Dual Slope PWM, overflow on BOTTOM
   
   ; Command select
-  NVMCTRL_CMD_NONE_gc = (0x00<<0)     ; No Command
-  NVMCTRL_CMD_NOOP_gc = (0x01<<0)     ; No Operation
-  NVMCTRL_CMD_FLWR_gc = (0x02<<0)     ; Flash Write
-  NVMCTRL_CMD_FLPER_gc = (0x08<<0)    ; Flash Page Erase
-  NVMCTRL_CMD_FLMPER2_gc = (0x09<<0)  ; Flash Multi-Page Erase 2 pages
-  NVMCTRL_CMD_FLMPER4_gc = (0x0A<<0)  ; Flash Multi-Page Erase 4 pages
-  NVMCTRL_CMD_FLMPER8_gc = (0x0B<<0)  ; Flash Multi-Page Erase 8 pages
-  NVMCTRL_CMD_FLMPER16_gc = (0x0C<<0) ; Flash Multi-Page Erase 16 pages
-  NVMCTRL_CMD_FLMPER32_gc = (0x0D<<0) ; Flash Multi-Page Erase 32 pages
-  NVMCTRL_CMD_EEWR_gc = (0x12<<0)     ; EEPROM Write
-  NVMCTRL_CMD_EEERWR_gc = (0x13<<0)   ; EEPROM Erase and Write
-  NVMCTRL_CMD_EEBER_gc = (0x18<<0)    ; EEPROM Byte Erase
-  NVMCTRL_CMD_EEMBER2_gc = (0x19<<0)  ; EEPROM Multi-Byte Erase 2 bytes
-  NVMCTRL_CMD_EEMBER4_gc = (0x1A<<0)  ; EEPROM Multi-Byte Erase 4 bytes
-  NVMCTRL_CMD_EEMBER8_gc = (0x1B<<0)  ; EEPROM Multi-Byte Erase 8 bytes
-  NVMCTRL_CMD_EEMBER16_gc = (0x1C<<0) ; EEPROM Multi-Byte Erase 16 bytes
-  NVMCTRL_CMD_EEMBER32_gc = (0x1D<<0) ; EEPROM Multi-Byte Erase 32 bytes
-  NVMCTRL_CMD_CHER_gc = (0x20<<0)     ; Chip Erase Command
-  NVMCTRL_CMD_EECHER_gc = (0x30<<0)   ; EEPROM Erase Command
+  TCA_SINGLE_CMD_NONE_gc = (0x00<<2)  ; No Command
+  TCA_SINGLE_CMD_UPDATE_gc = (0x01<<2) ; Force Update
+  TCA_SINGLE_CMD_RESTART_gc = (0x02<<2) ; Force Restart
+  TCA_SINGLE_CMD_RESET_gc = (0x03<<2) ; Force Hard Reset
   
-  ; Flash Mapping in Data space select
-  NVMCTRL_FLMAP_SECTION0_gc = (0x00<<4) ; Flash section 0
-  NVMCTRL_FLMAP_SECTION1_gc = (0x01<<4) ; Flash section 1
-  NVMCTRL_FLMAP_SECTION2_gc = (0x02<<4) ; Flash section 2
-  NVMCTRL_FLMAP_SECTION3_gc = (0x03<<4) ; Flash section 3
+  ; Direction select
+  TCA_SINGLE_DIR_UP_gc = (0x00<<0)    ; Count up
+  TCA_SINGLE_DIR_DOWN_gc = (0x01<<0)  ; Count down
   
-  ; Write error select
-  NVMCTRL_ERROR_NOERROR_gc = (0x00<<4) ; No Error
-  NVMCTRL_ERROR_ILLEGALCMD_gc = (0x01<<4) ; Write command not selected
-  NVMCTRL_ERROR_ILLEGALSADDR_gc = (0x02<<4) ; Write to section not allowed
-  NVMCTRL_ERROR_DOUBLESELECT_gc = (0x03<<4) ; Selecting new write command while write command already seleted
-  NVMCTRL_ERROR_ONGOINGPROG_gc = (0x04<<4) ; Starting a new programming operation before previous is completed
+  ; Event Action A select
+  TCA_SINGLE_EVACTA_CNT_POSEDGE_gc = (0x00<<1) ; Count on positive edge event
+  TCA_SINGLE_EVACTA_CNT_ANYEDGE_gc = (0x01<<1) ; Count on any edge event
+  TCA_SINGLE_EVACTA_CNT_HIGHLVL_gc = (0x02<<1) ; Count on prescaled clock while event line is 1.
+  TCA_SINGLE_EVACTA_UPDOWN_gc = (0x03<<1) ; Count on prescaled clock. Event controls count direction. Up-count when event line is 0, down-count when event line is 1.
+  
+  ; Event Action B select
+  TCA_SINGLE_EVACTB_NONE_gc = (0x00<<5) ; No Action
+  TCA_SINGLE_EVACTB_UPDOWN_gc = (0x03<<5) ; Count on prescaled clock. Event controls count direction. Up-count when event line is 0, down-count when event line is 1.
+  TCA_SINGLE_EVACTB_RESTART_POSEDGE_gc = (0x04<<5) ; Restart counter at positive edge event
+  TCA_SINGLE_EVACTB_RESTART_ANYEDGE_gc = (0x05<<5) ; Restart counter on any edge event
+  TCA_SINGLE_EVACTB_RESTART_HIGHLVL_gc = (0x06<<5) ; Restart counter while event line is 1.
+  
+  ; Clock Selection
+  TCA_SPLIT_CLKSEL_DIV1_gc = (0x00<<1) ; CLK_PER
+  TCA_SPLIT_CLKSEL_DIV2_gc = (0x01<<1) ; CLK_PER / 2
+  TCA_SPLIT_CLKSEL_DIV4_gc = (0x02<<1) ; CLK_PER / 4
+  TCA_SPLIT_CLKSEL_DIV8_gc = (0x03<<1) ; CLK_PER / 8
+  TCA_SPLIT_CLKSEL_DIV16_gc = (0x04<<1) ; CLK_PER / 16
+  TCA_SPLIT_CLKSEL_DIV64_gc = (0x05<<1) ; CLK_PER / 64
+  TCA_SPLIT_CLKSEL_DIV256_gc = (0x06<<1) ; CLK_PER / 256
+  TCA_SPLIT_CLKSEL_DIV1024_gc = (0x07<<1) ; CLK_PER / 1024
+  
+  ; Command select
+  TCA_SPLIT_CMD_NONE_gc = (0x00<<2)   ; No Command
+  TCA_SPLIT_CMD_UPDATE_gc = (0x01<<2) ; Force Update
+  TCA_SPLIT_CMD_RESTART_gc = (0x02<<2) ; Force Restart
+  TCA_SPLIT_CMD_RESET_gc = (0x03<<2)  ; Force Hard Reset
+  
+  ; Command Enable select
+  TCA_SPLIT_CMDEN_NONE_gc = (0x00<<0) ; None
+  TCA_SPLIT_CMDEN_BOTH_gc = (0x03<<0) ; Both low byte and high byte counter
   
   
   ;*************************************************************************
-  ;** OPAMP - Operational Amplifier System
+  ;** TCB - 16-bit Timer Type B
   ;*************************************************************************
   
-  ; OPAMP_CTRLA masks
-  OPAMP_ENABLE_bm = 0x01              ; Op Amp System Enable bit mask
-  OPAMP_ENABLE_bp = 0                 ; Op Amp System Enable bit position
+  ; TCB_CTRLA masks
+  TCB_ENABLE_bm = 0x01                ; Enable bit mask
+  TCB_ENABLE_bp = 0                   ; Enable bit position
+  TCB_CLKSEL_gm = 0x0E                ; Clock Select group mask
+  TCB_CLKSEL_gp = 1                   ; Clock Select group position
+  TCB_CLKSEL_0_bm = (1<<1)            ; Clock Select bit 0 mask
+  TCB_CLKSEL_0_bp = 1                 ; Clock Select bit 0 position
+  TCB_CLKSEL_1_bm = (1<<2)            ; Clock Select bit 1 mask
+  TCB_CLKSEL_1_bp = 2                 ; Clock Select bit 1 position
+  TCB_CLKSEL_2_bm = (1<<3)            ; Clock Select bit 2 mask
+  TCB_CLKSEL_2_bp = 3                 ; Clock Select bit 2 position
+  TCB_SYNCUPD_bm = 0x10               ; Synchronize Update bit mask
+  TCB_SYNCUPD_bp = 4                  ; Synchronize Update bit position
+  TCB_CASCADE_bm = 0x20               ; Cascade two timers bit mask
+  TCB_CASCADE_bp = 5                  ; Cascade two timers bit position
+  TCB_RUNSTDBY_bm = 0x40              ; Run Standby bit mask
+  TCB_RUNSTDBY_bp = 6                 ; Run Standby bit position
   
-  ; OPAMP_DBGCTRL masks
-  OPAMP_DBGRUN_bm = 0x01              ; Run in Debug Mode bit mask
-  OPAMP_DBGRUN_bp = 0                 ; Run in Debug Mode bit position
+  ; TCB_CTRLB masks
+  TCB_CNTMODE_gm = 0x07               ; Timer Mode group mask
+  TCB_CNTMODE_gp = 0                  ; Timer Mode group position
+  TCB_CNTMODE_0_bm = (1<<0)           ; Timer Mode bit 0 mask
+  TCB_CNTMODE_0_bp = 0                ; Timer Mode bit 0 position
+  TCB_CNTMODE_1_bm = (1<<1)           ; Timer Mode bit 1 mask
+  TCB_CNTMODE_1_bp = 1                ; Timer Mode bit 1 position
+  TCB_CNTMODE_2_bm = (1<<2)           ; Timer Mode bit 2 mask
+  TCB_CNTMODE_2_bp = 2                ; Timer Mode bit 2 position
+  TCB_CCMPEN_bm = 0x10                ; Pin Output Enable bit mask
+  TCB_CCMPEN_bp = 4                   ; Pin Output Enable bit position
+  TCB_CCMPINIT_bm = 0x20              ; Pin Initial State bit mask
+  TCB_CCMPINIT_bp = 5                 ; Pin Initial State bit position
+  TCB_ASYNC_bm = 0x40                 ; Asynchronous Enable bit mask
+  TCB_ASYNC_bp = 6                    ; Asynchronous Enable bit position
   
-  ; OPAMP_TIMEBASE masks
-  OPAMP_TIMEBASE_gm = 0x7F            ; Timebase Value group mask
-  OPAMP_TIMEBASE_gp = 0               ; Timebase Value group position
-  OPAMP_TIMEBASE_0_bm = (1<<0)        ; Timebase Value bit 0 mask
-  OPAMP_TIMEBASE_0_bp = 0             ; Timebase Value bit 0 position
-  OPAMP_TIMEBASE_1_bm = (1<<1)        ; Timebase Value bit 1 mask
-  OPAMP_TIMEBASE_1_bp = 1             ; Timebase Value bit 1 position
-  OPAMP_TIMEBASE_2_bm = (1<<2)        ; Timebase Value bit 2 mask
-  OPAMP_TIMEBASE_2_bp = 2             ; Timebase Value bit 2 position
-  OPAMP_TIMEBASE_3_bm = (1<<3)        ; Timebase Value bit 3 mask
-  OPAMP_TIMEBASE_3_bp = 3             ; Timebase Value bit 3 position
-  OPAMP_TIMEBASE_4_bm = (1<<4)        ; Timebase Value bit 4 mask
-  OPAMP_TIMEBASE_4_bp = 4             ; Timebase Value bit 4 position
-  OPAMP_TIMEBASE_5_bm = (1<<5)        ; Timebase Value bit 5 mask
-  OPAMP_TIMEBASE_5_bp = 5             ; Timebase Value bit 5 position
-  OPAMP_TIMEBASE_6_bm = (1<<6)        ; Timebase Value bit 6 mask
-  OPAMP_TIMEBASE_6_bp = 6             ; Timebase Value bit 6 position
+  ; TCB_EVCTRL masks
+  TCB_CAPTEI_bm = 0x01                ; Event Input Enable bit mask
+  TCB_CAPTEI_bp = 0                   ; Event Input Enable bit position
+  TCB_EDGE_bm = 0x10                  ; Event Edge bit mask
+  TCB_EDGE_bp = 4                     ; Event Edge bit position
+  TCB_FILTER_bm = 0x40                ; Input Capture Noise Cancellation Filter bit mask
+  TCB_FILTER_bp = 6                   ; Input Capture Noise Cancellation Filter bit position
   
-  ; OPAMP_PWRCTRL masks
-  OPAMP_IRSEL_bm = 0x01               ; Input Range Select bit mask
-  OPAMP_IRSEL_bp = 0                  ; Input Range Select bit position
+  ; TCB_INTCTRL masks
+  TCB_CAPT_bm = 0x01                  ; Capture or Timeout bit mask
+  TCB_CAPT_bp = 0                     ; Capture or Timeout bit position
+  TCB_OVF_bm = 0x02                   ; Overflow bit mask
+  TCB_OVF_bp = 1                      ; Overflow bit position
   
-  ; OPAMP_OP0CTRLA masks
-  OPAMP_ALWAYSON_bm = 0x01            ; Always On bit mask
-  OPAMP_ALWAYSON_bp = 0               ; Always On bit position
-  OPAMP_EVENTEN_bm = 0x02             ; Enable Events bit mask
-  OPAMP_EVENTEN_bp = 1                ; Enable Events bit position
-  OPAMP_OUTMODE_gm = 0x0C             ; Output Mode group mask
-  OPAMP_OUTMODE_gp = 2                ; Output Mode group position
-  OPAMP_OUTMODE_0_bm = (1<<2)         ; Output Mode bit 0 mask
-  OPAMP_OUTMODE_0_bp = 2              ; Output Mode bit 0 position
-  OPAMP_OUTMODE_1_bm = (1<<3)         ; Output Mode bit 1 mask
-  OPAMP_OUTMODE_1_bp = 3              ; Output Mode bit 1 position
-  OPAMP_RUNSTBY_bm = 0x80             ; Run in Standby Mode bit mask
-  OPAMP_RUNSTBY_bp = 7                ; Run in Standby Mode bit position
+  ; TCB_INTFLAGS masks
+  ; Masks for TCB_CAPT already defined
+  ; Masks for TCB_OVF already defined
   
-  ; OPAMP_OP0STATUS masks
-  OPAMP_SETTLED_bm = 0x01             ; Settled bit mask
-  OPAMP_SETTLED_bp = 0                ; Settled bit position
+  ; TCB_STATUS masks
+  TCB_RUN_bm = 0x01                   ; Run bit mask
+  TCB_RUN_bp = 0                      ; Run bit position
   
-  ; OPAMP_OP0RESMUX masks
-  OPAMP_MUXTOP_gm = 0x03              ; Multiplexer Top group mask
-  OPAMP_MUXTOP_gp = 0                 ; Multiplexer Top group position
-  OPAMP_MUXTOP_0_bm = (1<<0)          ; Multiplexer Top bit 0 mask
-  OPAMP_MUXTOP_0_bp = 0               ; Multiplexer Top bit 0 position
-  OPAMP_MUXTOP_1_bm = (1<<1)          ; Multiplexer Top bit 1 mask
-  OPAMP_MUXTOP_1_bp = 1               ; Multiplexer Top bit 1 position
-  OPAMP_MUXBOT_gm = 0x1C              ; Multiplexer Bottom group mask
-  OPAMP_MUXBOT_gp = 2                 ; Multiplexer Bottom group position
-  OPAMP_MUXBOT_0_bm = (1<<2)          ; Multiplexer Bottom bit 0 mask
-  OPAMP_MUXBOT_0_bp = 2               ; Multiplexer Bottom bit 0 position
-  OPAMP_MUXBOT_1_bm = (1<<3)          ; Multiplexer Bottom bit 1 mask
-  OPAMP_MUXBOT_1_bp = 3               ; Multiplexer Bottom bit 1 position
-  OPAMP_MUXBOT_2_bm = (1<<4)          ; Multiplexer Bottom bit 2 mask
-  OPAMP_MUXBOT_2_bp = 4               ; Multiplexer Bottom bit 2 position
-  OPAMP_MUXWIP_gm = 0xE0              ; Multiplexer Wiper selector group mask
-  OPAMP_MUXWIP_gp = 5                 ; Multiplexer Wiper selector group position
-  OPAMP_MUXWIP_0_bm = (1<<5)          ; Multiplexer Wiper selector bit 0 mask
-  OPAMP_MUXWIP_0_bp = 5               ; Multiplexer Wiper selector bit 0 position
-  OPAMP_MUXWIP_1_bm = (1<<6)          ; Multiplexer Wiper selector bit 1 mask
-  OPAMP_MUXWIP_1_bp = 6               ; Multiplexer Wiper selector bit 1 position
-  OPAMP_MUXWIP_2_bm = (1<<7)          ; Multiplexer Wiper selector bit 2 mask
-  OPAMP_MUXWIP_2_bp = 7               ; Multiplexer Wiper selector bit 2 position
+  ; TCB_DBGCTRL masks
+  TCB_DBGRUN_bm = 0x01                ; Debug Run bit mask
+  TCB_DBGRUN_bp = 0                   ; Debug Run bit position
   
-  ; OPAMP_OP0INMUX masks
-  OPAMP_MUXPOS_gm = 0x07              ; Positive Input Multiplexer group mask
+  ; Clock Select
+  TCB_CLKSEL_DIV1_gc = (0x00<<1)      ; CLK_PER
+  TCB_CLKSEL_DIV2_gc = (0x01<<1)      ; CLK_PER/2
+  TCB_CLKSEL_TCA0_gc = (0x02<<1)      ; Use CLK_TCA from TCA0
+  TCB_CLKSEL_TCA1_gc = (0x03<<1)      ; Use CLK_TCA from TCA1
+  TCB_CLKSEL_EVENT_gc = (0x07<<1)     ; Count on event edge
+  
+  ; Timer Mode select
+  TCB_CNTMODE_INT_gc = (0x00<<0)      ; Periodic Interrupt
+  TCB_CNTMODE_TIMEOUT_gc = (0x01<<0)  ; Periodic Timeout
+  TCB_CNTMODE_CAPT_gc = (0x02<<0)     ; Input Capture Event
+  TCB_CNTMODE_FRQ_gc = (0x03<<0)      ; Input Capture Frequency measurement
+  TCB_CNTMODE_PW_gc = (0x04<<0)       ; Input Capture Pulse-Width measurement
+  TCB_CNTMODE_FRQPW_gc = (0x05<<0)    ; Input Capture Frequency and Pulse-Width measurement
+  TCB_CNTMODE_SINGLE_gc = (0x06<<0)   ; Single Shot
+  TCB_CNTMODE_PWM8_gc = (0x07<<0)     ; 8-bit PWM
+  
+  
+  ;*************************************************************************
+  ;** TCD - Timer Counter D
+  ;*************************************************************************
+  
+  ; TCD_CTRLA masks
+  TCD_ENABLE_bm = 0x01                ; Enable bit mask
+  TCD_ENABLE_bp = 0                   ; Enable bit position
+  TCD_SYNCPRES_gm = 0x06              ; Synchronization prescaler group mask
+  TCD_SYNCPRES_gp = 1                 ; Synchronization prescaler group position
+  TCD_SYNCPRES_0_bm = (1<<1)          ; Synchronization prescaler bit 0 mask
+  TCD_SYNCPRES_0_bp = 1               ; Synchronization prescaler bit 0 position
+  TCD_SYNCPRES_1_bm = (1<<2)          ; Synchronization prescaler bit 1 mask
+  TCD_SYNCPRES_1_bp = 2               ; Synchronization prescaler bit 1 position
+  TCD_CNTPRES_gm = 0x18               ; Counter prescaler group mask
+  TCD_CNTPRES_gp = 3                  ; Counter prescaler group position
+  TCD_CNTPRES_0_bm = (1<<3)           ; Counter prescaler bit 0 mask
+  TCD_CNTPRES_0_bp = 3                ; Counter prescaler bit 0 position
+  TCD_CNTPRES_1_bm = (1<<4)           ; Counter prescaler bit 1 mask
+  TCD_CNTPRES_1_bp = 4                ; Counter prescaler bit 1 position
+  TCD_CLKSEL_gm = 0x60                ; Clock select group mask
+  TCD_CLKSEL_gp = 5                   ; Clock select group position
+  TCD_CLKSEL_0_bm = (1<<5)            ; Clock select bit 0 mask
+  TCD_CLKSEL_0_bp = 5                 ; Clock select bit 0 position
+  TCD_CLKSEL_1_bm = (1<<6)            ; Clock select bit 1 mask
+  TCD_CLKSEL_1_bp = 6                 ; Clock select bit 1 position
+  
+  ; TCD_CTRLB masks
+  TCD_WGMODE_gm = 0x03                ; Waveform generation mode group mask
+  TCD_WGMODE_gp = 0                   ; Waveform generation mode group position
+  TCD_WGMODE_0_bm = (1<<0)            ; Waveform generation mode bit 0 mask
+  TCD_WGMODE_0_bp = 0                 ; Waveform generation mode bit 0 position
+  TCD_WGMODE_1_bm = (1<<1)            ; Waveform generation mode bit 1 mask
+  TCD_WGMODE_1_bp = 1                 ; Waveform generation mode bit 1 position
+  
+  ; TCD_CTRLC masks
+  TCD_CMPOVR_bm = 0x01                ; Compare output value override bit mask
+  TCD_CMPOVR_bp = 0                   ; Compare output value override bit position
+  TCD_AUPDATE_bm = 0x02               ; Auto update bit mask
+  TCD_AUPDATE_bp = 1                  ; Auto update bit position
+  TCD_FIFTY_bm = 0x08                 ; Fifty percent waveform bit mask
+  TCD_FIFTY_bp = 3                    ; Fifty percent waveform bit position
+  TCD_CMPCSEL_bm = 0x40               ; Compare C output select bit mask
+  TCD_CMPCSEL_bp = 6                  ; Compare C output select bit position
+  TCD_CMPDSEL_bm = 0x80               ; Compare D output select bit mask
+  TCD_CMPDSEL_bp = 7                  ; Compare D output select bit position
+  
+  ; TCD_CTRLD masks
+  TCD_CMPAVAL_gm = 0x0F               ; Compare A value group mask
+  TCD_CMPAVAL_gp = 0                  ; Compare A value group position
+  TCD_CMPAVAL_0_bm = (1<<0)           ; Compare A value bit 0 mask
+  TCD_CMPAVAL_0_bp = 0                ; Compare A value bit 0 position
+  TCD_CMPAVAL_1_bm = (1<<1)           ; Compare A value bit 1 mask
+  TCD_CMPAVAL_1_bp = 1                ; Compare A value bit 1 position
+  TCD_CMPAVAL_2_bm = (1<<2)           ; Compare A value bit 2 mask
+  TCD_CMPAVAL_2_bp = 2                ; Compare A value bit 2 position
+  TCD_CMPAVAL_3_bm = (1<<3)           ; Compare A value bit 3 mask
+  TCD_CMPAVAL_3_bp = 3                ; Compare A value bit 3 position
+  TCD_CMPBVAL_gm = 0xF0               ; Compare B value group mask
+  TCD_CMPBVAL_gp = 4                  ; Compare B value group position
+  TCD_CMPBVAL_0_bm = (1<<4)           ; Compare B value bit 0 mask
+  TCD_CMPBVAL_0_bp = 4                ; Compare B value bit 0 position
+  TCD_CMPBVAL_1_bm = (1<<5)           ; Compare B value bit 1 mask
+  TCD_CMPBVAL_1_bp = 5                ; Compare B value bit 1 position
+  TCD_CMPBVAL_2_bm = (1<<6)           ; Compare B value bit 2 mask
+  TCD_CMPBVAL_2_bp = 6                ; Compare B value bit 2 position
+  TCD_CMPBVAL_3_bm = (1<<7)           ; Compare B value bit 3 mask
+  TCD_CMPBVAL_3_bp = 7                ; Compare B value bit 3 position
+  
+  ; TCD_CTRLE masks
+  TCD_SYNCEOC_bm = 0x01               ; Synchronize end of cycle strobe bit mask
+  TCD_SYNCEOC_bp = 0                  ; Synchronize end of cycle strobe bit position
+  TCD_SYNC_bm = 0x02                  ; synchronize strobe bit mask
+  TCD_SYNC_bp = 1                     ; synchronize strobe bit position
+  TCD_RESTART_bm = 0x04               ; Restart strobe bit mask
+  TCD_RESTART_bp = 2                  ; Restart strobe bit position
+  TCD_SCAPTUREA_bm = 0x08             ; Software Capture A Strobe bit mask
+  TCD_SCAPTUREA_bp = 3                ; Software Capture A Strobe bit position
+  TCD_SCAPTUREB_bm = 0x10             ; Software Capture B Strobe bit mask
+  TCD_SCAPTUREB_bp = 4                ; Software Capture B Strobe bit position
+  TCD_DISEOC_bm = 0x80                ; Disable at end of cycle bit mask
+  TCD_DISEOC_bp = 7                   ; Disable at end of cycle bit position
+  
+  ; TCD_EVCTRLA masks
+  TCD_TRIGEI_bm = 0x01                ; Trigger event enable bit mask
+  TCD_TRIGEI_bp = 0                   ; Trigger event enable bit position
+  TCD_ACTION_bm = 0x04                ; Event action bit mask
+  TCD_ACTION_bp = 2                   ; Event action bit position
+  TCD_EDGE_bm = 0x10                  ; Edge select bit mask
+  TCD_EDGE_bp = 4                     ; Edge select bit position
+  TCD_CFG_gm = 0xC0                   ; Event config group mask
+  TCD_CFG_gp = 6                      ; Event config group position
+  TCD_CFG_0_bm = (1<<6)               ; Event config bit 0 mask
+  TCD_CFG_0_bp = 6                    ; Event config bit 0 position
+  TCD_CFG_1_bm = (1<<7)               ; Event config bit 1 mask
+  TCD_CFG_1_bp = 7                    ; Event config bit 1 position
+  
+  ; TCD_EVCTRLB masks
+  ; Masks for TCD_TRIGEI already defined
+  ; Masks for TCD_ACTION already defined
+  ; Masks for TCD_EDGE already defined
+  ; Masks for TCD_CFG already defined
+  
+  ; TCD_INTCTRL masks
+  TCD_OVF_bm = 0x01                   ; Overflow interrupt enable bit mask
+  TCD_OVF_bp = 0                      ; Overflow interrupt enable bit position
+  TCD_TRIGA_bm = 0x04                 ; Trigger A interrupt enable bit mask
+  TCD_TRIGA_bp = 2                    ; Trigger A interrupt enable bit position
+  TCD_TRIGB_bm = 0x08                 ; Trigger B interrupt enable bit mask
+  TCD_TRIGB_bp = 3                    ; Trigger B interrupt enable bit position
+  
+  ; TCD_INTFLAGS masks
+  ; Masks for TCD_OVF already defined
+  ; Masks for TCD_TRIGA already defined
+  ; Masks for TCD_TRIGB already defined
+  
+  ; TCD_STATUS masks
+  TCD_ENRDY_bm = 0x01                 ; Enable ready bit mask
+  TCD_ENRDY_bp = 0                    ; Enable ready bit position
+  TCD_CMDRDY_bm = 0x02                ; Command ready bit mask
+  TCD_CMDRDY_bp = 1                   ; Command ready bit position
+  TCD_PWMACTA_bm = 0x40               ; PWM activity on A bit mask
+  TCD_PWMACTA_bp = 6                  ; PWM activity on A bit position
+  TCD_PWMACTB_bm = 0x80               ; PWM activity on B bit mask
+  TCD_PWMACTB_bp = 7                  ; PWM activity on B bit position
+  
+  ; TCD_INPUTCTRLA masks
+  TCD_INPUTMODE_gm = 0x0F             ; Input mode group mask
+  TCD_INPUTMODE_gp = 0                ; Input mode group position
+  TCD_INPUTMODE_0_bm = (1<<0)         ; Input mode bit 0 mask
+  TCD_INPUTMODE_0_bp = 0              ; Input mode bit 0 position
+  TCD_INPUTMODE_1_bm = (1<<1)         ; Input mode bit 1 mask
+  TCD_INPUTMODE_1_bp = 1              ; Input mode bit 1 position
+  TCD_INPUTMODE_2_bm = (1<<2)         ; Input mode bit 2 mask
+  TCD_INPUTMODE_2_bp = 2              ; Input mode bit 2 position
+  TCD_INPUTMODE_3_bm = (1<<3)         ; Input mode bit 3 mask
+  TCD_INPUTMODE_3_bp = 3              ; Input mode bit 3 position
+  
+  ; TCD_INPUTCTRLB masks
+  ; Masks for TCD_INPUTMODE already defined
+  
+  ; TCD_FAULTCTRL masks
+  TCD_CMPA_bm = 0x01                  ; Compare A value bit mask
+  TCD_CMPA_bp = 0                     ; Compare A value bit position
+  TCD_CMPB_bm = 0x02                  ; Compare B value bit mask
+  TCD_CMPB_bp = 1                     ; Compare B value bit position
+  TCD_CMPC_bm = 0x04                  ; Compare C value bit mask
+  TCD_CMPC_bp = 2                     ; Compare C value bit position
+  TCD_CMPD_bm = 0x08                  ; Compare D vaule bit mask
+  TCD_CMPD_bp = 3                     ; Compare D vaule bit position
+  TCD_CMPAEN_bm = 0x10                ; Compare A enable bit mask
+  TCD_CMPAEN_bp = 4                   ; Compare A enable bit position
+  TCD_CMPBEN_bm = 0x20                ; Compare B enable bit mask
+  TCD_CMPBEN_bp = 5                   ; Compare B enable bit position
+  TCD_CMPCEN_bm = 0x40                ; Compare C enable bit mask
+  TCD_CMPCEN_bp = 6                   ; Compare C enable bit position
+  TCD_CMPDEN_bm = 0x80                ; Compare D enable bit mask
+  TCD_CMPDEN_bp = 7                   ; Compare D enable bit position
+  
+  ; TCD_DLYCTRL masks
+  TCD_DLYSEL_gm = 0x03                ; Delay select group mask
+  TCD_DLYSEL_gp = 0                   ; Delay select group position
+  TCD_DLYSEL_0_bm = (1<<0)            ; Delay select bit 0 mask
+  TCD_DLYSEL_0_bp = 0                 ; Delay select bit 0 position
+  TCD_DLYSEL_1_bm = (1<<1)            ; Delay select bit 1 mask
+  TCD_DLYSEL_1_bp = 1                 ; Delay select bit 1 position
+  TCD_DLYTRIG_gm = 0x0C               ; Delay trigger group mask
+  TCD_DLYTRIG_gp = 2                  ; Delay trigger group position
+  TCD_DLYTRIG_0_bm = (1<<2)           ; Delay trigger bit 0 mask
+  TCD_DLYTRIG_0_bp = 2                ; Delay trigger bit 0 position
+  TCD_DLYTRIG_1_bm = (1<<3)           ; Delay trigger bit 1 mask
+  TCD_DLYTRIG_1_bp = 3                ; Delay trigger bit 1 position
+  TCD_DLYPRESC_gm = 0x30              ; Delay prescaler group mask
+  TCD_DLYPRESC_gp = 4                 ; Delay prescaler group position
+  TCD_DLYPRESC_0_bm = (1<<4)          ; Delay prescaler bit 0 mask
+  TCD_DLYPRESC_0_bp = 4               ; Delay prescaler bit 0 position
+  TCD_DLYPRESC_1_bm = (1<<5)          ; Delay prescaler bit 1 mask
+  TCD_DLYPRESC_1_bp = 5               ; Delay prescaler bit 1 position
+  
+  ; TCD_DLYVAL masks
+  TCD_DLYVAL_gm = 0xFF                ; Delay value group mask
+  TCD_DLYVAL_gp = 0                   ; Delay value group position
+  TCD_DLYVAL_0_bm = (1<<0)            ; Delay value bit 0 mask
+  TCD_DLYVAL_0_bp = 0                 ; Delay value bit 0 position
+  TCD_DLYVAL_1_bm = (1<<1)            ; Delay value bit 1 mask
+  TCD_DLYVAL_1_bp = 1                 ; Delay value bit 1 position
+  TCD_DLYVAL_2_bm = (1<<2)            ; Delay value bit 2 mask
+  TCD_DLYVAL_2_bp = 2                 ; Delay value bit 2 position
+  TCD_DLYVAL_3_bm = (1<<3)            ; Delay value bit 3 mask
+  TCD_DLYVAL_3_bp = 3                 ; Delay value bit 3 position
+  TCD_DLYVAL_4_bm = (1<<4)            ; Delay value bit 4 mask
+  TCD_DLYVAL_4_bp = 4                 ; Delay value bit 4 position
+  TCD_DLYVAL_5_bm = (1<<5)            ; Delay value bit 5 mask
+  TCD_DLYVAL_5_bp = 5                 ; Delay value bit 5 position
+  TCD_DLYVAL_6_bm = (1<<6)            ; Delay value bit 6 mask
+  TCD_DLYVAL_6_bp = 6                 ; Delay value bit 6 position
+  TCD_DLYVAL_7_bm = (1<<7)            ; Delay value bit 7 mask
+  TCD_DLYVAL_7_bp = 7                 ; Delay value bit 7 position
+  
+  ; TCD_DITCTRL masks
+  TCD_DITHERSEL_gm = 0x03             ; Dither select group mask
+  TCD_DITHERSEL_gp = 0                ; Dither select group position
+  TCD_DITHERSEL_0_bm = (1<<0)         ; Dither select bit 0 mask
+  TCD_DITHERSEL_0_bp = 0              ; Dither select bit 0 position
+  TCD_DITHERSEL_1_bm = (1<<1)         ; Dither select bit 1 mask
+  TCD_DITHERSEL_1_bp = 1              ; Dither select bit 1 position
+  
+  ; TCD_DITVAL masks
+  TCD_DITHER_gm = 0x0F                ; Dither value group mask
+  TCD_DITHER_gp = 0                   ; Dither value group position
+  TCD_DITHER_0_bm = (1<<0)            ; Dither value bit 0 mask
+  TCD_DITHER_0_bp = 0                 ; Dither value bit 0 position
+  TCD_DITHER_1_bm = (1<<1)            ; Dither value bit 1 mask
+  TCD_DITHER_1_bp = 1                 ; Dither value bit 1 position
+  TCD_DITHER_2_bm = (1<<2)            ; Dither value bit 2 mask
+  TCD_DITHER_2_bp = 2                 ; Dither value bit 2 position
+  TCD_DITHER_3_bm = (1<<3)            ; Dither value bit 3 mask
+  TCD_DITHER_3_bp = 3                 ; Dither value bit 3 position
+  
+  ; TCD_DBGCTRL masks
+  TCD_DBGRUN_bm = 0x01                ; Debug run bit mask
+  TCD_DBGRUN_bp = 0                   ; Debug run bit position
+  TCD_FAULTDET_bm = 0x04              ; Fault detection bit mask
+  TCD_FAULTDET_bp = 2                 ; Fault detection bit position
+  
+  ; Clock select
+  TCD_CLKSEL_OSCHF_gc = (0x00<<5)     ; Internal High-Frequency oscillator
+  TCD_CLKSEL_PLL_gc = (0x01<<5)       ; PLL
+  TCD_CLKSEL_EXTCLK_gc = (0x02<<5)    ; External Clock
+  TCD_CLKSEL_CLKPER_gc = (0x03<<5)    ; Peripheral clock
+  
+  ; Counter prescaler select
+  TCD_CNTPRES_DIV1_gc = (0x00<<3)     ; Sync clock divided by 1
+  TCD_CNTPRES_DIV4_gc = (0x01<<3)     ; Sync clock divided by 4
+  TCD_CNTPRES_DIV32_gc = (0x02<<3)    ; Sync clock divided by 32
+  
+  ; Synchronization prescaler select
+  TCD_SYNCPRES_DIV1_gc = (0x00<<1)    ; Selected clock source divided by 1
+  TCD_SYNCPRES_DIV2_gc = (0x01<<1)    ; Selected clock source divided by 2
+  TCD_SYNCPRES_DIV4_gc = (0x02<<1)    ; Selected clock source divided by 4
+  TCD_SYNCPRES_DIV8_gc = (0x03<<1)    ; Selected clock source divided by 8
+  
+  ; Waveform generation mode select
+  TCD_WGMODE_ONERAMP_gc = (0x00<<0)   ; One ramp mode
+  TCD_WGMODE_TWORAMP_gc = (0x01<<0)   ; Two ramp mode
+  TCD_WGMODE_FOURRAMP_gc = (0x02<<0)  ; Four ramp mode
+  TCD_WGMODE_DS_gc = (0x03<<0)        ; Dual slope mode
+  
+  ; Compare C output select
+  TCD_CMPCSEL_PWMA_gc = (0x00<<6)     ; PWM A output
+  TCD_CMPCSEL_PWMB_gc = (0x01<<6)     ; PWM B output
+  
+  ; Compare D output select
+  TCD_CMPDSEL_PWMA_gc = (0x00<<7)     ; PWM A output
+  TCD_CMPDSEL_PWMB_gc = (0x01<<7)     ; PWM B output
+  
+  ; Dither select
+  TCD_DITHERSEL_ONTIMEB_gc = (0x00<<0) ; On-time ramp B
+  TCD_DITHERSEL_ONTIMEAB_gc = (0x01<<0) ; On-time ramp A and B
+  TCD_DITHERSEL_DEADTIMEB_gc = (0x02<<0) ; Dead-time rampB
+  TCD_DITHERSEL_DEADTIMEAB_gc = (0x03<<0) ; Dead-time ramp A and B
+  
+  ; Delay prescaler select
+  TCD_DLYPRESC_DIV1_gc = (0x00<<4)    ; No prescaling
+  TCD_DLYPRESC_DIV2_gc = (0x01<<4)    ; Prescale with 2
+  TCD_DLYPRESC_DIV4_gc = (0x02<<4)    ; Prescale with 4
+  TCD_DLYPRESC_DIV8_gc = (0x03<<4)    ; Prescale with 8
+  
+  ; Delay select
+  TCD_DLYSEL_OFF_gc = (0x00<<0)       ; No delay
+  TCD_DLYSEL_INBLANK_gc = (0x01<<0)   ; Input blanking enabled
+  TCD_DLYSEL_EVENT_gc = (0x02<<0)     ; Event delay enabled
+  
+  ; Delay trigger select
+  TCD_DLYTRIG_CMPASET_gc = (0x00<<2)  ; Compare A set
+  TCD_DLYTRIG_CMPACLR_gc = (0x01<<2)  ; Compare A clear
+  TCD_DLYTRIG_CMPBSET_gc = (0x02<<2)  ; Compare B set
+  TCD_DLYTRIG_CMPBCLR_gc = (0x03<<2)  ; Compare B clear
+  
+  ; Event action select
+  TCD_ACTION_FAULT_gc = (0x00<<2)     ; Event trigger a fault
+  TCD_ACTION_CAPTURE_gc = (0x01<<2)   ; Event trigger a fault and capture
+  
+  ; Event config select
+  TCD_CFG_NEITHER_gc = (0x00<<6)      ; Neither Filter nor Asynchronous Event is enabled
+  TCD_CFG_FILTER_gc = (0x01<<6)       ; Input Capture Noise Cancellation Filter enabled
+  TCD_CFG_ASYNC_gc = (0x02<<6)        ; Asynchronous Event output qualification enabled
+  
+  ; Edge select
+  TCD_EDGE_FALL_LOW_gc = (0x00<<4)    ; The falling edge or low level of event generates retrigger or fault action
+  TCD_EDGE_RISE_HIGH_gc = (0x01<<4)   ; The rising edge or high level of event generates retrigger or fault action
+  
+  ; Input mode select
+  TCD_INPUTMODE_NONE_gc = (0x00<<0)   ; Input has no actions
+  TCD_INPUTMODE_JMPWAIT_gc = (0x01<<0) ; Stop output, jump to opposite compare cycle and wait
+  TCD_INPUTMODE_EXECWAIT_gc = (0x02<<0) ; Stop output, execute opposite compare cycle and wait
+  TCD_INPUTMODE_EXECFAULT_gc = (0x03<<0) ; stop output, execute opposite compare cycle while fault active
+  TCD_INPUTMODE_FREQ_gc = (0x04<<0)   ; Stop all outputs, maintain frequency
+  TCD_INPUTMODE_EXECDT_gc = (0x05<<0) ; Stop all outputs, execute dead time while fault active
+  TCD_INPUTMODE_WAIT_gc = (0x06<<0)   ; Stop all outputs, jump to next compare cycle and wait
+  TCD_INPUTMODE_WAITSW_gc = (0x07<<0) ; Stop all outputs, wait for software action
+  TCD_INPUTMODE_EDGETRIG_gc = (0x08<<0) ; Stop output on edge, jump to next compare cycle
+  TCD_INPUTMODE_EDGETRIGFREQ_gc = (0x09<<0) ; Stop output on edge, maintain frequency
+  TCD_INPUTMODE_LVLTRIGFREQ_gc = (0x0A<<0) ; Stop output at level, maintain frequency
+  
+  
+  ;*************************************************************************
+  ;** TWI - Two-Wire Interface
+  ;*************************************************************************
+  
+  ; TWI_CTRLA masks
+  TWI_FMPEN_bm = 0x02                 ; FM Plus Enable bit mask
+  TWI_FMPEN_bp = 1                    ; FM Plus Enable bit position
+  TWI_SDAHOLD_gm = 0x0C               ; SDA Hold Time group mask
+  TWI_SDAHOLD_gp = 2                  ; SDA Hold Time group position
+  TWI_SDAHOLD_0_bm = (1<<2)           ; SDA Hold Time bit 0 mask
+  TWI_SDAHOLD_0_bp = 2                ; SDA Hold Time bit 0 position
+  TWI_SDAHOLD_1_bm = (1<<3)           ; SDA Hold Time bit 1 mask
+  TWI_SDAHOLD_1_bp = 3                ; SDA Hold Time bit 1 position
+  TWI_SDASETUP_bm = 0x10              ; SDA Setup Time bit mask
+  TWI_SDASETUP_bp = 4                 ; SDA Setup Time bit position
+  TWI_INPUTLVL_bm = 0x40              ; Input Voltage Transition Level bit mask
+  TWI_INPUTLVL_bp = 6                 ; Input Voltage Transition Level bit position
+  
+  ; TWI_DUALCTRL masks
+  TWI_ENABLE_bm = 0x01                ; Dual Control Enable bit mask
+  TWI_ENABLE_bp = 0                   ; Dual Control Enable bit position
+  ; Masks for TWI_FMPEN already defined
+  ; Masks for TWI_SDAHOLD already defined
+  ; Masks for TWI_INPUTLVL already defined
+  
+  ; TWI_DBGCTRL masks
+  TWI_DBGRUN_bm = 0x01                ; Debug Run bit mask
+  TWI_DBGRUN_bp = 0                   ; Debug Run bit position
+  
+  ; TWI_MCTRLA masks
+  ; Masks for TWI_ENABLE already defined
+  TWI_SMEN_bm = 0x02                  ; Smart Mode Enable bit mask
+  TWI_SMEN_bp = 1                     ; Smart Mode Enable bit position
+  TWI_TIMEOUT_gm = 0x0C               ; Inactive Bus Timeout group mask
+  TWI_TIMEOUT_gp = 2                  ; Inactive Bus Timeout group position
+  TWI_TIMEOUT_0_bm = (1<<2)           ; Inactive Bus Timeout bit 0 mask
+  TWI_TIMEOUT_0_bp = 2                ; Inactive Bus Timeout bit 0 position
+  TWI_TIMEOUT_1_bm = (1<<3)           ; Inactive Bus Timeout bit 1 mask
+  TWI_TIMEOUT_1_bp = 3                ; Inactive Bus Timeout bit 1 position
+  TWI_QCEN_bm = 0x10                  ; Quick Command Enable bit mask
+  TWI_QCEN_bp = 4                     ; Quick Command Enable bit position
+  TWI_WIEN_bm = 0x40                  ; Write Interrupt Enable bit mask
+  TWI_WIEN_bp = 6                     ; Write Interrupt Enable bit position
+  TWI_RIEN_bm = 0x80                  ; Read Interrupt Enable bit mask
+  TWI_RIEN_bp = 7                     ; Read Interrupt Enable bit position
+  
+  ; TWI_MCTRLB masks
+  TWI_MCMD_gm = 0x03                  ; Command group mask
+  TWI_MCMD_gp = 0                     ; Command group position
+  TWI_MCMD_0_bm = (1<<0)              ; Command bit 0 mask
+  TWI_MCMD_0_bp = 0                   ; Command bit 0 position
+  TWI_MCMD_1_bm = (1<<1)              ; Command bit 1 mask
+  TWI_MCMD_1_bp = 1                   ; Command bit 1 position
+  TWI_ACKACT_bm = 0x04                ; Acknowledge Action bit mask
+  TWI_ACKACT_bp = 2                   ; Acknowledge Action bit position
+  TWI_FLUSH_bm = 0x08                 ; Flush bit mask
+  TWI_FLUSH_bp = 3                    ; Flush bit position
+  
+  ; TWI_MSTATUS masks
+  TWI_BUSSTATE_gm = 0x03              ; Bus State group mask
+  TWI_BUSSTATE_gp = 0                 ; Bus State group position
+  TWI_BUSSTATE_0_bm = (1<<0)          ; Bus State bit 0 mask
+  TWI_BUSSTATE_0_bp = 0               ; Bus State bit 0 position
+  TWI_BUSSTATE_1_bm = (1<<1)          ; Bus State bit 1 mask
+  TWI_BUSSTATE_1_bp = 1               ; Bus State bit 1 position
+  TWI_BUSERR_bm = 0x04                ; Bus Error bit mask
+  TWI_BUSERR_bp = 2                   ; Bus Error bit position
+  TWI_ARBLOST_bm = 0x08               ; Arbitration Lost bit mask
+  TWI_ARBLOST_bp = 3                  ; Arbitration Lost bit position
+  TWI_RXACK_bm = 0x10                 ; Received Acknowledge bit mask
+  TWI_RXACK_bp = 4                    ; Received Acknowledge bit position
+  TWI_CLKHOLD_bm = 0x20               ; Clock Hold bit mask
+  TWI_CLKHOLD_bp = 5                  ; Clock Hold bit position
+  TWI_WIF_bm = 0x40                   ; Write Interrupt Flag bit mask
+  TWI_WIF_bp = 6                      ; Write Interrupt Flag bit position
+  TWI_RIF_bm = 0x80                   ; Read Interrupt Flag bit mask
+  TWI_RIF_bp = 7                      ; Read Interrupt Flag bit position
+  
+  ; TWI_SCTRLA masks
+  ; Masks for TWI_ENABLE already defined
+  ; Masks for TWI_SMEN already defined
+  TWI_PMEN_bm = 0x04                  ; Promiscuous Mode Enable bit mask
+  TWI_PMEN_bp = 2                     ; Promiscuous Mode Enable bit position
+  TWI_PIEN_bm = 0x20                  ; Stop Interrupt Enable bit mask
+  TWI_PIEN_bp = 5                     ; Stop Interrupt Enable bit position
+  TWI_APIEN_bm = 0x40                 ; Address/Stop Interrupt Enable bit mask
+  TWI_APIEN_bp = 6                    ; Address/Stop Interrupt Enable bit position
+  TWI_DIEN_bm = 0x80                  ; Data Interrupt Enable bit mask
+  TWI_DIEN_bp = 7                     ; Data Interrupt Enable bit position
+  
+  ; TWI_SCTRLB masks
+  TWI_SCMD_gm = 0x03                  ; Command group mask
+  TWI_SCMD_gp = 0                     ; Command group position
+  TWI_SCMD_0_bm = (1<<0)              ; Command bit 0 mask
+  TWI_SCMD_0_bp = 0                   ; Command bit 0 position
+  TWI_SCMD_1_bm = (1<<1)              ; Command bit 1 mask
+  TWI_SCMD_1_bp = 1                   ; Command bit 1 position
+  ; Masks for TWI_ACKACT already defined
+  
+  ; TWI_SSTATUS masks
+  TWI_AP_bm = 0x01                    ; Client Address or Stop bit mask
+  TWI_AP_bp = 0                       ; Client Address or Stop bit position
+  TWI_DIR_bm = 0x02                   ; Read/Write Direction bit mask
+  TWI_DIR_bp = 1                      ; Read/Write Direction bit position
+  ; Masks for TWI_BUSERR already defined
+  TWI_COLL_bm = 0x08                  ; Collision bit mask
+  TWI_COLL_bp = 3                     ; Collision bit position
+  ; Masks for TWI_RXACK already defined
+  ; Masks for TWI_CLKHOLD already defined
+  TWI_APIF_bm = 0x40                  ; Address/Stop Interrupt Flag bit mask
+  TWI_APIF_bp = 6                     ; Address/Stop Interrupt Flag bit position
+  TWI_DIF_bm = 0x80                   ; Data Interrupt Flag bit mask
+  TWI_DIF_bp = 7                      ; Data Interrupt Flag bit position
+  
+  ; TWI_SADDRMASK masks
+  TWI_ADDREN_bm = 0x01                ; Address Enable bit mask
+  TWI_ADDREN_bp = 0                   ; Address Enable bit position
+  TWI_ADDRMASK_gm = 0xFE              ; Address Mask group mask
+  TWI_ADDRMASK_gp = 1                 ; Address Mask group position
+  TWI_ADDRMASK_0_bm = (1<<1)          ; Address Mask bit 0 mask
+  TWI_ADDRMASK_0_bp = 1               ; Address Mask bit 0 position
+  TWI_ADDRMASK_1_bm = (1<<2)          ; Address Mask bit 1 mask
+  TWI_ADDRMASK_1_bp = 2               ; Address Mask bit 1 position
+  TWI_ADDRMASK_2_bm = (1<<3)          ; Address Mask bit 2 mask
+  ut Multiplexer group mask
   OPAMP_MUXPOS_gp = 0                 ; Positive Input Multiplexer group position
   OPAMP_MUXPOS_0_bm = (1<<0)          ; Positive Input Multiplexer bit 0 mask
   OPAMP_MUXPOS_0_bp = 0               ; Positive Input Multiplexer bit 0 position

@@ -400,7 +400,7 @@ End Function
 
 'String > Long
 #DEFINE VAL32 StringToLong
-Function StringToLong(SysInString as String * 14 ) as Long
+Function StringToLong(SysInString as String ) as Long
 'Converts a string to Long
 'max in = "4294967295" (#4.294.967.295)
     StringToLong=0

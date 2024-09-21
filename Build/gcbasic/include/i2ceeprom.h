@@ -275,7 +275,7 @@ asm showdebug  `eeprom_wr_array - Uses a BYTE for eepAddr.  Intended for smaller
         eepAddr++                           ;prep for next one
         CalcNextPage = eepAddr mod eepPageSize
         if CalcNextPage  = 0 then                    ;end of page
-          HI2CStop                           ;so, lock in place
+          HI2CStop                            ;so, lock in place
           do
             HI2CReStart                              ;generate a start signal
             HI2CSend(eepDev)                       ;indicate a write
@@ -291,19 +291,19 @@ asm showdebug  `eeprom_wr_array - Uses a BYTE for eepAddr.  Intended for smaller
 
       I2CStart                              ;generate a start signal
       I2CSend(eepDev)                       ;indicate the device
-      I2CSend(eepAddr)                      ;as two bytes
+      I2CSend(eepAddr)                      ;one byte
 
       for eep_i = 1 to eepLen
         I2CSend(eepArray(eep_i))            ;write next byte from array
         eepAddr++                           ;prep for next one
+
         CalcNextPage = eepAddr mod eepPageSize  ; calculate next page
         if CalcNextPage = 0 then            ;end of page
           I2CStop                           ;so, lock in place
           I2CAckPoll(eepDev)                ;wait for buffer write
           I2CReStart                        ;generate a start signal
           I2CSend(eepDev)                   ;indicate a write
-          I2CSend(eepAddr_H)                ;send next page address
-          I2CSend(eepAddr)
+          I2CSend(eepAddr)                  ;send next page address
         end if
       next
 

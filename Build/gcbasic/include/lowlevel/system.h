@@ -97,7 +97,8 @@
 '    21072024 - Added AVRDX support to InitSys. Supports internal oscillator at 20 or 16 mHz
 '    24072024 - Added 18FxxQ10 type support to PFMWRITEBLOCK
 '    07082024 - Added AVRDX support to InitSys. Supports internal oscillator at 24 mHz
-
+'    06092024 - Revised ProgramRead to AVR, specifically for AVRDX
+'    16092024 - Add ProgramWrite for AVR, specifically for AVRDX
 
 'Constants
 #define ON 1
@@ -150,6 +151,11 @@
 
 'Calculate intosc division (needed to sort between 18F2620 and 18F26K20, possibly others)
 #script
+
+  If DEF(AVR) Then
+    // This redirects for AVR to a specific ProgramWrite method
+    ProgramWrite = ProgramWriteAVRDX
+  End If
 
   SYS_CLOCK_DIV_NEEDED = ChipIntOsc / ChipMHz
   SYS_CLOCK_INT_PLL_USED = False
@@ -3179,7 +3185,11 @@ sub SysMultSubSingle
     #IF VAR(WREG)
       SysByteTempX = WREG
     #ELSE
-      MOVLW SysByteTempX
+      #IFDEF PIC
+        MOVLW SysByteTempX
+      #ELSE
+        //~ Need to return call for AVR
+      #ENDIF
     #ENDIF
 
     #IFDEF SYSSINGLECALCS_DEBUG
@@ -3635,6 +3645,15 @@ end sub
 
 sub SysDivSubSingle
 
+    #IFDEF AVR
+      //! Not implemented
+      //!  See https://avr-asm.tripod.com/math32x.html
+      //!
+      //! Want this implemented ? Contact GCBASICDevelopmentTeam  AT anobium DOT co DOT uk
+      !
+    #ENDIF
+
+
     // Input are
       // SysSingleTempA
       // SysSingleTempB
@@ -3674,6 +3693,7 @@ sub SysDivSubSingle
     #ENDIF
 
       _SysDivSubSingle
+
 
     #IF VAR(WREG)
       SysByteTempX = WREG
@@ -5143,75 +5163,183 @@ End Sub
 
 sub ProgramWrite(In EEAddress, In EEDataWord)
 
-#IFDEF PIC
+  #IFDEF PIC
 
-  #IF VAR(EEADRH)
-    Dim EEAddress As Word Alias EEADRH, EEADR
-    Dim EEDataWord As Word Alias EEDATH, EEDATL_REF
-  #ENDIF
-  #IF VAR(PMADRH)
-    Dim EEAddress As Word Alias PMADRH, PMADRL
-    Dim EEDataWord As Word Alias PMDATH, PMDATL
-  #ENDIF
-  #IF BIT(NVMCMD0)
-    Dim EEAddress As Word Alias NVMADRH, NVMADRL
-    Dim EEDataWord As Word Alias NVMDATH, NVMDATL
-    NVMCON1 = 3                ' Byte Write operations
-  #ENDIF
+    #IF VAR(EEADRH)
+      Dim EEAddress As Word Alias EEADRH, EEADR
+      Dim EEDataWord As Word Alias EEDATH, EEDATL_REF
+    #ENDIF
+    #IF VAR(PMADRH)
+      Dim EEAddress As Word Alias PMADRH, PMADRL
+      Dim EEDataWord As Word Alias PMDATH, PMDATL
+    #ENDIF
+    #IF BIT(NVMCMD0)
+      Dim EEAddress As Word Alias NVMADRH, NVMADRL
+      Dim EEDataWord As Word Alias NVMDATH, NVMDATL
+      NVMCON1 = 3                ' Byte Write operations
+    #ENDIF
 
-  'Disable Interrupt
-  IntOff
+    'Disable Interrupt
+    IntOff
 
-  'Select program memory
-  #IFDEF Bit(EEPGD)
-    SET EEPGD ON
-  #ENDIF
-  #IFDEF Bit(CFGS)
-    Set CFGS OFF
-  #ENDIF
+    'Select program memory
+    #IFDEF Bit(EEPGD)
+      SET EEPGD ON
+    #ENDIF
+    #IFDEF Bit(CFGS)
+      Set CFGS OFF
+    #ENDIF
 
-  'Enable write
-  #ifdef bit(WREN)
-    SET WREN ON
-  #endif
-  #ifdef bit(FREE)
-    SET FREE OFF
-  #endif
+    'Enable write
+    #ifdef bit(WREN)
+      SET WREN ON
+    #endif
+    #ifdef bit(FREE)
+      SET FREE OFF
+    #endif
 
-  'Write enable code
+    'Write enable code
 
-  #IF VAR(EEADRH)
-    EECON2 = 0x55
-    EECON2 = 0xAA
-  #ELSE
-    #IF VAR(PMCON2)
-      PMCON2 = 0x55
-      PMCON2 = 0xAA
+    #IF VAR(EEADRH)
+      EECON2 = 0x55
+      EECON2 = 0xAA
     #ELSE
-      #IF VAR(NVMCON2)
-          NVMCON2 = 0x55
-          NVMCON2 = 0xAA
+      #IF VAR(PMCON2)
+        PMCON2 = 0x55
+        PMCON2 = 0xAA
+      #ELSE
+        #IF VAR(NVMCON2)
+            NVMCON2 = 0x55
+            NVMCON2 = 0xAA
+        #ENDIF
       #ENDIF
     #ENDIF
+
+
+
+
+    'Start write, wait for it to finish
+    #ifdef bit(WR)
+      SET WR ON
+    #endif
+    NOP
+    NOP
+    NOP
+    NOP
+    #ifdef bit(WREN)
+      SET WREN OFF
+    #endif
+    'Enable Interrupt
+    IntOn
   #ENDIF
+  
+End Sub
 
 
+sub ProgramWriteAVRDX( In ProgramAddress as Word , In EEDataByte as Byte )
+  
+  #IFDEF AVR
+    //_ Specific method for AVRs
+    #IFNDEF CHIPAVRDX
+      //! Not supported
+      !!
+    #ENDIF
+
+    #IFDEF CHIPAVRDX
+
+      //  NVMCTRLStatusCounter is set to the last status check - this prevents a BLOCKING routine
+      Dim __NVMStartOfPage As Word
+      Dim __NVMmemresult as Byte
+      Dim __NVMCcount As Word
+      Dim NVMCTRLStatusCounter As Byte
+
+      //BOOTLOCK disabled; APCWP enabled; 
+      NVMCTRL_CTRLB = 0x01
+
+      //EEREADY disabled
+      NVMCTRL_INTCTRL = 0x00
+
+      //Determine the base page address
+      __NVMStartOfPage = (CHIP_MAPPED_PROGMEM_START + ProgramAddress ) AND NOT (CHIP_PROGMEM_PAGE_SIZE - 1)
+      
+      // poke the page to set the registers
+      poke ( __NVMStartOfPage, 0 )
+      CPU_CCP = CPU_CCP_SPM_gc			// unlock CCP change protection for NVM command register
+      NVMCTRL_CTRLA = NVMCTRL_CMD_PAGEBUFCLR_gc
+
+      INTOFF
+
+      // read the initial part of the page
+      for __NVMCcount = __NVMStartOfPage to __NVMStartOfPage + ( ProgramAddress MOD CHIP_PROGMEM_PAGE_SIZE )  - 1
+
+        ProgramRead ( __NVMCcount - CHIP_MAPPED_PROGMEM_START , __NVMmemresult )
+
+        NVMCTRLStatusCounter = 0
+        Do
+          NVMCTRLStatusCounter++
+        Loop while ( NVMCTRL_STATUS.1 = 1 or NVMCTRL_STATUS.0 = 1 ) and NVMCTRLStatusCounter < 255
+
+        SYSSTRINGA = __NVMCcount // set X
+        SysValueCopy = [byte]__NVMmemresult
+        st X+, SysValueCopy
+
+      next
+      
+      // Write the new BYTE
+      NVMCTRLStatusCounter = 0
+      Do
+        NVMCTRLStatusCounter++
+      Loop while ( NVMCTRL_STATUS.1 = 1 or NVMCTRL_STATUS.0 = 1 ) and NVMCTRLStatusCounter < 255
+
+      SYSSTRINGA = __NVMStartOfPage + ( ProgramAddress MOD CHIP_PROGMEM_PAGE_SIZE ) // set X
+      SysValueCopy = [byte]EEDataByte
+      st X+, SysValueCopy
+
+      // Write the rest of the page
+      for __NVMCcount = __NVMStartOfPage + ( ProgramAddress MOD CHIP_PROGMEM_PAGE_SIZE ) + 1  to __NVMStartOfPage + CHIP_PROGMEM_PAGE_SIZE - 1
+
+        ProgramRead ( __NVMCcount - CHIP_MAPPED_PROGMEM_START , __NVMmemresult )
+        
+        NVMCTRLStatusCounter = 0
+        Do
+          NVMCTRLStatusCounter++
+        Loop while ( NVMCTRL_STATUS.1 = 1 or NVMCTRL_STATUS.0 = 1 ) and NVMCTRLStatusCounter < 255
+
+        SYSSTRINGA = __NVMCcount // set X
+        SysValueCopy = [byte]__NVMmemresult
+        st X+, SysValueCopy
+
+      next
+
+      NVMCTRLStatusCounter = 0
+      Do
+        NVMCTRLStatusCounter++
+      Loop while ( NVMCTRL_STATUS.1 = 1 or NVMCTRL_STATUS.0 = 1 ) and NVMCTRLStatusCounter < 255
 
 
-  'Start write, wait for it to finish
-  #ifdef bit(WR)
-    SET WR ON
-  #endif
-  NOP
-  NOP
-  NOP
-  NOP
-  #ifdef bit(WREN)
-    SET WREN OFF
-  #endif
-  'Enable Interrupt
-  IntOn
-#ENDIF
+      // unlock CCP change protection for NVM command register
+      CPU_CCP = CPU_CCP_SPM_gc			
+      // execute NVM erase/write     
+      NVMCTRL_CTRLA = NVMCTRL_CMD_PAGEERASEWRITE_gc	
+
+      NVMCTRLStatusCounter = 0
+      Do
+        NVMCTRLStatusCounter++
+      Loop while ( NVMCTRL_STATUS.1 = 1 or NVMCTRL_STATUS.0 = 1 ) and NVMCTRLStatusCounter < 255
+
+      //~ Handle the return value - if a NVMCTRL_STATUS bit =1 and NVMCTRLStatusCounter = 255 then the NVM is locked.
+      //~ Set NVMCTRLStatusCounter appropiately 
+      If NVMCTRLStatusCounter = 255 Then
+        NVMCTRLStatusCounter = NVMCTRL_STATUS and 7
+      Else
+        NVMCTRLStatusCounter = 0
+      End If 
+
+      INTON
+
+    #ENDIF
+
+  #ENDIF
 
 end sub
 
@@ -5286,6 +5414,8 @@ end sub
 
 sub ProgramRead(In EEAddress, Out EEDataWord)
 
+  #IFDEF PIC
+
     EEDataWord = 0x00
 
     #IF BIT(NVMCMD0)
@@ -5350,6 +5480,32 @@ sub ProgramRead(In EEAddress, Out EEDataWord)
         'Enable interrupt
         IntOn
     #ENDIF
+  #ENDIF
+
+  #IFDEF AVR
+
+      Dim EEADDRESS, EEDataWord As Word
+  
+      INTOFF
+
+      //~ SYSREADA = r30 & r31 = (Z)
+      SYSREADA   = EEAddress
+
+      //~ SYSBYTETEMPX = r0 ? (Z)
+      lpm                               
+      //~ r0 > variable
+      EEDataWord = SYSBYTETEMPX
+        //~ Use GCBASIC to increment EEAddress in (Z), this will protect again end cases
+      SYSREADA++   //~ increment EEAddress in (Z)
+
+      //~ SYSBYTETEMPX = r0 ? (Z)
+      lpm
+      //~ r0 > variable
+      EEDataWord_H = [BYTE]SYSBYTETEMPX
+
+      INTON
+
+  #ENDIF
 
 end sub
 

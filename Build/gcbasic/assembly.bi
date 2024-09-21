@@ -421,17 +421,23 @@ Function AsmTidy (DataSource As String ,  StoredGCASM as integer ) As String
 
   END IF
 
-
-
   Dim As String Temp, DSTemp
   Dim As Integer T, FS, AsmSize
 
   Temp = DataSource
 
-  'Replace CLS sub and calls to it sith lbCLS on AVR
-  If ModeAVR And INSTR(UCase(Temp), "CLS") <> 0 Then
-    If Left(Temp, 4) <> " cls" Then WholeReplace Temp, "CLS", "lbCLS"
+  
+  If ModeAVR then
+    'Replace CLS sub and calls to it sith lbCLS on AVR
+    If INSTR(UCase(Temp), "CLS") <> 0 Then
+      If Left(Temp, 4) <> " cls" Then WholeReplace Temp, "CLS", "lbCLS"
+    End If
+    'Ensure lowercase
+    If Instr( DataSource, "Z+") <> 0 Then
+      Replace( DataSource, "z+", "z+" )
+    End If
   End If
+  
 
   'Remove @ if not inside data statement
   If Left(Temp, 4) <> " dw " Then
@@ -459,8 +465,11 @@ Function AsmTidy (DataSource As String ,  StoredGCASM as integer ) As String
       IF Left(UCase(DSTemp), 3) <> "DT " AND Left(UCase(DSTemp), 3) <> "DW " THEN DSTemp = UCase(DSTemp)
       IF Left(UCase(DSTemp), 3) = "DT " OR Left(UCase(DSTemp), 3) = "DW " THEN DSTemp = UCase(Left(DSTemp, 3)) + Mid(DSTemp, 4)
       If Left(UCase(DSTemp), 4) = ".DB " Then DSTemp = Mid(DSTemp, 2)
+      If Left(UCase(DSTemp), 4) = ".DW " Then DSTemp = Mid(DSTemp, 2)
       If Left(UCase(DSTemp), 5) = ".ORG " Then DSTemp = Mid(DSTemp, 2)
       If ModePIC Or (Left(DSTemp, 1) <> "." And Left(DSTemp, 1) <> "#") Then AsmProgLoc = LinkedListInsert(AsmProgLoc, DSTemp)
+      'Add ESEG location to list
+      If ModeAVR And (Left(DSTemp, 5) = ".ESEG") Then AsmProgLoc = LinkedListInsert(AsmProgLoc, DSTemp)
     Else
       AsmProgLoc = LinkedListInsert(AsmProgLoc, "")
     END IF
@@ -631,6 +640,7 @@ SUB AssembleProgram
       DataSource = Mid(DataSource, INSTR(DataSource, ":") + 1)
     END IF
     IF DataSource <> "" THEN
+    
       'Get the index of the assembly command
       CurrCmd = IsASM(DataSource)
 
@@ -768,8 +778,13 @@ SUB AssembleProgram
           IF B > 255 Then DataSource = " bsf STATUS,IRP"
           CurrCmd = IsASM(DataSource)
 
-        'Raw hex code
-        ElseIF Left(DataSource, 4) = "RAW " THEN
+        'Raw hex code - read ESE as ESEG.  The use of ESE was to maintain 4 chars check
+        ElseIF Left(DataSource, 4) = "RAW " or Left(DataSource, 4) = "ESE " THEN
+          Dim ESEG as Integer = 0
+          If Left(DataSource, 4) = "ESE " Then
+            ' Set ESEG flag
+            ESEG = 1
+          End IF
           DataSource = Trim(Mid(DataSource, 4))
 
           DebugLoc = Hex(CurrentLine)
@@ -781,6 +796,9 @@ SUB AssembleProgram
           DO WHILE INSTR(DataSource, ",") <> 0
 
             CurrProgramLoc = LinkedListInsert(CurrProgramLoc, Left(DataSource, INSTR(DataSource, ",") - 1), CurrentLine)
+            'Set meta data to ESEG state
+			      GetMetaData(CurrProgramLoc)->IsESEG = ESEG
+           
             DebugOutput += (Left(DataSource, INSTR(DataSource, ",") - 1) + " ")
             If ChipFamily = 16 Then
               CurrentLine = CurrentLine + 2
@@ -790,9 +808,15 @@ SUB AssembleProgram
             DataSource = Mid(DataSource, INSTR(DataSource, ",") + 1)
           LOOP
           CurrProgramLoc = LinkedListInsert(CurrProgramLoc, DataSource, CurrentLine)
-
+		      'Set meta data to ESEG state - this is the last items, so, need to be added	
+          GetMetaData(CurrProgramLoc)->IsESEG = ESEG
+          
           DebugOutput += DataSource
 
+          If ESEG = 1 then 
+			      'Change the LST file output to look correct
+            If Instr( DebugInput, "ESE") Then Replace( DebugInput, "ESE ", "ESEG ")
+          End If
           Print #1, DebugLoc + Chr(9) + Trim(DebugOutput) + Chr(9) + DebugInput
 
           CurrCmd = 0
@@ -1111,7 +1135,7 @@ SUB AssembleProgram
         Do While Len(DebugLoc) < 6
           DebugLoc = "0" + DebugLoc
         Loop
-        'Print #1, DebugLoc + Chr(9) + Trim(DebugOutput) + Chr(9) + DebugInput
+        Print #1, DebugLoc + Chr(9) + Trim(DebugOutput) + Chr(9) + DebugInput
         CurrProgramLoc = LinkedListInsert(CurrProgramLoc, HTemp, CurrentLine)
 
         If (( compilerdebug and cGCASMDEBUG ) = cGCASMDEBUG )  Then
@@ -1304,10 +1328,18 @@ SUB AssembleProgram
   FRA = -1
   CHA = 0 'High address word
   CurrProgramLoc = OutProgram->Next
+
+  Dim ESEG as Integer = 0  ' local variable
+
   Do While CurrProgramLoc <> 0
 
+    ' Set ESEG for the current list item
+    ESeg = GetMetaData(CurrProgramLoc)->IsESEG
+
     CL = CurrProgramLoc->NumVal
-    IF ChipFamily <> 16 THEN CL = CL * 2
+    ' AVR EE must not use * 2 multiplier
+    IF ChipFamily <> 16 AND ESeg = 0 THEN CL = CL * 2       'CL = CurrentLine { maybe..}
+
     If OA = -1 Then OA = CL
     NewRecordData = CurrProgramLoc->Value
     Do While LEN(NewRecordData) < 4: NewRecordData = "0" + NewRecordData: Loop
@@ -1365,6 +1397,8 @@ SUB AssembleProgram
       OA = CL
       IF FRA = -1 THEN FRA = CL
     END IF
+    
+    GetMetaData ( CurrHexRecord)->IsESEG = ESeg
 
     CurrProgramLoc = CurrProgramLoc->Next
   Loop
@@ -1419,9 +1453,24 @@ SUB AssembleProgram
   End If
   CurrHexRecord = HexRecords->Next
   Do While CurrHexRecord <> 0
-    PRINT #1, CurrHexRecord->Value
+
+    ' Is this ESEG and is this the HEX, so, change file.
+    If GetMetaData(CurrHexRecord)->IsESEG = 1 and Right( UCase(HFI), 4 ) = ".HEX" Then
+      'Handle creation of EEP output file, close the HEX, open the EEP
+      PRINT #1, CurrHexRecord->Value
+      PRINT #1, ":00000001FF"
+      Close #1
+      Replace ( HFI, ".HEX", ".eep")
+      OPEN HFI FOR OUTPUT AS #1
+      Print Chr(9) + Message("MakeHex")
+      Print Chr(9) + Message("MakeEEP")
+    Else
+      PRINT #1, CurrHexRecord->Value
+    End If 
+
     CurrHexRecord = CurrHexRecord->Next
   Loop
+
   PRINT #1, ":00000001FF"
   If ModePIC and HexAppend <> "" then
     PRINT #1, ";HEX file generated by GCBASIC"
@@ -1437,6 +1486,7 @@ Sub BuildAsmSymbolTable
   Dim As Integer PD, CSB, RP1, CurrentLocation, DT, OrgLocation, SS, CS
   Dim As Integer DataBlockSize, DataSize, DWC, RSC, DWIC, T, FoundDirective
   Dim As AsmCommand Pointer CurrCmd
+  Dim As Integer FoundESEG = 0
 
   Dim As LinkedListElement Pointer TempList, CurrItem, AsmLine
   Dim As SysVarType Pointer TempVar
@@ -1544,8 +1594,12 @@ Sub BuildAsmSymbolTable
     'Blank line
     If AsmLine->Value = "" Then
 
-    'Assembly instruction
+    ElseIf Trim(AsmLine->Value) = ".ESEG" and FoundESEG = 0 Then
+      'Found .ESEG in the ASM and this is the first instance, and, we only set the CurrentLocation once
+       FoundESEG = 1
+       CurrentLocation = 0  
     ElseIf CurrCmd <> 0 THEN
+      'Assembly instruction
       DT = CurrCmd->Words
       If ChipFamily = 16 THEN DT = DT * 2
       AsmLine->Value = Str(CurrentLocation) + ":" + AsmLine->Value
@@ -1559,9 +1613,12 @@ Sub BuildAsmSymbolTable
         If OrgLocation >= CurrentLocation Then
           CurrentLocation = OrgLocation
         Else
-          Temp = Message("BadORG")
-          Replace Temp, "%loc%", "0x"+Hex(OrgLocation)
-          LogError("GCASM:" + Temp, "")
+          If FoundESEG = 0 Then
+            'ESSEG would error for AVR - only because the ORG is 0x0000 for EE data on AVR
+            Temp = Message("BadORG")
+            Replace Temp, "%loc%", "0x"+Hex(OrgLocation)
+            LogError("GCASM:" + Temp, "")
+          End If
         End If
         FoundDirective = -1
         AsmLine->Value = ""
@@ -1693,7 +1750,12 @@ Sub BuildAsmSymbolTable
           END IF
         Loop
 
-        AsmLine->Value = Str(CurrentLocation) + ":RAW " + Mid(NewData, 2)
+        If FoundESEG = 0 Then
+          AsmLine->Value = Str(CurrentLocation) + ":RAW " + Mid(NewData, 2)
+        Else
+		      'Set to :ESE as the compiler use a 4 chars like :RAW and :ESE
+          AsmLine->Value = Str(CurrentLocation) + ":ESE " + Mid(NewData, 2)
+        End If
         ' Add this check as the current location was being incorrect incremented.  This is used when TABLE name STORE DATA.  The eeprom was ok in the ASM but the GCASM hex was incorrect.
         ' This may impact other chipfamiles - tested on 14 only
         IF (ChipFamily = 14 Or ChipFamily = 15) THEN

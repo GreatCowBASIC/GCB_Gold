@@ -1541,7 +1541,12 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
   Do While INSTR(UCase(OutData), "%FN_NOEXT%") <> 0: Replace OutData, "%FN_NOEXT%", FileNameNoExt: Loop
   Do While INSTR(UCase(OutData), "%CHIPMODEL%") <> 0: Replace OutData, "%CHIPMODEL%", ChipName: Loop
   Do While INSTR(UCase(OutData), "%CHIPPROGRAMMERNAME%") <> 0: Replace OutData, "%CHIPPROGRAMMERNAME%", Chipprogrammername: Loop
-
+  Do While INSTR(UCase(OutData), "%FILENAMEEEP%") <> 0
+    Dim FIEEP as String = FileName
+    Replace FIEEP, ".hex", ".eep"
+    Replace OutData, "%FILENAMEEEP%", FIEEP
+  Loop
+    
 
 
 

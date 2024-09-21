@@ -90,7 +90,7 @@
 '             Improved USART usage to create STRICT use of baud rates to ensure specific USART capability exists
 '             Improved INIT for K40 type uC
 '             Added RAISECOMPILERERROR where appropiate
-'             Improved handling of variable comport and Defaultusartreturnvalue variable to only set when more than one USART
+'             Improved handling of variable comport and DEFAULTUSARTRETURNVALUE variable to only set when more than one USART
 ' 14/12/2022  Correct InitUSART for K22 ( missing register update )
 ' 06/08/2023  Improved handling of registers for USART2
 ' 27/08/2023  Added support for K40 USART3, 4 and 5
@@ -100,7 +100,13 @@
 ' 13/02/2024  Isolation of CREN by conditional test of RCSTA. Error encountered tested 18FxxQ20 as chip with I3CCON0.EN cause I3CCON0.EN = 1 in serial handler.
 ' 10/08/2024  Added more #samevar and #samebit for USART1, and, add isolation for VAR(U1BRGH) 
 ' 19/08/2024  New: Added AVRDX Init and HserSend support.
-
+' 22/08/2024  New: Improve HserSend comport handling
+' 25/08/2024  New: AVRDX HSerReceive added #DEFINE DEFAULT_COMPORT for default comport, variable comport also works.
+' 27/08/2024  New: Revised HSerGetNum to use a lot less resources. This resolved out of resources on mega328p program.
+' 15/09/2024  Fixed a bug causing an incorrect baud rate configuration on some microcontrollers that use BRG16 and doesn't have TXEN1 an incorrect configuration was set. -Angel Mier
+' 18/09/2024  Fixed a bug causing an incorrect baud rate configuration on some microcontrollers that use BAUDCON.  Added samevar BAUDCON, BAUDCON1 - EvanV
+' 19/09/2024  New: Added option for a Timed out USART_BLOCKING, the time out is defined in milliseconds by def USART_BLOCKING_TIMEOUT - Angel Mier
+' 19/09/2024  Fixed a bug where CREN was not set for 16F15xx devices.
 
 /*
 
@@ -121,7 +127,12 @@ USART constants
 #DEFINE USART5_BLOCKING         'Usart 5 waits for byte to be received
 #DEFINE USART5_TX_BLOCKING      'Usart 5 waits for empty Tx input buffer/register so the previous activity has been completed.
 
+#DEFINE USART_BLOCKING_TIMEOUT 500 'performs the RX wait of USART_BLOCKING but gives up after the timeout in milliseconds, preventing a hangout program or when a time window of a frame is known.
+                                   'It exposes the flag bit HSerReceive_TimedOut as 1 if the timed out happens and 0 if data received successfully.
+                                   'The objective of the timeout code is to have a snappiest response sacrificing timing precision, if more precision is needed, tunning USART_BLOCKING_TIMEOUT value is recommended.
+
 #DEFINE DEFAULTUSARTRETURNVALUE 'The byte value returned from USART receive when USARTx_BLOCKING is NOT used.
+#DEFINE DEFAULT_COMPORT         'The default USART.  Used when calling HSER functions to select USARTn.
 
 #DEFINE SerPrintCR  'prints a CR at the end of every print Sub
 #DEFINE SerPrintLF  'prints a LF at the end of every print Sub
@@ -160,13 +171,17 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samevar TXREG, TXREG1, U1TXB
 #samebit TXIF, TX1IF, U1TXIF
 
+#samevar BAUDCON, BAUDCON1
 #samevar SPBRG1, SPBRG
 #samevar SPBRGH, SPBRGH1
 #samevar TX1STA, TXSTA
+
 #samebit TXEN1, TXEN
+
 #samebit CREN1, CREN
 #samebit SPEN1, SPEN
 #samebit SYNC1, SYNC, SYNC_TX1STA
+#samebit RC1IE, RCIE
 
 #sameVar TXREG2, TX2REG, U2TXB
 #samevar TXSTA2, TX2STA
@@ -189,6 +204,20 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samebit TX5IF, U5TXIF
 #samebit TXSTA5_TRMT, TX5STA_TRMT, U5ERRIR_TXMTIF
 #samevar RCREG5, RC5REG
+
+// Allocate Time out tick counter variable and timed out flag
+#ifdef USART_BLOCKING_TIMEOUT
+  dim UsartTimeOutTick as Long
+  dim HSerReceive_TimedOut as Bit
+  #script
+    if ChipMHz < 1 then
+      Error "Error: USART_BLOCKING_TIMEOUT requires a chip speed greater or equal to 1mhz."
+    end if
+    if ((USART_BLOCKING_TIMEOUT * 5)*ChipMHz) > 4294967295 Then
+      Error "Error: USART_BLOCKING_TIMEOUT value to high. the calculation of (USART_BLOCKING_TIMEOUT * 5)*ChipMHz could not be greater than 4294967295."
+    end if
+  #endscript
+#endif
 
 'Script to calculate baud rate generator values
 'Also sets constants to check if byte received
@@ -225,19 +254,10 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
       DEFAULTUSARTRETURNVALUE=255
   END IF
 
-
-  // 'Users may define USART1_BAUD_RATE as this makes logical sense, but, all the methods() use USART_BAUD_RATE for USART1.
-  // 'So, if they use USART1_BAUD_RATE then this will automatically create the correct CONSTANTs
-   If USART1_BAUD_RATE Then
-     USART_BAUD_RATE   = USART1_BAUD_RATE
-     USART_BLOCKING    = USART1_BLOCKING
-     USART_TX_BLOCKING = USART1_TX_BLOCKING
-     USART_BLOCKING    = USART1_BLOCKING
-  End if
-
   //~There is SELECT-CASE in HSerSend() to improve performance and to only include the CASEs when more than one USART is use.
+  //~This is the default check to count USARTs in use 
   SCRIPT_USART_USAGE_CHECK = 0
-  IF USART_BAUD_RATE THEN
+  IF DEF(USART_BAUD_RATE) or DEF(USART1_BAUD_RATE)  THEN
     SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
   END IF
   IF USART2_BAUD_RATE THEN
@@ -253,7 +273,17 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
   END IF
 
+
   If PIC Then
+
+    If NODEF(DEFAULT_COMPORT) Then
+      SCRIPT_DEFAULT_COMPORT = 1
+    End If
+    If DEF(DEFAULT_COMPORT) Then
+      SCRIPT_DEFAULT_COMPORT = DEFAULT_COMPORT
+    End If
+    
+
 
     if ChipSubFamily = 15001 then
           TXREG = TX1REG
@@ -859,15 +889,23 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     //~There is SELECT-CASE in HSerSend() to improve performance and to only include the CASEs when more than one USART is use.
     IF DEF(CHIPAVRDX) THEN
 
-          // Interrup enablers
-          USART0HasData = "USART0_STATUS.USART_RXCIF_bp = On"
-          USART1HasData = "USART1_STATUS.USART_RXCIF_bp = On"
-          USART2HasData = "USART2_STATUS.USART_RXCIF_bp = On"
-          USART3HasData = "USART3_STATUS.USART_RXCIF_bp = On"
-          USART4HasData = "USART4_STATUS.USART_RXCIF_bp = On"
+        If NODEF(DEFAULT_COMPORT) Then
+          SCRIPT_DEFAULT_COMPORT = 0
+        End If
+        If DEF(DEFAULT_COMPORT) Then
+          SCRIPT_DEFAULT_COMPORT = DEFAULT_COMPORT
+        End If
+        
+        // Interrup enablers
+        USART0HasData = "USART0_STATUS.USART_RXCIF_bp = On"
+        USART1HasData = "USART1_STATUS.USART_RXCIF_bp = On"
+        USART2HasData = "USART2_STATUS.USART_RXCIF_bp = On"
+        USART3HasData = "USART3_STATUS.USART_RXCIF_bp = On"
+        USART4HasData = "USART4_STATUS.USART_RXCIF_bp = On"
 
+        //~The AVRDx check for counting USARTS in use
         SCRIPT_USART_USAGE_CHECK = 0
-        IF USART_BAUD_RATE THEN
+        IF DEF(USART_BAUD_RATE) OR DEF(USART0_BAUD_RATE) THEN   //~Need to usee DEF() when OR/AND used
         SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
         END IF
         IF USART1_BAUD_RATE THEN
@@ -984,6 +1022,15 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 
     IF NODEF(CHIPAVRDX) THEN
       //~Support for legacy AVRs
+
+      If NODEF(DEFAULT_COMPORT) Then
+        SCRIPT_DEFAULT_COMPORT = 1
+      End If
+      If DEF(DEFAULT_COMPORT) Then
+        SCRIPT_DEFAULT_COMPORT = DEFAULT_COMPORT
+      End If
+            
+
 
       'Remap to the AVRrc methods()
       IF ChipFamily = 121 Then
@@ -1106,9 +1153,18 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
       End If
 
     END IF // NDEF CHIPAVRDX`
+  
+    If ISSUE_CHECK_USART_BAUD_RATE_WARNING then
+      warning "`ISSUE_CHECK_USART_BAUD_RATE_WARNING` not supported for AVR ... you can add to USART.h" 
+    end if
+
+    if CHECK_USART_BAUD_RATE then
+      warning "`CHECK_USART_BAUD_RATE` not supported for AVR ... you can add to USART.h" 
+    end if
+    
   End If // IF AVR
 
-  'Figure out if SerData needs to be set by DefaultUsartReturnValue
+  'Figure out if SerData needs to be set by DEFAULTUSARTRETURNVALUE
   SCRIPT_SET_DEFAULTUSART1RETURNVALUE = 0
   SCRIPT_SET_DEFAULTUSART2RETURNVALUE = 0
   SCRIPT_SET_DEFAULTUSART3RETURNVALUE = 0
@@ -1193,13 +1249,25 @@ Sub InitUSART
 
       #IF CHIPUSART > 1
         'Set the default value for USART handler - required when more than one USART
-        comport = 1
+        comport = SCRIPT_DEFAULT_COMPORT
       #ENDIF
 
       #If USART_BAUD_RATE Then
+
+
         'PIC USART 1 Init
 
-          #ifndef Bit(TXEN1)
+          #ifdef var(U1BRGH)
+              //~Set baud rate for for 18fxxK42/K83/Qxx series UART
+              U1BRGH=SPBRGH_TEMP
+              U1BRGL=SPBRGL_TEMP
+              U1BRGS = BRGS1_SCRIPT
+              U1TXEN=1   'Enable TX1
+              U1RXEN=1   'Enable RX1
+              ON_U1CON1=1 'Enable USART1
+          #endif
+    
+          #ifndef Bit(RXEN1)  
               #ifndef var(U1BRGH)
                   #ifndef Bit(BRG16)
                     #ifdef VAR(SPBRG)
@@ -1224,34 +1292,28 @@ Sub InitUSART
                     BRG16 = BRG16_TEMP
                   #endif
                   //~ Set High Baud Rate Select bit
-                  BRGH = BRGH_TEMP
+                  BRGH = BRGH_TEMP                                      
               #endif
 
-              #ifdef var(U1BRGH)
-                  //~Set baud rate for for 18fxxK42/K83 series UART
-                  U1BRGH=SPBRGH_TEMP
-                  U1BRGL=SPBRGL_TEMP
-                  U1BRGS = BRGS1_SCRIPT
-                  U1TXEN=1   'Enable TX1
-                  U1RXEN=1   'Enable RX1
-                  ON_U1CON1=1 'Enable USART1
-              #endif
-
-             #IFNDEF var(U1CON0)
+              #IFNDEF var(U1CON0)
               //~ Enable async and TX mode
               //~ Changed to canskip to silently exit when no USART
               //~ Changed to canskip to silently exit when no USART
-              #IFDEF bit(SYNC)
-                SYNC=0
-              #ENDIF
-              #IFDEF bit(TXEN)
-                TXEN=1
+                #IFDEF bit(SYNC)
+                  SYNC=0
+                #ENDIF
+                #IFDEF bit(TXEN)
+                  TXEN=1
+                #ENDIF
+
               #ENDIF
 
-             #ENDIF
+              #ifdef bit(SPEN)
+                SPEN=1
+              #endif
 
-             #ifdef bit(SPEN)
-                  SPEN=1
+              #ifdef bit(CREN)
+                CREN=1
               #endif
 
               #if var(RCSTA)                     //~ Isolate EN to RCSTA 
@@ -1259,11 +1321,11 @@ Sub InitUSART
                     CREN=1
                 #endif
               #endif
-
+            
           #endif
 
           #ifndef VAR(U1BRGH)
-            #ifdef Bit(TXEN1)
+            #ifdef Bit(RXEN1)
               'Set baud rate
               SPBRG1 = SPBRGL_TEMP
               #ifdef Bit(BRG16)
@@ -1514,7 +1576,7 @@ Sub InitUSART
 
         // Set the default value for USART handler - required when more than one USART
         Dim comport as Byte
-        comport = 0
+        comport = SCRIPT_DEFAULT_COMPORT
 
         #IFDEF USART_BAUD_RATE
             
@@ -1544,7 +1606,7 @@ Sub InitUSART
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART0 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
             #ENDIF
 
@@ -1584,7 +1646,7 @@ Sub InitUSART
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART1 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
             #ENDIF
 
@@ -1624,7 +1686,7 @@ Sub InitUSART
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART2 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
             #ENDIF
 
@@ -1664,7 +1726,7 @@ Sub InitUSART
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART3 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
             #ENDIF
 
@@ -1678,7 +1740,7 @@ Sub InitUSART
 
         #IFDEF USART4_BAUD_RATE
 
-            #IF DEF(ScriptUSART4TXpin)
+            #IF VAR(ScriptUSART4TXpin)
                 //~ Set direction automatically
                 DIR ScriptUSART4TXpin OUT
                 DIR ScriptUSART4RXpin IN   
@@ -1704,7 +1766,7 @@ Sub InitUSART
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART4 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
             #ENDIF
 
@@ -1722,7 +1784,7 @@ Sub InitUSART
 
       #IF CHIPUSART > 1
         'Set the default value for USART handler - required when more than one USART
-        comport = 1
+        comport = SCRIPT_DEFAULT_COMPORT
       #ENDIF
 
       #If USART_BAUD_RATE Then
@@ -1810,50 +1872,32 @@ End Sub
 
 sub HSerSend (In SerData)
 
-  #ifdef PIC
-    #If USART_BAUD_RATE Then
+  #IF (SCRIPT_USART_USAGE_CHECK = 1) AND ( DEF(USART_BAUD_RATE) ) AND ( NODEF(CHIPAVRDX) )
+ 
+    #ifdef PIC
+      #If USART_BAUD_RATE Then
 
-      //~Ensure specific 18F are set to digital port prior to USART usage
-      #Ifdef ChipFamily 16 
-        #ifdef bit(PCFG6) 
-          PCFG6 = 1
-        #endif
-        #ifdef bit(PCFG5) 
-          PCFG5 = 1
-        #endif                
-      #Endif
-
-      //~Registers/Bits determined by #samevar at top of library
-
-          #ifdef USART_TX_BLOCKING
-            'USART_TX_BLOCKING
-
-              #IF CANBUSCHIP_SCRIPT = TRUE
-                //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
-                Wait While U1TXIF = Off
-              #endif
-
-              #IF CANBUSCHIP_SCRIPT = FALSE
-                #ifdef Bit(TXIF)
-                  Wait While TXIF = Off
-                #endif
-                #ifdef Bit(TRMT)
-                  //~Ensure any previous operation has completed
-                  Wait until TRMT = 1
-                #endif
-            #endif
+        //~Ensure specific 18F are set to digital port prior to USART usage
+        #Ifdef ChipFamily 16 
+          #ifdef bit(PCFG6) 
+            PCFG6 = 1
           #endif
+          #ifdef bit(PCFG5) 
+            PCFG5 = 1
+          #endif                
+        #Endif
 
-          #ifdef USART_BLOCKING
+        //~Registers/Bits determined by #samevar at top of library
 
-            #ifndef USART_TX_BLOCKING //~The ifndef tests ensure the only one of USART_BLOCKING or USART_TX_BLOCKING is implemented
-              #IF CANBUSCHIP_SCRIPT = TRUE
-                //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
-                Wait While U1TXIF = Off
-              #endif
+            #ifdef USART_TX_BLOCKING
+              'USART_TX_BLOCKING
 
-              #IF CANBUSCHIP_SCRIPT = FALSE
-                //~USART_BLOCKING and NOT USART_TX_BLOCKING
+                #IF CANBUSCHIP_SCRIPT = TRUE
+                  //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
+                  Wait While U1TXIF = Off
+                #endif
+
+                #IF CANBUSCHIP_SCRIPT = FALSE
                   #ifdef Bit(TXIF)
                     Wait While TXIF = Off
                   #endif
@@ -1863,69 +1907,94 @@ sub HSerSend (In SerData)
                   #endif
               #endif
             #endif
-          #endif
 
-          #ifdef Var(TXREG)
-              //~Write The Data Byte To The Usart
-              //~Sets register to value of SerData - where register could be TXREG or TXREG1 or U1TXB set via the #samevar
-              TXREG = SerData
+            #ifdef USART_BLOCKING
 
-              #IF USART_DELAY <> OFF
-                  //~ All bits shifted out on TX Pin
-                  Wait USART_DELAY
-              #ENDIF
+              #ifndef USART_TX_BLOCKING //~The ifndef tests ensure the only one of USART_BLOCKING or USART_TX_BLOCKING is implemented
+                #IF CANBUSCHIP_SCRIPT = TRUE
+                  //~ family 18fxx84 chips have TXIF as CANBUS Interrupt and we need to isolate TX1F from USART and use U1TXIF. Cannot use samebit as this would break any CANBUS usage
+                  Wait While U1TXIF = Off
+                #endif
 
-          #endif
+                #IF CANBUSCHIP_SCRIPT = FALSE
+                  //~USART_BLOCKING and NOT USART_TX_BLOCKING
+                    #ifdef Bit(TXIF)
+                      Wait While TXIF = Off
+                    #endif
+                    #ifdef Bit(TRMT)
+                      //~Ensure any previous operation has completed
+                      Wait until TRMT = 1
+                    #endif
+                #endif
+              #endif
+            #endif
 
-    #endif
+            #ifdef Var(TXREG)
+                //~Write The Data Byte To The Usart
+                //~Sets register to value of SerData - where register could be TXREG or TXREG1 or U1TXB set via the #samevar
+                TXREG = SerData
 
-  #endif
+                #IF USART_DELAY <> OFF
+                    //~ All bits shifted out on TX Pin
+                    Wait USART_DELAY
+                #ENDIF
 
-  #ifdef AVR
-   'AVR USART1 Send
-    #If USART_BAUD_RATE Then
-        #ifdef USART_BLOCKING
-          #ifdef Bit(UDRE0)
-            Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
-          #endif
+            #endif
 
-          #ifndef Bit(UDRE0)
-            Wait While UDRE = Off
-          #endif
-        #endif
-
-        #ifdef  USART_TX_BLOCKING
-          #ifdef Bit(UDRE0)
-            Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
-          #endif
-
-          #ifndef Bit(UDRE0)
-            Wait While UDRE = Off
-          #endif
-        #endif
-
-        #ifdef Var(UDR) ' ***************
-          UDR = SerData
-        #endif
-
-        #ifdef Var(UDR0)
-          UDR0 = SerData ' *******************
-        #endif
+      #endif
 
     #endif
 
-  #endif
+    #ifdef AVR
+    'AVR USART1 Send
+      #If USART_BAUD_RATE Then
+          #ifdef USART_BLOCKING
+            #ifdef Bit(UDRE0)
+              Wait While UDRE0 = Off    'Blocking Both Transmit buffer empty ,ready for data
+            #endif
+
+            #ifndef Bit(UDRE0)
+              Wait While UDRE = Off
+            #endif
+          #endif
+
+          #ifdef  USART_TX_BLOCKING
+            #ifdef Bit(UDRE0)
+              Wait While UDRE0 = Off    'Blocking Transmit buffer empty ,ready for data
+            #endif
+
+            #ifndef Bit(UDRE0)
+              Wait While UDRE = Off
+            #endif
+          #endif
+
+          #ifdef Var(UDR) ' ***************
+            UDR = SerData
+          #endif
+
+          #ifdef Var(UDR0)
+            UDR0 = SerData ' *******************
+          #endif
+
+      #endif
+
+    #endif
+
+  #ELSE
+    ' Send direct to correct HSerSend()
+    HserSend ( SerData, comport )
+  #ENDIF
 
 end sub
 
 
-sub HSerSend (In SerData, optional In comport = 1)
+sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
 
   #ifdef PIC
 
     //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
     #if SCRIPT_USART_USAGE_CHECK > 1 Then
-    Select Case comport
+    Select Case comport  
     #endif
 
     #If USART_BAUD_RATE Then
@@ -2177,7 +2246,7 @@ sub HSerSend (In SerData, optional In comport = 1)
     #IFDEF CHIPAVRDX
 
         //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
-        #IF SCRIPT_USART_USAGE_CHECK > 1 THEN
+        #IF (SCRIPT_USART_USAGE_CHECK > 1)
             Select Case comport
         #ENDIF
 
@@ -2205,7 +2274,7 @@ sub HSerSend (In SerData, optional In comport = 1)
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART0 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
                 #ENDIF
 
@@ -2245,7 +2314,7 @@ sub HSerSend (In SerData, optional In comport = 1)
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART1 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
                 #ENDIF
 
@@ -2285,7 +2354,7 @@ sub HSerSend (In SerData, optional In comport = 1)
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART2 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
                 #ENDIF
 
@@ -2325,7 +2394,7 @@ sub HSerSend (In SerData, optional In comport = 1)
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART3 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
                 #ENDIF
 
@@ -2365,7 +2434,7 @@ sub HSerSend (In SerData, optional In comport = 1)
                     //! or, email us:
                     //! evanvennn at users dot sourceforge dot net
                     //! 
-                    RaiseCompilerError "Unrecognised AVRDX chip"   'uses messages.dat
+                    RaiseCompilerError "No USART4 or Unrecognised AVRDX chip"   'uses messages.dat
                     #ENDIF
                 #ENDIF
 
@@ -2428,8 +2497,6 @@ sub HSerSend (In SerData, optional In comport = 1)
           #endif
         End If
       #endif
-
-      ;----------------------------------------------------
 
       #If USART2_BAUD_RATE Then
         'AVR USART 2 send
@@ -2500,26 +2567,32 @@ sub HSerSend (In SerData, optional In comport = 1)
 end sub
 
 Function HSerReceive
-  Comport = 1
   HSerReceive( SerData )
   HSerReceive = SerData
 End Function
 
+Function HSerReceive ( Optional in comport = SCRIPT_DEFAULT_COMPORT )
+  Comport = comport
+  HSerReceive( SerData )
+  HSerReceive = SerData
+End Function
+
+
 Function HSerReceive1
-  Comport = 1
+  Comport = SCRIPT_DEFAULT_COMPORT
   HSerReceive( SerData )
   HSerReceive1 = SerData
 End Function
 
 
 Function HSerReceive2
-  Comport = 2
+  Comport = SCRIPT_DEFAULT_COMPORT + 1
   HSerReceive( SerData )
   HSerReceive2 = SerData
 End Function
 
 
-Function HSerReceiveFrom ( Optional in comport = 1 )
+Function HSerReceiveFrom ( Optional in comport = SCRIPT_DEFAULT_COMPORT )
   Comport = comport
   HSerReceive( SerData )
   HSerReceiveFrom = SerData
@@ -2542,22 +2615,22 @@ Sub HSerReceive(Out SerData)
         #endif                
       #Endif
 
-    //~Only set the Serdata to DefaultUsartReturnValue if needed. See the script for the examimation criteria
+    //~Only set the Serdata to DEFAULTUSARTRETURNVALUE if needed. See the script for the examimation criteria
     //~It has to check all 5 usarts as any or all could need the value setting.
     #IF SCRIPT_SET_DEFAULTUSART1RETURNVALUE = 1
-      SerData = DefaultUsartReturnValue
+      SerData = DEFAULTUSARTRETURNVALUE
     #ELSE
       #IF SCRIPT_SET_DEFAULTUSART2RETURNVALUE = 1
-        SerData = DefaultUsartReturnValue
+        SerData = DEFAULTUSARTRETURNVALUE
       #ELSE
         #IF SCRIPT_SET_DEFAULTUSART3RETURNVALUE = 1
-          SerData = DefaultUsartReturnValue
+          SerData = DEFAULTUSARTRETURNVALUE
         #ELSE
           #IF SCRIPT_SET_DEFAULTUSART4RETURNVALUE = 1
-            SerData = DefaultUsartReturnValue
+            SerData = DEFAULTUSARTRETURNVALUE
           #ELSE
             #IF SCRIPT_SET_DEFAULTUSART5RETURNVALUE = 1
-              SerData = DefaultUsartReturnValue
+              SerData = DEFAULTUSARTRETURNVALUE
             #ENDIF
           #ENDIF
         #ENDIF
@@ -2578,8 +2651,22 @@ Sub HSerReceive(Out SerData)
       #endif
 
         #ifdef USART_BLOCKING
-           'Get a byte from register, if interrupt flag is valid
-           Wait Until USARTHasData
+           #ifdef USART_BLOCKING_TIMEOUT
+              'Timed out wait for USART_BLOCKING 
+              UsartTimeOutTick = 0
+              HSerReceive_TimedOut = 0
+              do until USARTHasData
+                UsartTimeOutTick ++
+                if UsartTimeOutTick > (USART_BLOCKING_TIMEOUT * 5)*ChipMHz Then
+                  HSerReceive_TimedOut = 1
+                  SerData = 0xFF
+                  exit sub
+                end If
+              Loop
+           #else
+              'Get a byte from register, if interrupt flag is valid
+              Wait Until USARTHasData
+           #endif
         #endif
 
         #ifdef var(U1RXB)
@@ -2667,7 +2754,21 @@ Sub HSerReceive(Out SerData)
       #endif
 
         #ifdef USART2_BLOCKING
-           Wait Until USART2HasData
+          #ifdef USART_BLOCKING_TIMEOUT
+            'Timed out wait for USART_BLOCKING 
+            UsartTimeOutTick = 0
+            HSerReceive_TimedOut = 0
+            do until USART2HasData
+              UsartTimeOutTick ++
+              if UsartTimeOutTick > (USART_BLOCKING_TIMEOUT * 5)*ChipMHz Then
+                HSerReceive_TimedOut = 1
+                SerData = 0xFF
+                exit sub
+              end If
+            Loop
+          #else
+            Wait Until USART2HasData
+          #endif
         #endif
 
         #ifdef Var(RC2REG)
@@ -2722,7 +2823,21 @@ Sub HSerReceive(Out SerData)
       #endif
 
         #ifdef USART3_BLOCKING
-           Wait Until USART3HasData
+          #ifdef USART_BLOCKING_TIMEOUT
+            'Timed out wait for USART_BLOCKING 
+            UsartTimeOutTick = 0
+            HSerReceive_TimedOut = 0
+            do until USART3HasData
+              UsartTimeOutTick ++
+              if UsartTimeOutTick > (USART_BLOCKING_TIMEOUT * 5)*ChipMHz Then
+                HSerReceive_TimedOut = 1
+                SerData = 0xFF
+                exit sub
+              end If
+            Loop
+          #else
+            Wait Until USART3HasData
+          #endif
         #endif
         
         #ifdef var(U3RXB)
@@ -2762,7 +2877,21 @@ Sub HSerReceive(Out SerData)
       #endif
 
         #ifdef USART4_BLOCKING
-           Wait Until USART4HasData
+          #ifdef USART_BLOCKING_TIMEOUT
+            'Timed out wait for USART_BLOCKING 
+            UsartTimeOutTick = 0
+            HSerReceive_TimedOut = 0
+            do until USART4HasData
+              UsartTimeOutTick ++
+              if UsartTimeOutTick > (USART_BLOCKING_TIMEOUT * 5)*ChipMHz Then
+                HSerReceive_TimedOut = 1
+                SerData = 0xFF
+                exit sub
+              end If
+            Loop
+          #else
+            Wait Until USART4HasData
+          #endif
         #endif
 
         #ifdef var(U4RXB)
@@ -2802,7 +2931,21 @@ Sub HSerReceive(Out SerData)
       #endif
 
         #ifdef USART5_BLOCKING
-           Wait Until USART5HasData
+          #ifdef USART_BLOCKING_TIMEOUT
+            'Timed out wait for USART_BLOCKING 
+            UsartTimeOutTick = 0
+            HSerReceive_TimedOut = 0
+            do until USART5HasData
+              UsartTimeOutTick ++
+              if UsartTimeOutTick > (USART_BLOCKING_TIMEOUT * 5)*ChipMHz Then
+                HSerReceive_TimedOut = 1
+                SerData = 0xFF
+                exit sub
+              end If
+            Loop
+          #else
+            Wait Until USART5HasData
+          #endif
         #endif
 
         #ifdef Var(RC5REG)
@@ -2841,111 +2984,237 @@ Sub HSerReceive(Out SerData)
 
 
   #ifdef AVR
-    'AVR USART 1 receive
-    #If USART_BAUD_RATE Then
-      if comport = 1 Then
-        SerData = DefaultUsartReturnValue
-        'If set up to block, wait for data
-        #ifdef USART_BLOCKING
-        Wait Until USARTHasData
+    #ifndef CHIPAVRDX
+      'AVR USART 1 receive
+      #If USART_BAUD_RATE Then
+        if comport = 1 Then
+          SerData = DEFAULTUSARTRETURNVALUE
+          'If set up to block, wait for data
+          #ifdef USART_BLOCKING
+          Wait Until USARTHasData
+          #endif
+          If USARTHasData Then
+            #ifndef Var(UDR0)
+              #ifdef Var(UDR1)
+                SerData = UDR1
+              #endif
+              #ifndef Var(UDR1)
+                SerData = UDR
+              #endif
+            #endif
+            #ifdef Var(UDR0)
+              SerData = UDR0
+            #endif
+          End If
+        End If
+      #endif
+
+
+      #If USART2_BAUD_RATE Then
+        'AVR USART 2 receive
+          if comport = 2 Then
+            SerData = DEFAULTUSARTRETURNVALUE
+            'If set up to block, wait for data
+            #ifdef USART2_BLOCKING
+            Wait Until USART2HasData
+            #endif
+            If USART2HasData Then
+              #ifdef Var(UDR1)
+                SerData = UDR1
+              #endif
+            End If
+          End If
+      #endif
+
+
+      #If USART3_BAUD_RATE Then
+          'AVR USART 3 receive
+          if comport = 3 Then
+            SerData = DEFAULTUSARTRETURNVALUE
+            'If set up to block, wait for data
+            #ifdef USART3_BLOCKING
+            Wait Until USART3HasData
+            #endif
+            If USART3HasData Then
+              #ifdef Var(UDR2)
+                SerData = UDR2
+              #endif
+            End If
+          End If
         #endif
-        If USARTHasData Then
-          #ifndef Var(UDR0)
-            #ifdef Var(UDR1)
-              SerData = UDR1
+
+
+      #If USART4_BAUD_RATE Then
+          'AVR USART 4 receive
+          if comport = 4 Then
+            SerData = DEFAULTUSARTRETURNVALUE
+            'If set up to block, wait for data
+            #ifdef USART4_BLOCKING
+            Wait Until USART4HasData
             #endif
-            #ifndef Var(UDR1)
-              SerData = UDR
-            #endif
-          #endif
-          #ifdef Var(UDR0)
-            SerData = UDR0
-          #endif
-        End If
-      End If
+            If USART4HasData Then
+              #ifdef Var(UDR3)
+                SerData = UDR3
+              #endif
+            End If
+          End If
+        #endif
     #endif
 
+    #ifdef CHIPAVRDX
+        //~  This looks complex but really very simple, the goal is to make things easy for the user
+        //~  This checks the USARTn_BAUD RATE exists and if only one USART is in use then the conditions will optimise the ASM
+        //~  If more than one USART is in use then `if comport = n then` is added.
+        //~
+        //~  The USART_RX_BLOCKING is conditionally added
+        //~
+        
+        #IFDEF ONEOF(USART0_BAUD_RATE,USART1_BAUD_RATE,USART2_BAUD_RATE,USART3_BAUD_RATE,USART4_BAUD_RATE)
+          //~Explaination - set the default return value as this can be tested by the user
+          SerData = DEFAULTUSARTRETURNVALUE
+        #ENDIF
+        #IF DEF(USART0_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          If comport = 0 Then
+            //~Explaination - If comport = nn is present then the user is using more than one USART 
+            #ENDIF
+              #IF DEF(USART0_BAUD_RATE) OR DEF(USART_BAUD_RATE)
+                #IF DEF(USART0_RX_BLOCKING) OR DEF(USART_RX_BLOCKING)
+                  //~If set up to block, wait for data
+                  //~Explaination - wait for serial data as either USART0_RX_BLOCKING or USART_RX_BLOCKING has been defined
+                  Wait While USART0_STATUS.USART_RXCIF_bp = Off
+                #ENDIF
+              
+                If USART0HasData Then
+                  #IF VAR(USART0_RXDATAL)
+                    SerData = USART0_RXDATAL
+                  #ENDIF
+                End If // If USART0HasData
+              #ENDIF
+            #IF DEF(USART0_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          End If //If Comport = 0
+        #ENDIF
 
-    #If USART2_BAUD_RATE Then
-       'AVR USART 2 receive
-        if comport = 2 Then
-          SerData = DefaultUsartReturnValue
-          'If set up to block, wait for data
-          #ifdef USART2_BLOCKING
-          Wait Until USART2HasData
-          #endif
-          If USART2HasData Then
-            #ifdef Var(UDR1)
-              SerData = UDR1
-            #endif
-          End If
-        End If
-    #endif
+        #IF DEF(USART1_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          If comport = 1 Then
+            //~Explaination - If comport = nn is present then the user is using more than one USART 
+            #ENDIF
+              #IF DEF(USART1_BAUD_RATE)
+                #IF DEF(USART1_RX_BLOCKING) OR DEF(USART_RX_BLOCKING)
+                  //~If set up to block, wait for data
+                  //~Explaination - wait for serial data as either USART1_RX_BLOCKING or USART_RX_BLOCKING has been defined
+                  Wait While USART1_STATUS.USART_RXCIF_bp = Off
+                #ENDIF
+              
+                If USART1HasData Then
+                  #IF VAR(USART1_RXDATAL)
+                    SerData = USART1_RXDATAL
+                  #ENDIF
+                End If // If USART1HasData
+              #ENDIF
+            #IF DEF(USART1_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          End If //If Comport = 1
+        #ENDIF
 
+        #IF DEF(USART2_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          If comport = 2 Then
+            //~Explaination - If comport = nn is present then the user is using more than one USART 
+            #ENDIF
+              #IF DEF(USART2_BAUD_RATE)
+                #IF DEF(USART2_RX_BLOCKING) OR DEF(USART_RX_BLOCKING)
+                  //~If set up to block, wait for data
+                  //~Explaination - wait for serial data as either USART2_RX_BLOCKING or USART_RX_BLOCKING has been defined
+                  Wait While USART2_STATUS.USART_RXCIF_bp = Off
+                #ENDIF
+              
+                If USART2HasData Then
+                  #IF VAR(USART2_RXDATAL)
+                    SerData = USART2_RXDATAL
+                  #ENDIF
+                End If // If USART2HasData
+              #ENDIF
+            #IF DEF(USART2_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          End If //If Comport = 2
+        #ENDIF
 
-    #If USART3_BAUD_RATE Then
-        'AVR USART 3 receive
-        if comport = 3 Then
-          SerData = DefaultUsartReturnValue
-          'If set up to block, wait for data
-          #ifdef USART3_BLOCKING
-          Wait Until USART3HasData
-          #endif
-          If USART3HasData Then
-            #ifdef Var(UDR2)
-              SerData = UDR2
-            #endif
-          End If
-        End If
-      #endif
+        #IF DEF(USART3_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          If comport = 3 Then
+            //~Explaination - If comport = nn is present then the user is using more than one USART 
+            #ENDIF
+              #IF DEF(USART3_BAUD_RATE)
+                #IF DEF(USART3_RX_BLOCKING) OR DEF(USART_RX_BLOCKING)
+                  //~If set up to block, wait for data
+                  //~Explaination - wait for serial data as either USART3_RX_BLOCKING or USART_RX_BLOCKING has been defined
+                  Wait While USART3_STATUS.USART_RXCIF_bp = Off
 
+                #ENDIF
+              
+                If USART3HasData Then
+                  #IF VAR(USART3_RXDATAL)
+                    SerData = USART3_RXDATAL
+                  #ENDIF
+                End If // If USART3HasData
+              #ENDIF
+            #IF DEF(USART3_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          End If //If Comport = 3
+        #ENDIF
 
-    #If USART4_BAUD_RATE Then
-        'AVR USART 4 receive
-        if comport = 4 Then
-          SerData = DefaultUsartReturnValue
-          'If set up to block, wait for data
-          #ifdef USART4_BLOCKING
-          Wait Until USART4HasData
-          #endif
-          If USART4HasData Then
-            #ifdef Var(UDR3)
-              SerData = UDR3
-            #endif
-          End If
-        End If
-      #endif
-  #endif
+        #IF DEF(USART4_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          If comport = 4 Then
+            //~Explaination - If comport = nn is present then the user is using more than one USART 
+            #ENDIF
+              #IF DEF(USART4_BAUD_RATE)
+                #IF DEF(USART4_RX_BLOCKING) OR DEF(USART_RX_BLOCKING)
+                  //~If set up to block, wait for data
+                  //~Explaination - wait for serial data as either USART4_RX_BLOCKING or USART_RX_BLOCKING has been defined
+                  Wait While USART4_STATUS.USART_RXCIF_bp = Off
+                #ENDIF
+              
+                If USART4HasData Then
+                  #IF VAR(USART4_RXDATAL)
+                    SerData = USART4_RXDATAL
+                  #ENDIF
+                End If // If USART4HasData
+              #ENDIF
+            #IF DEF(USART4_BAUD_RATE) AND ( SCRIPT_USART_USAGE_CHECK > 1  )
+          End If //If Comport = 4
+        #ENDIF
+    #ENDIF
+
+  #ENDIF
 
 End Sub
 
 
   'Added  11/4/2015 by mlo
   'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-
+  'Revised 27/08/2024 to use a lot less resources
   ' A number is input to a USART as a series of ASCII digits with a CR at the end
   'Output Value is in range of 0 to 65535 (Dec)
   'Input value is entered as decimal digits
-sub HSerGetNum (Out HSerNum As Word, optional In comport = 1)
-  Dim HSerDataIn(5)
-  HSerIndex = 0
+sub HSerGetNum (Out HSerNum As Word, optional In comport = SCRIPT_DEFAULT_COMPORT )
+  Dim HSerInByte, HSerIndex
+  HSerIndex = 1  
   HSerNum = 0
+  HSerInByte = DEFAULTUSARTRETURNVALUE
+ 
+    Do 
+        HSerReceive( HSerInByte, comport )
 
-  Do
-    HSerReceive( HSerInByte )
-    'Enter key?
-    If HSerInByte = 13 OR HSerIndex >= 5 Then       ' ***** look for CR  OR digits >= 5****
-      For HSerTemp = 1 to HSerIndex
-        HSerNum = HSerNum * 10 + HSerDataIn(HSerTemp) - 48
-      Next
-      Exit Sub
-    End If
-    'Number?
-    If HSerInByte >= 48 and HSerInByte <= 57 Then
-        HSerIndex++
-        HSerDataIn(HSerIndex) = HSerInByte
-    End If
-  Loop
+        If HSerInByte = 13 Then
+            // Exit upon CR
+            Exit Do    
+        End If     
+          
+        If HSerInByte >= 48 and HSerInByte <= 57 Then
+            // Ensure the calc only uses the first 5 chars
+            If HSerIndex < 6 Then 
+                HSerIndex++
+                HSerNum = HSerNum * 10 + HSerInByte - 48  
+            End If
+        End If
+ 
+    Loop
+    
 End Sub
 
   'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
@@ -2953,7 +3222,7 @@ End Sub
   ' A number is input to a USART as a series of ASCII digits with a CR at the end
   'Output Value is in range of 0 to 99999 (Dec)
   'Input value is entered as decimal digits
-sub HSerGetNum (Out HSerNum As Long, optional In comport = 1)
+sub HSerGetNum (Out HSerNum As Long, optional In comport = SCRIPT_DEFAULT_COMPORT )
   Dim HSerDataIn(5)
   HSerIndex = 0
   HSerNum = 0
@@ -2978,7 +3247,7 @@ sub HSerGetNum (Out HSerNum As Long, optional In comport = 1)
 End Sub
 
 
-function HSERGETSTRING ( optional In comport = 1)
+function HSERGETSTRING ( optional In comport = SCRIPT_DEFAULT_COMPORT )
   HSerGetString (  HSERGETSTRING , comport )
 end function
 
@@ -2988,7 +3257,7 @@ end function
   ' A string is input to a USART as a series of ASCII chars with a CR at the end
   'Output Value is a string
   'Input value is entered as digits,letters and most punctuation
-sub HSerGetString (Out HSerString As String, optional In comport = 1)
+sub HSerGetString (Out HSerString As String, optional In comport = SCRIPT_DEFAULT_COMPORT )
   HSerIndex = 0
   Do
     comport = comport 'not really required but added for clarity
@@ -3007,7 +3276,7 @@ sub HSerGetString (Out HSerString As String, optional In comport = 1)
 End Sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-sub HSerPrintStringCRLF (In PrintData As String, optional In comport = 1)
+sub HSerPrintStringCRLF (In PrintData As String, optional In comport = SCRIPT_DEFAULT_COMPORT )
 
   PrintLen = PrintData(0)
 
@@ -3024,7 +3293,7 @@ sub HSerPrintStringCRLF (In PrintData As String, optional In comport = 1)
 End Sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-sub HSerPrint (In PrintData As String, optional In comport = 1)
+sub HSerPrint (In PrintData As String, optional In comport = SCRIPT_DEFAULT_COMPORT )
 
   PrintLen = PrintData(0)
 
@@ -3090,7 +3359,7 @@ sub HSerPrint (In PrintData As String, optional In comport = 1)
 
 end sub
 
-Sub HserSpace(IN Optional NumSpaces = 1, IN Optional Comport = 1)
+Sub HserSpace(IN Optional NumSpaces = 1, IN Optional Comport = SCRIPT_DEFAULT_COMPORT )
    Repeat Numspaces
      Hsersend 32, Comport
    End Repeat
@@ -3098,7 +3367,7 @@ End Sub
 
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-sub HSerPrint (In SerPrintVal, optional In comport = 1)
+sub HSerPrint (In SerPrintVal, optional In comport = SCRIPT_DEFAULT_COMPORT )
 
   OutValueTemp = 0
 
@@ -3127,7 +3396,7 @@ sub HSerPrint (In SerPrintVal, optional In comport = 1)
 end sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-Sub HSerPrint (In SerPrintVal As Word, optional In comport = 1)
+Sub HSerPrint (In SerPrintVal As Word, optional In comport = SCRIPT_DEFAULT_COMPORT )
   Dim SysCalcTempX As Word
 
   OutValueTemp = 0
@@ -3177,7 +3446,7 @@ Sub HSerPrint (In SerPrintVal As Word, optional In comport = 1)
 End Sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-Sub HSerPrint (In SerPrintValInt As Integer, optional In comport = 1)
+Sub HSerPrint (In SerPrintValInt As Integer, optional In comport = SCRIPT_DEFAULT_COMPORT )
   Dim SerPrintVal As Word
 
   'If sign bit is on, print - sign and then negate
@@ -3196,7 +3465,7 @@ Sub HSerPrint (In SerPrintValInt As Integer, optional In comport = 1)
 End Sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-Sub HSerPrint (In SerPrintVal As Long, optional In comport = 1)
+Sub HSerPrint (In SerPrintVal As Long, optional In comport = SCRIPT_DEFAULT_COMPORT )
 
   Dim SysCalcTempA As Long
   Dim SysPrintBuffer(10)
@@ -3226,7 +3495,7 @@ Sub HSerPrint (In SerPrintVal As Long, optional In comport = 1)
 End Sub
 
  'Revised 05/07/2020 to  duplicate method without the comport parameter.  Change this method and you must change the duplicate method - the one without  comport.
-Sub HserPrintByteCRLF(In PrintValue,optional In comport =1)
+Sub HserPrintByteCRLF(In PrintValue,optional In comport =SCRIPT_DEFAULT_COMPORT )
   HSerPrint(PrintValue)
   HSerSend(13,comport)
   HSerSend(10,comport)
@@ -3548,7 +3817,7 @@ Sub HSerReceiveRC(Out SerData)
 
         if comport = 1 Then
 
-          SerData = DefaultUsartReturnValue
+          SerData = DEFAULTUSARTRETURNVALUE
 
           #ifdef USART_BLOCKING
             'If set up to block, wait for data
@@ -3622,7 +3891,7 @@ Sub HSerReceiveRC(Out SerData)
       #If USART2_BAUD_RATE Then
         'PIC USART 2 receive
         if comport = 2 Then
-          SerData = DefaultUsartReturnValue
+          SerData = DEFAULTUSARTRETURNVALUE
 
           #ifdef USART2_BLOCKING
             Wait Until USART2HasData
@@ -3670,7 +3939,7 @@ Sub HSerReceiveRC(Out SerData)
     #ifdef AVR
       'AVR USART 1 receive
       #If USART_BAUD_RATE Then
-          SerData = DefaultUsartReturnValue
+          SerData = DEFAULTUSARTRETURNVALUE
           'If set up to block, wait for data
           #ifdef USART_BLOCKING
           Wait Until USARTHasData

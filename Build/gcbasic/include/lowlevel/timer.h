@@ -97,9 +97,12 @@
 ' 18/09/2020: Added TCNT1 handling SetTimer specific change for AVR
 ' 02/01/2021: Corrected TCNT1 value for PS_1_8192
 ' 10/08/2021: Added fix for K40 Chips that require T0CON1 ASYNC bit to be set On
-' 14/08/22 Updated user changeable constants only - no functional change
-' 25/10/23 Updated to restore FOSC4 constant
-' 27/11/23 Updated to isolate AVR and PIC constants
+' 14/08/2022: Updated user changeable constants only - no functional change
+' 25/10/2023: Updated to restore FOSC4 constant
+' 27/11/2023: Updated to isolate AVR and PIC constants
+' 30/08/2024: Added AVRDX support
+'             Moved AVR constants to script for AVR legacy and AVRDX isolation
+'             Correct AVRDX masks for CLKSEL[2:0]
 '***********************************************************
 
 'Subroutines:
@@ -220,6 +223,10 @@
  '******   AVR TIMER  DIM/ALIAS ****************
  #ifdef AVR
 
+    #Ifdef var(TCA0_SINGLE_PERH) 
+      Dim TCA0_SINGLE_PERIOD as Word Alias TCA0_SINGLE_PERH, TCA0_SINGLE_PERL
+    #endif
+    
     #ifdef var(TCNT0) '8-bit Timer0
         DIM Timer0 Alias TCNT0 as Byte
     #endif
@@ -330,8 +337,6 @@
      USE_TIMER12=TRUE
   END IF
 
-
-
   if PIC then
 
     clocksourcetypetype  = 0
@@ -388,48 +393,118 @@
 
   end if
 
-#ENDSCRIPT
+  If AVR Then
 
- #ifdef AVR
-      //~ timer for AVR - ERV
+   // Added for AVRDX support as AVRDX uses different timer constant values
+   IF NODEF(CHIPAVRDX) THEN
+      //~ timer for AVR - these were defines but need to be script to support AVRDX
       //~ timer 0
-      #define PS_0 0         ' no clock source
-      #define PS_1 1
-      #define PS_8 2
-      #define PS_64 3
-      #define PS_256 4
-      #define PS_1024 5
+      PS_0     = 0         ' no clock source
+      PS_1     = 1
+      PS_8     = 2
+      PS_64    = 3
+      PS_256   = 4
+      PS_1024  = 5
 
-      #define PS_0_0 0        ' no clock source
-      #define PS_0_1 1
-      #define PS_0_8 2
-      #define PS_0_64 3
-      #define PS_0_256 4
-      #define PS_0_1024 5
+      PS_0_0   = 0        ' no clock source
+      PS_0_1   = 1
+      PS_0_8   = 2
+      PS_0_64  = 3
+      PS_0_256 = 4
+      PS_0_1024 = 5
 
       ' Set the script for PS_1_*
 
-      #define PS_3_0 0         ' no clock source
-      #define PS_3_1 1
-      #define PS_3_8 2
-      #define PS_3_64 3
-      #define PS_3_256 4
-      #define PS_3_1024 5
+      PS_3_0   = 0         ' no clock source
+      PS_3_1   = 1
+      PS_3_8   = 2
+      PS_3_64  = 3
+      PS_3_256 = 4
+      PS_3_1024 = 5
 
-      #define PS_4_0 0         ' no clock source
-      #define PS_4_1 1
-      #define PS_4_8 2
-      #define PS_4_64 3
-      #define PS_4_256 4
-      #define PS_4_1024 5
+      PS_4_0   = 0         ' no clock source
+      PS_4_1   = 1
+      PS_4_8   = 2
+      PS_4_64  = 3
+      PS_4_256 = 4
+      PS_4_1024 = 5
 
-      #define PS_5_0 0         ' no clock source
-      #define PS_5_1 1
-      #define PS_5_8 2
-      #define PS_5_64 3
-      #define PS_5_256 4
-      #define PS_5_1024 5
-#endif
+      PS_5_0   = 0         ' no clock source
+      PS_5_1   = 1
+      PS_5_8   = 2
+      PS_5_64  = 3
+      PS_5_256 = 4
+      PS_5_1024 = 5
+   END IF
+   IF DEF(CHIPAVRDX) THEN
+
+      //~ timer 0 CLKSEL[2:0] which is bits [3:1]
+      PS_0     =  0       ' System clock
+      PS_2     =  2
+      PS_4     =  4
+      PS_8     =  6
+      PS_16    =  8
+      PS_64    =  10
+      PS_256   =  12
+      PS_1024  =  14
+
+      PS_0_0     =  PS_0
+      PS_0_2     =  PS_2
+      PS_0_4     =  PS_4
+      PS_0_8     =  PS_8
+      PS_0_16    =  PS_16
+      PS_0_64    =  PS_64
+      PS_0_256   =  PS_256
+      PS_0_1024  =  PS_1024
+
+   END IF
+
+
+  End If
+
+#ENDSCRIPT
+
+//  #ifdef AVR
+//       //~ timer for AVR - ERV
+//       //~ timer 0
+//       #define PS_0 0         ' no clock source
+//       #define PS_1 1
+//       #define PS_8 2
+//       #define PS_64 3
+//       #define PS_256 4
+//       #define PS_1024 5
+
+//       #define PS_0_0 0        ' no clock source
+//       #define PS_0_1 1
+//       #define PS_0_8 2
+//       #define PS_0_64 3
+//       #define PS_0_256 4
+//       #define PS_0_1024 5
+
+//       ' Set the script for PS_1_*
+
+//       #define PS_3_0 0         ' no clock source
+//       #define PS_3_1 1
+//       #define PS_3_8 2
+//       #define PS_3_64 3
+//       #define PS_3_256 4
+//       #define PS_3_1024 5
+
+//       #define PS_4_0 0         ' no clock source
+//       #define PS_4_1 1
+//       #define PS_4_8 2
+//       #define PS_4_64 3
+//       #define PS_4_256 4
+//       #define PS_4_1024 5
+
+//       #define PS_5_0 0         ' no clock source
+//       #define PS_5_1 1
+//       #define PS_5_8 2
+//       #define PS_5_64 3
+//       #define PS_5_256 4
+//       #define PS_5_1024 5
+
+// #endif
 
   'support 16f188xx series (and others) 8/16 bit timers
   '
@@ -901,6 +976,13 @@ Sub StartTimer(In TMRNumber)
         End If
      #endif
 
+    // AVRDX support   - Starttimer
+    #ifdef Var(TCA0_SINGLE_CTRLA)
+      If TMRNumber = 0 Then
+        TCA0_SINGLE_CTRLA = TCA0_SINGLE_CTRLA OR TCA_SINGLE_ENABLE_bm OR TMR0_TMP
+      End If
+    #endif
+
   #endif
 
 End Sub
@@ -1267,6 +1349,14 @@ Sub SetTimer (In TMRNumber, In TMRValue As Word)
         TCNT5L = TMRValue
       End If
     #endif
+
+    // AVRDX support  
+    #ifdef Var(TCA0_SINGLE_PER)
+      If TMRNumber = 0 Then
+        TCA0_SINGLE_PERIOD = TMRValue
+      End If
+    #endif
+
   #endif
 
 End Sub
@@ -1404,6 +1494,14 @@ Sub StopTimer (In TMRNumber)
           TCCR5B = TCCR5B And 248
         End If
      #endif
+
+    // AVRDX support  - StopTimer
+    #ifdef Var(TCA0_SINGLE_CTRLA)
+      If TMRNumber = 0 Then
+        TCA0_SINGLE_CTRLA = TCA0_SINGLE_CTRLA XOR TCA_SINGLE_ENABLE_bm
+      End If
+    #endif
+
   #endif
 End Sub
 
@@ -1464,6 +1562,8 @@ Sub InitTimer0(In TMRSource, In TMRPres, in TMRPost )
 End Sub
 
 Sub InitTimer0(In TMRSource, In TMRPres)
+
+   Dim TMR0_TMP as Byte
 
   #ifdef PIC
      'Some PICS (18F+) Use T0CON for timer0 Control
@@ -1571,20 +1671,93 @@ Sub InitTimer0(In TMRSource, In TMRPres)
   #endif
 
   #ifdef AVR
-    'Just need to buffer TMR0Pres
-    '(And change it for external clock)
-    ' TMRPres, TMRSource now shared and local - WMR
-    ' TMR0_TMP now used as shadow register    - WMR
-     If TMRSource = Ext Then
-        TMRPres = AVR_EXT_TMR_0_RE
-     End If
 
-     #ifdef TMR0_16BIT    ' 05/01/2016 added for Timer0 16-bit mode
-         #ifdef bit(TCW0) ' on ATtiny216/461/861 and some others
-            Set TCW0 ON   '
+      #IFNDEF CHIPAVRDX
+         // Legacy AVRs
+         //~ Just need to buffer TMR0Pres
+         //~ (And change it for external clock)
+         //~ TMRPres, TMRSource now shared and local - WMR
+         //~ TMR0_TMP now used as shadow register    - WMR
+
+         If TMRSource = Ext Then
+            TMRPres = AVR_EXT_TMR_0_RE
+         End If
+
+         #ifdef TMR0_16BIT    //~ 05/01/2016 added for Timer0 16-bit mode
+               #ifdef bit(TCW0) 
+                  // ATtiny216/461/861 and some others
+                  Set TCW0 ON 
+               #endif
          #endif
-     #endif
-     TMR0_TMP = TMRPres
+         TMR0_TMP = TMRPres
+      #ENDIF
+
+      #IFDEF CHIPAVRDX
+         /* AVRDX time0 initialise. OSC Source is ignored. AVRDx cannot select Clock source for specific timer.
+         
+         In Normal ( Coounter ) mode, the TCA Overflow output is not present on a pin, 
+         but the TCA can be used to generate an interrupt when the number of counting events reached the TCAn.CMPn value. 
+         The GCBASIC uses the configuration of TCA to generate periodic interrupts on the overflow flag.
+
+         */
+           
+         //Compare 0
+         TCA0_SINGLE_CMP0 = 0x01
+
+         //Compare 1
+         TCA0_SINGLE_CMP1 = 0x01
+
+         //Compare 2
+         TCA0_SINGLE_CMP2 = 0x01
+
+         //Count
+         TCA0_SINGLE_CNT = 0x00
+
+         //CMP2EN disabled; CMP1EN disabled; CMP0EN disabled; ALUPD disabled; WGMODE NORMAL; 
+         TCA0_SINGLE_CTRLB = 0x00
+
+         //CMP2OV disabled; CMP1OV disabled; CMP0OV disabled; 
+         TCA0_SINGLE_CTRLC = 0x00
+
+         //SPLITM disabled; 
+         TCA0_SINGLE_CTRLD = 0x00
+
+         //CMD NONE; LUPD disabled; DIR disabled; 
+         TCA0_SINGLE_CTRLECLR = 0x00
+
+         //CMD NONE; LUPD disabled; DIR UP; 
+         TCA0_SINGLE_CTRLESET = 0x00
+
+         //CMP2BV disabled; CMP1BV disabled; CMP0BV disabled; PERBV disabled; 
+         TCA0_SINGLE_CTRLFCLR = 0x00
+
+         //CMP2BV disabled; CMP1BV disabled; CMP0BV disabled; PERBV disabled; 
+         TCA0_SINGLE_CTRLFSET = 0x00
+
+         //DBGRUN disabled; 
+         TCA0_SINGLE_DBGCTRL = 0x00
+
+         //EVACT POSEDGE; CNTEI disabled; 
+         TCA0_SINGLE_EVCTRL = 0x00
+
+         //CMP2 disabled; CMP1 disabled; CMP0 disabled; OVF enabled; 
+         // TCA0_SINGLE_INTCTRL = 0x01
+
+         //CMP2 disabled; CMP1 disabled; CMP0 disabled; OVF disabled; 
+         TCA0_SINGLE_INTFLAGS = 0x00
+
+         //Period
+         TCA0_SINGLE_PERIOD = 0x00
+
+         //Temporary data for 16-bit Access
+         TCA0_SINGLE_TEMP = 0x00
+
+         //CLKSEL = TMRPres; ENABLE enabled; 
+         TCA0_SINGLE_CTRLA = TMRPres OR TCA_SINGLE_ENABLE_bm
+         TMR0_TMP = TMRPres
+
+      #ENDIF
+
   #endif
 
 End Sub

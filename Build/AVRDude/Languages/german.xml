@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Deutsch (German)</name>
 	<data>
 
 		<!-- Main form -->
@@ -85,6 +84,10 @@ Verwenden Sie dies, wenn Sie nur das EEPROM aktualisieren wollen.</string>
 		<string name="READFUSE">Lese Sicherungsbytes</string>
 		<string name="READLOCKBITS">Lese Sperrbyte</string>
 		<string name="NOSUPPORTEDFUSES">{0} besitzt keine unterstützte Absicherung</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Prüfen auf Updates...</string>
 		<string name="UPDATE_FAILED">Update-Prüfung fehlgeschlagen: {0}</string>
@@ -108,6 +111,7 @@ Verwenden Sie dies, wenn Sie nur das EEPROM aktualisieren wollen.</string>
 		<string name="BROWSE_FILTER_ALL">Alle Dateien (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">HEX-Dateien (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">EEPROM-Dateien (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Voreinstellungs-Manager</string>
@@ -182,8 +186,6 @@ der AVR-SIZE.exe Datei</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Beim Versuch zu speichern ist ein Fehler aufgetreten {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Kopieren der Vorlage {0} in AppData ist fehlgeschlagen:
 {1}</string>
 		<string name="EXECMISSING">{0} fehlt!</string>
 		<string name="EXECFAIL">Prozess kann nicht gestartet werden: {0}</string>

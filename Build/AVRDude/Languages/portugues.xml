@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <translation>
-	<name>Português (Portuguese)</name>
 	<data>
 
 		<!-- Main form -->
@@ -86,6 +85,10 @@ de flash (-D)</string>
 		<string name="READFUSE">Ler fuse</string>
 		<string name="READLOCKBITS">Ler lock bits</string>
 		<string name="NOSUPPORTEDFUSES">{0} não tem nenhum Fuse suportado</string>
+		<string name="CONFIG_FILE_TOO_LARGE">Config file {0} is too large</string>
+		<string name="NOTHING_FOUND_IN_CONFIG_FILE">Nothing was found in config file {0}</string>
+		<string name="CONFIG_LOADED_PROGS_MCUS">Loaded {0} programmers and {1} MCUs</string>
+		<string name="IN_PORTABLE_MODE">Running in portable mode</string>
 
 		<string name="UPDATE_CHECK">Verificando atualizações...</string>
 		<string name="UPDATE_FAILED">Falha na verificação de atualização: {0}</string>
@@ -109,6 +112,7 @@ de flash (-D)</string>
 		<string name="BROWSE_FILTER_ALL">Todos os arquivos (*.*)</string>
 		<string name="BROWSE_FILTER_HEX">Arquivos Hex (*.hex)</string>
 		<string name="BROWSE_FILTER_EEP">Arquivos EEPROM (*.eep)</string>
+		<string name="BROWSE_FILTER_XML">XML files (*.xml)</string>
 
 		<!-- Preset manager form -->
 		<string name="TITLE_PRESETMGR">Gerenciador de Preset</string>
@@ -181,8 +185,6 @@ na inicialização</string>
 
 		<!-- Errors and things -->
 		<string name="XMLWRITEERROR">Ocorreu um erro ao tentar salvar {0}:
-{1}</string>
-		<string name="XMLCOPYERROR">Falha ao copiar o modelo {0} para AppData:
 {1}</string>
 		<string name="EXECMISSING">{0} está faltando!</string>
 		<string name="EXECFAIL">Incapaz de iniciar o processo: {0}</string>
