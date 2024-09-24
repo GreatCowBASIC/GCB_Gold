@@ -2529,12 +2529,13 @@ SUB PreProcessor
           ConstName = Left(ConstName, INSTR(ConstName, " ") - 1)
         END IF
 
+        '23092024 moved to section below as this was too early in the process to remove the = and calc.
         'Calculate define value if = present
-        IF Left(Value, 1) = "=" THEN
-          Value = Mid(Value, 2)
-          Calculate Value
-          Value = Trim(Value)
-        END IF
+        'IF Left(Value, 1) = "=" THEN
+        '  Value = Mid(Value, 2)
+        '  Calculate Value
+        '  Value = Trim(Value)
+        'END IF
 
         'Convert all non-decimal values to decimal
         If InStr(Value, "0X") <> 0 Or InStr(Value, "B'") <> 0 Then
@@ -2546,7 +2547,26 @@ SUB PreProcessor
 
         'Check to see if #define CONSTANT exists
         IF HashMapGet(Constants, ConstName) = 0 THEN
+          'If has an equal then remove
+          
+          If Left(Value, 1) = "="  Then 
+              Value = Mid(Value, 2)
+              Value = Trim(Value)
+          
+            'if is a calc, this no longer relies on the '=' sign
+            If CountOccur(value, "';+-*/&|!()", 0 ) > 0 or Instr( Value, "INT(") Then 
+            
+              Do 
+                Value = ReplaceConstantsLine(Value, 0)
+              Loop While  Value <> ReplaceConstantsLine(Value, 0)
+            
+            End If
 
+            Calculate Value
+            Value = Trim(Value)
+            
+          End If
+          
          If Conditionaldebugfile <> "" Then PRINT #CDFFileHandle,, "CODE/Constant:     Line "+LineNumberStr+ " "+ Left(ConstName+Space(40),40)+ CHR(9) + Left(Value+Space(32),32)+ CHR(9) + SourceFile(Val(TempFile)).FileName
           AddConstant(ConstName, Value, TempFile)
           CheckConstName ConstName, Origin

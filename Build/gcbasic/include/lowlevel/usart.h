@@ -206,18 +206,20 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samevar RCREG5, RC5REG
 
 // Allocate Time out tick counter variable and timed out flag
-#ifdef USART_BLOCKING_TIMEOUT
+
   dim UsartTimeOutTick as Long
   dim HSerReceive_TimedOut as Bit
   #script
-    if ChipMHz < 1 then
-      Error "Error: USART_BLOCKING_TIMEOUT requires a chip speed greater or equal to 1mhz."
-    end if
-    if ((USART_BLOCKING_TIMEOUT * 5)*ChipMHz) > 4294967295 Then
-      Error "Error: USART_BLOCKING_TIMEOUT value to high. the calculation of (USART_BLOCKING_TIMEOUT * 5)*ChipMHz could not be greater than 4294967295."
-    end if
+    If DEF(USART_BLOCKING_TIMEOUT) Then
+      if ChipMHz < 1 then
+        Error "Error: USART_BLOCKING_TIMEOUT requires a chip speed greater or equal to 1mhz."
+      end if
+      if ((USART_BLOCKING_TIMEOUT * 5)*ChipMHz) > 4294967295 Then
+        Error "Error: USART_BLOCKING_TIMEOUT value to high. the calculation of (USART_BLOCKING_TIMEOUT * 5)*ChipMHz could not be greater than 4294967295."
+      end if
+    End If
   #endscript
-#endif
+
 
 'Script to calculate baud rate generator values
 'Also sets constants to check if byte received

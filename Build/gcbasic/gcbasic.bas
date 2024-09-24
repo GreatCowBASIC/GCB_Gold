@@ -823,9 +823,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.09.17"
-buildVersion = "1428"
-
+Version = "2024.09.23"
+buildVersion = "1432"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -11410,6 +11409,11 @@ SUB CompileWait (CompSub As SubType Pointer)
           GoTo EndWaitCompile
         End Select
 
+        ' Added to ensure no calcs get thru
+        If CountOccur(value, "';+-*/%&|#!") > 0 Then 
+          LogError Message("SynErr"), Origin
+        End If
+
         Temp = Unit: Replace Temp, "Delay_", ""
 
         'Add word variables (PIC only)
@@ -11466,7 +11470,9 @@ SUB CompileWait (CompSub As SubType Pointer)
 
           'Generate error when using US delay on slow chips
           IF Unit = "Delay_US" AND gUSDelaysInaccurate  AND overrideUSDelaysInaccurateWarning = 0 THEN
-            LogWarning Message("WarningUSDelay"), Origin
+            Temp = Message("WarningUSDelay")
+            Temp = Temp + ": " + Value
+            LogWarning Temp, Origin
           END If
 
         'Compile microsecond delays as inline when given constant length
@@ -12262,6 +12268,7 @@ Function FixBit (InBit As String, Origin As String) As String
   'If bit < 8, return without change
   If B < 8 Then Return InBit
 
+
   'Prepare error
   Temp = Message("BadVarBit")
   Replace Temp, "%var%", VarName
@@ -12272,6 +12279,11 @@ Function FixBit (InBit As String, Origin As String) As String
   If B < 8 * GetTypeSize(VarType) Then
     Return GetByte(VarName, B \ 8) + DivChar + Trim(Str(B Mod 8))
   Else
+    If ChipAVRDX Then
+      If Instr( Ucase(Temp), "_OUT") > 0 then Replace Temp, "_OUT", ""
+      If Instr( Ucase(Temp), "_IN") > 0 then Replace Temp, "_IN", ""
+    End If
+    If Instr( Ucase(Temp), "%") > 0 then Replace Temp, "%", ""
     LogError Temp, Origin
   End If
 
@@ -13193,6 +13205,13 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
     Replace Temp, "%var%", VarNameOld
     Replace Temp, "%type%", LCase(VarType)
     Replace Temp, "%bit", VarBitOld
+
+    If ChipAVRDX Then
+      If Instr( Ucase(Temp), "_OUT") > 0 then Replace Temp, "_OUT", ""
+      If Instr( Ucase(Temp), "_IN") > 0 then Replace Temp, "_IN", ""
+    End If
+    If Instr( Ucase(Temp), "%") > 0 then Replace Temp, "%", ""
+
     LogError Temp, Origin
     Return OutList
   End If

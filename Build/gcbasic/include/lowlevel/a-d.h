@@ -151,7 +151,32 @@
 ' 07/09/22 Added #SAMEBIT to ADGO for 16F180xx family
 ' 02/10/22 Add support for legacy chips PIC18F2331/2431/4331/4431 where ADCHS exists and AD port is set use ACMOD1/ACMOD0 (see above)
 ' 24/10/22 Add support for family 15002 and 15003.  Added Diffrential handler as this chipfamily has new registers for Diffrential Operations
-' 25/11/22 Added isolation for family 15002, 15003 and 15004 for Diffrential handler 
+' 25/11/22 Added isolation for family 15002, 15003 and 15004 for Diffrential handler
+' 21/09/24 Add ReadADAVRDx and ReadAD10AVRDx. User can control ADC Prescaler via #define AVRX_ADC_PRESC_DIV 16 | 4 - defaults to AVRX_ADC_PRESC_DIV 16 
+' 22/09/24 Add ReadADAVRDx and ReadAD10AVRDx optimisation constants.  AVRX_ADC_PORTx_PinyCTRL and AVRX_ADC_NOCACHE_PORTx_PinyCTRL
+/*
+AVRDX ReadAD and ReadAD10 optional control constants added 22/09/24
+
+Change the constants can save up to 61 words but the functions are constrained to a specfic PORTx_Piny
+
+  Set explicit port.pin - this will prevent any table lookup - would be used when either a single ADC is used, or, an error in the lookup table
+      Save 22 words but makes the READAD and READAD10 locked on the specified PORTx_Piny
+      ANIx MUST be correct for the specified PORTx_Piny
+
+      #DEFINE AVRX_ADC_PORTx_PinyCTRL PORTD_Pin1CTRL //~ for AIN1 on a MEGA4809
+
+  Do not cache the port.pin setting.Therefore, you need to manage the PORTx_PinyCTRL state.
+      Saves 9 words
+      
+      #DEFINE AVRX_ADC_NOCACHE_PORTx_PinyCTRL
+
+  Change the ADC frequency
+      No program size impact. This just overrides the default value
+      
+      #DEFINE AVRX_ADC_PRESC_DIV 16    // Options are 16 or 4
+*/        
+
+
 
 #option REQUIRED PIC ChipADC %NoADC%
 
@@ -163,6 +188,39 @@
 
 'User Defaults
 #SCRIPT
+
+  If DEF(CHIPAVRDX) Then
+      READAD=ReadADAVRDx
+      READAD10=ReadAD10AVRDx
+
+      // the default
+      If NODEF(AVRX_ADC_PRESC_DIV) Then
+        SCRIPTADC_PRESC_DIV_gc = ADC_PRESC_DIV16_gc
+      End If
+
+      // suppot user defined value using the contant AVRX_ADC_PRESC_DIV
+      If DEF(AVRX_ADC_PRESC_DIV) Then
+        AVRX_ADC_PRESC_DIV_Check = 0
+        If AVRX_ADC_PRESC_DIV = 16 Then
+          AVRX_ADC_PRESC_DIV_Check = 1
+          // assign the constant value
+          SCRIPTADC_PRESC_DIV_gc = ADC_PRESC_DIV16_gc
+        End If
+        If AVRX_ADC_PRESC_DIV = 4 Then
+          AVRX_ADC_PRESC_DIV_Check = 1
+          // assign the constant value
+          SCRIPTADC_PRESC_DIV_gc = ADC_PRESC_DIV4_gc
+        End If
+
+        If AVRX_ADC_PRESC_DIV_Check = 0 then
+          Warning "Constant AVRX_ADC_PRESC_DIV4 can only be 16 or 4"
+          SCRIPTADC_PRESC_DIV_gc = ADC_PRESC_DIV4_gc
+        End if 
+
+      End If
+      
+
+  End If
 
   IF NODEF(AD_ACQUISITION_TIME_SELECT_BITS) THEN
       AD_ACQUISITION_TIME_SELECT_BITS = 0b00000100  'set the three bits
@@ -2994,7 +3052,282 @@ function FVRIsOutputReady as bit
 end function
 
 
+Function ReadAD10AVRDx( ADReadPort as Byte ) as Word
 
+    Dim SYSSTRINGA as Word at 26
+
+    //~ Dimension is the function name, the alias return ADC result registers.  
+    //~ These will be set to the result upon exit of this function
+    Dim ReadAD10AVRDx as Word alias ADC0_RESH, ADC0_RESL
+    Dim PORTx_PinyCTRL as Word 
+    Dim ADCPort_Ctrl_Cache as Byte
+
+      #IF NODEF( AVRX_ADC_PORTx_PinyCTRL )
+        //~ User define not present so use the lookup
+        // Get the register address for the specified AINx/ADReadPort from the specific table
+        ReadTable CHIPADCPPORTMAP, ADReadPort + 1, PORTx_PinyCTRL
+      #ELSE
+        // User define PORTx_PinyCTRL, so, just use it
+        PORTx_PinyCTRL = @AVRX_ADC_PORTx_PinyCTRL
+      #ENDIF
+
+    // Port Specific Operations - get the existing value and set for ADC
+
+        //~ set X,  SYSSTRINGA is the X registers            
+        [word]SYSSTRINGA = [word]PORTx_PinyCTRL
+        ld SysValueCopy, x 
+        #IF NODEF( AVRX_ADC_NOCACHE_PORTx_PinyCTRL )
+          // Cache current register for the selected AINx/ADReadPort
+          ADCPort_Ctrl_Cache = SysValueCopy 
+        #ENDIF
+        // For selected PORT ; Disable digital input buffer
+        SysValueCopy.PORT_ISC_0_bp = 0
+        SysValueCopy.PORT_ISC_1_bp = 0
+        SysValueCopy.PORT_ISC_2_bp = 0
+        
+        // Disable pull-up resistor
+        SysValueCopy.PORT_PULLUPEN_bp = 0
+
+        // Load the selected AINx/ADReadPort register with the ADC config
+        [word]SYSSTRINGA = [word]PORTx_PinyCTRL // set X
+        st X+, SysValueCopy
+
+    // Select ADC channel using GCBASIC variable
+    ADC0_MUXPOS = ADReadPort
+
+    // Non port specific operations
+        //~ CLK_PER divided by 4 
+
+        //~ use ADC_REFSEL_VDDREF_gc to reference VDD 
+        //~ or ADC_REFSEL_INTREF_gc for 4v3 
+        //~ ADC prescaler: The ADC requires an input clock frequency between 50 kHz and 1.5 MHz 
+        //~ for maximum resolution. If a lower resolution than 10 bits is selected, the input 
+        //~ clock frequency to the ADC can be higher than 1.5 MHz to get a higher sample rate.
+
+        ADC0_CTRLC = SCRIPTADC_PRESC_DIV_gc  | ADC_REFSEL_VDDREF_gc         
+                    
+        // Internal reference; ADC Enable; 10-bit mode; 
+        ADC0_CTRLA = ADC_ENABLE_bm  | ADC_RESSEL_10BIT_gc
+
+        // Clear ADC interrupt flag - this is required
+        ADC0_INTFLAGS.ADC_RESRDY_bp = 1
+
+        // Start ADC conversion
+        ADC0_COMMAND = ADC_STCONV_bm
+        
+        //~ Wait until ADC conversion done
+        wait while ADC0_INTFLAGS.ADC_RESRDY_bp = 1
+        
+        #IF NODEF( AVRX_ADC_NOCACHE_PORTx_PinyCTRL )
+          // Port Specific - revert cache to the AINx/ADReadPort register
+          [word]SYSSTRINGA = [word]PORTx_PinyCTRL // set X
+          SysValueCopy = ADCPort_Ctrl_Cache
+          st X+, SysValueCopy
+        #ENDIF
+
+End Function
+
+Function ReadADAVRDx( ADReadPort as Byte ) as Word
+
+    Dim SYSSTRINGA as Word at 26 
+
+    //~ Dimension is the function name, the alias return ADC result registers.  
+    //~ These will be set to the result upon exit of this function
+
+    Dim ReadADAVRDx as Word alias ADC0_RESH, ADC0_RESL
+    Dim PORTx_PinyCTRL as Word 
+    Dim ADCPort_Ctrl_Cache as Byte
+
+      #IF NODEF( AVRX_ADC_PORTx_PinyCTRL )
+        //~ User define not present so use the lookup
+        // Get the register address for the specified AINx/ADReadPort from the specific table
+        ReadTable CHIPADCPPORTMAP, ADReadPort + 1, PORTx_PinyCTRL
+      #ELSE
+        // User define PORTx_PinyCTRL, so, just use it
+        PORTx_PinyCTRL = @AVRX_ADC_PORTx_PinyCTRL
+      #ENDIF
+    
+    // Port Specific Operations - get the existing value and set for ADC
+
+        //~ set X,  SYSSTRINGA is the X registers            
+        [word]SYSSTRINGA = [word]PORTx_PinyCTRL
+        ld SysValueCopy, x 
+        #IF NODEF( AVRX_ADC_NOCACHE_PORTx_PinyCTRL )
+          // Cache current register for the selected AINx/ADReadPort
+          ADCPort_Ctrl_Cache = SysValueCopy 
+        #ENDIF
+
+        // For selected PORT ; Disable digital input buffer
+        SysValueCopy.PORT_ISC_0_bp = 0
+        SysValueCopy.PORT_ISC_1_bp = 0
+        SysValueCopy.PORT_ISC_2_bp = 0
+        
+        // Disable pull-up resistor
+        SysValueCopy.PORT_PULLUPEN_bp = 0
+
+        // Load the selected AINx/ADReadPort register with the ADC config
+        [word]SYSSTRINGA = [word]PORTx_PinyCTRL // set X
+        st X+, SysValueCopy
+
+    // Select ADC channel using GCBASIC variable
+    ADC0_MUXPOS = ADReadPort
+
+    // Non port specific operations
+        //~ CLK_PER divided by 4 
+
+        //~ use ADC_REFSEL_VDDREF_gc to reference VDD 
+        //~ or ADC_REFSEL_INTREF_gc for 4v3 
+        //~ ADC prescaler: The ADC requires an input clock frequency between 50 kHz and 1.5 MHz 
+        //~ for maximum resolution. If a lower resolution than 10 bits is selected, the input 
+        //~ clock frequency to the ADC can be higher than 1.5 MHz to get a higher sample rate.
+
+        ADC0_CTRLC = SCRIPTADC_PRESC_DIV_gc  | ADC_REFSEL_VDDREF_gc         
+                    
+        // Internal reference; ADC Enable; 8-bit mode; 
+        ADC0_CTRLA = ADC_ENABLE_bm  | ADC_RESSEL_8BIT_gc
+
+        // Clear ADC interrupt flag - this is required
+        ADC0_INTFLAGS.ADC_RESRDY_bp = 1
+
+        // Start ADC conversion
+        ADC0_COMMAND = ADC_STCONV_bm
+        
+        //~ Wait until ADC conversion done
+        wait while ADC0_INTFLAGS.ADC_RESRDY_bp = 1
+      
+        #IF NODEF( AVRX_ADC_NOCACHE_PORTx_PinyCTRL )
+          // Port Specific - revert cache to the AINx/ADReadPort register
+          [word]SYSSTRINGA = [word]PORTx_PinyCTRL // set X
+          SysValueCopy = ADCPort_Ctrl_Cache
+          st X+, SysValueCopy
+        #ENDIF
+
+End Function
+
+
+
+// for each entry in the table this is the port.in cntl for the ADC.  this are the address regisers.
+// they are sequential AIN1 to AIN22
+// if 0x000, then that specific AINx does not exist.
+// this was lifted from the datasheets
+
+Table AVRDxADC06Type1Lookup as Word
+    0x410, 0x411, 0x412, 0x413 , 0x416, 0x417           // PORTA
+End Table
+
+Table AVRDxADC12Type1Lookup as Word
+    0x410, 0x411, 0x412, 0x413 , 0x414, 0x415, 0x416    // PORTA
+           0x431, 0x432                                 // PORT?
+End Table
+
+Table AVRDxADC16Type1Lookup as Word                                 // supports 4808/4809
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477    // PORTD
+    0x490, 0x491, 0x492, 0x493                                // PORTE
+    0x4B0, 0x4B1, 0x4B2, 0x4B3                                // PORTF
+End Table
+
+Table AVRDxADC22Type1Lookup as Word                            // supports 64 pin AVRxxxDxA64 - 22
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x490, 0x491, 0x492, 0x493, 0x494, 0x495, 0x496, 0x497     // PORTE
+    0x4B0, 0x4B1, 0x4B2, 0x4B3, 0x4B4, 0x4B5                   // PORTF
+End Table
+
+Table AVRDxADC18Type1Lookup as Word                            // supports 48 pin AVRxxxDxA48 - 18
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x490, 0x491, 0x492, 0x493, 0x000, 0x000, 0x000, 0x000     // PORTE
+    0x4B0, 0x4B1, 0x4B2, 0x4B3, 0x4B4, 0x4B5                   // PORTF
+End Table
+
+Table AVRDxADC14Type1Lookup as Word                            // supports 32 pin AVRxxxDxA32 - 14
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // PORTE
+    0x4B0, 0x4B1, 0x4B2, 0x4B3, 0x4B4, 0x4B5                   // PORTF
+End Table
+
+
+Table AVRDxADC10Type1Lookup as Word                            // supports 28 pin AVRxxxDxA28 - 10
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // PORTE
+    0x4B0, 0x4B1                                               // PORTF
+End Table
+
+Table AVRDxADC23Type2Lookup as Word                            // supports 32 pin AVR16/32DD28/32 - 23
+    0x000, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // none
+    0x4B0, 0x4B1, 0x4B2, 0x4B3, 0x4B4, 0x4B5                   // PORTF
+    0x412, 0x413, 0x414, 0x415, 0x416, 0x417                   // PORTA
+    0x450, 0x451, 0x452, 0x453                                 // PORTC
+End Table
+
+
+Table AVRDxADC19Type2Lookup as Word                            // supports 28 pin AVR16/32DD28/32 - 19
+    0x000, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // none
+    0x4B0, 0x4B1, 0x000, 0x000, 0x000, 0x000                   // PORTF
+    0x412, 0x413, 0x414, 0x415, 0x416, 0x417                   // PORTA
+    0x450, 0x451, 0x452, 0x453                                 // PORTC
+End Table
+
+
+
+Table AVRDxADC13Type2Lookup as Word                            // supports 20 pin AVR16/32DD28/32 - 13
+    0x000, 0x000, 0x000, 0x000, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // none
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000                   // PORTF
+    0x412, 0x413, 0x414, 0x415, 0x416, 0x417                   // PORTA
+    0x000, 0x451, 0x452, 0x453                                 // PORTC
+End Table
+
+Table AVRDxADC7Type2Lookup as Word                            // supports 14 pin AVR16/32DD28/32 - 7
+    0x000, 0x000, 0x000, 0x000, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000     // none
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000                   // PORTF
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000                   // PORTA
+    0x000, 0x451, 0x452, 0x453                                 // PORTC
+End Table
+
+Table AVRDxADC12Type3Lookup as Word                           // supports 24&20 pin ATtiny804/806/807/1604/1606/1607 - 12
+    0x410, 0x411, 0x412, 0x413, 0x414, 0x415, 0x416, 0x417    // PORTA
+    0x435, 0x434, 0x431, 0x430                                // PORTB
+End Table
+
+Table AVRDxADC10Type3Lookup as Word                           // supports 14 pin ATtiny804/806/807/1604/1606/1607 - 10
+    0x410, 0x411, 0x412, 0x413, 0x414, 0x415, 0x416, 0x417    // PORTA
+    0x000, 0x000, 0x431, 0x430                                // PORTB
+End Table
+
+Table AVRDxADC6Type3Lookup as Word                            // supports 8 pin ATtiny202/204/402/404/406 - 6
+    0x410, 0x411, 0x412, 0x413, 0x000, 0x000, 0x416, 0x417    // PORTA
+End Table
+
+Table AVRDxADC15Type4Lookup as Word                           // supports 24&20 pin ATtiny1624/1626/1627 - 15
+    0x000, 0x411, 0x412, 0x413, 0x414, 0x415, 0x416, 0x417    // PORTA
+    0x435, 0x434, 0x431, 0x430                                // PORTB
+    0x450, 0x451, 0x452, 0x453
+End Table
+
+
+Table AVRDxADC9Type4Lookup as Word                            // supports 14 pin ATtiny1624/1626/1627 - 9
+    0x000, 0x411, 0x412, 0x413, 0x414, 0x415, 0x416, 0x417    // PORTA
+    0x435, 0x434    
+End Table
+
+
+Table AVRDxADC16Type5Lookup as Word                            // supports 48 pin ATmega808/809/1608/1609 - 16
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x490, 0x491, 0x492, 0x493                                 // PORTE
+    0x4B2, 0x4B3, 0x4B4, 0x4B5                                 // PORTF
+End Table
+
+Table AVRDxADC12Type5Lookup as Word                            // supports 32 pin ATmega808/809/1608/1609 - 12
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477     // PORTD
+    0x000, 0x000, 0x000, 0x000                                 // PORTE
+    0x4B2, 0x4B3, 0x4B4, 0x4B5                                 // PORTF
+End Table
+
+Table AVRDxADC8Type5Lookup as Word                            // supports 28 pin ATmega808/809/1608/1609 - 8
+    0x470, 0x471, 0x472, 0x473, 0x474, 0x475, 0x476, 0x477    // PORTD
+End Table
 '
 'Testprogram:
 '

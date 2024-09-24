@@ -122,7 +122,7 @@
 ''' 24/11/2018 Added PWM8 for K42
 ''' 13/11/2018 Added channels 1,2 and 3 to HPWUpdate
 ''' 14/12/2018 Added PWMxOE enable bits to support parts that need it. 16f1503 etc.
-''' 02/05/2019 Added HPWMUpdate for CCP1..CCP5. Two sections one for the hardware PWM module(s) and one for the CCP module(s)
+''' 02/05/2019 Added HPWMUpdate for CCP1..CCP5. Two sections one for the hardware PWM module(s) a nd one for the CCP module(s)
 ''' 14/08/2019 Added labels only. No functional changes.
 ''' 07/05/2020 Revised to isolate Timer4 and Timer6 in HPWM()
 ''' 21/06/2020 Revised to support ChipFamily 121
@@ -136,6 +136,7 @@
 ''' 05/04/2024 Revised to add CHIPTIMERXCLOCKSOURCESVARIANT to support chip that FOSC/4 clock source in T2CLKCON, T4CLKCON or T6CLKCON equate to 0b0000000 - the standard is 0b00000001
 ''' 05/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCPSetDuty() to support 9bit and 10Bit operations.
 ''' 06/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCP_MAXDUTYVALUE() to support 9bit and 10Bit operations.
+''' 23/09/2024 Added AVRDx PWM Fixed Mode support for TCA0/Channel 1
 
 
 
@@ -229,13 +230,14 @@
     IF NODEF(USE_HPWM_TIMER6) THEN
       USE_HPWM_TIMER6=TRUE
     END IF
-    IF NODEF(AVRTC0) THEN
-      AVRTC0=TRUE
+    IF NODEF(CHIPAVRDX) THEN
+      IF NODEF(AVRTC0) THEN
+        AVRTC0=TRUE
+      END IF
+      IF NODEF(AVRCHAN2) THEN
+        AVRCHAN2=TRUE
+      END IF
     END IF
-    IF NODEF(AVRCHAN2) THEN
-      AVRCHAN2=TRUE
-    END IF
-
 
     If AVR Then
       'redirects to AVR code
@@ -251,13 +253,20 @@
 
 #startup InitPWM
 
+  #IF DEF(CHIPAVRDX)
+    Dim TCA0_SINGLE_COMPARE0 as Word Alias TCA0_SINGLE_CMP0H, TCA0_SINGLE_CMP0L
+    Dim TCA0_SINGLE_COMPARE1 as Word Alias TCA0_SINGLE_CMP1H, TCA0_SINGLE_CMP1L
+    Dim TCA0_SINGLE_COMPARE2 as Word Alias TCA0_SINGLE_CMP2H, TCA0_SINGLE_CMP2L
+  #ENDIF
 
 
 Sub InitPWM
 
-  _PWMTimerSelected = 2
+
 
   #ifdef PIC
+
+      _PWMTimerSelected = 2
 
       Dim PRx_Temp as LONG
 
@@ -383,7 +392,7 @@ Sub InitPWM
 
       #endscript
 
-Legacy_StartofFixedCCPPWMModeCode:
+    Legacy_StartofFixedCCPPWMModeCode:
 
 
       #ifndef DisableCCPFixedModePWM
@@ -1591,7 +1600,7 @@ Legacy_StartofFixedCCPPWMModeCode:
     #endscript
     '~This is the end of script section, now we use the constants created to updated registers.
 
-StartofFixedPWMModeCode:
+    StartofFixedPWMModeCode:
 
       '~Set registers using the constants from script
       '~This is repeated for timer 2, 4 and 6 - and the two timer variants and the 9 PWM channels
@@ -2018,7 +2027,7 @@ StartofFixedPWMModeCode:
 
       #ENDIF
 
-SetPWMDutyCode:
+    SetPWMDutyCode:
       '~This section finally, sets the Duty using the constants from the script.
       '~This uses the user defined constants to set the appropiate registers.
       #IFDEF PWM_1_Duty
@@ -2221,56 +2230,111 @@ SetPWMDutyCode:
   '~This is the end of the fixed PWM Mode handler
   #endif
 
+  #script
 
-  #IFDEF AVR
+  if AVR then
+    
+    // Support fixed mode PWM
 
-    #script
+    if nodef(CHIPAVRDX) then
+      ICR1temp = int(((chipMHZ*1000) / PWM_Freq) - 1)
+      SCRIPT_PWMPRESCALER = 1
+      If ICR1temp > 255 Then
+        ICR1temp = int(ICR1temp / 8)
+        SCRIPT_PWMPRESCALER = 8
 
-      if AVR then
-        ICR1temp = int(((chipMHZ*1000) / PWM_Freq) - 1)
-        SCRIPT_PWMPRESCALER = 1
         If ICR1temp > 255 Then
           ICR1temp = int(ICR1temp / 8)
-          SCRIPT_PWMPRESCALER = 8
+          SCRIPT_PWMPRESCALER = 64
+        End If
 
           If ICR1temp > 255 Then
-            ICR1temp = int(ICR1temp / 8)
-            SCRIPT_PWMPRESCALER = 64
+            error msg(BadHPWMFreq)
+          End If
+      End If
+      PWM_Duty = int((PWM_Duty * 255)/100)
+      PWMDutyTempAVR = int((PWM_Duty * ICR1temp) / 255)
+    end if
+
+    if def(CHIPAVRDX) then
+      ICR1temp = int(((chipMHZ*1000000) / PWM_Freq) - 1)
+      
+      // Calculate the correct prescaler
+      SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV1_GC
+      If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV2_GC
+          ICR1temp = int(ICR1temp / 2)
+
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV4_GC
+          ICR1temp = int(ICR1temp / 2)
           End If
 
-            If ICR1temp > 255 Then
-              error msg(BadHPWMFreq)
-            End If
-        End If
-        PWM_Duty = int((PWM_Duty * 255)/100)
-        PWMDutyTempAVR = int((PWM_Duty * ICR1temp) / 255)
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV8_GC
+          ICR1temp = int(ICR1temp / 2)
+          End If
 
-      end if
-      _v9081Patch=2
-    #endscript
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV16_GC
+          ICR1temp = int(ICR1temp / 2)
+          End If
 
-    'Set all defined channel modes, and default channel 2 mode
-    'Mode must be set first
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER =TCA_SINGLE_CLKSEL_DIV64_GC
+          ICR1temp = int(ICR1temp / 2)
+          End If
+
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV256_GC
+          ICR1temp = int(ICR1temp / 2)
+          End If
+
+          If ICR1temp > 65535 Then
+          SCRIPT_PWMPRESCALER = TCA_SINGLE_CLKSEL_DIV1024_GC
+          ICR1temp = int(ICR1temp / 2)
+          End If
+
+          If ICR1temp > 65535 Then
+              error msg(BadPWMFreq)
+          End If
+
+      end If
+
+      SCRIPT_PWM_PERIOD = ICR1temp
+      SCRIPT_PWM_DUTY = int(SCRIPT_PWM_PERIOD / ( 100 / PWM_Duty) )
+
+    end if
+
+
+  end if
+  _v9081Patch=2
+  #endscript
+
+  #IFDEF AVR
+    //~ Set all defined channel modes, and default channel 2 mode
+    //~ Mode must be set first
     AVRSetHPWMMode
     PWMPrescale = SCRIPT_PWMPRESCALER
 
-    'Set prescale and duty cycle on timer0 OCR0B (channel 2)
-    'when using PWMON/PWMOFF
-    #IFDEF AVRCHAN2
-      AVRTimer = 0
-      AVRSetPrescale (AVRTimer)
-      'OCR2A is used as the period register
-      #IFNDEF VAR(OCR0AL)
-        OCR0A = ICR1temp
-        OCR0B = PWMDutyTempAVR
-      #ENDIF
+    #IF NODEF(CHIPAVRDX)
+      'Set prescale and duty cycle on timer0 OCR0B (channel 2)
+      'when using PWMON/PWMOFF
+      #IFDEF AVRCHAN2
+        AVRTimer = 0
+        AVRSetPrescale (AVRTimer)
+        'OCR2A is used as the period register
+        #IFNDEF VAR(OCR0AL)
+          OCR0A = ICR1temp
+          OCR0B = PWMDutyTempAVR
+        #ENDIF
 
-      #IFDEF VAR(OCR0AL)
-        OCR0AL = ICR1temp
-        OCR0BL = PWMDutyTempAVR
+        #IFDEF VAR(OCR0AL)
+          OCR0AL = ICR1temp
+          OCR0BL = PWMDutyTempAVR
+        #ENDIF
       #ENDIF
     #ENDIF
-
     AVRPWMFreqOld = 0
 
   #ENDIF
@@ -4989,122 +5053,149 @@ end sub
 
 sub AVRSetHPWMMode
 
-  'AVR HPWM makes use of the Fast PWM mode by setting WGMnx bits
-  'TC1,TC3,TC4,TC5 can have OCR1C and ICRxL as TOP
-  'TC0 and TC2 have OCR0A and OCR2A as TOP
-  #IFDEF AVRTC0
-    #IFDEF BIT(WGM02)
-      #IFDEF VAR(OCR0)
-        '8bit single channel devices
-        'no period register like mega128
-        'error msg(TMR0 HPWMNot Available)
-      #ENDIF
+  #IF DEF(CHIPAVRDX)
+    Dim TCA0_SINGLE_COMPARE0 as Word Alias TCA0_SINGLE_CMP0H, TCA0_SINGLE_CMP0L
+    Dim TCA0_SINGLE_COMPARE1 as Word Alias TCA0_SINGLE_CMP1H, TCA0_SINGLE_CMP1L
+    Dim TCA0_SINGLE_COMPARE2 as Word Alias TCA0_SINGLE_CMP2H, TCA0_SINGLE_CMP2L
 
-      #IFNDEF VAR(OCR0)
-        #IFNDEF VAR(OCR0AL)
-          '8bit 2 channel devices
-          asm ShowDebug Canskip handler addded for TCCR0B and TCCR0A
-          [canskip]TCCR0B = b'00001000'
-          [canskip]TCCR0A = b'00000011'
+    //~ CMP2EN disabled; CMP1EN disabled; CMP0EN enabled; ALUPD disabled; WGMODE SINGLESLOPE;
+    TCA0_SINGLE_CTRLB = TCA0_SINGLE_CTRLB | TCA_SINGLE_WGMODE_SINGLESLOPE_gc
+    TCA0_SINGLE_CTRLB.TCA_SINGLE_CMP0EN_bp = 1
+    TCA0_SINGLE_CTRLB.TCA_SINGLE_ALUPD_bp = 0
+
+    //~ Period
+    Dim TCA0_SINGLE_PERIOD as Word ALIAS TCA0_SINGLE_PERH, TCA0_SINGLE_PERL
+    TCA0_SINGLE_PERIOD = SCRIPT_PWM_PERIOD
+
+    //~ Compare 0
+    TCA0_SINGLE_COMPARE0 = SCRIPT_PWM_Duty
+    //~ TCA0 pins on PA[5:0]
+    PORTMUX_TCAROUTEA = 0x00
+
+    //~ CLKSEL by SCRIPT constant; DISABLED;
+    TCA0_SINGLE_CTRLA =SCRIPT_PWMPRESCALER
+    TCA0_SINGLE_CTRLA.TCA_SINGLE_ENABLE_bp = 0
+
+  #ENDIF
+
+  //~Legacy AVR
+    #IF NODEF(CHIPAVRDX)
+      //~ AVR HPWM makes use of the Fast PWM mode by setting WGMnx bits
+      //~ TC1,TC3,TC4,TC5 can have OCR1C and ICRxL as TOP
+      //~ TC0 and TC2 have OCR0A and OCR2A as TOP
+      #IFDEF AVRTC0
+        #IFDEF BIT(WGM02)
+          #IFDEF VAR(OCR0)
+            //~ 8bit single channel devices
+            //~ no period register like mega128
+            //error msg(TMR0 HPWMNot Available)
+          #ENDIF
+
+          #IFNDEF VAR(OCR0)
+            #IFNDEF VAR(OCR0AL)
+              '8bit 2 channel devices
+              asm ShowDebug Canskip handler addded for TCCR0B and TCCR0A
+              [canskip]TCCR0B = b'00001000'
+              [canskip]TCCR0A = b'00000011'
+            #ENDIF
+
+            #IFDEF VAR(OCR0AL)
+              'ATtiny10
+              '16bit 2 channel devices
+              [canskip]TCCR0B = b'00011000'
+              [canskip]TCCR0A = b'00000011'
+            #ENDIF
+          #ENDIF
         #ENDIF
 
-        #IFDEF VAR(OCR0AL)
-          'ATtiny10
-          '16bit 2 channel devices
-          [canskip]TCCR0B = b'00011000'
-          [canskip]TCCR0A = b'00000011'
+        #IFNDEF BIT(WGM02)
+          //~no period register like ATtiny261A series
+          //error msg(TMR0 HPWMNot Available)
         #ENDIF
       #ENDIF
-    #ENDIF
 
-    #IFNDEF BIT(WGM02)
-      'no period register like ATtiny261A series
-      'error msg(TMR0 HPWMNot Available)
-    #ENDIF
-  #ENDIF
+      #IFDEF AVRTC1
+        #IFDEF BIT(PWM1A)
+          #IFDEF BIT(PWM11)
+            'ATmega103 8bit mode
+            SET PWM11 OFF
+            SET PWM10 ON
+          #ENDIF
 
-  #IFDEF AVRTC1
-    #IFDEF BIT(PWM1A)
-      #IFDEF BIT(PWM11)
-        'ATmega103 8bit mode
-        SET PWM11 OFF
-        SET PWM10 ON
-      #ENDIF
+          'ATtiny25, ATtiny261A  series
+          #IFDEF AVRCHAN3
+            SET PWM1A ON
+          #ENDIF
 
-      'ATtiny25, ATtiny261A  series
-      #IFDEF AVRCHAN3
-        SET PWM1A ON
-      #ENDIF
+          #IFDEF AVRCHAN4
+            SET PWM1B ON
+          #ENDIF
 
-      #IFDEF AVRCHAN4
-        SET PWM1B ON
-      #ENDIF
+          'ATtiny261A  series
+          #IFDEF PWM1D
+            SET WGM11 ON
+            SET WGM10 OFF
+          #ENDIF
 
-      'ATtiny261A  series
-      #IFDEF PWM1D
-        SET WGM11 ON
-        SET WGM10 OFF
-      #ENDIF
+          #IFDEF AVRCHAN5
+            SET PWM1D ON
+          #ENDIF
 
-      #IFDEF AVRCHAN5
-        SET PWM1D ON
-      #ENDIF
-
-    #ENDIF
-
-    #IFNDEF BIT(PWM1A)
-      '16 bit, 16 mode devices like ATmega328p series
-      'Fast PWM
-      TCCR1B = b'00011000'
-      TCCR1A = b'00000010'
-    #ENDIF
-  #ENDIF
-
-  #IFDEF AVRTC2
-    #IFDEF BIT(WGM22)
-      #IFDEF OCR2
-        '8bit single channel devices
-        'no period register like mega128
-        'error msg(TMR2 HPWMNot Available)
-      #ENDIF
-
-      #IFNDEF OCR2
-        #IFNDEF ICR2L
-          '8bit 2 channel devices
-          TCCR2B = b'00001000'
-          TCCR2A = b'00000011'
         #ENDIF
 
-        #IFDEF ICR2L
-          'ATtiny102
-          '16bit 2 channel devices
-          TCCR2B = b'00011000'
-          TCCR2A = b'00000010'
+        #IFNDEF BIT(PWM1A)
+          '16 bit, 16 mode devices like ATmega328p series
+          'Fast PWM
+          TCCR1B = b'00011000'
+          TCCR1A = b'00000010'
         #ENDIF
       #ENDIF
+
+      #IFDEF AVRTC2
+        #IFDEF BIT(WGM22)
+          #IFDEF OCR2
+            '8bit single channel devices
+            'no period register like mega128
+            'error msg(TMR2 HPWMNot Available)
+          #ENDIF
+
+          #IFNDEF OCR2
+            #IFNDEF ICR2L
+              '8bit 2 channel devices
+              TCCR2B = b'00001000'
+              TCCR2A = b'00000011'
+            #ENDIF
+
+            #IFDEF ICR2L
+              'ATtiny102
+              '16bit 2 channel devices
+              TCCR2B = b'00011000'
+              TCCR2A = b'00000010'
+            #ENDIF
+          #ENDIF
+        #ENDIF
+
+        #IFNDEF BIT(WGM22)
+          'no period register like ATtiny261A series
+          'error msg(TMR2 HPWMNot Available)
+        #ENDIF
+      #ENDIF
+
+      #IFDEF AVRTC3
+        TCCR3B = b'00011000'
+        TCCR3A = b'00000010'
+      #ENDIF
+
+      #IFDEF AVRTC4
+        TCCR4B = b'00011000'
+        TCCR4A = b'00000010'
+      #ENDIF
+
+      #IFDEF AVRTC5
+        TCCR5B = b'00011000'
+        TCCR5A = b'00000010'
+      #ENDIF
     #ENDIF
-
-    #IFNDEF BIT(WGM22)
-      'no period register like ATtiny261A series
-      'error msg(TMR2 HPWMNot Available)
-    #ENDIF
-  #ENDIF
-
-  #IFDEF AVRTC3
-    TCCR3B = b'00011000'
-    TCCR3A = b'00000010'
-  #ENDIF
-
-  #IFDEF AVRTC4
-    TCCR4B = b'00011000'
-    TCCR4A = b'00000010'
-  #ENDIF
-
-  #IFDEF AVRTC5
-    TCCR5B = b'00011000'
-    TCCR5A = b'00000010'
-  #ENDIF
-
 end sub
 
 sub AVRSetPrescale (AVRTimer)
@@ -5370,16 +5461,33 @@ end sub
 
 sub AVRPWMOn
 
+  #IF DEF(CHIPAVRDX)
+    //~ Enable single channel PWM
+    TCA0_SINGLE_CTRLB.TCA_SINGLE_CMP0EN_bp = 1
+    TCA0_SINGLE_CTRLA.TCA_SINGLE_ENABLE_bp = 1
+  #ENDIF
+
+  #IF NODEF(CHIPAVRDX)
     [canskip]COM0B1 = 1
     [canskip]COM0B0 = 0
-
+  #ENDIF
+  
 end sub
 
 
 sub AVRPWMOff
 
+
+  #IF DEF(CHIPAVRDX)
+    //~ Disalble single channel PWM
+    TCA0_SINGLE_CTRLB.TCA_SINGLE_CMP0EN_bp = 0
+    TCA0_SINGLE_CTRLA.TCA_SINGLE_ENABLE_bp = 0
+  #ENDIF
+
+  #IF NODEF(CHIPAVRDX)
     [canskip]COM0B1 = 0
     [canskip]COM0B0 = 0
+  #ENDIF
 
 end sub
 
