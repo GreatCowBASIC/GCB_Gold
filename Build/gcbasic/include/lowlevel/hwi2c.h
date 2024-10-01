@@ -55,6 +55,7 @@
 '            14/08/22 - Updated user changeable constants only - no functional change
 '            28/02/23 - Added support fort 18FxxQ71 and resolved constant isolation
 '    Updated Jun 2023 - Revised to make I2C1I2C1CONxDefaults optional
+'    Updated 30/03/23 - Added AVRDx support
 
 'User changeable constants
 
@@ -123,27 +124,28 @@
 #script
 
   IF NODEF(HI2C_BAUD_RATE) THEN
-      HI2C_BAUD_RATE = 100
+    // Set default HI2C_BAUD_RATE
+    HI2C_BAUD_RATE = 100
   END IF 
 
-  if hi2c_DATA  then
+  if HI2C_DATA  then
 
       HI2C_BAUD_TEMP = 0
 
-      if int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE))-1 > 0 then
-          HI2C_BAUD_TEMP = int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE)) - 1
-      end if
-      if int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE)) = 0 then
-          Warning "Clock Frequency to slow for desired I2C baud rate"
-          HI2C_BAUD_TEMP = 0
-      end if
-
-      if HI2C_BAUD_TEMP > 255 then
-        Warning "Clock Frequency for desired I2C baud rate high"
-      end if
-
 
       If PIC Then
+
+            if int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE))-1 > 0 then
+                HI2C_BAUD_TEMP = int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE)) - 1
+            end if
+            if int((ChipMhz * 1000000)/(4000 * HI2C_BAUD_RATE)) = 0 then
+                Warning "Clock Frequency to slow for desired I2C baud rate"
+                HI2C_BAUD_TEMP = 0
+            end if
+
+            if HI2C_BAUD_TEMP > 255 then
+              Warning "Clock Frequency for desired I2C baud rate high"
+            end if
 
             If Bit(I2C1CON0_EN) Then
                 'Redirects to I2C Module for new MSSP aka K-Mode family
@@ -166,7 +168,8 @@
     end if
 
     IF AVR then
-        'Redirects to AVR CODE
+      IF NODEF( CHIPAVRDX ) then
+        'Redirects to legacy AVR CODE
         HI2CMode = AVRHI2CMode
         HI2CStart = AVRHI2CStart
         HI2CStop = AVRHI2CStop
@@ -184,7 +187,55 @@
         TWIByte = I2CByte
         TWIAckPollState = HI2CAckPollState
         TWIStartOccurred = HI2CStartOccurred
+      End If
 
+      IF DEF( CHIPAVRDX ) then
+
+        IF NODEF(TWI_SEND_DELAY) Then
+          // Set default delay
+          TWI_SEND_DELAY = 0
+          IF HI2C_BAUD_RATE  < 101 Then
+            TWI_SEND_DELAY = 10
+          End If
+
+        END IF
+
+        // Redirects to AVRDx CODE
+        HI2CMode = AVRDxTWI0Mode
+        HI2CStart = AVRDxTWI0Start
+        HI2CStop = AVRDxTWI0Stop
+        HI2CReStart = AVRDxTWI0ReStart
+        HI2CSend = AVRDxTWI0Send
+        HI2CReceive = AVRDxTWI0Receive
+
+        TWIMode = AVRDxTWI0Mode
+        TWIStart = AVRDxTWI0Start
+        TWIStop = AVRDxTWI0Stop
+        TWICReStart = AVRDxTWI0ReStart
+        TWISend = AVRDxTWI0Send
+        TWIReceive = AVRDxTWI0Receive
+        TWIByte = I2CByte
+        TWIAckPollState = HI2CAckPollState
+        TWIStartOccurred = HI2CStartOccurred
+
+        SCRIPT_TWI_BAUD = INT(INT((ChipMhz * 1000000 ) /  (HI2C_BAUD_RATE * 1000)-10)/2)
+        SCRIPT_TWI_FAST_MODE = 0
+        
+        // IF SCRIPT_TWI_BAUD < 64 then 
+        //   // Recalc with fast mode
+        //     warning "Switch to fast mode"
+        //       SCRIPT_TWI_BAUD = INT(INT((ChipMhz * 1000000 ) /  (HI2C_BAUD_RATE * 500)-10)/2)
+        //       warning SCRIPT_TWI_BAUD
+        //       SCRIPT_TWI_BAUD = 95
+        //       SCRIPT_TWI_FAST_MODE = 28
+        // End IF
+        IF INT(SCRIPT_TWI_BAUD) < 0 Then
+          Error "TWI_BAUD calculation is invalid = " SCRIPT_TWI_BAUD
+          Error "HWI2C.H AVRDx script section has negative calculation - contact us on the GCBASIC Forum.  We can resolve very quickly."
+        END IF
+      END IF
+
+      IF NODEF(CHIPAVRDX) Then
 
          ' SCL CLOCK
          ' ---------
@@ -232,7 +283,11 @@
          End If
         ' Uncommented Displays Results In GCB Output Window
          ' warning " CST_PRESCALER = "  CST_PRESCALER  "    CST_TWBR = "  CST_TWBR
-    END IF
+        END IF
+
+      END IF
+    
+    END IF  // end AVR
 
    if novar(SSPCON1) then
 
@@ -737,7 +792,9 @@ end sub
 
     Dim HI2C1StateMachine as byte
     Dim HI2CACKPOLLSTATE  as Byte
+    Dim TWI0ACKPOLLSTATE  as Byte Alias HI2CACKPOLLSTATE
     Dim HI2C1lastError as Byte
+    Dim TWI0LastError as Byte Alias HI2C1lastError
 
     #DEFINE I2C1_GOOD             0
     #DEFINE I2C1_FAIL_TIMEOUT     1
@@ -1142,3 +1199,330 @@ sub SI2CDiscovery ( address )
     #ENDIF
 
 end sub
+
+// AVRdx support *******************************************************************
+
+
+
+Sub AVRDxTWI0Mode
+
+    Dim HI2CCurrentMode as Byte
+    Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
+
+    HI2CCurrentMode = 0
+    TWI0Timeout = 0
+
+    Do
+
+      TWI0Timeout = 0
+
+      Dir HI2C_DATA out
+      Dir HI2C_CLOCK Out
+      
+      Do 
+
+        If TWI0Timeout = 255 then Exit Sub  // Users can check for TWI0Timeout = TRUE
+        TWI0Timeout++
+
+        // Reset the TWI!
+        TWI0_MCTRLB = TWI_FLUSH_bm
+        TWI0_MSTATUS= 0
+        TWI0_CTRLA = 0
+        TWI0_MCTRLA = 0
+        TWI0_MCTRLB = 0
+
+        // Bit bang a START/STOP sequence
+          HI2C_DATA = 1                 // SDA and SCL idle high
+          HI2C_CLOCK = 1
+          Wait 1 us
+          HI2C_DATA = 0                 // then, SDA low while SCL still high
+          Wait 1 us                     // for this amount of time
+          HI2C_CLOCK = 0                // end with SCL low, ready to clock
+          HI2C_DATA = 0
+          Wait 1 us                     // let ports settle
+          HI2C_CLOCK = 1                // make SCL=1 first
+          Wait 1 us                     // hold for normal clock width time
+          HI2C_DATA = 1                 // then make SDA=1 afterwards
+          wait 1 ms
+    
+      Loop While ( TWI0_MSTATUS and 3 ) = 3
+
+      TWI0_CTRLA = SCRIPT_TWI_FAST_MODE  // for slow mode = 0 
+      
+      TWI0_DUALCTRL = 0
+
+      //Debug Run
+      TWI0_DBGCTRL = 0x00
+      
+      //Master Baud Rate Control
+      TWI0_MBAUD = SCRIPT_TWI_BAUD //(uint8_t)TWI0_BAUD(100000, 0)
+      
+      TWI0_MCTRLA = 0x02
+      
+      TWI0_MSTATUS = 0x61
+      
+      //Master Address
+      TWI0_MADDR = 0x00
+      
+      //FLUSH  ACKACT ACK MCMD NOACT 
+      TWI0_MCTRLB = 0x08
+      
+      //Master Data
+      TWI0_MDATA = 0x00
+
+      TWI0_MCTRLA.0 = 1
+      
+      wait 10 ms
+    
+    Loop While ( TWI0_MSTATUS and 3 ) = 3
+
+End sub
+
+Sub AVRDxTWI0Start
+
+    Dim TWI0StateMachine,TWI0LastError as Byte
+    Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
+    Dim TWI0AckPollState as Byte Alias HI2CAckPollState
+
+    TWI0StateMachine = 1
+    TWI0Timeout = 0
+
+    // Clear the error state variable
+    TWI0LastError = I2C1_GOOD
+    
+End Sub
+
+Sub AVRDxTWI0ReStart
+    
+    Dim TWI0StateMachine, TWI0Timeout,TWI0LastError as Byte
+
+    TWI0StateMachine = 3
+    TWI0Timeout = 0
+
+    // Clear the error state variable
+    TWI0LastError = I2C1_GOOD
+End Sub
+
+Sub AVRDxTWI0Stop
+
+    Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
+    Dim TWI0AckPollState as Byte Alias HI2CAckPollState
+
+    // Waits up to 254us then set the error state
+    TWI0StateMachine = 0
+    TWI0Timeout = 0
+
+    // Stop Command
+    TWI0_MCTRLB = TWI0_MCTRLB OR 3
+
+    do while TWI0Timeout < 255
+        TWI0Timeout++
+        // Wait till bus is IDLE 
+        if TWI0_MSTATUS.TWI_BUSSTATE_0_bp  = 1 and TWI0_MSTATUS.TWI_BUSSTATE_1_bp  = 0 then
+            exit sub
+        else
+          #IF TWI_SEND_DELAY= 0 
+            NOP
+            NOP
+          #ELSE
+            wait   TWI_SEND_DELAY us
+          #ENDIF
+        end if
+    loop
+    
+    if TWI0Timeout = 255 then TWI0LastError = TWI0LastError or I2C1_STOP_TIMEOUT
+
+End Sub
+
+Sub AVRDxTWI0Send ( in I2Cbyte )
+
+    Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
+    Dim TWI0AckPollState as Byte Alias HI2CAckPollState
+
+    // This is now a state Machine to cater for the new approach with the AVRDX TWI module
+    Select Case TWI0StateMachine
+
+      case 2  // Send data
+      
+        // Send Data Command
+        TWI0_MCTRLB = TWI0_MCTRLB OR 6
+
+        TWI0_MDATA = I2Cbyte
+        // Ensure stability on the bus
+        TWI0Timeout = 1
+        dim cache_TWI0_MSTATUS
+        cache_TWI0_MSTATUS = TWI0_MSTATUS
+        Do while cache_TWI0_MSTATUS = TWI0_MSTATUS
+            If TWI0Timeout = 0 Then 
+              TWI0Timeout = 255
+              Exit Do
+            End If
+            TWI0Timeout++
+        Loop
+
+        // At this point the TWI0Timeout may ( or may not be ) 255.. if 255 then the timeout has happended, prepare to exit sub
+        // Waits up to 254us then creates error message
+        do while TWI0Timeout < 255
+
+            TWI0Timeout++
+            // Wait for this event
+            if TWI0_MSTATUS.TWI_RXACK_bp = 0 then
+                TWI0AckPollState = False
+                exit Sub
+            else
+              #IF TWI_SEND_DELAY= 0 
+                NOP
+                NOP
+              #ELSE
+                wait   TWI_SEND_DELAY us
+              #ENDIF
+            end if
+        loop
+
+        if TWI0Timeout = 255 then TWI0LastError = TWI0LastError
+        TWI0AckPollState = True
+
+      case 1  // A start
+
+        // Send Start command
+        TWI0_MCTRLB = TWI0_MCTRLB OR 1
+
+        #IF TWI_SEND_DELAY= 0 
+          NOP
+          NOP
+        #ELSE
+          wait   TWI_SEND_DELAY us
+        #ENDIF
+        TWI0_MADDR = I2Cbyte
+        
+        // Ensure stability on the bus
+        TWI0Timeout = 1
+        dim cache_TWI0_MSTATUS
+        cache_TWI0_MSTATUS = TWI0_MSTATUS
+        Do while cache_TWI0_MSTATUS = TWI0_MSTATUS
+            If TWI0Timeout = 0 Then 
+              TWI0Timeout = 255
+              Exit Do
+            End If
+            TWI0Timeout++
+        Loop
+        TWI0Timeout = 0
+
+        TWI0StateMachine = 2
+
+        // Can wait up to 254 NOPs then set error code
+        do while TWI0Timeout < 255
+            TWI0Timeout++
+
+            // Wait for this event
+            If ( TWI0_MSTATUS.4 = 0 ) or ( TWI0_MSTATUS.3 = 1 ) then
+                // Move to next state upon exit
+                TWI0AckPollState = False
+                exit Sub
+            else
+              #IF TWI_SEND_DELAY= 0 
+                NOP
+                NOP
+              #ELSE
+                wait   TWI_SEND_DELAY us
+              #ENDIF
+            end if
+        loop
+
+        if TWI0Timeout = 255 then TWI0LastError = TWI0Timeout or I2C1_START_TIMEOUT
+        TWI0AckPollState = True
+
+      case 3  // A restart
+
+        TWI0_MCTRLB = TWI0_MCTRLB OR 1
+
+        #IF TWI_SEND_DELAY= 0 
+          NOP
+          NOP
+        #ELSE
+          wait   TWI_SEND_DELAY us
+        #ENDIF
+        TWI0_MADDR = I2Cbyte
+        wait 150 us
+        
+        // Ensure stability on the bus
+        TWI0Timeout = 1
+        dim cache_TWI0_MSTATUS
+        cache_TWI0_MSTATUS = TWI0_MSTATUS
+        Do while cache_TWI0_MSTATUS = TWI0_MSTATUS
+            If TWI0Timeout = 0 Then 
+              TWI0Timeout = 255
+              Exit Do
+            End If
+            TWI0Timeout++
+        Loop
+        TWI0Timeout = 0
+
+        TWI0StateMachine = 2
+
+        // Can wait up to 254 NOPs then set error code
+        do while TWI0Timeout < 255
+            TWI0Timeout++
+
+            // Wait for this event
+            If ( TWI0_MSTATUS.4 = 0 ) or ( TWI0_MSTATUS.3 = 1 ) then
+                // Move to next state upon exit
+                TWI0AckPollState = False
+                exit Sub
+            else
+              #IF TWI_SEND_DELAY= 0 
+                NOP
+                NOP
+              #ELSE
+                wait   TWI_SEND_DELAY us
+              #ENDIF
+            end if
+        loop
+
+        if TWI0Timeout = 255 then TWI0LastError = TWI0Timeout or I2C1_START_TIMEOUT
+        TWI0AckPollState = True
+
+      End Select 
+
+End Sub
+
+Sub AVRDxTWI0Receive ( Out I2CByte, Optional In HI2CGetAck = 1 )
+
+    Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
+    Dim TWI0AckPollState as Byte Alias HI2CAckPollState
+
+    DIR HI2C_DATA IN 
+
+    // Wait for bus to clear
+    wait while TWI0_MSTATUS.TWI_BUSSTATE_0_bp  = 1 and TWI0_MSTATUS.TWI_BUSSTATE_1_bp  = 0
+
+    TWI0_MCTRLB = TWI0_MCTRLB OR TWI_MCMD_RECVTRANS_gc
+    TWI0_MCTRLB.TWI_ACKACT_bp = HI2CGetAck
+    I2Cbyte = TWI0_MDATA
+
+    TWI0Timeout = 0
+
+    // Waits up to 254us then creates error message
+    do while TWI0Timeout < 255
+
+        TWI0Timeout++
+        // Wait for this event
+        if TWI0_MSTATUS.TWI_RXACK_bp = 1 then
+            TWI0AckPollState = False
+            exit Sub
+        else
+              #IF TWI_SEND_DELAY= 0 
+                NOP
+                NOP
+              #ELSE
+                wait   TWI_SEND_DELAY us
+              #ENDIF
+        end if
+    loop
+
+    if TWI0Timeout = 255 then TWI0LastError = TWI0LastError
+    TWI0AckPollState = True
+
+    DIR HI2C_DATA OUT
+
+End Sub

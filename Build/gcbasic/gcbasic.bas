@@ -823,8 +823,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.09.23"
-buildVersion = "1432"
+Version = "2024.09.30"
+buildVersion = "1436"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -11408,11 +11408,6 @@ SUB CompileWait (CompSub As SubType Pointer)
           CurrLine = LinkedListDelete(CurrLine)
           GoTo EndWaitCompile
         End Select
-
-        ' Added to ensure no calcs get thru
-        If CountOccur(value, "';+-*/%&|#!") > 0 Then 
-          LogError Message("SynErr"), Origin
-        End If
 
         Temp = Unit: Replace Temp, "Delay_", ""
 

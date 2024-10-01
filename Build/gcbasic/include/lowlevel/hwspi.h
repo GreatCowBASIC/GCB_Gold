@@ -47,7 +47,8 @@
 '  02/11/2020  Add further ChipFamily 122 support by adding the constant SPIDELAY_SCRIPT_MASTER.  This is adds clock cycles to permit the data (a byte to exit the buffer before the CS line is changed.
 '              Added HWSPI_Fast_Write_Word_Macro where data needs to passed in the HWSPI_Send_word word variable
 ' 14/08/22 Updated user changeable constants only - no functional change
-
+' 26/09/24 Added AVRDx support
+' 28/09/29 Added HWSPI2 support for PIC
 
 'To make the PIC pause until it receives an SPI message while in slave mode, set the
 'constant "WaitForSPI" at the start of the program. The value does not matter.
@@ -332,47 +333,80 @@ Sub SPIMode (In SPICurrentMode)
   #endif
 
   #ifdef AVR
-    'Turn off SPI
-    '(Prevents any weird glitches during setup)
-    Set SPCR.SPE Off
+    #if nodef(CHIPAVRDX)
+      'Turn off SPI
+      '(Prevents any weird glitches during setup)
+      Set SPCR.SPE Off
 
-    'Set clock pulse settings
-    'Need CPHA = 1 to match default PIC settings
-    '(CPOL = 0 matches PIC)
-    Set SPCR.CPHA On
+      'Set clock pulse settings
+      'Need CPHA = 1 to match default PIC settings
+      '(CPOL = 0 matches PIC)
+      Set SPCR.CPHA On
 
-    'Select mode and clock
-    'Set some mode bits off, can set on later
-    Set SPCR.MSTR Off
-    Set SPSR.SPI2X Off
-    Set SPCR.SPR0 Off
-    Set SPCR.SPR1 Off
+      'Select mode and clock
+      'Set some mode bits off, can set on later
+      Set SPCR.MSTR Off
+      Set SPSR.SPI2X Off
+      Set SPCR.SPR0 Off
+      Set SPCR.SPR1 Off
 
-    Select Case SPICurrentMode
-    Case MasterUltraFast
-      Set SPCR.MSTR On
-      Set SPSR.SPI2X On
+      Select Case SPICurrentMode
+      Case MasterUltraFast
+        Set SPCR.MSTR On
+        Set SPSR.SPI2X On
 
-    Case MasterFast
-      Set SPCR.MSTR On
+      Case MasterFast
+        Set SPCR.MSTR On
 
-    Case Master
-      Set SPCR.MSTR On
-      Set SPCR.SPR0 On
+      Case Master
+        Set SPCR.MSTR On
+        Set SPCR.SPR0 On
 
-    Case MasterSlow
-      Set SPCR.MSTR On
-      Set SPCR.SPR1 On
+      Case MasterSlow
+        Set SPCR.MSTR On
+        Set SPCR.SPR1 On
 
-    'Nothing needed for slave
-    'Case Slave
-    'Case SlaveSS
+      'Nothing needed for slave
+      'Case Slave
+      'Case SlaveSS
 
-    End Select
+      End Select
 
-    'Enable SPI
-    Set SPCR.SPE On
+      'Enable SPI
+      Set SPCR.SPE On
+    #endif
+
+    #if def(CHIPAVRDX)
+
+      'Turn off SPI
+      '(Prevents any weird glitches during setup)
+      // Disable module
+      SPI0_CTRLA.SPI_ENABLE_bp = 0          
+
+      // Data mode
+      SPI0_CTRLB = 0 /* Data Mode */
+
+      // LSB is transmitted first; SPI module in Master mode; System Clock divided by 16
+      Select Case SPICurrentMode
+        Case MasterUltraFast
+            SPI0_CTRLA = SPI_CLK2X_bm | SPI_DORD_bm | SPI_MASTER_bm 
+        Case MasterFast
+            SPI0_CTRLA =  SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_0_bm
+        Case Master
+            SPI0_CTRLA = SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_1_bm
+        Case MasterSlow
+            SPI0_CTRLA = SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_1_bm | SPI_PRESC_0_bm
+        'Nothing needed for slave
+        'Case Slave
+        'Case SlaveSS
+      End Select
+
+      'Enable SPI
+      SPI0_CTRLA.SPI_ENABLE_bp = 1          // Enable module
+
+    #endif
   #endif
+
 
 End Sub
 
@@ -557,51 +591,84 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
   #endif
 
   #ifdef AVR
-    'Turn off SPI
-    '(Prevents any weird glitches during setup)
-    Set SPCR.SPE Off
+    #if nodef(CHIPAVRDX)
+      'Turn off SPI
+      '(Prevents any weird glitches during setup)
+      Set SPCR.SPE Off
 
-    'Set clock pulse settings
-    Set SPCR.CPHA Off
-    If SPIClockMode.0 = On Then
-      Set SPCR.CPHA On
-    End If
-    Set SPCR.CPOL Off
-    If SPIClockMode.1 = On Then
-      Set SPCR.CPOL On
-    End If
+      'Set clock pulse settings
+      Set SPCR.CPHA Off
+      If SPIClockMode.0 = On Then
+        Set SPCR.CPHA On
+      End If
+      Set SPCR.CPOL Off
+      If SPIClockMode.1 = On Then
+        Set SPCR.CPOL On
+      End If
 
-    'Select mode and clock
-    'Set some mode bits off, can set on later
-    Set SPCR.MSTR Off
-    Set SPSR.SPI2X Off
-    Set SPCR.SPR0 Off
-    Set SPCR.SPR1 Off
+      'Select mode and clock
+      'Set some mode bits off, can set on later
+      Set SPCR.MSTR Off
+      Set SPSR.SPI2X Off
+      Set SPCR.SPR0 Off
+      Set SPCR.SPR1 Off
 
-    Select Case SPICurrentMode
-    Case MasterUltraFast
-      Set SPCR.MSTR On
-      Set SPSR.SPI2X On
+      Select Case SPICurrentMode
+      Case MasterUltraFast
+        Set SPCR.MSTR On
+        Set SPSR.SPI2X On
 
-    Case MasterFast
-      Set SPCR.MSTR On
+      Case MasterFast
+        Set SPCR.MSTR On
 
-    Case Master
-      Set SPCR.MSTR On
-      Set SPCR.SPR0 On
+      Case Master
+        Set SPCR.MSTR On
+        Set SPCR.SPR0 On
 
-    Case MasterSlow
-      Set SPCR.MSTR On
-      Set SPCR.SPR1 On
+      Case MasterSlow
+        Set SPCR.MSTR On
+        Set SPCR.SPR1 On
 
-    'Nothing needed for slave
-    'Case Slave
-    'Case SlaveSS
+      'Nothing needed for slave
+      'Case Slave
+      'Case SlaveSS
 
-    End Select
+      End Select
 
-    'Enable SPI
-    Set SPCR.SPE On
+      'Enable SPI
+      Set SPCR.SPE On
+    #endif
+
+    #if def(CHIPAVRDX)
+
+      'Turn off SPI
+      '(Prevents any weird glitches during setup)
+      // Disable module
+      SPI0_CTRLA.SPI_ENABLE_bp = 0          
+
+      // Data mode
+      SPI0_CTRLB = SPI0_CTRLB | SPIClockMode; /* Data Mode */
+
+      // LSB is transmitted first; SPI module in Master mode; System Clock divided by 16
+      Select Case SPICurrentMode
+        Case MasterUltraFast
+            SPI0_CTRLA = SPI_CLK2X_bm | SPI_DORD_bm | SPI_MASTER_bm 
+        Case MasterFast
+            SPI0_CTRLA =  SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_0_bm
+        Case Master
+            SPI0_CTRLA = SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_1_bm
+        Case MasterSlow
+            SPI0_CTRLA = SPI_DORD_bm | SPI_MASTER_bm | SPI_PRESC_1_bm | SPI_PRESC_0_bm
+        'Nothing needed for slave
+        'Case Slave
+        'Case SlaveSS
+      End Select
+
+      'Enable SPI
+      SPI0_CTRLA.SPI_ENABLE_bp = 1          // Enable module
+
+    #endif
+
   #endif
 
 End Sub
@@ -614,7 +681,13 @@ Sub SSPOFF
   #endif
 
   #ifdef AVR
-    Set SPE Off
+    #if nodef(CHIPAVRDX)
+      Set SPE Off
+    #endif
+    #if def(CHIPAVRDX)
+      // Disable module
+      SPI0_CTRLA.SPI_ENABLE_bp = 0  
+    #endif
   #endif
 
 End Sub
@@ -665,41 +738,50 @@ Sub HWSPITransfer(In SPITxData, Out SPIRxData)
   #endif
 
   #ifdef AVR
-    'Master mode
-    If SPICurrentMode > 10 Then
-      'Put byte to send into buffer
-      'Will start transfer
-      #IF ChipFamily <> 122
+    #if nodef(CHIPAVRDX)
+      'Master mode
+      If SPICurrentMode > 10 Then
+        'Put byte to send into buffer
+        'Will start transfer
+        #IF ChipFamily <> 122
+          Do
+            SPDR = SPITxData
+          Loop While SPSR.WCOL
+        #ENDIF
+        #IF ChipFamily = 122
+          SPFR = SPFR & 0x44 'setup  RDEMPT and WREMPT simutanously to clear buffer
+          SPDR = SPITxData
+          Repeat SPIDELAY_SCRIPT_MASTER
+            nop
+          End Repeat
+        #ENDIF
+      'Slave mode
+      Else
+        'Retry until send succeeds
         Do
           SPDR = SPITxData
-        Loop While SPSR.WCOL
+        Loop While SPSR.WCOL = On
+      End If
+
+      'Read buffer
+      'Same for master and slave
+      #IF ChipFamily <> 122
+        Wait While SPSR.SPIF = Off
       #ENDIF
+
       #IF ChipFamily = 122
-        SPFR = SPFR & 0x44 'setup  RDEMPT and WREMPT simutanously to clear buffer
-        SPDR = SPITxData
-        Repeat SPIDELAY_SCRIPT_MASTER
-          nop
-        End Repeat
+        'Chipfmaily 122 has different registers.... and, is so fast...
+        Wait While ( SPSR.SPIF = Off and RDEMPT = 0 )
       #ENDIF
-    'Slave mode
-    Else
-      'Retry until send succeeds
-      Do
-        SPDR = SPITxData
-      Loop While SPSR.WCOL = On
-    End If
+      SPIRxData = SPDR
+    #endif
 
-    'Read buffer
-    'Same for master and slave
-    #IF ChipFamily <> 122
-      Wait While SPSR.SPIF = Off
-    #ENDIF
-
-    #IF ChipFamily = 122
-      'Chipfmaily 122 has different registers.... and, is so fast...
-      Wait While ( SPSR.SPIF = Off and RDEMPT = 0 )
-    #ENDIF
-    SPIRxData = SPDR
+    #if def(CHIPAVRDX)
+      SPI0_DATA = SPITxData
+      // waits until data is exchanged
+      wait while SPI0_INTFLAGS.SPI_IF_bp = 0
+      SPIRxData = SPI0_DATA
+    #endif    
   #endif
 
 End Sub
@@ -743,30 +825,36 @@ Sub FastHWSPITransfer( In SPITxData )
   #endif
 
   #ifdef AVR
-    'Master mode only
-   #IF ChipFamily <> 122
-     Do
-       SPDR = SPITxData
-     Loop While SPSR.WCOL
-   #ENDIF
-   #IF ChipFamily = 122
-     SPFR = SPFR & 0x44 'setup  RDEMPT and WREMPT simutanously to clear buffer
-     SPDR = SPITxData
-     Repeat SPIDELAY_SCRIPT_MASTER
-       nop
-     End Repeat
-   #ENDIF
+    #if nodef(CHIPAVRDX)
+      'Master mode only
+      #IF ChipFamily <> 122
+        Do
+          SPDR = SPITxData
+        Loop While SPSR.WCOL
+      #ENDIF
+      #IF ChipFamily = 122
+        SPFR = SPFR & 0x44 'setup  RDEMPT and WREMPT simutanously to clear buffer
+        SPDR = SPITxData
+        Repeat SPIDELAY_SCRIPT_MASTER
+          nop
+        End Repeat
+      #ENDIF
 
-    'Same for master and slave
-    #IF ChipFamily <> 122
-      Wait While SPSR.SPIF = Off
-    #ENDIF
+      'Same for master and slave
+      #IF ChipFamily <> 122
+        Wait While SPSR.SPIF = Off
+      #ENDIF
 
-    #IF ChipFamily = 122
-      'Chipfmaily 122 has different registers.... and, is so fast...
-      Wait While ( SPSR.SPIF = Off and RDEMPT = 0 )
-    #ENDIF
-
+      #IF ChipFamily = 122
+        'Chipfmaily 122 has different registers.... and, is so fast...
+        Wait While ( SPSR.SPIF = Off and RDEMPT = 0 )
+      #ENDIF
+    #endif
+    #if def(CHIPAVRDX)
+      SPI0_DATA = SPITxData
+      // waits until data is exchanged
+      wait while SPI0_INTFLAGS.SPI_IF_bp = 0
+    #endif
   #endif
 
 End Sub
@@ -841,3 +929,302 @@ Macro HWSPI_Fast_Write_18bits_Macro
 
 End Macro
 
+//*********************************** HWSPI2 support
+
+Sub SPI2Mode (In SPICurrentMode)
+
+  #ifdef PIC
+    #ifndef Var(SSPCON1)
+      #ifdef Var(SSPCON)
+        Dim SSPCON1 Alias SSPCON
+      #endif
+    #endif
+
+    #ifdef Var(SPI2CON0)
+        
+         'Supports K mode SPI using the specific SPI module
+
+        'Turn off SPI
+        '(Prevents any weird glitches during setup)
+        SPI2CON0_EN = 0
+
+        'Set clock pulse settings
+        SPI2CON1.SMP = 0
+        'Data write on rising (idle > active) clock (CPHA = 1)
+        SPI2CON1.CKE = 0
+        'Clock idle low (CPOL = 0)
+        SPI2CON1.CKP = 0
+
+        SPI2CON1 = 0x40
+
+        'Transfer
+        SPI2CON2 = SPI2CON2 or 3
+
+        #ifdef SPI2_DC
+          dir SPI2_DC       out
+        #endif
+
+        #ifdef SPI2_CS
+          dir SPI2_CS       out
+        #endif
+
+        #ifdef SPI2_RESET
+          dir SPI2_RESET    out
+        #endif
+
+        #ifdef SPI2_DI
+          dir SPI2_DI       in
+        #endif
+
+        #ifdef SPI2_DO
+          dir SPI2_DO       out
+        #endif
+
+        #ifdef SPI2_SCK
+          dir SPI2_SCK      out
+        #endif
+
+        'Select mode and clock
+        SPI2CLK = SSP1_FOSC
+
+        Select Case SPICurrentMode
+          Case MasterFast or MasterUltraFast
+            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT
+            SPI2BAUD = SPIBAUDRATE_SCRIPT
+            SPI2CON0.MST = 1
+          Case Master
+            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTER
+            SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTER
+            SPI2CON0.MST = 1
+          Case MasterSlow
+            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTERSLOW
+            SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTERSLOW
+            SPI2CON0.MST = 1
+          Case Slave
+
+            SPI2CON0.MST = 0
+            #ifdef SPI2_SCK
+              dir SPI2_SCK      in
+            #endif
+          Case SlaveSS
+
+            SPI2CON0.MST = 0
+            #ifdef SPI2_SCK
+              dir SPI2_SCK      in
+            #endif
+        End Select
+
+
+        #ifdef SPI_BAUD_RATE_REGISTER
+         'override the script calculation
+          SPI2BAUD = SPI_BAUD_RATE_REGISTER
+        #endif
+
+        'Enable SPI
+        SPI2CON0.EN = 1
+    #endif
+
+  #endif
+
+  #ifdef AVR
+    #if nodef(CHIPAVRDX)
+      'Turn off SPI
+      '(Prevents any weird glitches during setup)
+      Set SPCR.SPE Off
+
+      'Set clock pulse settings
+      'Need CPHA = 1 to match default PIC settings
+      '(CPOL = 0 matches PIC)
+      Set SPCR.CPHA On
+
+      'Select mode and clock
+      'Set some mode bits off, can set on later
+      Set SPCR.MSTR Off
+      Set SPSR.SPI2X Off
+      Set SPCR.SPR0 Off
+      Set SPCR.SPR1 Off
+
+      Select Case SPICurrentMode
+      Case MasterUltraFast
+        Set SPCR.MSTR On
+        Set SPSR.SPI2X On
+
+      Case MasterFast
+        Set SPCR.MSTR On
+
+      Case Master
+        Set SPCR.MSTR On
+        Set SPCR.SPR0 On
+
+      Case MasterSlow
+        Set SPCR.MSTR On
+        Set SPCR.SPR1 On
+
+      'Nothing needed for slave
+      'Case Slave
+      'Case SlaveSS
+
+      End Select
+
+      'Enable SPI
+      Set SPCR.SPE On
+    #endif
+  #endif
+
+  #if def(CHIPAVRDX)
+
+  #endif
+
+End Sub
+
+'Initialisation sub
+'Used to set mode and clock options
+'Overloaded: Other version is more compact but doesn't allow clock options to be set
+Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
+
+  #ifdef PIC
+    #ifndef Var(SSPCON1)
+      #ifdef Var(SSPCON)
+        Dim SSPCON1 Alias SSPCON
+      #endif
+    #endif
+
+    #ifdef Var(SPI2CON0)
+        'Supports K mode SPI using the specific SPI module
+
+        'Turn off SPI
+        '(Prevents any weird glitches during setup)
+        SPI2CON0_EN = 0
+
+        'Set clock pulse settings to middle
+        SPI2CON1.SMP = 0
+
+        'Data write on rising (idle > active) clock (CPHA = 1)
+        SPI2CON1.CKE = 0
+        'Clock idle low (CPOL = 0)
+        SPI2CON1.CKP = 0
+
+        If SPIClockMode.0 = Off Then
+          SPI2CON1.CKE = 1
+        End If
+
+        If SPIClockMode.1 = On Then
+          SPI2CON1.CKP = 1
+        End If
+
+        SPI2CON1 = 0x40
+
+        'Transfer
+        SPI2CON2 = SPI2CON2 or 3
+
+        #ifdef SPI2_DC
+          dir SPI2_DC       out
+        #endif
+
+        #ifdef SPI2_CS
+          dir SPI2_CS       out
+        #endif
+
+        #ifdef SPI2_RESET
+          dir SPI2_RESET    out
+        #endif
+
+        #ifdef SPI2_DI
+          dir SPI2_DI       in
+        #endif
+
+        #ifdef SPI2_DO
+          dir SPI2_DO       out
+        #endif
+
+        #ifdef SPI2_SCK
+          dir SPI2_SCK      out
+        #endif
+
+        'Select mode and clock
+        SPI2CLK = SSP1_FOSC
+
+        Select Case SPICurrentMode
+            Case MasterFast or MasterUltraFast
+              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT
+              SPI2BAUD = SPIBAUDRATE_SCRIPT
+              SPI2CON0.MST = 1
+            Case Master
+              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTER
+              SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTER
+              SPI2CON0.MST = 1
+            Case MasterSlow
+              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTERSLOW
+              SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTERSLOW
+              SPI2CON0.MST = 1
+            Case Slave
+              SPI2CON0.MST = 0
+            #ifdef SPI2_SCK
+              dir SPI2_SCK      in
+            #endif
+
+            Case SlaveSS
+              SPI2CON0.MST = 0
+            #ifdef SPI2_SCK
+              dir SPI2_SCK      in
+            #endif
+
+        End Select
+
+        #ifdef SPI_BAUD_RATE_REGISTER
+        'override the script calculation
+          SPI2BAUD = SPI_BAUD_RATE_REGISTER
+        #endif
+
+        'Enable SPI
+        SPI2CON0.EN = 1
+
+    #endif
+  #endif
+
+
+End Sub
+
+#define SPI2Transfer HWSPI2Transfer
+'Sub to handle SPI data send/receive
+Sub HWSPI2Transfer(In SPITxData, Out SPIRxData)
+
+  #ifdef PIC
+
+    #ifdef Var(SPI2CON0)
+
+      'One byte transfer count
+      SPI2TCNTL = 1
+      SPI2TXB = SPITxData
+
+      wait while SPI2RXIF = SPI_RX_IN_PROGRESS
+      SPIRxData = SPI2RXB
+
+    #endif
+
+  #endif
+
+End Sub
+
+'Sub to handle SPI data send - Master mode only
+Sub FastHWSPI2Transfer( In SPITxData )
+  'Master mode only
+  #ifdef PIC
+
+    #ifdef Var(SPI2CON0)
+
+    dim SPIRxData
+
+      'One byte transfer count
+      SPI2TCNTL = 1
+      SPI2TXB = SPITxData
+
+      wait while SPI2RXIF = SPI_RX_IN_PROGRESS
+      SPIRxData = SPI2RXB
+
+    #endif
+
+  #endif
+
+
+End Sub
