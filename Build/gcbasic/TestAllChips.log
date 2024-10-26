@@ -12,8 +12,6 @@ Error: DAT file error - probable `MaxAddress = 255` is incorrect/too small. Chec
 Processing 16cr926
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
-Processing 18lf46j13
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
 Processing 18macro
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
@@ -22,31 +20,40 @@ Error: Excessive RAM usage! Delete some variables, reduce the size of arrays, or
 Error: First page of program memory is full, please reduce size of Main and Interrupt routines
 Error: Program is too large, cannot fit into available program memory
 Processing 16f13113
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13114
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13115
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13123
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13124
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13125
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13143
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13144
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f13145
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 16f527
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
@@ -54,72 +61,80 @@ Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determin
 Processing 16f570
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BSF STATUS,RP0` Hexfile address(see lst file): 000000
 Error: GCASM: Symbol [SFR]RP0 has not been defined. Inspect ASM file to determine error  at `BCF STATUS,RP0` Hexfile address(see lst file): 000000
-Processing 18f44j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f44j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f45j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f45j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f46j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f46j13
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f46j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f46j53
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f47j13
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f47j53
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18f65j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Processing 18f24q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
-Processing 18f66j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+Processing 18f25q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f26q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f45q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f46q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f55q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
+
+Processing 18f56q24
+Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. 
+Warning:     There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
 
 Processing 18f66j99
 Error: Program is too large, cannot fit into available program memory
-Processing 18f85j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
-
-Processing 18f86j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
-
 Processing 18f86j99
 Error: Program is too large, cannot fit into available program memory
-Processing 18f95j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
-
 Processing 18f96j72
 Error: Program is too large, cannot fit into available program memory
-Processing 18f96j94
-Warning: This is a development chip definition file (.DAT) and the chip has not been validated by the developers of the compiler. There may be errors in the ASM and/or the generated HEX file - please be aware that the libraries may or may not support this chip.
-
 Processing 18f96j99
 Error: Program is too large, cannot fit into available program memory
 Processing 18f97j72
 Error: Program is too large, cannot fit into available program memory
-Processing 18lf44j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf44j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf45j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf45j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf46j11
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf46j13
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf46j50
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf46j53
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf47j13
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
-Processing 18lf47j53
-system.h ** (1133): Error: Incorrect parameters in Set, expected: Set variable.bit status (System Include)
+Processing tiny1614
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000066
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000069
+Processing tiny202
+Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
+Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny204
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny212
+Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
+Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny214
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny402
+Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
+Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny404
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny412
+Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
+Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny414
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
+Processing tiny814
+Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
+Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
 Completed

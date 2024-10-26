@@ -569,6 +569,7 @@ declare function LongToString(value as ulong) as string
 declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
 declare Function CheckSysVarDef(ConditionIn As String) As String
 declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
+declare SUB OptimiseAVRDx ()
 declare SUB PrepareBuiltIn ()
 declare SUB PreProcessor ()
 declare Sub ProcessSame (DirectiveIn As String)
@@ -823,8 +824,8 @@ IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 Randomize Timer
 
 'Set version
-Version = "2024.09.30"
-buildVersion = "1436"
+Version = "2024.10.17"
+buildVersion = "1441"
 
 #ifdef __FB_DARWIN__  'OS X/macOS
   #ifndef __FB_64BIT__
@@ -2721,11 +2722,21 @@ End SUB
 
 SUB CalcConfig
 
+  Dim As Integer configreport
+  Dim As String ConfigReportFileName
+
   'Process config flags from CONFIG variable and programmer required settings
   'Store required settings in OutConfig array
 
   'No config registers on AVR that can be set by GCBASIC
   If ModeAVR Then
+    If OutPutConfigOptions = 0 then
+      configreport = FreeFile
+      ConfigReportFileName = ReplaceToolVariables("%filename%", "config")
+      Open ConfigReportFileName For Output As #configreport
+      Print #configreport, "[" + ChipName + "]"+str(ModePIC)+","+str(ModeAVR)+",,"+str(chipfamily)
+      Close #configreport
+    End If
     If NOT CHIPAVRDX Then
       Exit Sub
     End If
@@ -2740,8 +2751,6 @@ SUB CalcConfig
   Dim As LinkedListElement Pointer CurrSettingLoc, CurrSettingOptLoc
   Dim As ConfigSetting Pointer CurrSetting
 
-  Dim As Integer configreport
-  Dim As String ConfigReportFileName
   'Set default - this is needed as some dont use the same LF INT OSC
   LFINTOSCString = "LFINT"
 
@@ -18393,7 +18402,11 @@ Sub WriteAssembly
     End If
     PRINT #1, ";Chip Model: " + ChipName
     PRINT #1, ";Assembler header file"
-    PRINT #1, ".INCLUDE " + Chr(34) + Temp + "def.inc" + Chr(34)
+    If HashMapGet(Constants, "AVRASM2_INCLUDE_LOCATION" ) = 0  Then 
+      PRINT #1, ".INCLUDE " + Chr(34) + Temp + "def.inc" + Chr(34)
+    Else
+      PRINT #1, ".INCLUDE " + Chr(34) + HashMapGetStr(Constants, "AVRASM2_INCLUDE_LOCATION") + Chr(34)
+    End If
     Print #1, ""
     Print #1, ";SREG bit names (for AVR Assembler compatibility, GCBASIC uses different names)"
     VarList = HashMapToList(SysVarBits, -1)

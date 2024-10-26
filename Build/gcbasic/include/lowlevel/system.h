@@ -97,8 +97,9 @@
 '    21072024 - Added AVRDX support to InitSys. Supports internal oscillator at 20 or 16 mHz
 '    24072024 - Added 18FxxQ10 type support to PFMWRITEBLOCK
 '    07082024 - Added AVRDX support to InitSys. Supports internal oscillator at 24 mHz
-'    06092024 - Revised ProgramRead to AVR, specifically for AVRDX
-'    16092024 - Add ProgramWrite for AVR, specifically for AVRDX
+'    06092024 - Revised ProgramRead to AVR, specifiicially for AVRDX
+'    16092024 - Add ProgramWrite for AVR, specifiicially for AVRDX
+'    17102024 - Add AVR DX - clear down the ram to 0x00. ASM routine.
 
 'Constants
 #define ON 1
@@ -1638,21 +1639,23 @@ Sub InitSys
         #ENDIF
       #ENDIF
     #ENDIF  'CHIPUSINGINTOSC
-    ;---------------------------------------------------------------------------
-    //~ fillmem:
-    //~ ldi r26, low(RAMEND-ChipRam) ; Load the X pointer with start address
-    //~ ldi r27, high(RAMEND-ChipRam) ;
-    //~ ldi r16,0 ; Load fill pattern to r16
-    //~ fill_lp:
-    //~ st X+,r16 ; Store a fill pattern, advance X pointer
-    //~ cpi r26, low(RAMEND-0x08) ; Repeat until XL = low(RAMSTART+0xFF0)
-    //~ brne fill_lp ;
-    //~ cpi r27, high(RAMEND-0x08) ; Repeat until XH = high(RAMSTART+0xFF0)
-    //~ brne fill_lp ; (executed only on every 256th loop cycle)
-          //~ ret ;
 
+    // AVR DX - clear down the ram to 0x00 
+      eor r1, r1
+      ldi r18, HIGH( RAMEND) - 2 
+      ldi r26, LOW(CHIP_INTERNAL_SRAM_START ) ; 
+      ldi r27, HIGH(CHIP_INTERNAL_SRAM_START )
+      rjmp InitSysClearRAMStart
 
-    // AVR DX chips
+      InitSysClearRAMLoop:
+      st  X+, r1
+
+      InitSysClearRAMStart:
+      cpi r26, LOW(CHIP_INTERNAL_SRAM_START + RAMEND)
+      cpc r27, r18
+      brne  InitSysClearRAMLoop
+      st  X+, r1
+
       #IFDEF Var(PORTA)
         DDRA = 0
         PORTA = 255

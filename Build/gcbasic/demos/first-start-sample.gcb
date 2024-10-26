@@ -24,16 +24,16 @@
 
 ' ----- Configuration
 'Make into a comment to use the AVR chipset
-#CHIP 16f886
+#CHIP 16f88
 '  #chip mega328p         'Uncomment to simply use the AVR chipset
 '  #chip LGT8F328P        'Uncomment to simply use the LGT chipset
-
+'  #chip mega4809         'Uncomment to simply use the AVRDX chipset
 
 ' ----- Main body of program commences here.
 Do Forever
 
     'Lighten Arduinos onboard LED for 100 milliseconds
-    PulseOut PortB.5, 100 ms
+    PulseOut PortA.5, 100 ms
 
     'Then wait 900 milliseconds after LED goes off
     Wait 900 ms

@@ -1,61 +1,62 @@
 '    Hardware I2C routines for GCBASIC
-'    Copyright (C) 2010-2024 Hugh Considine, Jacques Erdemaal and Evan R. Venn
+  '    Copyright (C) 2010-2024 Hugh Considine, Jacques Erdemaal and Evan R. Venn
 
-'    This library is free software; you can redistribute it and/or
-'    modify it under the terms of the GNU Lesser General Public
-'    License as published by the Free Software Foundation; either
-'    version 2.1 of the License, or (at your option) any later version.
+  '    This library is free software; you can redistribute it and/or
+  '    modify it under the terms of the GNU Lesser General Public
+  '    License as published by the Free Software Foundation; either
+  '    version 2.1 of the License, or (at your option) any later version.
 
-'    This library is distributed in the hope that it will be useful,
-'    but WITHOUT ANY WARRANTY; without even the implied warranty of
-'    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-'    Lesser General Public License for more details.
+  '    This library is distributed in the hope that it will be useful,
+  '    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  '    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  '    Lesser General Public License for more details.
 
-'    You should have received a copy of the GNU Lesser General Public
-'    License along with this library; if not, write to the Free Software
-'    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  '    You should have received a copy of the GNU Lesser General Public
+  '    License along with this library; if not, write to the Free Software
+  '    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-'********************************************************************************
-'IMPORTANT:
-'THIS FILE IS ESSENTIAL FOR SOME OF THE COMMANDS IN GCBASIC. DO NOT ALTER THIS FILE
-'UNLESS YOU KNOW WHAT YOU ARE DOING. CHANGING THIS FILE COULD RENDER SOME GCBASIC
-'COMMANDS UNUSABLE!
-'********************************************************************************
+  '********************************************************************************
+  'IMPORTANT:
+  'THIS FILE IS ESSENTIAL FOR SOME OF THE COMMANDS IN GCBASIC. DO NOT ALTER THIS FILE
+  'UNLESS YOU KNOW WHAT YOU ARE DOING. CHANGING THIS FILE COULD RENDER SOME GCBASIC
+  'COMMANDS UNUSABLE!
+  '********************************************************************************
 
 
-'    Updated Feb 2015 by Jacques Erdemaal to improve (to remove the guess work) from the configuration for AVR
-'            and to improve the initialisation of the AVR
-'
-'    Updated Feb 2015 to support AVR and correct HI2CReceive parameter error.
-'    Moved defines ACK/NACK to sysen.ini to
-'
-'    Updated May 2015 - enhance hi2cwaitmssp
-'    Updated Oct 2015 - enhance hi2cwaitmssp
-'    Updated Jan 2016 - enhance hi2cwaitmssp
-'    Updated May 2016 - resolved AVR TWINT lockup issues
-'    Updated Sept 2016 - resolve 16f18855 register mapping
-'    Updated Oct 2016  - for Option Explicit and to fix the script issue
-'    Updated Oct 2016  - ... Slave10 was NOT defined.
-'    Updated Dec 2016  - ... Added SSPIF = SSP1IF to correct error
-'    Updated Feb 2017  - Added AVRDisable_HI2CAckPollState for AVR performance
-'    Updated May 2017 -  Added support for PIC chips with bit "SEN_SSP1CON2"
-'    Updated Sep 2017 -  Added SAMEVAR and optimised HSerReceive
-'    Updated Oct 2017 - Added MASTER for I2C module. No slave.
-'    Updated Oct 2017 - Updated to add SI2C discovery support methods.
-'    Updated Jan 2018 - Updated to handle AVR frequency and I2C baud rate. Warning added
-'    Updated Jan 2018 - Updated to handle AVR I2C message handling
-'    Updated Aug 2019 - Updated documentation only. No functional changes
-'    Updated Jan 2020 - Correct SSPxADD calculation for out of bound values
-'    Updated Apr 2020 - Corrected Si2CReceive.  Was set to 255 bytes, not 1!
-'    Updated Apr 2020 - Updated to SI32CDisovery. Now using I2C1PIR.7 to detect part and renamed HIC2Init to HI2CInit
-'    Updated May 2020 - Removed Unused Constant
-'    Updated Dec 2020 - Added support for 18FxxQ10
-'    Updated Jan 2021 - Added support for 18FxxQ43
-'    Updated Sep 2021 - Revised SI2CDiscovery adding #IFDEF var(I2C1CNTL) and #IFDEF var(I2C1CNT) to isolate Q43 that only supports I2C1CNT
-'            14/08/22 - Updated user changeable constants only - no functional change
-'            28/02/23 - Added support fort 18FxxQ71 and resolved constant isolation
-'    Updated Jun 2023 - Revised to make I2C1I2C1CONxDefaults optional
-'    Updated 30/03/23 - Added AVRDx support
+  '    Updated Feb 2015 by Jacques Erdemaal to improve (to remove the guess work) from the configuration for AVR
+  '            and to improve the initialisation of the AVR
+  '
+  '    Updated Feb 2015 to support AVR and correct HI2CReceive parameter error.
+  '    Moved defines ACK/NACK to sysen.ini to
+  '
+  '    Updated May 2015 - enhance hi2cwaitmssp
+  '    Updated Oct 2015 - enhance hi2cwaitmssp
+  '    Updated Jan 2016 - enhance hi2cwaitmssp
+  '    Updated May 2016 - resolved AVR TWINT lockup issues
+  '    Updated Sept 2016 - resolve 16f18855 register mapping
+  '    Updated Oct 2016  - for Option Explicit and to fix the script issue
+  '    Updated Oct 2016  - ... Slave10 was NOT defined.
+  '    Updated Dec 2016  - ... Added SSPIF = SSP1IF to correct error
+  '    Updated Feb 2017  - Added AVRDisable_HI2CAckPollState for AVR performance
+  '    Updated May 2017 -  Added support for PIC chips with bit "SEN_SSP1CON2"
+  '    Updated Sep 2017 -  Added SAMEVAR and optimised HSerReceive
+  '    Updated Oct 2017 - Added MASTER for I2C module. No slave.
+  '    Updated Oct 2017 - Updated to add SI2C discovery support methods.
+  '    Updated Jan 2018 - Updated to handle AVR frequency and I2C baud rate. Warning added
+  '    Updated Jan 2018 - Updated to handle AVR I2C message handling
+  '    Updated Aug 2019 - Updated documentation only. No functional changes
+  '    Updated Jan 2020 - Correct SSPxADD calculation for out of bound values
+  '    Updated Apr 2020 - Corrected Si2CReceive.  Was set to 255 bytes, not 1!
+  '    Updated Apr 2020 - Updated to SI32CDisovery. Now using I2C1PIR.7 to detect part and renamed HIC2Init to HI2CInit
+  '    Updated May 2020 - Removed Unused Constant
+  '    Updated Dec 2020 - Added support for 18FxxQ10
+  '    Updated Jan 2021 - Added support for 18FxxQ43
+  '    Updated Sep 2021 - Revised SI2CDiscovery adding #IFDEF var(I2C1CNTL) and #IFDEF var(I2C1CNT) to isolate Q43 that only supports I2C1CNT
+  '            14/08/22 - Updated user changeable constants only - no functional change
+  '            28/02/23 - Added support fort 18FxxQ71 and resolved constant isolation
+  '    Updated Jun 2023 - Revised to make I2C1I2C1CONxDefaults optional
+  '    Updated 30/09/24 - Added AVRDx support
+  '    Updated 10/10/24 - Isolation of the Byte variables
 
 'User changeable constants
 
@@ -63,14 +64,12 @@
 'End of user changeable constants
 
 'SPI mode constants also SHARED by hardware I2C:
-
-' Define HI2C settings - CHANGE PORTS
-'  #define MasterFast 13
-'  #define Master 12             ; Used in this module
-'  #define MasterSlow 11
-'  #define SlaveSS 2
-'  #define Slave 1               ; Used in this module
-'
+  '  #define MasterFast 13
+  '  #define Master 12             ; Used in this module
+  '  #define MasterSlow 11
+  '  #define SlaveSS 2
+  '  #define Slave 1               ; Used in this module
+  '
 
 'HI2C Mode constants
 #define Slave10 3
@@ -78,26 +77,26 @@
 
 
 'Setup
-'        ;Master and AVR
-'        #define I2C_DATA PORTC.4
-'        #define I2C_CLOCK PORTC.3
-'        ;I2C pins need to be input for SSP module on a PIC
-'        Dir HI2C_DATA in
-'        Dir HI2C_CLOCK in
-'        ;Type
-'        HI2CMode Master
+  '        ;Master and AVR
+  '        #define I2C_DATA PORTC.4
+  '        #define I2C_CLOCK PORTC.3
+  '        ;I2C pins need to be input for SSP module on a PIC
+  '        Dir HI2C_DATA in
+  '        Dir HI2C_CLOCK in
+  '        ;Type
+  '        HI2CMode Master
 
 
-'      ' SLAVE
-'      '  'Buffer for incoming HI2C messages for the slave operation
-'        'Each message takes 4 bytes
-'        Dim HI2CBuffer(10)
-'        HI2CBufferSize = 0
-'        OldHI2CBufferSize = 0
-'        HI2CMode Slave
-'        HI2CSetAddress 128
-'        'Set up interrupt to process I2C
-'        On Interrupt SSP1Ready Call HI2CHandlerSlave
+  '      ' SLAVE
+  '      '  'Buffer for incoming HI2C messages for the slave operation
+  '        'Each message takes 4 bytes
+  '        Dim HI2CBuffer(10)
+  '        HI2CBufferSize = 0
+  '        OldHI2CBufferSize = 0
+  '        HI2CMode Slave
+  '        HI2CSetAddress 128
+  '        'Set up interrupt to process I2C
+  '        On Interrupt SSP1Ready Call HI2CHandlerSlave
 
 
 
@@ -229,9 +228,13 @@
         //       SCRIPT_TWI_BAUD = 95
         //       SCRIPT_TWI_FAST_MODE = 28
         // End IF
-        IF INT(SCRIPT_TWI_BAUD) < 0 Then
-          Error "TWI_BAUD calculation is invalid = " SCRIPT_TWI_BAUD
-          Error "HWI2C.H AVRDx script section has negative calculation - contact us on the GCBASIC Forum.  We can resolve very quickly."
+
+        IF DEF(HI2C_DATA) THEN
+          // Only issue error when used!
+          IF INT(SCRIPT_TWI_BAUD) < 0 Then
+            Error "TWI_BAUD calculation is invalid = " SCRIPT_TWI_BAUD
+            Error "HWI2C.H AVRDx script section has negative calculation - contact us on the GCBASIC Forum.  We can resolve very quickly."
+          END IF
         END IF
       END IF
 
@@ -564,11 +567,11 @@ Sub HI2CReceive (Out I2CByte, Optional In HI2CGetAck = 1 )
 
 End Sub
 
-; This routine waits for the last I2C operation to complete.
-; It does this by polling the SSPIF flag in PIR1.
-; Then, it clears SSPIF
-; Updated at v0.95.010 Option Explicit
-Dim HI2CWaitMSSPTimeout as byte
+  ; This routine waits for the last I2C operation to complete.
+  ; It does this by polling the SSPIF flag in PIR1.
+  ; Then, it clears SSPIF
+  ; Updated at v0.95.010 Option Explicit
+  Dim HI2CWaitMSSPTimeout as byte
 sub HI2CWaitMSSP
 
 
@@ -774,6 +777,12 @@ End Sub
 
 
 sub HI2CInit
+
+    Dim HI2C1StateMachine as byte
+    Dim HI2CACKPOLLSTATE  as Byte
+    Dim TWI0ACKPOLLSTATE  as Byte Alias HI2CACKPOLLSTATE
+    Dim HI2C1lastError as Byte
+
     asm showdebug  This method sets the variable `HI2CCurrentMode`, and, if required calls the method `SI2CInit` to set up new MSSP modules - aka K-Mode family chips
     HI2CCurrentMode = 0
 
@@ -788,13 +797,6 @@ end sub
 
 
 'New I2C module support
-
-
-    Dim HI2C1StateMachine as byte
-    Dim HI2CACKPOLLSTATE  as Byte
-    Dim TWI0ACKPOLLSTATE  as Byte Alias HI2CACKPOLLSTATE
-    Dim HI2C1lastError as Byte
-    Dim TWI0LastError as Byte Alias HI2C1lastError
 
     #DEFINE I2C1_GOOD             0
     #DEFINE I2C1_FAIL_TIMEOUT     1
@@ -1209,6 +1211,12 @@ Sub AVRDxTWI0Mode
     Dim HI2CCurrentMode as Byte
     Dim TWI0Timeout as Byte Alias HI2CWaitMSSPTimeout
 
+    Dim HI2C1StateMachine as byte
+    Dim HI2CACKPOLLSTATE  as Byte
+    Dim TWI0ACKPOLLSTATE  as Byte Alias HI2CACKPOLLSTATE
+    Dim HI2C1lastError as Byte
+    Dim TWI0LastError as Byte Alias HI2C1lastError
+
     HI2CCurrentMode = 0
     TWI0Timeout = 0
 
@@ -1410,7 +1418,7 @@ Sub AVRDxTWI0Send ( in I2Cbyte )
 
         TWI0StateMachine = 2
 
-        // Can wait up to 254 NOPs then set error code
+        // Can wait up to 254 operations then set error code
         do while TWI0Timeout < 255
             TWI0Timeout++
 
@@ -1443,7 +1451,6 @@ Sub AVRDxTWI0Send ( in I2Cbyte )
           wait   TWI_SEND_DELAY us
         #ENDIF
         TWI0_MADDR = I2Cbyte
-        wait 150 us
         
         // Ensure stability on the bus
         TWI0Timeout = 1
@@ -1460,7 +1467,7 @@ Sub AVRDxTWI0Send ( in I2Cbyte )
 
         TWI0StateMachine = 2
 
-        // Can wait up to 254 NOPs then set error code
+        // Can wait up to 254 operations then set error code
         do while TWI0Timeout < 255
             TWI0Timeout++
 

@@ -34,6 +34,8 @@
 // User can used #DEFINE MILLIS_TIMER_VALUE_ADJUST n to change the delta timer value to decrease or increase latency
 //    #DEFINE MILLIS_TIMER_VALUE_ADJUST 1
 
+// The script determines the period setting for the timer. The conditional test set the prescaler. The rest is common.
+
 // Subroutines:
   // MsCtr_Int_Hdlr
   // Init_MsCtr_Int
@@ -123,77 +125,73 @@
     if ChipMaxMHz = 20 Then
       if ChipMHz=20 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x4ED
+        SCRIPT_TMR0INITVAL = 0x9C3
       end if
       if ChipMHz=10 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x4ED
+        SCRIPT_TMR0INITVAL = 0x4E1
       end if
       if ChipMHz=5 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x4ED
+        SCRIPT_TMR0INITVAL = 0x270
       end if
       if ChipMHz=3.333333 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x682
+        SCRIPT_TMR0INITVAL = 0x1A0
       end if
       if ChipMHz=2.5 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x4ED
+        SCRIPT_TMR0INITVAL = 0x138
       end if
       if ChipMHz=2 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1F4
+        SCRIPT_TMR0INITVAL = 0xF9
       end if          
       if ChipMHz=1.666667 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x346
+        SCRIPT_TMR0INITVAL = 0xCF
       end if      
       if ChipMHz=1.25 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1F7
+        SCRIPT_TMR0INITVAL = 0x9B
       end if
     end if
 
     if ChipMaxMHz = 24 Then
       if ChipMHz=24 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x2EE0
+        SCRIPT_TMR0INITVAL = 0x5D
       end if
       if ChipMHz=20 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x4E1
+        SCRIPT_TMR0INITVAL = 0x4D
       end if
       if ChipMHz=16 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1F40
+        SCRIPT_TMR0INITVAL = 0x3E
       end if      
       if ChipMHz=12 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1770
+        SCRIPT_TMR0INITVAL = 0x2E
       end if
       if ChipMHz=8 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0xFA0  
+        SCRIPT_TMR0INITVAL = 0x1E
       end if
       if ChipMHz=4 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x7D0
+        SCRIPT_TMR0INITVAL = 0x1F3
       end if
       if ChipMHz=3 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x5D0
+        SCRIPT_TMR0INITVAL = 0x176
       end if
       if ChipMHz=2 then
         SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1F4
-      end if    
-      if ChipMHz=1 then
-        SCRIPT_MILLISERRORHANDLER=1
-        SCRIPT_TMR0INITVAL = 0x1F4
+        SCRIPT_TMR0INITVAL = 0xF9
       end if    
     end if
-    warning SCRIPT_TMR0INITVAL
+    
   end if
 
   if SCRIPT_MILLISERRORHANDLER = 0 Then
@@ -316,7 +314,7 @@ Sub Init_MsCtr_Int
         InitTimer0 Osc, PS_0_0
       #endif
       #ifdef ChipMHz 20
-        InitTimer0 Osc, PS_0_8
+        InitTimer0 Osc, PS_0_8  //
       #endif        
       #ifdef ChipMHz 16
         InitTimer0 Osc, PS_0_0
@@ -325,37 +323,34 @@ Sub Init_MsCtr_Int
         InitTimer0 Osc, PS_0_0
       #endif
       #ifdef ChipMHz 10
-        InitTimer0 Osc, PS_0_4
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 8
         InitTimer0 Osc, PS_0_0
       #endif
       #ifdef ChipMHz 5
-        InitTimer0 Osc, PS_0_2
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 4
-        InitTimer0 Osc, PS_0_0
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 3
-        InitTimer0 Osc, PS_0_0
+        InitTimer0 Osc, PS_0_8
       #endif
       #ifdef ChipMHz 3.333333
-        InitTimer0 Osc, PS_0_1
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 2.5
-        InitTimer0 Osc, PS_0_1
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 2
-        InitTimer0 Osc, PS_0_2
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 1.6666667
-        InitTimer0 Osc, PS_0_0
+        InitTimer0 Osc, PS_0_8 //
       #endif
       #ifdef ChipMHz 1.25
-        InitTimer0 Osc, PS_0_0
-      #endif
-      #ifdef ChipMHz 1
-        InitTimer0 Osc, PS_0_0
+        InitTimer0 Osc, PS_0_8 //
       #endif
     #endif
   #endif
@@ -559,7 +554,7 @@ End macro
 macro SetTimer_Millis_AVRDX ( In TMRValueMillis As Word)
 
     #ifdef AVR
-        TCA0_SINGLE_PERIOD = TMRValueMillis
+        TCA0_SINGLE_PERIOD = [WORD]TMRValueMillis
     #endif
 
 End macro
