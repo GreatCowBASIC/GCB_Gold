@@ -99,42 +99,4 @@ Processing 18f96j99
 Error: Program is too large, cannot fit into available program memory
 Processing 18f97j72
 Error: Program is too large, cannot fit into available program memory
-Processing tiny1614
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000066
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000069
-Processing tiny202
-Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
-Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny204
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny212
-Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
-Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny214
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny402
-Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
-Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny404
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny412
-Error: GCASM: Symbol [SFR]PORTB_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTB_DIR,SYSVALUECOPY` Hexfile address(see lst file): 00003D
-Error: GCASM: Symbol [SFR]PORTB_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTB_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000040
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny414
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
-Processing tiny814
-Error: GCASM: Symbol [SFR]PORTC_DIR has not been defined. Inspect ASM file to determine error  at `STS PORTC_DIR,SYSVALUECOPY` Hexfile address(see lst file): 000043
-Error: GCASM: Symbol [SFR]PORTC_OUT has not been defined. Inspect ASM file to determine error  at `STS PORTC_OUT,SYSVALUECOPY` Hexfile address(see lst file): 000046
 Completed

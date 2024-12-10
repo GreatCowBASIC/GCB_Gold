@@ -53,7 +53,6 @@
       #SameVar NVMCON2, PMCON2
       #SameBit NVMREGS, CFGS
 
-
       #DEFINE SAF_ROWSIZE_BYTES    HEF_ROWSIZE_BYTES
       #DEFINE SAF_ROWSIZE_WORDS    HEF_ROWSIZE_WORDS
       #DEFINE SAF_START_ADDR       HEF_START_ADDR
@@ -466,7 +465,15 @@ Sub SAFEraseBlock(In _HEF_BlockNum)
             NVMADRH = _HEF_ABS_ADDR_H
             NVMADRL = _HEF_ABS_ADDR
             NVMCON1 = 2 ; Page read
-            NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+            
+            #IF BIT(NVMCON0.GO)
+              NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+            #ELSE
+              #IF BIT(GO_NVMCON0)
+                GO_NVMCON0 = 1
+              #ENDIF  
+            #ENDIF
+
             NVMCON1 = 6 ; Erase operations
           #ENDIF
 
@@ -503,7 +510,13 @@ Sub SAFEraseBlock(In _HEF_BlockNum)
             NVMCON1.WR = 1            'Write takes place here for legacy chips with NVMCON1.WR
           #ENDIF
           #IF BIT(NVMCMD0)
-            NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+              #IF BIT(NVMCON0.GO)
+                NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+              #ELSE
+                #IF BIT(GO_NVMCON0)
+                  GO_NVMCON0 = 1
+                #ENDIF  
+              #ENDIF
           #ENDIF
           NOP
           NOP
@@ -644,7 +657,13 @@ Sub SAFWriteBlock(in _HEF_BlockNum, in _HEF_Buffer(), Optional in _HEF_Count = H
             NVMCON1.WR = 1            'Write takes place here for legacy chips with NVMCON1.WR
           #ENDIF
           #IF BIT(NVMCMD0)
-            NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+              #IF BIT(NVMCON0.GO)
+                NVMCON0.GO = 1            'Write takes place here for chips with NVMCON0.GO
+              #ELSE
+                #IF BIT(GO_NVMCON0)
+                  GO_NVMCON0 = 1
+                #ENDIF  
+              #ENDIF
           #ENDIF
 
 

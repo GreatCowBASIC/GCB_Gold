@@ -16,6 +16,7 @@
 '    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 '    12.12.2019       Initial release
+'    20.11.2024       Rename dummy variables to _dummy
 
 
 'SPISRAM_wr_byte( Long_address, byte_value )
@@ -205,11 +206,11 @@ end sub
 sub  SendData_SPISRAM( in SPISRAMSendByte   )
 
   dim eepromValCounter as byte
-  dim dummyVal as byte alias eepromValCounter
+  dim _dummyVal as byte alias eepromValCounter
   eepromValCounter = 0
 
   #ifdef SPISRAM_HARDWARESPI
-     SPITransfer  SPISRAMSendByte, dummyVal
+     SPITransfer  SPISRAMSendByte, _dummyVal
      exit sub
   #endif
 
@@ -234,13 +235,13 @@ end Sub
 
 sub  GetData_SPISRAM( out eepromVal )
 
-  Dim dummyByte, eepromVal, eepromValCounter as byte
-  dummyByte = 0x55
+  Dim _dummyByte, eepromVal, eepromValCounter as byte
+  _dummyByte = 0x55
   eepromVal  = 0x55
   eepromValCounter = 0
 
   #ifdef SPISRAM_HARDWARESPI
-     SPITransfer  dummyByte,  eepromVal
+     SPITransfer  _dummyByte,  eepromVal
   #endif
 
   #ifndef SPISRAM_HARDWARESPI

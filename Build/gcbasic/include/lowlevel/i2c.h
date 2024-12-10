@@ -53,6 +53,7 @@
 ' 14/08/22 Updated user changeable constants only - no functional change
 ' 22/08/23 Added I2CPreSendMacro and I2CPostSendMacro and I2CPostSendMacroLabel to support greater control of I2CSend
 ' 23/08/23 Revised INTERRUPT caching to ensure state is preserved by I2C routines
+' 26/11/24 Revised comments in I2CINIT - no functional change
 
 '    - With the default constants, communication can be as high as 75 kHz.
 
@@ -190,8 +191,29 @@ sub InitI2C()
   ' Moved to prevent variable defintion when not required
   dim I2COldState, I2CState, I2CMatch, I2CTemp as byte
   dim I2CCount alias I2CState
+  //!
+  //!
+  //! Key constants not defined. I2C_DATA and I2C_CLOCK are required.
+  //! 
+  //! Have you called "I2CStart", "I2CSend" or "I2CStop" without correct configuration of these key constants for software I2C?
+  //! 
+  //!
   I2C_DATA_HIGH                   'release SDA (open drain floats high)
+  //!
+  //!
+  //! Key constants not defined. I2C_DATA and I2C_CLOCK are required.
+  //! 
+  //! Have you called "I2CStart", "I2CSend" or "I2CStop" without correct configuration of these key constants for software I2C?
+  //! 
+  //!
   I2C_CLOCK_HIGH                  'release SCL (open drain floats high)
+  //!
+  //!
+  //! Key constants not defined. I2C_DATA and I2C_CLOCK are required.
+  //! 
+  //! Have you called "I2CStart", "I2CSend" or "I2CStop" without correct configuration of these key constants for software I2C?
+  //! 
+  //!
   I2CMatch = FALSE                'address doesn't match (Slave mode)
 
   #if I2C_MODE = Slave            'previous State unknown to begin with

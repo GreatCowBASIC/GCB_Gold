@@ -57,6 +57,9 @@
   '    Updated Jun 2023 - Revised to make I2C1I2C1CONxDefaults optional
   '    Updated 30/09/24 - Added AVRDx support
   '    Updated 10/10/24 - Isolation of the Byte variables
+  '    Updated 29/10/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ20
+  '    Updated 01/12/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ24
+  
 
 'User changeable constants
 
@@ -156,10 +159,48 @@
                 HI2CReceive = SI2CReceive
             end if
 
+            If ChipFamily18FxxQ24 = ChipSubFamily or ChipFamily18FxxQ20 = ChipSubFamily Then
+              If NODEF ( DEFAULT_HIC2Q2XBUFFERSIZE ) Then
+                DEFAULT_HIC2Q2XBUFFERSIZE = 128
+              End If
+            End if
+
+            If ChipFamily18FxxQ20 = ChipSubFamily Then
+                HI2CStop =    HI2CQ20Stop
+                HI2CSend =    HI2CQ20Send
+                // Set buffer size to SCRIPT_HIC2Q2XBUFFERSIZE
+                If NODEF( HIC2Q2XBUFFERSIZE ) Then
+                  SCRIPT_HIC2Q2XBUFFERSIZE = DEFAULT_HIC2Q2XBUFFERSIZE
+                End If
+                If DEF( HIC2Q2XBUFFERSIZE ) Then
+                  SCRIPT_HIC2Q2XBUFFERSIZE = HIC2Q2XBUFFERSIZE
+                End If
+            End If
+
+            If ChipFamily18FxxQ24 = ChipSubFamily Then
+                HI2CStart =   SI2CStart
+                HI2CStop =    HI2CQ24Stop
+                HI2CSend =    HI2CQ24Send
+                SI2CInit =    HI2CQ24Init
+                // Set buffer size to SCRIPT_HIC2Q2XBUFFERSIZE
+                If NODEF( HIC2Q2XBUFFERSIZE ) Then
+                  SCRIPT_HIC2Q2XBUFFERSIZE = DEFAULT_HIC2Q2XBUFFERSIZE
+                End If
+                If DEF( HIC2Q2XBUFFERSIZE ) Then
+                  SCRIPT_HIC2Q2XBUFFERSIZE = HIC2Q2XBUFFERSIZE
+                End If
+            End If
+
+            If ChipFamily18FxxQ24 = ChipSubFamily or ChipFamily18FxxQ20 = ChipSubFamily Then
+              If NODEF ( MUTE_HIC2Q2XBUFFERSIZE_WARNING ) Then
+                Warning "I2C Buffer Size set to " SCRIPT_HIC2Q2XBUFFERSIZE " bytes"
+                Warning " Use '#DEFINE MUTE_HIC2Q2XBUFFERSIZE_WARNING' to mute this message"
+              End If
+            End If
+
             iF var( I2C1CNTL ) THEN
                 'for the 18FxxQ10's
                 I2C1CNT = I2C1CNTL
-
             end if
 
       end If
@@ -878,9 +919,9 @@ Sub SI2CInit
     I2C1CON0.MDR=1
 
     'Initialise correct state of I2C module. Not sure why this is needed but it is. Microchip failed to explain why this is required. But, it is.
-    SI2CStart
-    SI2CSend ( 0xff )
-    SI2CStop
+    // SI2CStart
+    // SI2CSend ( 0xff )
+    // SI2CStop
 
     HI2CCurrentMode = 0
 
@@ -1062,8 +1103,6 @@ Sub SI2CReceive (Out I2CByte, Optional In HI2CGetAck = 1 )
 
       if HI2CWaitMSSPTimeout = 255 then HI2C1lastError = HI2C1lastError or I2C1_RXBF_TIMEOUT
 
-
-
 End Sub
 
 Sub SI2CWait4Ack
@@ -1163,7 +1202,7 @@ sub SI2CDiscovery ( address )
 
     wait while I2C1STAT1.TXBE <> 1
 
-    #IF ChipSubFamily =  ChipFamily18FxxQ41 or ChipSubFamily =  ChipFamily18FxxQ71 
+    #IF ChipSubFamily =  ChipFamily18FxxQ41 or ChipSubFamily =  ChipFamily18FxxQ71
 
       'this chip has a proper STOP bit, so, get statis and exit SUB
       HI2CSend 0
@@ -1531,5 +1570,264 @@ Sub AVRDxTWI0Receive ( Out I2CByte, Optional In HI2CGetAck = 1 )
     TWI0AckPollState = True
 
     DIR HI2C_DATA OUT
+
+End Sub
+
+// ****************************** Q20 Support
+
+Dim HWI2C_Buffer( SCRIPT_HIC2Q2XBUFFERSIZE )
+
+Sub HI2CQ24Stop
+
+    // This routine handles the full transaction.
+    // 1. Enables and loads the key registers
+    // 2. Send IC2START
+    // 3. Send data.. using I2CSEND
+    // 4. Set  HI2CWaitMSSPTimeout and HI2CAckpollState for public use.
+
+    // ReStart I2C this prevent lock ups
+    I2C1CON0.I2CEN=1
+    // Clear the test bit
+    I2C1PIR.7 = 0
+
+    // Number of bytes excluding address
+    I2C1CNTH = HWI2C_BufferLocationCounter_H 
+    I2C1CNT = HWI2C_BufferLocationCounter
+
+    // Start
+    I2C1CON0.S = 1
+
+    Do while I2C1CON0.S = 1
+        // Wait for start 
+        NOP
+    Loop
+
+    Dim HWI2C_BufferLocationCounterIndex as Word
+    
+    For HWI2C_BufferLocationCounterIndex = 1 to HWI2C_BufferLocationCounter
+
+        HI2CWaitMSSPTimeout = 0
+
+        // Send/Clock data out
+        I2C1TXB = HWI2C_Buffer ( HWI2C_BufferLocationCounterIndex )
+
+        Do while I2C1STAT1.TXBE = 0
+          // Wait for Transmit Buffer to Empty
+          wait 1 us
+          HI2CWaitMSSPTimeout++
+          If HI2CWaitMSSPTimeout = 255 Then
+              // Transmission failure, exit.
+              Goto HI2CQ24StopExit
+          End If
+          
+        Loop
+
+    Next
+
+    // Wait for a stop bit to complete
+    Do while I2C1STAT0.MMA = 1 and HI2CWaitMSSPTimeout <> 255
+      wait 1 us
+    Loop
+
+    HI2CQ24StopExit:
+    If I2C1PIR.7 = 1 then
+      HI2CAckpollState = False
+    Else
+      HI2CAckpollState = True
+    End If
+    I2C1CON0.I2CEN=0
+
+End Sub
+
+Sub HI2CQ24Send ( in I2Cbyte )
+    
+  //~ Redirected for Q24 family higher level programs or the user program probably called HI2CSend
+
+    Dim HWI2C_Buffer( SCRIPT_HIC2Q2XBUFFERSIZE )
+    Dim HWI2C_BufferLocationCounter as Word
+
+    asm showdebug  Redirected for Q2x-mode family probalby called HI2CSend
+    //~ This method sets the state and loads the buffer
+
+    // This is a state Machine to cater for the new approach with the I2C module
+    Select Case HI2C1StateMachine
+
+      case 2  'send data
+
+        //~ Load buffer
+        HWI2C_BufferLocationCounter++
+        HWI2C_Buffer(HWI2C_BufferLocationCounter)=I2Cbyte
+        exit Sub
+
+      case 1  'A start
+
+        //~ Reset buffer
+        HWI2C_BufferLocationCounter = 0
+        I2C1ADB1 = I2Cbyte
+        HI2C1StateMachine = 2  'Set state Machine to send data
+        Exit Sub
+
+      case 3  'A restart
+
+        //~ Reset buffer
+        HWI2C_BufferLocationCounter = 0
+        I2C1ADB1 = I2Cbyte
+        HI2C1StateMachine = 2  'Set state Machine to send data
+        Exit Sub
+
+    end select
+
+End Sub
+
+Sub HI2CQ24Init
+
+      // SCL pin
+      HI2C_CLOCK = 1
+      DIR HI2C_CLOCK Out
+
+      // SDA pin
+      HI2C_DATA = 1
+      DIR HI2C_DATA Out
+
+      // Configure the peripheral itself
+      I2C1CON0.MODE0=0; // 0b100 => I2C Host mode, 7-bit address
+      I2C1CON0.MODE1=0; // 0b100 => I2C Host mode, 7-bit address
+      I2C1CON0.MODE2=1; // 0b100 => I2C Host mode, 7-bit address
+      
+      I2C1CON1.ACKCNT=1; // 1 => I2CxCNT == 0 => Not Acknowledge (NACK) copied to SDA output
+      I2C1CON1.ACKDT=0; // 0 => I2CxCNT != 0 => Acknowledge (ACK) copied to SDA output
+      I2C1CON3.FME0=0b0; // 0b00 => SCL frequency (FSCL) = FI2CxCLK/5 // Q24 specific
+      I2C1CON3.FME1=0b0; // 0b00 => SCL frequency (FSCL) = FI2CxCLK/5 // Q24 specific
+      
+      I2C1CON2.BFRET0=0b0; // 0b00 => Minimum stop time 8 I2CxCLK pulses
+      I2C1CON2.BFRET1=0b0; // 0b00 => Minimum stop time 8 I2CxCLK pulses
+      I2C1CON2.ABD=0; // 0 => Address buffers are enabled.
+      I2C1CLK=0b0011; // 0b0011 => MFINTOSC (500kHz): gives 100kHz with FME=0. 125kHz with FME=1
+      I2C1BAUD=0; // 0 => div-by-1. // **** New for Q24 devices
+      I2C1CON0.I2CEN=1;
+      // This is the workaround as stated in the errata
+      wait 1 us
+      nop
+      nop
+      nop
+      nop
+      nop
+      nop
+
+End Sub
+
+
+// ****************************** Q20 Support
+
+Dim HWI2C_Buffer( SCRIPT_HIC2Q2XBUFFERSIZE )
+
+Sub HI2CQ20Stop
+
+  asm showdebug  Redirected for Q20 family higher level programs or the user program probably called HI2CStop
+  asm showdebug  This method set the buffer, so this actually sends START..BUFFER..END
+
+    Dim HWI2C_Buffer( SCRIPT_HIC2Q2XBUFFERSIZE )
+    Dim HWI2C_BufferLocationCounter as Word
+    Dim HWI2C_BufferLocationCounterIndex as Word
+    
+    //~ Set clear register buffer
+    I2C1STAT1.CLRBF = 1
+    I2C1STAT1.I2C1TXB = 1
+    I2C1CNT = HWI2C_BufferLocationCounter
+    //~ Set address  
+    I2C1ADB1 = I2C1ADB1_cache
+    I2C1PIR.SCIF = 0
+    I2C1CON0.S = 1
+
+    If HWI2C_BufferLocationCounter > 0 then
+      HI2CAckpollState = 0
+
+      // Iterate thru the I2C buffer   
+      For HWI2C_BufferLocationCounterIndex = 1 to HWI2C_BufferLocationCounter
+
+          HI2CWaitMSSPTimeout = 0
+          'waits up to 254us then creates error message the user can use
+          Do while HI2CWaitMSSPTimeout < 255
+              HI2CWaitMSSPTimeout++
+
+              'HWI2C_BufferLocationCounter++
+              I2C1TXB = HWI2C_Buffer(HWI2C_BufferLocationCounterIndex)
+          
+              Do while HI2CWaitMSSPTimeout < 255
+
+                HI2CWaitMSSPTimeout++
+                'Wait for this event
+                If I2C1STAT1.TXBE = 1 then
+
+                    Do while HI2CWaitMSSPTimeout < 255
+
+                      If I2C1CON1.ACKSTAT = 0 Then                       
+                        Goto NextI2CBufferByte
+                      End If
+                      HI2CWaitMSSPTimeout++
+                    Loop
+                Else
+                    wait 1 us
+                End If
+              Loop
+          loop
+          If HI2CWaitMSSPTimeout = 255 then 
+            Exit For
+          End If
+          NextI2CBufferByte:
+      Next
+    End If
+
+    HI2C1StateMachine = 0
+    HWI2C_BufferLocationCounter = 0
+    HI2CAckpollState = I2C1CON1.5
+    //~ forced delay to ensure the register is cleared
+    wait 95 us
+    I2C1CON1.P = 1
+    
+End Sub
+
+Sub HI2CQ20Send ( in I2Cbyte )
+    
+  asm showdebug  Redirected for Q20 family higher level programs or the user program probably called HI2CSend
+
+    Dim HWI2C_Buffer( SCRIPT_HIC2Q2XBUFFERSIZE )
+    Dim HWI2C_BufferLocationCounter as Word
+
+    asm showdebug  Redirected for K-mode family probalby called HI2CSend
+    asm showdebug  This method sets the registers and register bits to send I2C data
+
+    'This is now a state Machine to cater for the new approach with the I2C module
+    Select Case HI2C1StateMachine
+
+      case 2  'send data
+
+        If HWI2C_BufferLocationCounter = SCRIPT_HIC2Q2XBUFFERSIZE + 1 Then
+          // Send the buffer when full, HWI2C_BufferLocationCounter is reset automatically
+          // Means MAX I2C packet for the Q20 is 128 bytes
+          SI2CStop
+        End if
+
+        //~ Load buffer
+        HWI2C_BufferLocationCounter++
+        HWI2C_Buffer(HWI2C_BufferLocationCounter)=I2Cbyte
+        exit Sub
+
+      case 1  'A start
+
+        //~ Reset buffer
+        HWI2C_BufferLocationCounter = 0
+        I2C1ADB1_cache = I2Cbyte
+        HI2C1StateMachine = 2  'Set state Machine to send data
+        Exit Sub
+
+      case 3  'A restart
+
+        //~ Rest buffer
+        HWI2C_BufferLocationCounter = 0
+        I2C1ADB1_cache = I2Cbyte
+        Exit Sub
+
+    end select
 
 End Sub

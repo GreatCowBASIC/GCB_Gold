@@ -100,6 +100,7 @@
 '    06092024 - Revised ProgramRead to AVR, specifiicially for AVRDX
 '    16092024 - Add ProgramWrite for AVR, specifiicially for AVRDX
 '    17102024 - Add AVR DX - clear down the ram to 0x00. ASM routine.
+'    08112024 - Change AVR DX initsys to test for PORTx_DIR. This is a more robust test.
 
 'Constants
 #define ON 1
@@ -1656,43 +1657,43 @@ Sub InitSys
       brne  InitSysClearRAMLoop
       st  X+, r1
 
-      #IFDEF Var(PORTA)
+      #IFDEF Var(PORTA_DIRSET)
         DDRA = 0
         PORTA = 255
       #ENDIF
-      #IFDEF Var(PORTB)
+      #IFDEF Var(PORTB_DIRSET)
         DDRB = 0
         PORTB = 0
       #ENDIF
-      #IFDEF Var(PORTC)
+      #IFDEF Var(PORTC_DIRSET)
         DDRC = 0
         PORTC = 0
       #ENDIF
-      #IFDEF Var(PORTD)
+      #IFDEF Var(PORTD_DIRSET)
         DDRD = 0
         PORTD = 0
       #ENDIF
-      #IFDEF Var(PORTE)
+      #IFDEF Var(PORTE_DIRSET)
         DDRE = 0
         PORTE = 0
       #ENDIF
-      #IFDEF Var(PORTF)
+      #IFDEF Var(PORTF_DIRSET)
         DDRF = 0
         PORTF = 0
       #ENDIF
-      #IFDEF Var(PORTG)
+      #IFDEF Var(PORTG_DIRSET)
         DDRG = 0
         PORTG = 0
       #ENDIF
-      #IFDEF Var(PORTH)
+      #IFDEF Var(PORTH_DIRSET)
         DDRH = 0
         PORTH = 0
       #ENDIF
-      #IFDEF Var(PORTI)
+      #IFDEF Var(PORTI_DIRSET)
         DDRI = 0
         PORTI = 0
       #ENDIF
-      #IFDEF Var(PORTJ)
+      #IFDEF Var(PORTJ_DIRSET)
         DDRJ = 0
         PORTJ = 0
       #ENDIF
@@ -3263,7 +3264,7 @@ Sub _SysMultSubSingle
     MOVWF _AARGB4
     MOVF _AARGB2,W
     MOVWF _AARGB5
-    BSF _AARGB3,cMSB ; make argument MSB’s explicit
+    BSF _AARGB3,cMSB ; make argument MSBâ€™s explicit
     BSF _BARGB0,cMSB
     BCF cStatusC
     CLRF _AARGB0 ; clear initial partial product
@@ -3768,7 +3769,7 @@ sub _SysDivSubSingle
     MOVF _AARGB0,W
     XORWF _BARGB0,W
     MOVWF _SIGN ; save sign in SIGN
-    BSF _AARGB0,cMSB ; make argument MSB’s explicit
+    BSF _AARGB0,cMSB ; make argument MSBâ€™s explicit
     BSF _BARGB0,cMSB
     TALIGN32:
     CLRF _TEMP ; clear align increment

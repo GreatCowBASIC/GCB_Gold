@@ -187,9 +187,9 @@ LibraryIncludeMessage = " (Library Include)"
 
 
 SendToPIC = "Downloading program ..."
-PromoMessage1 = "<p>Enjoying GCBASIC ? Donate to help support the operational costs. Donate using http://paypal.me/gcbasic </p>"
-PromoMessage2 = "<p>Enjoying GCBASIC ? Donate to help support the operational costs. Donate using http://paypal.me/gcbasic </p>"
-PromoMessage3 = "<p>Enjoying GCBASIC ? Donate to help support the operational costs. Donate using http://paypal.me/gcbasic </p>"
+PromoMessage1 = "<p>Enjoying GCBASIC ? Donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ </p>"
+PromoMessage2 = "<p>Using GCBASIC ? Please donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ </p>"
+PromoMessage3 = "<p>Developing solutions using GCBASIC ? Donate to help support the operational costs. Donate here https://gcbasic.com/donate/ </p>"
 
 
 'Errors
@@ -300,6 +300,7 @@ InvalidDoMode = "Invalid loop mode %mode%, mode (if specified) must be While or 
 InvalidElse = "Invalid #ELSE - #IFDEF or #IFNDEF not previous"
 InvalidElseCantHandle = "Invalid #ELSE - cannot handle"
 LoopWithoutDo = "Loop without matching Do"
+MaxParametersExceeded = "Maximum number of parameters (%param%) exceeded"
 MissingCoreFile = "Cannot find file %core%, which is required for %chip%"
 MissingFunctionAssignment = "Missing Function Assignment - assign function result to a variable, or, change to a Subroutine"
 MissingOperand = "Missing operand, %pos% %operator%"

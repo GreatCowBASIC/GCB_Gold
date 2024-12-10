@@ -3191,6 +3191,10 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8bit resolution on timer 2
         AddHPWMCCPExit1
       #endif
 
+      #if ChipFamily = 16
+          EndChipFamilyPWMCCP1CON16Handler:
+      #endif
+
     #endif
   #endif
 

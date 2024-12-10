@@ -55,6 +55,8 @@
 ' 28/02/23: Added suppoort for ChipFamily18FxxQ71
 ' 16/08/23: Added support for 18x6xK40's
 ' 12/02/24: Added support for 18Fx6Q20's
+' 02/09/24: Added support for EPWRITE and EPREAD for AVRDX
+' 24/11/24: Added support for 18Fx6Q24's
 
 
 #option REQUIRED PIC CHipEEPROM %NoEEProm%
@@ -132,38 +134,54 @@ sub EPWrite(In EEAddress, In EEDataValue)
 #ENDIF
 
 #IFDEF AVR
-  'Variable alias
-  #IFDEF Var(EEARH)
-    Dim EEAddress As Word Alias EEARH, EEARL
-  #ENDIF
-  #IFNDEF Var(EEARH)
-    #IFDEF Var(EEAR)
-      Dim EEAddress Alias EEAR
+  #IFNDEF CHIPAVRDX
+    'Variable alias
+    #IFDEF Var(EEARH)
+      Dim EEAddress As Word Alias EEARH, EEARL
     #ENDIF
-  #ENDIF
-  Dim EEDataValue Alias EEDR
+    #IFNDEF Var(EEARH)
+      #IFDEF Var(EEAR)
+        Dim EEAddress Alias EEAR
+      #ENDIF
+    #ENDIF
+    Dim EEDataValue Alias EEDR
 
-  'Enable write
-  #IFDEF Bit(EEMWE)
-    Set EEMWE On
-  #ENDIF
-  #IFNDEF Bit(EEMWE)
-    #IFDEF Bit(EEMPE)
-      Set EEMPE On
+    'Enable write
+    #IFDEF Bit(EEMWE)
+      Set EEMWE On
     #ENDIF
-  #ENDIF
-  'Start write, wait for it to complete
-  #IFDEF Bit(EEWE)
-    Set EEWE On
-    Wait Until EEWE Off
-  #ENDIF
-  #IFNDEF Bit(EEWE)
-    #IFDEF Bit(EEPE)
-      Set EEPE On
-      Wait Until EEPE Off
+    #IFNDEF Bit(EEMWE)
+      #IFDEF Bit(EEMPE)
+        Set EEMPE On
+      #ENDIF
+    #ENDIF
+    'Start write, wait for it to complete
+    #IFDEF Bit(EEWE)
+      Set EEWE On
+      Wait Until EEWE Off
+    #ENDIF
+    #IFNDEF Bit(EEWE)
+      #IFDEF Bit(EEPE)
+        Set EEPE On
+        Wait Until EEPE Off
+      #ENDIF
     #ENDIF
   #ENDIF
 
+  #IFDEF CHIPAVRDX
+
+		// Clear page buffer
+    CPU_CCP = CPU_CCP_SPM_gc			; unlock CCP change protection for NVM command register
+    NVMCTRL_CTRLA = NVMCTRL_CMD_PAGEBUFCLR_gc	; execute NVM erase/write 
+
+    Poke ( 0x1400 + [word]EEAddress , EEDataValue )
+    INTOFF
+    CPU_CCP = CPU_CCP_SPM_gc			; unlock CCP change protection for NVM command register
+    NVMCTRL_CTRLA = NVMCTRL_CMD_PAGEERASEWRITE_gc	; execute NVM erase/write 
+    Wait While NVMCTRL_STATUS.NVMCTRL_EEBUSY_bm
+    INTON
+
+  #ENDIF
 #ENDIF
 
 end sub
@@ -174,6 +192,8 @@ end sub
 sub SysEPRead(In EEAddress, Out EEDataValue)
 
 #IFDEF PIC
+
+  EEDataValue = 0
 
   'Variable alias
   #IFNDEF Var(EEADRH)
@@ -215,22 +235,26 @@ sub SysEPRead(In EEAddress, Out EEDataValue)
 #ENDIF
 
 #IFDEF AVR
-  'Variable alias
-  #IFDEF Var(EEARH)
-    Dim EEAddress As Word Alias EEARH, EEARL
-  #ENDIF
-  #IFNDEF Var(EEARH)
-    #IFDEF Var(EEAR)
-      Dim EEAddress Alias EEAR
+  #ifndef CHIPAVRDX
+    'Variable alias
+    #IFDEF Var(EEARH)
+      Dim EEAddress As Word Alias EEARH, EEARL
     #ENDIF
-  #ENDIF
-  Dim EEDataValue Alias EEDR
+    #IFNDEF Var(EEARH)
+      #IFDEF Var(EEAR)
+        Dim EEAddress Alias EEAR
+      #ENDIF
+    #ENDIF
+    Dim EEDataValue Alias EEDR
 
-  'Start read
-  Set EERE On
+    'Start read
+    Set EERE On
+  #endif
 
-
-
+  #ifdef CHIPAVRDX
+    Wait While NVMCTRL_STATUS.NVMCTRL_EEBUSY_bm
+    EEDataValue = Peek ( 0x1400+EEAddress )
+  #endif
 #ENDIF
 
 end sub
@@ -358,6 +382,14 @@ Sub NVMADR_EPWrite(IN SysEEAddress as WORD , in EEData)
         //Set the NVMCMD control bits for DFM Byte Read operation
         NVMCON1 = NVMCON1 and 0XF8 or 0x03' set bits ,1 and0
        #ENDIF
+
+       #if ChipSubFamily = ChipFamily18FxxQ24
+       'Select DATA EE section (0x380000 - 0x3800FF) for ChipFamily18FxxQ24
+        NVMADRU = 0x38
+        //Set the NVMCMD control bits for DFM Byte Read operation
+        NVMCON1 = NVMCON1 and 0XF8 or 0x03' set bits ,1 and0
+       #ENDIF
+
 
        #if ChipSubFamily = ChipFamily18FxxQ41
        'Select DATA EE section (0x380000 - 0x3803FF) for ChipFamily18FxxQ41
@@ -541,7 +573,7 @@ Sub NVMADR_EPRead(IN SysEEAddress AS word  , out EEDataValue )
         NVMADRL =SysEEAddress
        'Set the NVMCMD control bits for DFM Byte Read operation by clearing NVMCMD[2:0] NVM Command bits
         NVMCON1 = 0
-        NVMCON0.GO = 1
+        GO_NVMCON0 = 1
        #ENDIF
 
        #if ChipSubFamily = ChipFamily18FxxQ20
@@ -554,6 +586,15 @@ Sub NVMADR_EPRead(IN SysEEAddress AS word  , out EEDataValue )
         GO_NVMCON0 = 1
        #ENDIF
 
+       #if ChipSubFamily = ChipFamily18FxxQ24
+       'Select DATA EE section (0x380000 - 0x3800FF) for ChipFamily18FxxQ24
+        NVMADRU = 0x38
+        NVMADRH =SysEEAddress_h
+        NVMADRL =SysEEAddress
+       'Set the NVMCMD control bits for DFM Byte Read operation by clearing NVMCMD[2:0] NVM Command bits
+        NVMCON1 = 0
+        GO_NVMCON0 = 1
+       #ENDIF
 
        #if ChipSubFamily =  ChipFamily18FxxQ40
        'Select DATA EE section (0x380000 - 0x3803FF) for ChipFamily18FxxQ40
