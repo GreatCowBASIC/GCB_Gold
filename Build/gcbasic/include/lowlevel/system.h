@@ -101,6 +101,7 @@
 '    16092024 - Add ProgramWrite for AVR, specifiicially for AVRDX
 '    17102024 - Add AVR DX - clear down the ram to 0x00. ASM routine.
 '    08112024 - Change AVR DX initsys to test for PORTx_DIR. This is a more robust test.
+'    12122204 - Added BANKSEL to SYSCOMPLESSTHANSINGLE to manage bank.
 
 'Constants
 #define ON 1
@@ -3264,7 +3265,7 @@ Sub _SysMultSubSingle
     MOVWF _AARGB4
     MOVF _AARGB2,W
     MOVWF _AARGB5
-    BSF _AARGB3,cMSB ; make argument MSBâ€™s explicit
+    BSF _AARGB3,cMSB ; make argument MSB’s explicit
     BSF _BARGB0,cMSB
     BCF cStatusC
     CLRF _AARGB0 ; clear initial partial product
@@ -3769,7 +3770,7 @@ sub _SysDivSubSingle
     MOVF _AARGB0,W
     XORWF _BARGB0,W
     MOVWF _SIGN ; save sign in SIGN
-    BSF _AARGB0,cMSB ; make argument MSBâ€™s explicit
+    BSF _AARGB0,cMSB ; make argument MSB’s explicit
     BSF _BARGB0,cMSB
     TALIGN32:
     CLRF _TEMP ; clear align increment
@@ -4672,6 +4673,10 @@ Sub SYSCOMPLESSTHANSINGLE
     
 
     Call _SYSCOMPLESSTHANSINGLE
+
+    // Set the BANKSEL after the call to _SYSCOMPLESSTHANSINGLE to ensure banksel is where the compiler expects.
+    ASM BANKSEL 0
+    
     // returns with W set to state
     MOVWF SysByteTempX
     If SysByteTempX = 0 Then

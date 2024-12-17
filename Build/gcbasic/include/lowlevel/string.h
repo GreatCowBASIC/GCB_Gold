@@ -400,7 +400,7 @@ End Function
 
 'String > Long
 #DEFINE VAL32 StringToLong
-Function StringToLong(SysInString as String ) as Long
+Function StringToLong(SysInString as String * 14 ) as Long
 'Converts a string to Long
 'max in = "4294967295" (#4.294.967.295)
     StringToLong=0
@@ -677,7 +677,7 @@ Function StringToSingle (in StrNum as String) as Single
 
   // Check that integer <> 0, AND then, if SysByteTempX = True check decimal <> 0   
   
-      #IFDEF ChipFamily 12,14,15
+      #IFDEF ChipFamily 12,14,15,16
         //~ Prevent stack issues
         SysByteTempX = False
         If [BYTE]SysULongInt_STS_Num = 0 Then    // Check all is ZERO
@@ -1378,6 +1378,39 @@ End Function
 
 // *********************** Advanced variables
 
+
+/*
+
+  Convert 0x40400000 a single-precision IEEE-754 number to decimal. 
+  1.	Convert Hexadecimal to Binary: Hexadecimal 0x40400000 converts to binary as:
+  2.	0100 0000 0100 0000 0000 0000 0000 0000
+  3.	Identify the Components: IEEE-754 single-precision format is composed of 1 sign bit, 8 exponent bits, and 23 fraction (mantissa) bits.
+  4.	Sign bit:        0
+  5.	Exponent:       10000000
+  6.	Fraction:   10000000000000000000000
+  7.	Determine the Sign: The sign bit is 0, which means the number is positive.
+  8.	Calculate the Exponent: The exponent in binary is 10000000. Convert this to decimal:
+  9.	10000000 (binary) = 128 (decimal)
+
+  IEEE-754 format uses a bias of 127 for single-precision, so we subtract 127 from the exponent:
+  128 - 127 = 1
+
+  10.	Calculate the Fraction (Mantissa): The fraction (or mantissa) is 10000000000000000000000 in binary, which represents:
+  11.	1.10000000000000000000000
+  12.	Combine the Components: Using the formula for IEEE-754 floating-point numbers:
+  13.	(-1)^sign * 1.fraction * 2^(exponent - bias)
+
+  Plugging in the values:
+  (-1)^0 * 1.10000000000000000000000 * 2^1
+
+  14.	Simplify the Expression:
+  15.	1.10000000000000000000000 (binary) = 1 + 1/2 = 1.5 (decimal)
+
+  Thus, the number becomes:
+  1.5 * 2^1 = 1.5 * 2 = 3
+  So, the IEEE-754 single-precision floating-point representation 0x40400000 converts to the decimal number 3.
+
+*/
 Function SingleToString(in SingleNum as Single) as String * 20
   ' Source from Clint Koehn 25/03/2024
   '-----------------------------------------------------------
@@ -1400,24 +1433,41 @@ Function SingleToString(in SingleNum as Single) as String * 20
   dim SysWordTempX as Word
 
   dim SysULongInt_STS_Num as ULongInt  
+  SysULongInt_STS_Num =0
   dim SysLong_STS_Mantissa as Long  
+  SysLong_STS_Mantissa = 0
   dim SysByte_STS_Sgn as Byte
   dim SysByte_STS_Exp as Byte
   dim SysByte_STS_Bin as Byte
   dim SysByte_STS_Ptr as Byte
   dim SysByte_STS_Err as Byte 
 
-  'ExtractSingleParts
-  SysLongTempB = [byte]SingleNum: SysLongTempB_H = [byte]SingleNum_H: SysLongTempB_U = [byte]SingleNum_U: SysLongTempB_E = [byte]SingleNum_E
-  
+  'ExtractSingleParts. Set bytes to ensure GCBASIC does not LONG convert.
+  [byte]SysLongTempB = [byte]SingleNum: SysLongTempB_H = [byte]SingleNum_H: SysLongTempB_U = [byte]SingleNum_U: SysLongTempB_E = [byte]SingleNum_E
+
+
+  /*
+  Identify the Components: IEEE-754 single-precision format is composed of 1 sign bit, 8 exponent bits, and 23 fraction (mantissa) bits.
+  Sign bit:   0
+  Exponent:   10000000
+  Fraction:   10000000000000000000000
+  */
+
+  // Extract sign bit - Determine the Sign: The sign bit is 0, which means the number is positive.
   SysByte_STS_Sgn = SysLongTempB.31
 
+  // Determine the Fraction part by a using a mask
   SysLong_STS_Mantissa = (SysLongTempB & 0x7FFFFF)
   
+  // Rotate the variable to the left to remove the sign bit 
   Rotate SysLongTempB Left
   
+  // The variable still has 4 parts  SysLongTempB_E, SysLongTempB_U, SysLongTempB_H, SysLongTemp
+
+  // Calculate the Exponent: The exponent in the 8 bits.
   SysByte_STS_Exp = [byte]SysLongTempB_E
 
+  // Check if SysLong_STS_Mantissa + SysByte_STS_Exp are zero, set and exit. A quick method 
   If (SysLong_STS_Mantissa + SysByte_STS_Exp) = 0 then
     SingleToString = " 0.0"
     SysByte_STS_Err = 0
@@ -1484,7 +1534,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
     SysULongIntTempA = SysLong_STS_Mantissa
   
     'Starting with fraction
-      #IFDEF ChipFamily 12,14,15
+      #IFDEF ChipFamily 12,14,15,16
         //~ Prevent stack issues
         SysByteTempX = False
         If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
@@ -1517,7 +1567,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
       SingleToString(SysByte_STS_Ptr) = (SysByte_STS_Bin + 48)	'add 48 gives tha ASC value of 0 - 9 
 
       SysByte_STS_Ptr --    ' decrement pos in SingleToString for next char
-      #IFDEF ChipFamily 12,14,15
+      #IFDEF ChipFamily 12,14,15,16
         //~ Prevent stack issues
         SysByteTempX = False
         If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
@@ -1560,7 +1610,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
 
   SysULongIntTempA = SysULongInt_STS_Num
 
-  #IFDEF ChipFamily 12,14,15
+  #IFDEF ChipFamily 12,14,15,16
     //~ Prevent stack issues
     SysByteTempX = False
         If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
@@ -1601,7 +1651,7 @@ Function SingleToString(in SingleNum as Single) as String * 20
     SingleToString(SysByte_STS_Ptr) = (SysByte_STS_Bin + 48)	'add 48 gives tha ASC value of 0 - 9    
     SysByte_STS_Ptr --
     
-    #IFDEF ChipFamily 12,14,15
+    #IFDEF ChipFamily 12,14,15,16
       //~ Prevent stack issues
       SysByteTempX = False
           If [BYTE]SysULongIntTempA = 0 Then    // Check all is ZERO
@@ -1694,7 +1744,9 @@ Function StringToSingle3DP ( in inStringToSingle as String ) As Single
 
 End Function
 
-Function SingleToString3DP (  In SingleNum as Single  ) as String
+Dim SingleToString3DP as String * 14
+Function SingleToString3DP (  In SingleNum as Single  ) as String * 14
+ 
     //! Show to three decimal points using psuedo_multiplication .. which is addition, many times
 
         // Dimension the variables
@@ -1703,10 +1755,10 @@ Function SingleToString3DP (  In SingleNum as Single  ) as String
 
         // Extract exponent
         // Assign the Single to the Integer 
-        ExponentNumberInteger = SingleNum
+        ExponentNumberInteger = [single]SingleNum
 
         // Deduct the exponent from float
-        SingleNum = SingleNum - ExponentNumberInteger
+        SingleNum = [single]SingleNum - [integer]ExponentNumberInteger
 
         psuedo_multiplication:
             // Now SingleNum is just the mantissa
@@ -1714,26 +1766,28 @@ Function SingleToString3DP (  In SingleNum as Single  ) as String
             //
             // ResultNumber is the result
             //
-            ResultNumber = SingleNum
+            [single]ResultNumber = [single]SingleNum
+
             Repeat 1000
                 If SingleNum.31 = 0 Then
-                    ResultNumber += SingleNum
+                    [single]ResultNumber += [single]SingleNum
                 Else
-                    ResultNumber -= SingleNum
+                    [single]ResultNumber -= [single]SingleNum
                 End If
             End Repeat
 
             // Handle rounding
             If SingleNum.31 = 0 Then
-                ResultNumber--
+                [single]ResultNumber--
             Else
-                ResultNumber++
+                [single]ResultNumber++
             End If
         end_of_psuedo_multiplication:
 
         MantissaNumberInteger = ResultNumber
         // Factorisation can cause decimal rounding so, check for the integer value and add to exponent
-        ExponentNumberInteger  = ExponentNumberInteger + (MantissaNumberInteger / 1000)
+        ExponentNumberInteger  = ExponentNumberInteger '+ (MantissaNumberInteger / 1000)
+
 
         // Show results
         SingleToString3DP = IntegerToString(ExponentNumberInteger)

@@ -137,6 +137,7 @@
 ''' 05/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCPSetDuty() to support 9bit and 10Bit operations.
 ''' 06/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCP_MAXDUTYVALUE() to support 9bit and 10Bit operations.
 ''' 23/09/2024 Added AVRDx PWM Fixed Mode support for TCA0/Channel 1
+''' 11/12/2024 Added CCP1CON_EN support for Fixed Mode operations for 18FxxQ24
 
 
 
@@ -470,7 +471,12 @@ Sub InitPWM
                           CCPR1H = DutyCycleH
                           CCPR1L = DutyCycleL*64
                           [canskip]T2CLKCON = 1
+                          // set the enable bit in the Fixed Mode cache variable
+                          #ifdef Bit(CCP1CON_EN)
+                            CCPCONCache.CCP1CON_EN = 1
+                          #else
                           [canskip]CCPCONCache.en = 1
+                    #endif
                     #endif
 
 
@@ -3164,7 +3170,7 @@ sub HPWM (In PWMChannel, In PWMFreq, PWMDuty )  '8bit resolution on timer 2
       #endif
 
       #if ChipSubFamily = ChipFamily18FxxQ41 OR ChipSubFamily = ChipFamily18FxxQ40
-          'Identify the Q40 or Q41 chips that only have ONE CCP1PMW
+          'Identify the 18FxxQxx chips that only have ONE CCP1PMW
           calculateDuty 'Sets PRx_Temp  to the duty value for bits 15-8 and 7-6
           CCPR1H = PRx_Temp_H
           CCPR1L = PRx_Temp
