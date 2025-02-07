@@ -1,6 +1,6 @@
 #OPTION explicit
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2012-2024 Hugh Considine, Giuseppe D'Elia and Evan Venn
+'    Copyright (C) 2012-2025 Hugh Considine, Giuseppe D'Elia and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

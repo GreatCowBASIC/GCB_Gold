@@ -1,5 +1,5 @@
 '    MicroChip specific to support Software Serial for GCBASIC
-'    Copyright (C) 2017-2024 Frank Steinberg
+'    Copyright (C) 2017-2025 Frank Steinberg
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,9 @@
 '  05.02.2019     Bugfix for AVR-receive
 '  08.05.2020     Reduced RAM consumption using Ser1Print with string constants
 '  02.02.2022     Initialization of some script variables with zero (for compiler build >= 1077)
-' 14/08/22 Updated user changeable constants only - no functional change
+'  14.08.2022 	  Updated user changeable constants only - no functional change
+'  28.04.2034	    Add SER1_TXDELAY.  This is a post Ser1Send() to support serial LCDs etc 
+'  05.05.2034	    Add SER1_TXDELAYus and SER1_TXDELAYms.  This is a post Ser1Send() to support serial LCDs etc 
 
   '*** Process pin-direction and -polarity for sending on programmstart:
   #startup STx1PinSetup
@@ -74,7 +76,7 @@
       SER1_RXNOWAIT  = OFF
   END IF
 
-
+  
    If Var(SER1_TXPORT) Or Var(SER1_TXPIN) Or Var(SER1_RXPORT) Or Var(SER1_RXPIN) Or Var(SER1_BAUD) Then
    '*** Check if all necessary constants for sending or receiving are set and valid:
      If (SER1_DATABITS < 5) Or (SER1_DATABITS > 8) Then ERROR "Valid value for SER1_DATABITS: 5 - 8"
@@ -182,7 +184,7 @@ Sub Ser1Send (In STxDataByte)
 
  '*** Code for PIC:
   #ifdef PIC
-
+ 
   '**PIC; send to channel:
     Dim SerDlyCnt, SerBitCnt As Byte
 
@@ -311,7 +313,17 @@ Sub Ser1Send (In STxDataByte)
       #endif
 
   #endif  '... for AVR code
-
+ 
+  #IFDEF SER1_TXDELAYus
+       WAIT SER1_TXDELAYus us
+  #ENDIF
+  #IFDEF SER1_TXDELAYms
+       WAIT SER1_TXDELAYms ms
+  #ENDIF
+  
+  #IFDEF SER1_TXDELAY
+       WAIT SER1_TXDELAY ms
+  #ENDIF
 End Sub
 
 
@@ -345,6 +357,7 @@ Sub Ser1Print (In SerPrintVal)
     OutValueTemp = SerPrintVal / 100
     SerPrintVal = SysCalcTempX
     Ser1Send OutValueTemp + 48
+
   End If
   If OutValueTemp > 0 Or SerPrintVal >= 10 Then
     OutValueTemp = SerPrintVal / 10
@@ -429,6 +442,7 @@ Sub Ser1Print (In SerPrintVal As Long)
   'Display
   For SysPrintTemp = SysPrintBuffLen To 1 Step -1
     Ser1Send SysPrintBuffer(SysPrintTemp) + 48
+
   Next
 
   'CR

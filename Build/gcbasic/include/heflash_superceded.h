@@ -1,4 +1,4 @@
-'''Copyright 2015 -2024 Jaques Nilo
+'''Copyright 2015 -2025 Jaques Nilo
 '''
 '''GCB Library for reading/writing to High Endurance Flash Memory
 '''-----------------------------------------------------------------------------

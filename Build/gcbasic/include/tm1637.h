@@ -1,4 +1,4 @@
-'    Copyright 2017-2024 Mike Otte
+'    Copyright 2017-2025 Mike Otte
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation; either
@@ -267,10 +267,10 @@ sub TMHex  ( In  TMValue as word)
                     TMeVal = TMValue / 256
                     TMValue = TMValue % 256
           End If
-          IF TMValue >= 16 Then
-                    TMhVal = TMValue / 16
-                    TMlVal = TMValue % 16
-          End If
+          
+          TMhVal = TMValue / 16
+          TMlVal = TMValue % 16
+          
 
     Write4Dig ( TMsVal, TMeVal, TMhVal, TMlVal)
 

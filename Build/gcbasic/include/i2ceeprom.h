@@ -2,7 +2,7 @@
 '    Copyright (C) 2013 Evan R. Venn
 '    Copyright (C) 2014 Thomas Henry
 '    Copyright (C) 2014 Evan R. Venn
-'    Copyright (C) 2015 -2024 Evan R. Venn
+'    Copyright (C) 2015 -2025 Evan R. Venn
 
 '    This library is free software' you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

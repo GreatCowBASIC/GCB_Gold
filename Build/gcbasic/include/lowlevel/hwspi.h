@@ -1,5 +1,5 @@
 '    Hardware SPI routines for GCBASIC
-'    Copyright (C) 2006-2024 Hugh Considine and Evan R. Venn
+'    Copyright (C) 2006-2025 Hugh Considine and Evan R. Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,9 @@
 '              Added HWSPI_Fast_Write_Word_Macro where data needs to passed in the HWSPI_Send_word word variable
 ' 14/08/22 Updated user changeable constants only - no functional change
 ' 26/09/24 Added AVRDx support
-' 28/09/29 Added HWSPI2 support for PIC
+' 28/09/24 Added HWSPI2 support for PIC
+' 02/12/24 Tidied SPI1CON0_EN usage
+
 
 'To make the PIC pause until it receives an SPI message while in slave mode, set the
 'constant "WaitForSPI" at the start of the program. The value does not matter.
@@ -90,6 +92,12 @@
 #define SPI_RX_IN_PROGRESS       0x00
 
 #script
+
+    'Set the SPI Clock Mode if the user has not set it.....
+    HWSPIClockModeSCRIPT = 0
+    if DEF(HWSPIClockMode) then
+        HWSPIClockModeSCRIPT = HWSPIClockMode
+    end if
 
     'Set the SPI Mode if the user had not set it... used in the SPI libraries
     userspecifiedHWSPIMode = 0
@@ -252,7 +260,12 @@ Sub SPIMode (In SPICurrentMode)
 
         'Turn off SPI
         '(Prevents any weird glitches during setup)
+        #if BIT(SPI1CON0_EN)
         SPI1CON0_EN = 0
+        #else
+          SPI1CON0.EN = 0
+        #endif
+
 
         'Set clock pulse settings
         SPI1CON1.SMP = 0
@@ -326,9 +339,13 @@ Sub SPIMode (In SPICurrentMode)
           SPI1BAUD = SPI_BAUD_RATE_REGISTER
         #endif
 
-        'Enable SPI
-        SPI1CON0.EN = 1
+        #if BIT(SPI1CON0_EN)
+          SPI1CON0_EN = 0
+        #else
+          SPI1CON0.EN = 0
     #endif
+
+  #endif
 
   #endif
 
@@ -453,7 +470,7 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
         Set SSPSTAT.SMP Off
         Set SSPSTAT.CKE Off
 
-        If SPIClockMode.0 = Off Then
+        If SPIClockMode.0 = On Then
           Set SSPSTAT.CKE On
         End If
         Set SSPCON1.CKP Off
@@ -500,7 +517,11 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
 
         'Turn off SPI
         '(Prevents any weird glitches during setup)
+        #if BIT(SPI1CON0_EN)
         SPI1CON0_EN = 0
+        #else
+          SPI1CON0.EN = 0
+        #endif
 
         'Set clock pulse settings to middle
         SPI1CON1.SMP = 0
@@ -510,7 +531,7 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
         'Clock idle low (CPOL = 0)
         SPI1CON1.CKP = 0
 
-        If SPIClockMode.0 = Off Then
+        If SPIClockMode.0 = On Then
           SPI1CON1.CKE = 1
         End If
 
@@ -585,7 +606,11 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
 
 
         'Enable SPI
+        #if BIT(SPI1CON0_EN)
+          SPI1CON0_EN = 1
+        #else
         SPI1CON0.EN = 1
+        #endif
 
     #endif
   #endif
@@ -1104,7 +1129,7 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
         'Clock idle low (CPOL = 0)
         SPI2CON1.CKP = 0
 
-        If SPIClockMode.0 = Off Then
+        If SPIClockMode.0 = On Then
           SPI2CON1.CKE = 1
         End If
 

@@ -1,6 +1,6 @@
 '    GCB Library for reading/writing to High Endurance Flash Memory (HEF)
 '    and Storage Area Memory (SAF) on PIC Microcontrollers
-'    Copyright (C) 2018-2024  William Roth, Evan Venn
+'    Copyright (C) 2018-2025  William Roth, Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

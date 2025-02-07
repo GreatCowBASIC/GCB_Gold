@@ -1,5 +1,5 @@
 '    Some common BASIC commands/functions for GCBASIC
-'    Copyright (C) 2006-2024 Hugh Considine, Chris Roper and Willaim Roth and Evan Venn
+'    Copyright (C) 2006-2025 Hugh Considine, Chris Roper and Willaim Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,7 @@
 ' 19/10/2021: Change PULSEx delays to one cycle less using WAITL1
 ' 04/03/2024: Add RoundSingle for Single support
 ' 07/03/2024: Add Int()
-
+' 07/01/2024: Improved Int() messages
 'Misc settings
 
 'Bit rate delays
@@ -466,25 +466,33 @@ End Function
     End Function
 
 Function int ( SYSSINGLETEMP as Integer ) as Integer
-    //! Int() is not supported for Integer variables
-    //! Please close this library and remove function call from your source program
+    //! Int() is not supported for Integer variables.  Int() is for transforming a Single variable to an Integer variable.
+    //! Please close this library and remove the INT function call from your source program
     |
+    //! Or, have you called INT OFF... the syntax is INTOFF ... note no space.
+    //! Please close this library and correct your source program
     End Function
 
 Function int ( SYSSINGLETEMP as Word ) as Word
-    //! Int() is not supported for Word variables
-    //! Please close this library and remove function call from your source program
+    //! Int() is not supported for Word variables.  Int() is for transforming a Single variable to an Integer variable.
+    //! Please close this library and remove the INT function call from your source program
     |
+    //! Or, have you called INT OFF... the syntax is INTOFF ... note no space.
+    //! Please close this library and correct your source program
     End Function
 
 Function int ( SYSSINGLETEMP as Byte ) as Byte
-    //! Int() is not supported for Byte variables
-    //! Please close this library and remove function call from your source program
+    //! Int() is not supported for Byte variables.  Int() is for transforming a Single variable to an Integer variable.
+    //! Please close this library and remove the INT function call from your source program
     |
+    //! Or, have you called INT OFF... the syntax is INTOFF ... note no space.
+    //! Please close this library and correct your source program
     End Function
 
 Function int ( SYSSINGLETEMP as Long ) as Long
-    //! Int() is not supported for Long variables
-    //! Please close this library and remove function call from your source program
+    //! Int() is not supported for Long variables.  Int() is for transforming a Single variable to an Integer variable.
+    //! Please close this library and remove the INT function call from your source program
     |
+    //! Or, have you called INT OFF... the syntax is INTOFF ... note no space.
+    //! Please close this library and correct your source program
     End Function

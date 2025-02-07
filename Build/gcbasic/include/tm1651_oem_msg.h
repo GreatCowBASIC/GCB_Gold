@@ -1,6 +1,6 @@
 
 '   TM1651 Message Processor - TM1651_OEM_Message.h   GreatCowBasic
-'   Copyright (C) 2024 -  ToniG, EvanV
+'   Copyright (C) 2025 -  ToniG, EvanV
 '   This include is used by TM1651_OEM_Cmd_Lib.h
 
 '    This Library is free software; you can redistribute it and/or

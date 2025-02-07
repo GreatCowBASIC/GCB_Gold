@@ -1,6 +1,6 @@
 ;DHT Humidity/Temperature Sensor Library for GCBASIC
 
-;Copyright 2017 - -2024 Thomas Henry
+;Copyright 2017 - -2025 Thomas Henry
 ;
 ;Version 2.0 -- 4/21/2014 - 2017
 

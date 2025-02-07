@@ -1,6 +1,6 @@
 '    #option explicit
 '    System routines for GCBASIC
-'    Copyright (C) 2006-2024 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
+'    Copyright (C) 2006-2025 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

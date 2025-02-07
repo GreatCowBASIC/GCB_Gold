@@ -1,5 +1,5 @@
 '    Software I2C routines for the GCBASIC compiler
-'    Copyright (C) 2009-2024 Hugh Considine, Evan R. Venn, Thomas Henry, William Roth
+'    Copyright (C) 2009-2025 Hugh Considine, Evan R. Venn, Thomas Henry, William Roth
 
 '    This library is free software' you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -54,6 +54,7 @@
 ' 22/08/23 Added I2CPreSendMacro and I2CPostSendMacro and I2CPostSendMacroLabel to support greater control of I2CSend
 ' 23/08/23 Revised INTERRUPT caching to ensure state is preserved by I2C routines
 ' 26/11/24 Revised comments in I2CINIT - no functional change
+' 10/01/25 Added wait I2C_END_DELAY for frequencies greater than 32mHz
 
 '    - With the default constants, communication can be as high as 75 kHz.
 
@@ -378,6 +379,9 @@ sub I2CSend(in I2CByte )
         I2C_DATA_LOW
       end if
 
+      #IF CHIPMHZ > 32
+        wait I2C_END_DELAY            'let port settle
+      #ENDIF
       rotate I2CByte left         'shift in bit for the next time
       I2C_CLOCK_HIGH              'now clock it in
 

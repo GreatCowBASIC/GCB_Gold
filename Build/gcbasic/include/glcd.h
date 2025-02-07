@@ -1,5 +1,5 @@
 /*    Graphical LCD routines for the GCBASIC compiler
-    Copyright (C) 2012-2024 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
+    Copyright (C) 2012-2025 Hugh Considine, Joseph Realmuto, Evan Venn and Giuseppe DElia
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -64,6 +64,7 @@
     25/03/23 Added ILI9488 support
     26/03/23 Added GLCD_TYPE_ST7789_320_240 support
     05/02/24 Remove include statements except KX0108.h.  Other are now controlled by glcd.dat
+    08/01/25 Added GLCD_TYPE_SSD1306_64x32 support
 
 */
 'Constants that might need to be set
@@ -113,6 +114,7 @@
   #define LT7686_800_480_BLUE          35
   #define LT7686_1024_600_BLUE         36
   #define LT7686_1024_600_BLACK        37
+  #define GLCD_TYPE_SSD1306_64x32      38
 
   
 
@@ -281,7 +283,6 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   End If
 
-
   If GLCD_TYPE = GLCD_TYPE_SSD1306 Then
      'Support I2C, I2C2 and 4wire SPI with low memory optimisation.
      ' #include <glcd_ssd1306.h>
@@ -340,6 +341,24 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
 
   End If
 
+  If GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 Then
+     ' #include <glcd_ssd1306.h>
+     InitGLCD = InitGLCD_SSD1306
+     GLCDCLS = GLCDCLS_SSD1306
+     GLCDDrawChar = GLCDDrawChar_SSD1306
+     FilledBox = FilledBox_SSD1306
+     Pset = Pset_SSD1306
+     GLCD_Open_PageTransaction = GLCD_Open_PageTransaction_SSD1306
+     GLCD_Close_PageTransaction = GLCD_Close_PageTransaction_SSD1306
+     GLCDSetContrast = SetContrast_SSD1306
+     glcd_type_string = "SSD1306_32"
+     GLCD_WIDTH = 64
+     GLCD_HEIGHT = 32
+     SSD1306_GLCD_HEIGHT = GLCDDeviceHeight
+     SSD1306_GLCD_WIDTH = GLCDDeviceWidth
+     GLCD_TYPE_SSD1306_64x32_XOFFSET = 32
+
+  End If
 
   If GLCD_TYPE = GLCD_TYPE_SSD1306_TWIN Then
 

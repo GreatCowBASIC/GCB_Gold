@@ -1,5 +1,5 @@
 '     Liquid Crystal Display routines for GCBASIC
-'     Copyright (C) 2006-2024 Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Theo Loermans, Wiliam Roth and Evan Venn
+'     Copyright (C) 2006-2025 Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Theo Loermans, Wiliam Roth and Evan Venn
 '
 '     This library is free software; you can redistribute it and/or
 '     modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,11 @@
 '   #define LCD_I2C_Address_1 0x4e
 '   #define LCD_I2C_Address_2 0x4c
 '   #define LCD_I2C_Address_3 0x4a
-'   #define LCD_I2C_Address_4 0x49
+'   #define LCD_I2C_Address_4 0x48
+'   #define LCD_I2C_Address_5 0x46
+'   #define LCD_I2C_Address_6 0x44
+'   #define LCD_I2C_Address_7 0x42
+'   #define LCD_I2C_Address_8 0x40
 '
 '   Use LCD_I2C_Address_Current = LCD_I2C_Address to change the LCD output routines to a specific device.
 '    LCD_I2C_Address_Current = LCD_I2C_Address
@@ -51,6 +55,13 @@
 '      #define LCD_EB     PORTa.0            ; enable bit
 '
 '
+'
+'
+'  #define LCD_IO 16
+'     'Change as necessary - PIN MAPPINGS FOR PIC16LF72 LCD IO SPI EXPANDER
+'      #define LCD_SPI_DO      PORTb.3           // CONSTANT IS MANDATED - DATA LINE
+'      #define LCD_SPI_SCK     PORTb.4           // CONSTANT IS MANDATED - CLOCK LINE
+
 '***********************************************************************
 ' 06/04/2020   Added K107 Capabilities
 ' 04/05/2020   Added Support for HWI2C2
@@ -61,7 +72,9 @@
 ' 14/08/22 Updated user changeable constants only - no functional change
 ' 14/08/23 Revisws to add SPI/LCD_IO 14 support
 ' 08/08/24 Add Timeout counter / exit to CheckBusyFlag to resolve LCD_RW lockup
-
+' 22/12/24 Add OCULAR_OM1614 Support
+' 27/12/24 Added script to support OCULAR_OM1614 INIT method. Removed #IFDEF from INITLCD.
+' 21/02/25 Added LCD_IO 16 for PIC16LF72 LCD IO SPI EXPANDER
 
 #startup InitLCD
 
@@ -220,11 +233,94 @@ Dim SysLCDTemp as Byte
     #define LINE2_START_ADDRESS     0xC0
     #define OUTPUT_DIR              0x00
 
+// Added for OCULAR_OM1614 Support
 
+    #define HD44780_LCD_RESET           0x30
+    #define HD44780_FOUR_BIT            0x20  // 4-bit Interface
+    #define HD44780_EIGHT_BIT           0x30  // 8-bit Interface not used !!!
+    #define HD44780_FOUR_BIT_ONE_LINE   0x20
+    #define HD44780_FOUR_BIT_TWO_LINE   0x28
+
+  //******************************************************************************
+  // Extended Function Set        0   0   |   0   0   1   DL  N   F   IT1 IT0
+  //******************************************************************************
+    #define HD44780_EXT_INSTR_TBL_0     0x00
+    #define HD44780_EXT_INSTR_TBL_1     0x01
+    #define HD44780_EXT_INSTR_TBL_2     0x02
+  // Bias Set                     0   0   |   0   0   0   1   BS  1   0   FX
+    #define HD44780_EXT1_BIAS_1_4       0x1C
+    #define HD44780_EXT1_BIAS_1_5       0x14
+  // ICON address                 0   0   |   0   1   0   0   a   a   a   a
+    #define HD44780_EXT1_ICON_ADDR      0x40
+  // Power/ICON Ctrl/Contrast     0   0   |   0   1   0   1   Ion Bon C5  C4
+    #define HD44780_EXT1_BOOST_ICON_C   0x50
+    #define HD44780_ICON_ON             0x08
+    #define HD44780_BOOST_ON            0x04
+    #define HD44780_BOOST_OFF           0
+  // Follower Ctrl                0   0   |   0   1   1   0   Fon R_2 R_1 R_0
+    #define HD44780_EXT1_FOLLOWER       0x60
+    #define HD44780_FOLLOWER_ON         0x08
+    #define HD44780_FOLLOWER_OFF        0
+  // Contrast                     0   0   |   0   1   1   1   C3  C2  C1  C0
+    #define HD44780_EXT1_CONTRAST       0x70
+
+  // Double height Position       0   0   |   0   0   0   1   UD  -   -   -
+    #define HD44780_EXT2_DHP_TOP        0x18
+    #define HD44780_EXT2_DHP_BOT        0x10
+
+//=============================================================================
+// Instruction Set defines (HD44780 compatible)
+//                              RS  R/W |   D7  D6  D5  D4  D3  D2  D1  D0
+// Clear display (long cmd)      0   0  |    0   0   0   0   0   0   0   1
+    #define HD44780_CLEAR_DISPLAY       0x01
+// Return home   (long cmd)      0   0  |    0   0   0   0   0   0   1   -
+    #define HD44780_RETURN_HOME         0x02
+// Entry mode set (mid cmd)      0   0  |    0   0   0   0   0   1   I/D S
+    #define HD44780_ENTRY_MODE          0x04
+    #define HD44780_CURSOR_INC          0x02
+    #define HD44780_CURSOR_DEC          0x00
+    #define HD44780_DSHIFT_ON           0x01
+    #define HD44780_DSHIFT_OFF          0x00
+// Display ctrl   (mid cmd)      0   0  |    0   0   0   0   1   D   C   B
+    #define HD44780_DISPLAY_CTRL        0x08
+    #define HD44780_DISPLAY_ON          0x04
+    #define HD44780_DISPLAY_OFF         0x00
+    #define HD44780_CURSOR_ON           0x02
+    #define HD44780_CURSOR_OFF          0x00
+    #define HD44780_BLINK_ON            0x01
+    #define HD44780_BLINK_OFF           0x00
+// Cursor/Disp shift(mid cmd)    0   0  |    0   0   0   1   S/C R/L -   -
+    #define HD44780_DISPLAY_SHIFT_R     0x1C
+    #define HD44780_DISPLAY_SHIFT_L     0x18
+    #define HD44780_CURSOR_MOVE_R       0x14
+    #define HD44780_CURSOR_MOVE_L       0x10	//ASO
+
+// End of OCULAR_OM1614 Support
 
 'All scripts consolidatd here
 #SCRIPT
 
+    IF LCD_IO = 16 THEN
+
+        InitLCD             = InitLCD_IO16_PICSPI
+        LCDNormalWriteByte  = LCD_IO16_SPI_WriteIOPICExpander
+        Locate              = LCD_IO16_Locate
+        CLS                 = LCD_IO16_CLS
+
+        IF NoDef(LCD_SPI_DO) Then
+            Error LCD_SPI_DO constant to define port required, and PPS if required
+        END IF
+        IF NoDef(LCD_SPI_SCK) Then
+            Error LCD_SPI_SCK constant to define port required, and PPS if required
+        END IF
+
+    END IF  
+
+    If Def( LCD_OCULAR_OM1614 ) Then
+        'Change INITLCD to specific Initialisation sub
+        INITLCD = INIT_OCULAR_OM1614_LCD
+    End if
+    
     'LCD configuratio 1,2, 4, 8 OR 10, 12
     If NoDef(LCD_IO) Then
         LCD_IO = 4
@@ -583,336 +679,357 @@ end sub
 
 sub InitLCD
 
-    asm showdebug  `LCD_IO selected is ` LCD_IO
+        asm showdebug  `LCD_IO selected is ` LCD_IO
 
-    #IFDEF LCD_Speed FAST
-        asm showdebug  `LCD_Speed is FAST`
-    #ENDIF
-    #IFDEF LCD_Speed MEDIUM
-        asm showdebug  `LCD_Speed is MEDIUM`
-    #ENDIF
-    #IFDEF LCD_Speed SLOW
-        asm showdebug  `LCD_Speed is SLOW`
-    #ENDIF
-
-    asm showdebug  `OPTIMAL is set to ` OPTIMAL
-    asm showdebug  `LCD_Speed is set to ` LCD_Speed
-
-
-    #IFDEF LCD_IO 4,8,10,12
-        #IFDEF LCD_backlight
-            Dir LCD_Backlight OUT
-            Set LCD_Backlight OFF
+        #IFDEF LCD_Speed FAST
+            asm showdebug  `LCD_Speed is FAST`
         #ENDIF
-    #ENDIF
-
-    #IFDEF LCD_IO 1
-        ' 1-wire mode with shiftreg 74HC595
-        Set LCD_CD ON
-        Dir LCD_CD OUT
-        LCDBacklight Off  ' Prevents compiler error if LCDbacklight is not used user code
-        wait 10 MS
-        Set LCD_RS OFF
-        ResetShiftReg
-        LCD2_NIBBLEOUT 0X03
-        Wait 5 ms
-        LCD2_NIBBLEOUT 0X03
-        WAIT 1 MS
-        LCD2_NIBBLEOUT 0X03
-        WAIT 1 MS
-        LCD2_NIBBLEOUT 0X02
-        WAIT 1 MS
-        LCDWriteByte 0x28
-        WAIT 1 MS
-        LCDWriteByte 0x08
-        WAIT 1 MS
-        LCDWriteByte 0x01
-        WAIT 1 MS
-        LCDWriteByte 0x06
-        WAIT 1 MS
-        LCDWriteByte 0x0C
-        WAIT 1 MS
-    #ENDIF
-
-    #IFDEF LCD_IO 2, 2_74XX174, 2_74XX164
-        'All 2-wire modes
-        Set LCD_DB OFF
-        Set LCD_CB OFF
-        Dir LCD_DB OUT
-        Dir LCD_CB OUT
-
-        LCDBacklight Off  'Prevents compiler error if LCDbacklight is not used user code
-
-        WAIT 35 MS
-        Set LCD_RS OFF
-        LCD2_NIBBLEOUT 0X03
-        Wait 5 ms
-        LCD2_NIBBLEOUT 0X03
-        WAIT 1 MS
-        LCD2_NIBBLEOUT 0X03
-        WAIT 1 MS
-        LCD2_NIBBLEOUT 0X02
-        WAIT 1 MS
-        LCDWriteByte 0x28
-        WAIT 1 MS
-        LCDWriteByte 0x08
-        WAIT 1 MS
-        LCDWriteByte 0x01
-        WAIT 5 MS
-        LCDWriteByte 0x06
-        WAIT 1 MS
-        LCDWriteByte 0x0C
-        WAIT 1 MS
-
-    #ENDIF
-
-    #IFDEF LCD_IO 3
-        'LCD_IO_3
-        LCDBacklight Off  'Prevents compiler error if LCDbacklight is not used user code
-
-        Dir LCD_EB out
-        Dir LCD_RS out
-        Dir LCD_CB out
-
-        Set LCD_EB OFF
-        Set LCD_RS OFF
-        Set LCD_CB OFF
-
-        wait 20 ms
-
-        Set LCD_EB ON
-
-        LCD3_CMD(0x30)
-        wait 5 ms
-
-        LCD3_CMD(0x30)
-        wait 1 ms
-
-        LCD3_CMD(0x38)
-        LCD3_CMD(0x08)
-        LCD3_CMD(0x0F)
-        LCD3_CMD(0x01)
-        LCD3_CMD(0x38)
-        LCD3_CMD(0x80)
-
-    #ENDIF
-
-
-    #IFDEF LCD_IO 4
-
-        Wait 50 ms
-
-        #IFNDEF LCD_NO_RW
-          Dir LCD_RW OUT
-          Set LCD_RW OFF
+        #IFDEF LCD_Speed MEDIUM
+            asm showdebug  `LCD_Speed is MEDIUM`
         #ENDIF
-        Dir LCD_DB4 OUT
-        Dir LCD_DB5 OUT
-        Dir LCD_DB6 OUT
-        Dir LCD_DB7 OUT
-        Dir LCD_RS OUT
-        Dir LCD_Enable OUT
-        Set LCD_RS OFF
-        Set LCD_Enable OFF
+        #IFDEF LCD_Speed SLOW
+            asm showdebug  `LCD_Speed is SLOW`
+        #ENDIF
 
-        'Wakeup (0x30 - b'0011xxxx' )
-        Set LCD_DB7 OFF
-        Set LCD_DB6 OFF
-        Set LCD_DB5 ON
-        Set LCD_DB4 ON
-        Wait 2 us
-        PulseOut LCD_Enable, 2 us
-        Wait 10 ms
-        Repeat 3
+        asm showdebug  `OPTIMAL is set to ` OPTIMAL
+        asm showdebug  `LCD_Speed is set to ` LCD_Speed
+
+
+        #IFDEF LCD_IO 4,8,10,12
+            #IFDEF LCD_backlight
+                Dir LCD_Backlight OUT
+                Set LCD_Backlight OFF
+            #ENDIF
+        #ENDIF
+
+        #IFDEF LCD_IO 1
+            ' 1-wire mode with shiftreg 74HC595
+            Set LCD_CD ON
+            Dir LCD_CD OUT
+            LCDBacklight Off  ' Prevents compiler error if LCDbacklight is not used user code
+            wait 10 MS
+            Set LCD_RS OFF
+            ResetShiftReg
+            LCD2_NIBBLEOUT 0X03
+            Wait 5 ms
+            LCD2_NIBBLEOUT 0X03
+            WAIT 1 MS
+            LCD2_NIBBLEOUT 0X03
+            WAIT 1 MS
+            LCD2_NIBBLEOUT 0X02
+            WAIT 1 MS
+            LCDWriteByte 0x28
+            WAIT 1 MS
+            LCDWriteByte 0x08
+            WAIT 1 MS
+            LCDWriteByte 0x01
+            WAIT 1 MS
+            LCDWriteByte 0x06
+            WAIT 1 MS
+            LCDWriteByte 0x0C
+            WAIT 1 MS
+        #ENDIF
+
+        #IFDEF LCD_IO 2, 2_74XX174, 2_74XX164
+            'All 2-wire modes
+            Set LCD_DB OFF
+            Set LCD_CB OFF
+            Dir LCD_DB OUT
+            Dir LCD_CB OUT
+
+            LCDBacklight Off  'Prevents compiler error if LCDbacklight is not used user code
+
+            WAIT 35 MS
+            Set LCD_RS OFF
+            LCD2_NIBBLEOUT 0X03
+            Wait 5 ms
+            LCD2_NIBBLEOUT 0X03
+            WAIT 1 MS
+            LCD2_NIBBLEOUT 0X03
+            WAIT 1 MS
+            LCD2_NIBBLEOUT 0X02
+            WAIT 1 MS
+            LCDWriteByte 0x28
+            WAIT 1 MS
+            LCDWriteByte 0x08
+            WAIT 1 MS
+            LCDWriteByte 0x01
+            WAIT 5 MS
+            LCDWriteByte 0x06
+            WAIT 1 MS
+            LCDWriteByte 0x0C
+            WAIT 1 MS
+
+        #ENDIF
+
+        #IFDEF LCD_IO 3
+            'LCD_IO_3
+            LCDBacklight Off  'Prevents compiler error if LCDbacklight is not used user code
+
+            Dir LCD_EB out
+            Dir LCD_RS out
+            Dir LCD_CB out
+
+            Set LCD_EB OFF
+            Set LCD_RS OFF
+            Set LCD_CB OFF
+
+            wait 20 ms
+
+            Set LCD_EB ON
+
+            LCD3_CMD(0x30)
+            wait 5 ms
+
+            LCD3_CMD(0x30)
+            wait 1 ms
+
+            LCD3_CMD(0x38)
+            LCD3_CMD(0x08)
+            LCD3_CMD(0x0F)
+            LCD3_CMD(0x01)
+            LCD3_CMD(0x38)
+            LCD3_CMD(0x80)
+
+        #ENDIF
+
+
+        #IFDEF LCD_IO 4
+
+            Wait 50 ms
+
+            #IFNDEF LCD_NO_RW
+            Dir LCD_RW OUT
+            Set LCD_RW OFF
+            #ENDIF
+            Dir LCD_DB4 OUT
+            Dir LCD_DB5 OUT
+            Dir LCD_DB6 OUT
+            Dir LCD_DB7 OUT
+            Dir LCD_RS OUT
+            Dir LCD_Enable OUT
+            Set LCD_RS OFF
+            Set LCD_Enable OFF
+
+            'Wakeup (0x30 - b'0011xxxx' )
+            Set LCD_DB7 OFF
+            Set LCD_DB6 OFF
+            Set LCD_DB5 ON
+            Set LCD_DB4 ON
+            Wait 2 us
             PulseOut LCD_Enable, 2 us
-            Wait 1 ms
-        End Repeat
+            Wait 10 ms
+            Repeat 3
+                PulseOut LCD_Enable, 2 us
+                Wait 1 ms
+            End Repeat
 
-        'Set 4 bit mode (0x20 - b'0010xxxx')
-        Set LCD_DB7 OFF
-        Set LCD_DB6 OFF
-        Set LCD_DB5 ON
-        Set LCD_DB4 OFF
-        Wait 2 us
-        PulseOut LCD_Enable, 2 us
-        Wait 100 us
-       '===== now in 4 bit mode =====
+            'Set 4 bit mode (0x20 - b'0010xxxx')
+            Set LCD_DB7 OFF
+            Set LCD_DB6 OFF
+            Set LCD_DB5 ON
+            Set LCD_DB4 OFF
+            Wait 2 us
+            PulseOut LCD_Enable, 2 us
+            Wait 100 us
+        '===== now in 4 bit mode =====
 
-        LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
-        LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
-        LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
-        Cls  'Clear the display
-
-    #ENDIF
-
-    #IFDEF LCD_IO 404
-
-        wait 20 ms
-
-        'Configure RS,Enable & RW pin directions for 404
-        Dir LCD_RS OUT
-        Dir LCD_Enable1 OUT
-        Dir LCD_Enable2 OUT
-        'Set datapins to output
-        Dir LCD_DB4 OUT
-        Dir LCD_DB5 OUT
-        Dir LCD_DB6 OUT
-        Dir LCD_DB7 OUT
-
-        Set LCD_RS OFF
-
-        #IFNDEF LCD_NO_RW
-             Dir LCD_RW OUT
-             Set LCD_RW OFF
+            LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
+            LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
+            LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
+            Cls  'Clear the display
+            
         #ENDIF
 
-        Wait 20 ms
+        #IFDEF LCD_IO 404
 
-        'Wakeup 0x30
-        Set LCD_DB4 ON
-        Set LCD_DB5 ON
-        Set LCD_DB6 OFF
-        Set LCD_DB7 OFF
+            wait 20 ms
 
-        'Device 1
-        Wait 2 us
-        PulseOut LCD_Enable1, 2 us
-        Wait 5 ms
-        Repeat 3   'three more times
+            'Configure RS,Enable & RW pin directions for 404
+            Dir LCD_RS OUT
+            Dir LCD_Enable1 OUT
+            Dir LCD_Enable2 OUT
+            'Set datapins to output
+            Dir LCD_DB4 OUT
+            Dir LCD_DB5 OUT
+            Dir LCD_DB6 OUT
+            Dir LCD_DB7 OUT
+
+            Set LCD_RS OFF
+
+            #IFNDEF LCD_NO_RW
+                Dir LCD_RW OUT
+                Set LCD_RW OFF
+            #ENDIF
+
+            Wait 20 ms
+
+            'Wakeup 0x30
+            Set LCD_DB4 ON
+            Set LCD_DB5 ON
+            Set LCD_DB6 OFF
+            Set LCD_DB7 OFF
+
+            'Device 1
+            Wait 2 us
             PulseOut LCD_Enable1, 2 us
             Wait 5 ms
-        End Repeat
-        Wait 5 ms
+            Repeat 3   'three more times
+                PulseOut LCD_Enable1, 2 us
+                Wait 5 ms
+            End Repeat
+            Wait 5 ms
 
-       'Set 4 bit mode    (0x20)
-        Set LCD_DB4 OFF
-        Set LCD_DB5 ON
-        Set LCD_DB6 OFF
-        Set LCD_DB7 OFF
-        Wait 2 us
-        PulseOut LCD_Enable1, 2 us
-        Wait 5 ms
-        '===== now in 4 bit mode =====
+        'Set 4 bit mode    (0x20)
+            Set LCD_DB4 OFF
+            Set LCD_DB5 ON
+            Set LCD_DB6 OFF
+            Set LCD_DB7 OFF
+            Wait 2 us
+            PulseOut LCD_Enable1, 2 us
+            Wait 5 ms
+            '===== now in 4 bit mode =====
 
-        gLCDEnableAddress = 1
-        gLCDXYPosition = 0
+            gLCDEnableAddress = 1
+            gLCDXYPosition = 0
 
-        LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
-        LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
-        LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
-        Cls  'Clear the display
+            LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
+            LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
+            LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
+            Cls  'Clear the display
 
-        'Device 2
-        Wait 5 ms
-        PulseOut LCD_Enable2, 2 us
-        Wait 5 ms
-        Repeat 3   'three more times
+            'Device 2
+            Wait 5 ms
             PulseOut LCD_Enable2, 2 us
             Wait 5 ms
-        End Repeat
-        Wait 5 ms
+            Repeat 3   'three more times
+                PulseOut LCD_Enable2, 2 us
+                Wait 5 ms
+            End Repeat
+            Wait 5 ms
 
-       'Set 4 bit mode  (0x20)
-        Set LCD_DB4 OFF
-        Set LCD_DB5 ON
-        Set LCD_DB6 OFF
-        Set LCD_DB7 OFF
+        'Set 4 bit mode  (0x20)
+            Set LCD_DB4 OFF
+            Set LCD_DB5 ON
+            Set LCD_DB6 OFF
+            Set LCD_DB7 OFF
 
-        Wait 2 us
-        PulseOut LCD_Enable2, 2 us
-        Wait 5 ms
-        '===== now in 4 bit mode =====
+            Wait 2 us
+            PulseOut LCD_Enable2, 2 us
+            Wait 5 ms
+            '===== now in 4 bit mode =====
 
-        LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
-        LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
-        LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
-        Cls  'Clear the display
+            LCDWriteByte 0x28    '(b'00101000')  '0x28 set 2 line mode
+            LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
+            LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
+            Cls  'Clear the display
 
-    #ENDIF
-
-    #IFDEF LCD_IO 8
-
-        Wait 50 ms
-
-        #IFNDEF LCD_NO_RW
-          Dir LCD_RW OUT
-          Set LCD_RW OFF
         #ENDIF
-        Dir LCD_RS OUT
-        Dir LCD_Enable OUT
-        Dir LCD_DATA_PORT OUT
-        Set LCD_RS OFF
 
-        'Wakeup (0x30)
-        LCD_DATA_PORT = 0x30
-        Wait 2 us
-        PulseOut LCD_Enable, 2 us
-        Wait 10 ms
-        Repeat 3
-          PulseOut LCD_Enable, 2 us
-          Wait 1 ms
-        End Repeat
+        #IFDEF LCD_IO 8
 
-        LCDWriteByte 0x38    '(b'00111000')  '0x38  set 2 line mode
-        LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
-        LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
-        Cls  'Clear the display
+            Wait 50 ms
 
-    #ENDIF
+            #IFNDEF LCD_NO_RW
+            Dir LCD_RW OUT
+            Set LCD_RW OFF
+            #ENDIF
+            Dir LCD_RS OUT
+            Dir LCD_Enable OUT
+            Dir LCD_DATA_PORT OUT
+            Set LCD_RS OFF
 
+            'Wakeup (0x30)
+            LCD_DATA_PORT = 0x30
+            Wait 2 us
+            PulseOut LCD_Enable, 2 us
+            Wait 10 ms
+            Repeat 3
+            PulseOut LCD_Enable, 2 us
+            Wait 1 ms
+            End Repeat
 
-    #IFDEF LCD_IO 10, 12
+            LCDWriteByte 0x38    '(b'00111000')  '0x38  set 2 line mode
+            LCDWriteByte 0x06    '(b'00000110')  'Set cursor movement
+            LCDWriteByte 0x0C    '(b'00001100')  'Turn off cursor
+            Cls  'Clear the display
 
-        #ifdef I2C_DATA
-          InitI2C       ;call to init i2c is required here!
-        #endif
-
-        #ifdef HI2C_DATA
-          HI2CMode Master    ;call to Master required to init I2C Baud Rate here!
-        #endif
-
-        #ifdef HI2C2_DATA
-          HI2C2Mode Master    ;call to Master required to init I2C Baud Rate here!
-        #endif
+        #ENDIF
 
 
-        LCD_Backlight = LCD_Backlight_On_State
-        wait 2 ms
+        #IFDEF LCD_IO 10, 12
 
-        repeat 2  ; called to ensure reset is complete.  Needed for cheap LCDs!!
-
-            #ifdef LCD_I2C_Address_1
-                   LCD_I2C_Address_Current = LCD_I2C_Address_1
-                   initI2CLCD
+            #ifdef I2C_DATA
+            InitI2C       ;call to init i2c is required here!
             #endif
 
-            #ifdef LCD_I2C_Address_2
-                   LCD_I2C_Address_Current = LCD_I2C_Address_2
-                   initI2CLCD
+            #ifdef HI2C_DATA
+            HI2CMode Master    ;call to Master required to init I2C Baud Rate here!
             #endif
 
-            #ifdef LCD_I2C_Address_3
-                   LCD_I2C_Address_Current = LCD_I2C_Address_3
-                   initI2CLCD
+            #ifdef HI2C2_DATA
+            HI2C2Mode Master    ;call to Master required to init I2C Baud Rate here!
             #endif
 
-            #ifdef LCD_I2C_Address_4
-                   LCD_I2C_Address_Current = LCD_I2C_Address_4
-                   initI2CLCD
-            #endif
-        end repeat
-    #ENDIF
 
-    #IFDEF LCD_IO 107
+            LCD_Backlight = LCD_Backlight_On_State
+            wait 2 ms
 
-        CLS
+            repeat 2  ; called to ensure reset is complete.  Needed for cheap LCDs!!
 
-    #ENDIF
+                #ifdef LCD_I2C_Address_1
+                    LCD_I2C_Address_Current = LCD_I2C_Address_1
+                    initI2CLCD
+                #endif
 
-    #IFDEF LCD_IO 14
-        LCD_SPI_Expander_Initialize
-    #ENDIF
+                #ifdef LCD_I2C_Address_2
+                    LCD_I2C_Address_Current = LCD_I2C_Address_2
+                    initI2CLCD
+                #endif
 
+                #ifdef LCD_I2C_Address_3
+                    LCD_I2C_Address_Current = LCD_I2C_Address_3
+                    initI2CLCD
+                #endif
+
+                #ifdef LCD_I2C_Address_4
+                    LCD_I2C_Address_Current = LCD_I2C_Address_4
+                    initI2CLCD
+                #endif
+
+                #ifdef LCD_I2C_Address_5
+                    LCD_I2C_Address_Current = LCD_I2C_Address_5
+                    initI2CLCD
+                #endif
+
+                #ifdef LCD_I2C_Address_6
+                    LCD_I2C_Address_Current = LCD_I2C_Address_6
+                    initI2CLCD
+                #endif
+
+                #ifdef LCD_I2C_Address_7
+                    LCD_I2C_Address_Current = LCD_I2C_Address_7
+                    initI2CLCD
+                #endif
+
+                #ifdef LCD_I2C_Address_8
+                    LCD_I2C_Address_Current = LCD_I2C_Address_8
+                    initI2CLCD
+                #endif
+            end repeat
+        #ENDIF
+
+        #IFDEF LCD_IO 107
+
+            CLS
+
+        #ENDIF
+
+        #IFDEF LCD_IO 14
+            LCD_SPI_Expander_Initialize
+        #ENDIF
+    
+    Dim LCD_State
     LCD_State = 12
 
 end sub
@@ -935,7 +1052,8 @@ end sub
 
 sub Print (In PrintData As String)
 'Sub to print a string variable on the LCD
-
+    Dim SysPrintTemp
+    Dim PrintLen
     PrintLen = PrintData(0)
 
     If PrintLen = 0 Then Exit Sub
@@ -1107,14 +1225,16 @@ Sub CheckBusyFlag
 'Sub that waits until LCD controller busy flag goes low (ready)
 'Only used by LCD_IO 4,8 and only when LCD_NO_RW is NOT Defined
 'Called by sub LCDNOrmalWriteByte
+
+    Dim LCDTEMPRWCount
     #IFDEF LCD_IO 4,8
 
         #IFNDEF LCD_NO_RW
 
-             LCD_RSTemp = LCD_RS
-             DIR SCRIPT_LCD_BF  IN
-             SET LCD_RS OFF
-             SET LCD_RW ON
+            LCD_RSTemp = LCD_RS
+            DIR SCRIPT_LCD_BF IN
+            SET LCD_RS OFF
+            SET LCD_RW ON
 
             #IFDEF LCD_IO 4
                 LCDTEMPRWCount = 0
@@ -1129,7 +1249,9 @@ Sub CheckBusyFlag
                     Wait 1 us
                     if LCDTEMPRWCount = 255 Then SysLCDTemp.7 = 0
                     LCDTEMPRWCount++
-                Loop While SysLCDTemp.7 <> 0  
+                    
+                Loop While SysLCDTemp.7 <> 0
+
             #ENDIF
 
 
@@ -1159,6 +1281,8 @@ End Sub
 
 sub LCDNormalWriteByte(In LCDByte )
     'Sub to write a byte to the LCD
+
+    Dim LCD_I2C_Address_Current
 
     #IFNDEF LCD_NO_RW
         #IFDEF LCD_IO 4,8
@@ -1211,14 +1335,14 @@ sub LCDNormalWriteByte(In LCDByte )
         DIR LCD_DB7 OUT
 
        'Write upper nibble to output pins
-    '        set LCD_DB4 OFF
-    '        set LCD_DB5 OFF
-    '        set LCD_DB6 OFF
-    '        set LCD_DB7 OFF
-    '        if LCDByte.7 ON THEN SET LCD_DB7 ON
-    '        if LCDByte.6 ON THEN SET LCD_DB6 ON
-    '        if LCDByte.5 ON THEN SET LCD_DB5 ON
-    '        if LCDByte.4 ON THEN SET LCD_DB4 ON
+        '        set LCD_DB4 OFF
+        '        set LCD_DB5 OFF
+        '        set LCD_DB6 OFF
+        '        set LCD_DB7 OFF
+        '        if LCDByte.7 ON THEN SET LCD_DB7 ON
+        '        if LCDByte.6 ON THEN SET LCD_DB6 ON
+        '        if LCDByte.5 ON THEN SET LCD_DB5 ON
+        '        if LCDByte.4 ON THEN SET LCD_DB4 ON
             LCD_DB7 = LCDByte.7
             LCD_DB6 = LCDByte.6
             LCD_DB5 = LCDByte.5
@@ -1233,17 +1357,17 @@ sub LCDNormalWriteByte(In LCDByte )
         PulseOut LCD_enable, 1 us
 
         'All data pins low
-    '        set LCD_DB4 OFF
-    '        set LCD_DB5 OFF
-    '        set LCD_DB6 OFF
+        '        set LCD_DB4 OFF
+        '        set LCD_DB5 OFF
+        '        set LCD_DB6 OFF
             set LCD_DB7 OFF
-    '
-    '       'Write lower nibble to output pins
+        '
+        '       'Write lower nibble to output pins
             if LCDByte.3 ON THEN SET LCD_DB7 ON
-    '        if LCDByte.2 ON THEN SET LCD_DB6 ON
-    '        if LCDByte.1 ON THEN SET LCD_DB5 ON
-    '        if LCDByte.0 ON THEN SET LCD_DB4 ON
-    '        LCD_DB7 = LCDByte.3
+        '        if LCDByte.2 ON THEN SET LCD_DB6 ON
+        '        if LCDByte.1 ON THEN SET LCD_DB5 ON
+        '        if LCDByte.0 ON THEN SET LCD_DB4 ON
+        '        LCD_DB7 = LCDByte.3
             LCD_DB6 = LCDByte.2
             LCD_DB5 = LCDByte.1
             LCD_DB4 = LCDByte.0
@@ -1653,6 +1777,8 @@ end function
 ' Method uses parameters LCDON, LCDOFF, CURSORON, CURSOROFF, FLASHON, Or FLASHOFF
 sub LCDCursor(In LCDCRSR)
 'Sub  to set cursor style
+
+    Dim LCDTemp
     Set LCD_RS OFF
 
     If LCDCRSR = ON  Then LCDTemp = LCD_State OR LCDON
@@ -2833,7 +2959,11 @@ End Sub
 '''   #define LCD_I2C_Address_1 0x4e
 '''   #define LCD_I2C_Address_2 0x4c
 '''   #define LCD_I2C_Address_3 0x4a
-'''   #define LCD_I2C_Address_4 0x49
+'''   #define LCD_I2C_Address_4 0x48
+'''   #define LCD_I2C_Address_5 0x46
+'''   #define LCD_I2C_Address_6 0x44
+'''   #define LCD_I2C_Address_7 0x42
+'''   #define LCD_I2C_Address_8 0x40
 '''
 '''   Use LCD_I2C_Address_Current = LCD_I2C_Address to change the LCD output routines to a specific device.
 '''       LCD_I2C_Address_Current = LCD_I2C_Address
@@ -2889,3 +3019,312 @@ End Sub
 '''   Updated version info
 
 '*************************************************************************
+
+// Add for OCULAR_OM1614 Support
+
+Sub INIT_OCULAR_OM1614_LCD
+
+    #IFDEF LCD_Speed FAST
+        asm showdebug  `LCD_Speed is FAST`
+    #ENDIF
+    #IFDEF LCD_Speed MEDIUM
+        asm showdebug  `LCD_Speed is MEDIUM`
+    #ENDIF
+    #IFDEF LCD_Speed SLOW
+        asm showdebug  `LCD_Speed is SLOW`
+    #ENDIF
+
+    asm showdebug  `OPTIMAL is set to ` OPTIMAL
+    asm showdebug  `LCD_Speed is set to ` LCD_Speed
+
+    #IFDEF LCD_IO 4
+
+        #IFDEF LCD_POWER
+            Dir LCD_POWER OUT
+            Set LCD_POWER ON
+        #ELSE
+        //! Your program required a constant for a port called LCD_POWER.
+        //!
+        //! You should add the constant like shown below. 
+        //!
+        //! #DEFINE LCD_POWER PORTD.7
+        //! 
+        //! Please close this library once you have resolved - do not change this library
+        //! 
+        RaiseCompilerError "Error missing LCD_POWER constant" 
+        #ENDIF
+        
+        Wait 50 ms
+
+        #IFNDEF LCD_NO_RW
+        Dir LCD_RW OUT
+        Set LCD_RW OFF
+        #ENDIF
+
+        Dir LCD_DB4 OUT
+        Dir LCD_DB5 OUT
+        Dir LCD_DB6 OUT
+        Dir LCD_DB7 OUT
+        Dir LCD_RS      OUT
+        Dir LCD_Enable  OUT
+        Set LCD_RS      OFF
+        Set LCD_Enable  OFF
+
+        LCDWrite_Nibble HD44780_LCD_RESET
+        Wait 5 ms
+        LCDWrite_Nibble HD44780_LCD_RESET
+        Wait 100 us
+        LCDWrite_Nibble HD44780_LCD_RESET
+        CheckBusyFlag
+        LCDWrite_Nibble HD44780_FOUR_BIT
+        CheckBusyFlag
+
+
+        #IFDEF OCULAR_OM1614_EXT_LCD_3_3_V
+        LCDWriteByte(HD44780_FOUR_BIT_TWO_LINE + HD44780_EXT_INSTR_TBL_1)
+        LCDWriteByte(HD44780_EXT1_BIAS_1_5)
+        LCDWriteByte(HD44780_EXT1_CONTRAST + 0x0C)
+        LCDWriteByte(HD44780_EXT1_BOOST_ICON_C + HD44780_BOOST_ON + 1)
+        LCDWriteByte(HD44780_EXT1_FOLLOWER + HD44780_FOLLOWER_ON + 5)
+        #ELSE
+        #IFDEF OCULAR_OM1614_EXT_LCD_5_V
+            LCDWriteByte(HD44780_FOUR_BIT_TWO_LINE + HD44780_EXT_INSTR_TBL_1)
+            LCDWriteByte(HD44780_EXT1_BIAS_1_4)
+            LCDWriteByte(HD44780_EXT1_CONTRAST + 0x04)
+            LCDWriteByte(HD44780_EXT1_BOOST_ICON_C + HD44780_BOOST_OFF + 2)
+            LCDWriteByte(HD44780_EXT1_FOLLOWER + HD44780_FOLLOWER_ON + 1)
+        #ELSE
+            LCDWriteByte(HD44780_FOUR_BIT_TWO_LINE)
+        #ENDIF
+        #ENDIF
+
+        LCDWriteByte(HD44780_DISPLAY_CTRL + HD44780_DISPLAY_ON)
+        LCDWriteByte(HD44780_ENTRY_MODE + HD44780_CURSOR_INC + HD44780_DSHIFT_OFF)
+        CLS
+
+    #ENDIF
+
+End Sub
+
+Sub LCDWrite_Nibble (In LCD2BYTE)
+
+    set LCD_RS OFF
+
+    #IFNDEF LCD_NO_RW
+        #IFDEF LCD_IO 4,8
+            CheckBusyFlag         'WaitForReady
+            set LCD_RW OFF
+        #ENDIF
+    #ENDIF
+
+    #IFDEF LCD_IO 4
+        
+        'Pins must be outputs if returning from WaitForReady, or after LCDReadByte or GET subs
+        DIR LCD_DB4 OUT
+        DIR LCD_DB5 OUT
+        DIR LCD_DB6 OUT
+        DIR LCD_DB7 OUT
+
+        // Write upper nibble to output pins
+
+        LCD_DB4 = LCDByte.4
+        LCD_DB5 = LCDByte.5
+        LCD_DB6 = LCDByte.6
+        LCD_DB7 = LCDByte.7
+
+        LCD_enable = 1
+        Wait 1 us
+        LCD_enable = 0
+      
+        Wait SCRIPT_LCD_POSTWRITEDELAY
+    #ELSE
+      //!
+      //! LCD mode not supported.  You need to add to this method.
+      //!
+    #ENDIF
+
+End Sub
+
+// LCD_IO16 Support
+
+Sub InitLCD_IO16_PICSPI
+
+    asm showdebug  `LCD_IO selected is ` LCD_IO
+
+    #IFDEF LCD_backlight
+        Dir LCD_Backlight OUT
+        Set LCD_Backlight OFF
+    #ENDIF
+
+    //! Start of INIT
+    Dir LCD_SPI_DO      Out
+    Dir LCD_SPI_SCK     Out
+
+    // Let the SPI Exander settle
+    wait 1500 ms 
+
+    //~ hard initialise - brute force
+    LCD_RS = 0
+    LCD_IO16_SPI_InitIOPICExpander ( 0 )
+    LCD_IO16_SPI_InitIOPICExpander ( 3 )
+
+    //~ Sync the expander
+    Repeat 4
+        LCDWriteByte (0x00)
+    End Repeat 
+
+    //~ Set the D7-D4 pins to 0b0011 and toggle the enable pin three times
+    //~ As the expander is attached to D7-D4 set value 3
+    LCDWriteByte(0x03)
+    wait 200 us
+
+    LCDWriteByte(0x03)   
+    wait 200 us
+
+    LCDWriteByte(0x03)
+    wait 200 us
+
+    LCDWriteByte(0x02)
+    wait myWait3 ms
+
+    //~Setup the LCD
+    LCDCmd(0x28)
+    LCDCmd(0x0D)
+    LCDCmd(0x01)
+    LCDCmd(0x06)
+    LCDCmd(0x80)
+    wait myWait3 ms
+    CLS
+
+    //! End of INIT
+    
+    Dim LCD_State
+    LCD_State = 12
+
+
+End Sub
+
+sub LCD_IO16_SPI_WriteIOPICExpander( __LCDbyte ) 
+    
+    dim __LCD_outbuffer, __LCD_Sendata, __LCD_Nibble
+    
+    For __LCD_Nibble = 1 to 2
+
+        For __LCD_Sendata = 1 to 3
+
+            If __LCD_Nibble = 1 then 
+                __LCD_outbuffer = Swap4( __LCDbyte )
+            Else
+                __LCD_outbuffer = __LCDbyte
+            End If
+
+            __LCD_outbuffer = __LCD_outbuffer & 0x0F
+
+            __LCD_outbuffer.6 = LCD_RS
+
+            if __LCD_Sendata = 2 then __LCD_outbuffer.4 = 1
+            if __LCD_Sendata = 3 then __LCD_outbuffer.4 = 0
+
+            repeat 8
+                SET LCD_SPI_DO OFF
+                SET LCD_SPI_SCK On
+                if __LCD_outbuffer.7 = ON  then
+                    SET LCD_SPI_DO ON
+                end if
+                rotate __LCD_outbuffer left                    
+                nop
+                nop
+                nop
+                nop
+                SET LCD_SPI_SCK Off
+            end repeat
+            nop
+            nop
+            nop
+            nop
+            SET LCD_SPI_DO OFF
+
+        Next    
+
+    Next
+
+End Sub
+
+sub LCD_IO16_SPI_InitIOPICExpander( optional in __LCDbyte = 3   ) 
+    
+    dim __LCD_outbuffer, __LCD_Sendata, __LCD_Nibble
+    
+    For __LCD_Nibble = 1 to 12
+
+        For __LCD_Sendata = 1 to 3
+
+            If __LCD_Nibble MOD 2 = 1 then 
+                __LCD_outbuffer = Swap4( __LCDbyte )
+            Else
+                __LCD_outbuffer = __LCDbyte
+            End If
+
+            __LCD_outbuffer = __LCD_outbuffer & 0x0F
+
+            __LCD_outbuffer.6 = LCD_RS
+
+            if __LCD_Sendata = 2 then __LCD_outbuffer.4 = 1
+            if __LCD_Sendata = 3 then __LCD_outbuffer.4 = 0
+
+            repeat 8
+                SET LCD_SPI_DO OFF
+                SET LCD_SPI_SCK On
+                if __LCD_outbuffer.7 = ON  then
+                    SET LCD_SPI_DO ON
+                end if
+                rotate __LCD_outbuffer left                    
+                nop
+                nop
+                nop
+                nop
+                SET LCD_SPI_SCK Off
+            end repeat
+            nop
+            nop
+            nop
+            nop
+            SET LCD_SPI_DO OFF
+
+        Next    
+
+        nop
+        nop
+        nop
+        nop
+
+    Next
+
+End Sub
+
+Sub LCD_IO16_Locate (In LCDLine, In LCDColumn)
+'Sub to locate the cursor
+'Where LCDColumn is 0 to screen width-1, LCDLine is 0 to screen height-1
+
+    Set LCD_RS Off
+    If LCDLine > 1 Then
+        LCDLine = LCDLine - 2
+        LCDColumn = LCDColumn + LCD_WIDTH
+    End If
+
+    LCDWriteByte(0x80 or 0x40 * LCDLine + LCDColumn)
+    wait 1500 us
+End Sub
+
+Sub LCD_IO16_CLS
+'Sub to clear the LCD
+    SET LCD_RS OFF
+
+    'Clear screen
+    LCDWriteByte (0b00000001)
+    Wait 4 ms
+
+    'Move to start of visible DDRAM
+    LCDWriteByte(0x80)
+    Wait 500 us
+
+End Sub

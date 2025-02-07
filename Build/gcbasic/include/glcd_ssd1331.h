@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2017-2024 Evan Venn
+'    Copyright (C) 2017-2025 Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -142,8 +142,8 @@ Sub InitGLCD_SSD1331
 
     #ifdef SSD1331_HardwareSPI
           ' harware SPI mode
-          asm showdebug SPI constant used equates to HWSPIMODESCRIPT
-          SPIMode HWSPIMODESCRIPT, 0
+          asm showdebug SPI constant used equates to HWSPIMODESCRIPT, HWSPIClockModeSCRIPT
+          SPIMode HWSPIMODESCRIPT, HWSPIClockModeSCRIPT
     #endif
 
    Set SSD1331_CS On

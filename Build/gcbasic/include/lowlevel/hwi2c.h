@@ -59,6 +59,7 @@
   '    Updated 10/10/24 - Isolation of the Byte variables
   '    Updated 29/10/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ20
   '    Updated 01/12/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ24
+  '    Updated 07/01/24 - Corrected HI2CQ24Stop redirection
   
 
 'User changeable constants
@@ -102,7 +103,7 @@
   '        On Interrupt SSP1Ready Call HI2CHandlerSlave
 
 
-
+  #ignorecompile
 
   ' Move to HWI2C.h when completed
   #define AVR_I2C_START 0x08
@@ -181,7 +182,8 @@
                 HI2CStart =   SI2CStart
                 HI2CStop =    HI2CQ24Stop
                 HI2CSend =    HI2CQ24Send
-                SI2CInit =    HI2CQ24Init
+                HI2CINIT =    HI2CQ24Init
+
                 // Set buffer size to SCRIPT_HIC2Q2XBUFFERSIZE
                 If NODEF( HIC2Q2XBUFFERSIZE ) Then
                   SCRIPT_HIC2Q2XBUFFERSIZE = DEFAULT_HIC2Q2XBUFFERSIZE
@@ -1584,51 +1586,62 @@ Sub HI2CQ24Stop
     // 2. Send IC2START
     // 3. Send data.. using I2CSEND
     // 4. Set  HI2CWaitMSSPTimeout and HI2CAckpollState for public use.
-
-    // ReStart I2C this prevent lock ups
-    I2C1CON0.I2CEN=1
+ 
     // Clear the test bit
     I2C1PIR.7 = 0
 
-    // Number of bytes excluding address
-    I2C1CNTH = HWI2C_BufferLocationCounter_H 
-    I2C1CNT = HWI2C_BufferLocationCounter
-
-    // Start
-    I2C1CON0.S = 1
-
-    Do while I2C1CON0.S = 1
-        // Wait for start 
-        NOP
+    // Wait for bus to be available
+    HI2CWaitMSSPTimeout = 0
+    Do While HI2CWaitMSSPTimeout <> 255
+      If I2C1STAT0.BFRE  = 0 Then Exit Do
+      HI2CWaitMSSPTimeout++
     Loop
+    If HI2CWaitMSSPTimeout <> 255 Then
+      
+      // Number of bytes excluding address
+      I2C1CNTH = HWI2C_BufferLocationCounter_H 
+      I2C1CNT = HWI2C_BufferLocationCounter
 
-    Dim HWI2C_BufferLocationCounterIndex as Word
+      I2C1CON0.I2CEN=0
+      // Start I2C this prevent lock ups
+      I2C1CON0.I2CEN=1
+
+      // Start
+      I2C1CON0.S = 1
+
+      Do while I2C1CON0.S = 1
+          // Wait for start 
+          NOP
+      Loop
+
+      Dim HWI2C_BufferLocationCounterIndex as Word
+      
+      For HWI2C_BufferLocationCounterIndex = 1 to HWI2C_BufferLocationCounter
+
+          HI2CWaitMSSPTimeout = 0
+
+          // Send/Clock data out
+          I2C1TXB = HWI2C_Buffer ( HWI2C_BufferLocationCounterIndex )
+
+          Do while I2C1STAT1.TXBE = 0
+            // Wait for Transmit Buffer to Empty
+            wait 1 us
+            HI2CWaitMSSPTimeout++
+            If HI2CWaitMSSPTimeout = 255 Then
+                // Transmission failure, exit.
+                Goto HI2CQ24StopExit
+            End If
+            
+          Loop
+
+      Next
+
+      // Wait for a stop bit to complete
+      Do while I2C1STAT0.MMA = 1 and HI2CWaitMSSPTimeout <> 255
+        wait 1 us
+      Loop
+    End If
     
-    For HWI2C_BufferLocationCounterIndex = 1 to HWI2C_BufferLocationCounter
-
-        HI2CWaitMSSPTimeout = 0
-
-        // Send/Clock data out
-        I2C1TXB = HWI2C_Buffer ( HWI2C_BufferLocationCounterIndex )
-
-        Do while I2C1STAT1.TXBE = 0
-          // Wait for Transmit Buffer to Empty
-          wait 1 us
-          HI2CWaitMSSPTimeout++
-          If HI2CWaitMSSPTimeout = 255 Then
-              // Transmission failure, exit.
-              Goto HI2CQ24StopExit
-          End If
-          
-        Loop
-
-    Next
-
-    // Wait for a stop bit to complete
-    Do while I2C1STAT0.MMA = 1 and HI2CWaitMSSPTimeout <> 255
-      wait 1 us
-    Loop
-
     HI2CQ24StopExit:
     If I2C1PIR.7 = 1 then
       HI2CAckpollState = False

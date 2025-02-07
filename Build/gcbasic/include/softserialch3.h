@@ -1,5 +1,5 @@
 '    MicroChip specific to support Software Serial for GCBASIC
-'    Copyright (C) 2017-2024 Frank Steinberg
+'    Copyright (C) 2017-2025 Frank Steinberg and JBerg2025
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -42,7 +42,8 @@
 '  08.05.2020     Reduced RAM consumption using Ser3Print with string constants
 '  02.02.2022     Initialization of some script variables with zero (for compiler build >= 1077)
 ' 14/08/22 Updated user changeable constants only - no functional change
-
+'  28.04.2034	  Add SER2_TXDELAY.  This is a post Ser2Send() to support serial LCDs etc
+'  05.05.2034	    Add SER3_TXDELAYus and SER3_TXDELAYms.  This is a post Ser1Send() to support serial LCDs etc 
 
   #script
 
@@ -308,6 +309,18 @@ Sub Ser3Send (In STxDataByte)
       #endif
 
   #endif  '... for AVR code
+
+  #ifdef SER3_TXDELAYus
+       wait SER3_TXDELAYus us
+  #endif
+
+  #ifdef SER3_TXDELAYms
+       wait SER3_TXDELAYms ms
+  #endif
+
+  #ifdef SER3_TXDELAY
+       wait SER3_TXDELAY ms
+  #endif
 
 End Sub
 

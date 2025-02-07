@@ -1,5 +1,5 @@
 '    MicroChip specific to support Software Serial for GCBASIC
-'    Copyright (C) 2017-2024 Frank Steinberg
+'    Copyright (C) 2017-2025 Frank Steinberg
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

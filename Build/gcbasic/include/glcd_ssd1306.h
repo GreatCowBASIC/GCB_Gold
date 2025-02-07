@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2015- 2021 Kent Schafer, Evan Venn and Joseph Realmuto
+'    Copyright (C) 2015- 2025 Kent Schafer, Evan Venn and Joseph Realmuto
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -109,6 +109,15 @@
 '  26/03/21  Revised Write_Transaction_Data_SSD1306 to correct SPI command/data settings
 '  12/04/23  Revised to ERROR() when family14 and less than 225 byes of RAM. The array needs 128 bytes and these chips only support 95 bytes of contiguous RAM 
 '  21/08/23  AddGLCDYFLIP, GLCDXFLIP and GLCDXYFLIP to rotate the GLCD
+'  30/12/24  Add 64x32 device
+    ' The active memory region for these displays horizontal line is in the middle of memory region of 128 pixel device - horizontal addressing
+    ' 
+    ' X Memmory Address        0 .. 31, 32 .. 63, 64 .. 95,96 ... 126.67
+    '                                   <---------------->                 X columns memory at 32 to 96
+    '                                   <--SSD1306_64x32->                 so, add 32
+    ' Therefore, place all data in cols 32 to 96....
+'
+
 
 #define SSD1306_vccstate 0
 
@@ -173,7 +182,7 @@
         IGNORE_SPECIFIED_GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY = 1
      end if
 
-     if GLCD_TYPE = GLCD_TYPE_SSD1306 then
+     if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32 or GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 then
        If ChipRAM < 1024  Then
            GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY = TRUE
            GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE = TRUE
@@ -194,7 +203,7 @@
        End If
      end if
 
-     if GLCD_TYPE = GLCD_TYPE_SSD1306_32 then
+     if GLCD_TYPE = GLCD_TYPE_SSD1306_32 or or GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 then
        If ChipRAM < 512  Then
            GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY = TRUE
            GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE = TRUE
@@ -204,8 +213,11 @@
        End If
      end if
 
-
-
+      If GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 Then
+        If def(GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY) or def(GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY) Then
+            Error "GLCD_TYPE_SSD1306_64x32 in low memory mode not tested"
+        End If
+      End If
 
 
    #endscript
@@ -218,14 +230,21 @@
 
    #ifndef GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY
      #if GLCD_TYPE = GLCD_TYPE_SSD1306
-       asm showdebug  GGLCD SSD1306 buffer is 1024bytes
+       asm showdebug  GLCD SSD1306 buffer is 1024bytes
        Dim SSD1306_BufferAlias(1024)
      #endif
      #if GLCD_TYPE = GLCD_TYPE_SSD1306_32
        asm showdebug  GLCD SSD1306 buffer is 512bytes
        Dim SSD1306_BufferAlias(512)
      #endif
+     #if GLCD_TYPE = GLCD_TYPE_SSD1306_64x32
+       asm showdebug  GLCD SSD1306 buffer is 256bytes
+       Dim SSD1306_BufferAlias(256)
+     #endif
+
    #endif
+
+   
 
    #ifdef GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY
      #ifdef GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE
@@ -331,7 +350,7 @@ End Sub
 '''@hide
 Sub InitGLCD_SSD1306
 
-  #IF ( GLCD_TYPE  = GLCD_TYPE_SSD1306_32 ) or ( GLCD_TYPE  = GLCD_TYPE_SSD1306 )then
+  #IF ( GLCD_TYPE  = GLCD_TYPE_SSD1306_32 ) or ( GLCD_TYPE  = GLCD_TYPE_SSD1306 ) or ( GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 ) then
         'Colours //Set these first
         GLCDBackground = 0
         GLCDForeground = 1
@@ -383,7 +402,12 @@ Sub InitGLCD_SSD1306
         Write_Command_SSD1306(SSD1306_SETDISPLAYOFFSET)              ' 0xD3
         Write_Command_SSD1306(0x00)                                   ' no offset
 
-        Write_Command_SSD1306(SSD1306_SETSTARTLINE | 0x00)            ' line #0
+        #IF GLCD_TYPE = GLCD_TYPE_SSD1306_64x32
+          //  if(geometry == GEOMETRY_64_32)
+          Write_Command_SSD1306(0x00)
+        #ELSE
+          Write_Command_SSD1306(SSD1306_SETSTARTLINE | 0x00)            ' line #0
+        #ENDIF
         Write_Command_SSD1306(SSD1306_CHARGEPUMP)                    ' 0x8D
 
         if (SSD1306_vccstate = SSD1306_EXTERNALVCC) then
@@ -393,21 +417,21 @@ Sub InitGLCD_SSD1306
         end if
 
         Write_Command_SSD1306(SSD1306_MEMORYMODE)                    ' 0x20
-        'Write_Command_SSD1306(0x00)                                  ' 0x00 act like ks0108 - DO NOT SELECT!!
+        //~Write_Command_SSD1306(0x00)                                  ' 0x00 act like ks0108 - DO NOT SELECT!!
         Write_Command_SSD1306(0x10)                                  ' 0x01 act like PCD8544
 
         Write_Command_SSD1306(SSD1306_SEGREMAP | 0x1)
         Write_Command_SSD1306(SSD1306_COMSCANDEC)
         Write_Command_SSD1306(SSD1306_SETCOMPINS)                    ' 0xDA
 
-        #if GLCD_HEIGHT = 64
+        #if GLCD_HEIGHT = 64 or GLCD_TYPE = GLCD_TYPE_SSD1306_64x32
           Write_Command_SSD1306(0x12)                                 '64 pixels
+        #else
+          #if GLCD_HEIGHT = 32
+            Write_Command_SSD1306(0x02)                                 '32 pixels
+          #endif
         #endif
-
-        #if GLCD_HEIGHT = 32
-          Write_Command_SSD1306(0x02)                                 '32 pixels
-        #endif
-
+        
         Write_Command_SSD1306(SSD1306_SETCONTRAST)                   ' 0x81
         if SSD1306_vccstate = SSD1306_EXTERNALVCC then
           Write_Command_SSD1306(0x9F)
@@ -452,7 +476,7 @@ Sub GLCDCLS_SSD1306 ( Optional In  GLCDBackground as word = GLCDBackground )
     #endif
     #ifdef GLCD_TYPE_SSD1306_CHARACTER_MODE_ONLY
       #ifdef GLCD_TYPE_SSD1306_LOWMEMORY_GLCD_MODE
-        For SSD1306_BufferLocationCalc = 0 to 128
+        For SSD1306_BufferLocationCalc = 0 to 127
             SSD1306_BufferAlias(SSD1306_BufferLocationCalc) = 0
         Next
       #endif
@@ -880,7 +904,7 @@ Sub FilledBox_SSD1306(In LineX1, In LineY1, In LineX2, In LineY2, Optional In Li
     LineY2 = GLCDTemp
   End If
 
-  #if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32
+  #if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32 or GLCD_TYPE = GLCD_TYPE_SSD1306_64x32
     'Draw lines going across
     For DrawLine = LineX1 To LineX2
       For GLCDTemp = LineY1 To LineY2
@@ -911,7 +935,7 @@ Sub PSet_SSD1306(In GLCDX, In GLCDY, In GLCDColour As Word)
       GLCDY = GLCD_HEIGHT - 1 -GLCDY
       GLCDX = GLCD_WIDTH - 1 -GLCDX      
     #endif
-    #if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32
+    #if GLCD_TYPE = GLCD_TYPE_SSD1306 or GLCD_TYPE = GLCD_TYPE_SSD1306_32 or GLCD_TYPE = GLCD_TYPE_SSD1306_64x32 
 
         #IFDEF GLCD_PROTECTOVERRUN
             'anything off screen with be rejected
@@ -1072,6 +1096,15 @@ sub Cursor_Position_SSD1306( in LocX as byte, in LocY as byte )
     Rotate PosCharY Right
   End Repeat
 
+  #IFDEF GLCD_TYPE_SSD1306_64x32_XOFFSET
+    //~ The active memory region for these displays horizontal line is in the middle of memory region of 128 pixel device - horizontal addressing
+    //~
+    //~ X Memmory Address        0 .. 31, 32 .. 63, 64 .. 95,96 ... 126.67
+    //~                                   <---------------->                 X columns memory at 32 to 96
+    //~                                   <--SSD1306_64x32->                 so, add 32
+    //~ Place all data in cols 32 to 96
+    LocX = LocX + GLCD_TYPE_SSD1306_64x32_XOFFSET
+  #ENDIF    
 
   Write_Command_SSD1306( 0xB0 + PosCharY )   ' set page address
   PosCharX = ( LocX  & 0x0f )  ' lower nibble

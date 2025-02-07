@@ -1,5 +1,5 @@
 '    MicroChip specific to support Software Serial for GCBASIC
-'    Copyright (C) 2017-2024 Frank Steinberg
+'    Copyright (C) 2017-2025 Frank Steinberg
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -42,8 +42,8 @@
 '  08.05.2020     Reduced RAM consumption using Ser2Print with string constants
 '  02.02.2022     Initialization of some script variables with zero (for compiler build >= 1077)
 ' 14/08/22 Updated user changeable constants only - no functional change
-
-
+'  28.04.2034	  Add SER2_TXDELAY.  This is a post Ser2Send() to support serial LCDs etc
+'  05.05.2034	    Add SER2_TXDELAYus and SER2_TXDELAYms.  This is a post Ser2Send() to support serial LCDs etc 
   #script
 
     ''SET THE DEFAULT VALUE
@@ -307,6 +307,19 @@ Sub Ser2Send (In STxDataByte)
       #endif
 
   #endif  '... for AVR code
+
+  #ifdef SER2_TXDELAYus
+       wait SER2_TXDELAYus us
+  #endif
+
+  #ifdef SER2_TXDELAYms
+       wait SER2_TXDELAYms ms
+  #endif
+
+  #ifdef SER2_TXDELAY
+       wait SER2_TXDELAY ms
+  #endif
+
 
 End Sub
 

@@ -1,5 +1,5 @@
 '    Software PCF85x3 routines for the GCBASIC compiler
-'    Copyright Evan R. Venn 2019-2024
+'    Copyright Evan R. Venn 2019-2025
 '
 '    This library is free software' you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

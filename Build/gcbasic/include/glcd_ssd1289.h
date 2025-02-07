@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2018-2024 Dimitris  Katsaounis based on works of Hugh Considine and  Evan Venn
+'    Copyright (C) 2018-2025 Dimitris  Katsaounis based on works of Hugh Considine and  Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

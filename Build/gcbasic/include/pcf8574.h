@@ -1,4 +1,4 @@
-''' Copyright 2015-2024 Evan R. Venn
+''' Copyright 2015-2025 Evan R. Venn
 '''A suppport program  for GCGB and GCB.
 '''--------------------------------------------------------------------------------------------------------------------------------
 '''This driver support the 8-bit quasi-bidirectional port via an I2C-bus interface.

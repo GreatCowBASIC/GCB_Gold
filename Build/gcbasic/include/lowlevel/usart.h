@@ -1,5 +1,5 @@
 '    USART routines for GCBASIC
-'    Copyright (C) 2009-2024 Hugh Considine, Mike Otte, William Roth and Evan Venn
+'    Copyright (C) 2009-2025 Hugh Considine, Mike Otte, William Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -107,6 +107,9 @@
 ' 18/09/2024  Fixed a bug causing an incorrect baud rate configuration on some microcontrollers that use BAUDCON.  Added samevar BAUDCON, BAUDCON1 - EvanV
 ' 19/09/2024  New: Added option for a Timed out USART_BLOCKING, the time out is defined in milliseconds by def USART_BLOCKING_TIMEOUT - Angel Mier
 ' 19/09/2024  Fixed a bug where CREN was not set for 16F15xx devices.
+' 23/12/2024  Correct double byte read in RECIEVE2
+' 24/12/2024  Resolve BAUDCONn_BRG16 to BAUDCONn_BRG16 issue where baud rate was not being calculated. 
+'             Added check to ensure baud rate is calculated.
 
 /*
 
@@ -188,6 +191,7 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samebit TX2IF, U2TXIF
 ' incorrect mapping as TRMT is also USART1 removed 10.4.21 #samebit TXSTA2.TRMT, TX2STA.TRMT, U2ERRIR.TXMTIF
 #samebit TXSTA2_TRMT, TX2STA_TRMT, U2ERRIR_TXMTIF '// PIC16F1946/47
+#samebit BAUDCON2_BRG16, BAUD2CON_BRG16
 
 #sameVar TXREG3, TX3REG, U3TXB
 #samevar TXSTA3, TX3STA
@@ -284,8 +288,6 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     If DEF(DEFAULT_COMPORT) Then
       SCRIPT_DEFAULT_COMPORT = DEFAULT_COMPORT
     End If
-    
-
 
     if ChipSubFamily = 15001 then
           TXREG = TX1REG
@@ -470,9 +472,12 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
       USART5HasData = "U5RXIF = On"
     End If
 
-   ' USART 1 baud calculation
+    ' USART 1 baud calculation
     If USART_BAUD_RATE Then
       'Find best baud rate
+
+      SPBRG_TEMP = 0
+
       If Bit(BRG16) Then
          'Try 16 bit /4 (H = 1, 16 = 1)
         SPBRG_TEMP = ChipMHz / USART_BAUD_RATE / 4 * 1000000 - 1
@@ -636,13 +641,20 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRG = SPBRGL
       end if
 
+      IF SPBRG_TEMP =  0 Then
+        Warning "USART BAUD RATE error: Calculation in USART.H script has failed.  Report to GCBASIC forum for resolution"
+      End If
+
     End If
 
     'USART2
     If USART2_BAUD_RATE Then
 
       'Find best baud rate
-      If Bit(BAUDCON2_BRG16) Then
+
+      SPBRG_TEMP2 = 0
+
+      If Bit(BAUDCON2_BRG16) or Bit(BAUD2CON_BRG16) Then
          'Try 16 bit /4 (H = 1, 16 = 1)
         SPBRG_TEMP2 = ChipMHz / USART2_BAUD_RATE / 4 * 1000000 - 1
         BRGH_TEMP2 = 1
@@ -699,12 +711,19 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRGH_TEMP2 = Int((SPBRG_TEMP2+1) / 256)
       END IF
 
+      IF SPBRG_TEMP2 =  0 Then
+        Warning "USART2 BAUD RATE error: Calculation in USART.H script has failed.  Report to GCBASIC forum for resolution"
+      End If
+
     End If
 
     'USART3 Script support
     If USART3_BAUD_RATE Then
       'Find best baud rate
-      If Bit(BAUDCON3_BRG16) Then
+
+      SPBRG_TEMP3 =  0
+
+      If Bit(BAUDCON3_BRG16) or Bit(BAUD3CON_BRG16) Then
          'Try 16 bit /4 (H = 1, 16 = 1)
         SPBRG_TEMP3 = ChipMHz / USART2_BAUD_RATE / 4 * 1000000 - 1
         BRGH_TEMP3 = 1
@@ -760,12 +779,19 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRGH_TEMP3 = Int((SPBRG_TEMP3+1) / 256)
       END IF
 
+      IF SPBRG_TEMP3 =  0 Then
+        Warning "USART3 BAUD RATE error: Calculation in USART.H script has failed.  Report to GCBASIC forum for resolution"
+      End If
+
     End If
 
     'USART4 script support
     If USART4_BAUD_RATE Then
       'Find best baud rate
-      If Bit(BAUDCON4_BRG16) Then
+
+      SPBRG_TEMP4 =  0
+
+      If Bit(BAUDCON4_BRG16) or Bit(BAUD4CON_BRG16) Then
          'Try 16 bit /4 (H = 1, 16 = 1)
         SPBRG_TEMP4 = ChipMHz / USART4_BAUD_RATE / 4 * 1000000 - 1
         BRGH_TEMP4 = 1
@@ -821,13 +847,19 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRGH_TEMP4 = Int((SPBRG_TEMP4+1) / 256)
       END IF
 
+      IF SPBRG_TEMP4 =  0 Then
+        Warning "USART4 BAUD RATE error: Calculation in USART.H script has failed.  Report to GCBASIC forum for resolution"
+      End If
 
     End If
 
     'USART5 script support
     If USART5_BAUD_RATE Then
       'Find best baud rate
-      If Bit(BAUDCON5_BRG16) Then
+
+      SPBRG_TEMP5 =  0
+
+      If Bit(BAUDCON5_BRG16) or Bit(BAUD5CON_BRG16) Then
          'Try 16 bit /4 (H = 1, 16 = 1)
         SPBRG_TEMP5 = ChipMHz / USART5_BAUD_RATE / 4 * 1000000 - 1
         BRGH_TEMP5 = 1
@@ -882,6 +914,10 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
         SPBRGL_TEMP5 = Int(SPBRG_TEMP5+1) And 255
         SPBRGH_TEMP5 = Int((SPBRG_TEMP5+1) / 256)
       END IF
+
+      IF SPBRG_TEMP5 =  0 Then
+        Warning "USART5 BAUD RATE error: Calculation in USART.H script has failed.  Report to GCBASIC forum for resolution"
+      End If
 
     End If
 
@@ -1255,7 +1291,6 @@ Sub InitUSART
       #ENDIF
 
       #If USART_BAUD_RATE Then
-
 
         'PIC USART 1 Init
 
@@ -1875,7 +1910,7 @@ End Sub
 sub HSerSend (In SerData)
 
   #IF (SCRIPT_USART_USAGE_CHECK = 1) AND ( DEF(USART_BAUD_RATE) ) AND ( NODEF(CHIPAVRDX) )
- 
+
     #ifdef PIC
       #If USART_BAUD_RATE Then
 
@@ -2588,7 +2623,7 @@ End Function
 
 
 Function HSerReceive2
-  Comport = SCRIPT_DEFAULT_COMPORT + 1
+  Comport = SCRIPT_DEFAULT_COMPORT
   HSerReceive( SerData )
   HSerReceive2 = SerData
 End Function
@@ -2749,9 +2784,9 @@ Sub HSerReceive(Out SerData)
 
     #If USART2_BAUD_RATE Then
 
+      HSerReceive2Handler:
       //~There is SELECT-CASE to improve performance and to only include the CASEs when more than one USART is use.
       #if SCRIPT_USART_USAGE_CHECK > 1 Then
-      HSerReceive2Handler:
       Case 2
       #endif
 
@@ -2769,42 +2804,48 @@ Sub HSerReceive(Out SerData)
               end If
             Loop
           #else
+            //! This will always be called when IFNDEF USART2_BLOCKING
             Wait Until USART2HasData
           #endif
         #endif
 
+        #ifdef Bit(RC2STA_OERR)
+            if  RC2STA_OERR = 1 Then
+                // EUSART2 error - restart
+                RC2STA_CREN = 0
+                RC2STA_CREN = 1 
+            End IF
+        #endif
+
         #ifdef Var(RC2REG)
-
-          #ifdef Bit(RC2STA_OERR)
-              if  RC2STA_OERR = 1 Then
-                  // EUSART5 error - restart
-                  RC2STA_CREN = 0
-                  RC2STA_CREN = 1 
-              End IF
-          #endif
-
-         'Get a byte from register, if interrupt flag is valid
-          If USART2HasData Then
-             SerData = RC2REG
-          End if
-
-        #endif
-
-        #ifdef var(U2RXB)
-            U2RXEN = 1
-            if ( U2FERIF = 1 ) then
-                'UART2 error - clear the error
-                ON_U2CON1 = 0
-                ON_U2CON1 = 1
-            end if
-            SerData = U2RXB
-        #endif
-
-        #ifdef Var(RCREG2)
+        
           'Get a byte from register, if interrupt flag is valid
           If USART2HasData Then
-              SerData = RCREG2
+            SerData = RC2REG
           End if
+
+        #else
+
+          #ifdef var(U2RXB)
+              U2RXEN = 1
+              if ( U2FERIF = 1 ) then
+                  'UART2 error - clear the error
+                  ON_U2CON1 = 0
+                  ON_U2CON1 = 1
+              end if
+              SerData = U2RXB
+          
+          #else
+
+            #ifdef Var(RCREG2)
+              'Get a byte from register, if interrupt flag is valid
+              If USART2HasData Then
+                  SerData = RCREG2
+              End if
+            #endif      
+
+          #endif
+
         #endif
 
         #ifdef bit(OERR2)
@@ -2856,7 +2897,7 @@ Sub HSerReceive(Out SerData)
 
           #ifdef Bit(RC3STA_OERR)
               if  RC3STA_OERR = 1 Then
-                  // EUSART5 error - restart
+                  // EUSART3 error - restart
                   RC3STA_CREN = 0
                   RC3STA_CREN = 1 
               End IF
@@ -2910,7 +2951,7 @@ Sub HSerReceive(Out SerData)
 
           #ifdef Bit(RC4STA_OERR)
               if  RC4STA_OERR = 1 Then
-                  // EUSART5 error - restart
+                  // EUSART4 error - restart
                   RC4STA_CREN = 0
                   RC4STA_CREN = 1 
               End IF

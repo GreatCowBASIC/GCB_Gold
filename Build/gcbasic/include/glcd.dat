@@ -17,6 +17,8 @@
 ' glcd_ks0108.h is automatically loaded via glcd.h
 ' 1,glcd_type_ks0108,glcd_ks0108.h
 
+' added to support bigfonts
+1,glcd_type_ks0108,glcd_ssd1289.h
 2,glcd_type_st7735,glcd_st7735.h
 3,glcd_type_st7920,glcd_st7920.h
 4,glcd_type_pcd8544,glcd_pcd8544.h

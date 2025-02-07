@@ -1,4 +1,4 @@
-'''Copyright 2017-2024 Evan R. Venn
+'''Copyright 2017-2025 Evan R. Venn
 '''A Hardware I2C ISR Handler for GCGB and GCB.
 '''------------------------------------------------------------------------------------------------------------------------------
 ''' Description: this ISR library provides an ISR to implement

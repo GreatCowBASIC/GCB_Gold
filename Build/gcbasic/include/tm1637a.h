@@ -335,10 +335,10 @@ sub TMHex  ( In  TMValue as word)
                     TMeVal = TMValue / 256
                     TMValue = TMValue % 256
           End If
-          IF TMValue >= 16 Then
-                    TMhVal = TMValue / 16
-                    TMlVal = TMValue % 16
-          End If
+          
+          TMhVal = TMValue / 16
+          TMlVal = TMValue % 16
+          
 
     TMWrite4Dig ( TMsVal, TMeVal, TMhVal, TMlVal,TM_Bright,0)
 

@@ -1,5 +1,5 @@
 '    CanBus MCP2515 routines for the GCBASIC compiler
-'    Copyright (C) 2011-2024 Angel Mier
+'    Copyright (C) 2011-2025 Angel Mier
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

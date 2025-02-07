@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2019-2024 Giuseppe D'Elia and Evan Venn
+'    Copyright (C) 2019-2025 Giuseppe D'Elia and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
