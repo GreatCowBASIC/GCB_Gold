@@ -34,7 +34,8 @@
 '  27/08/19  Add GLCDfntDefaultHeight = 7  used by GLCDPrintString and GLCDPrintStringLn
 ' 11/10/19  Corrected Dim GLCDPixelCount As Long in FilledBox method, was a Word.  A word can overflow.
 ' 03/11/20  Added support for HWSPI_Fast_Write_Word_Macro where data needs to passed in the HWSPI_Send_word word variable
-'
+' 13/02/25  Test with revised FastHWSPITransfer in GLCDCLS
+
 #script
 
     'examine what is operational SPI or 8Bit
@@ -56,6 +57,8 @@
     end if
 
 #endscript
+
+#samevar SSPCON1 SSPCON
 
 ' Hardware settings
 ' Type
@@ -243,7 +246,7 @@ Sub InitGLCD_ILI9341
     #ifdef ILI9341_HardwareSPI
       ' harware SPI mode
       asm showdebug SPI constant used equates to HWSPIMODESCRIPT
-      SPIMode HWSPIMODESCRIPT, 0
+      SPIMode HWSPIMODESCRIPT, HWSPIClockModeSCRIPT
     #endif
 
    Set ILI9341_CS On
@@ -671,40 +674,11 @@ Sub GLCDCLS_ILI9341 ( Optional In  GLCDBACKGROUND as word = GLCDBACKGROUND )
 
           #ifdef PIC
 
-            #ifndef bit(WCOL)
+            #ifdef bit(WCOL)
                 FastHWSPITransfer  ILI9341SendWord_h
                 FastHWSPITransfer  ILI9341SendWord
-            #endif
-
-            #ifdef bit(WCOL)
-                #ifndef Var(SSPCON1)
-                  #ifdef Var(SSPCON)
-                    Dim SSPCON1 Alias SSPCON
-                  #endif
-                #endif
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9341SendWord_h
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9341TempOut = SSPBUF
-                #endif
-
-
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9341SendWord
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9341TempOut = SSPBUF
-                #endif
-
+            #else
+                !//! Unhandled SPI condition - report to Forum for support 
             #endif
 
           #endif

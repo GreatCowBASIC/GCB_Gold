@@ -50,6 +50,7 @@
 ' 26/09/24 Added AVRDx support
 ' 28/09/24 Added HWSPI2 support for PIC
 ' 02/12/24 Tidied SPI1CON0_EN usage
+' 15/02/24 Revert undocumented SPIClockMode.0 = On change.  This must be 'Off' 
 
 
 'To make the PIC pause until it receives an SPI message while in slave mode, set the
@@ -443,19 +444,18 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
     #ifdef Var(SSPCON1)
         'Supports Legacy SPI via MSSP module
 
-        'added for 16f18855
         #ifndef Var(SSPCON1)
           #ifdef Var(SSP1CON1)
             Dim SSPCON1 Alias SSP1CON1 ;added for 18f18855
           #endif
         #endif
-        'added for 16f18855
+
         #ifndef Var(SSPSTAT)
           #ifdef Var(SSP1STAT)
             Dim SSPSTAT Alias SSP1STAT ;added for 18f18855
           #endif
         #endif
-        'added for 16f18855
+
         #ifndef Var(SSPBUF)
           #ifdef Var(SSP1BUF)
             Dim SSPBUF Alias SSP1BUF
@@ -470,7 +470,7 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
         Set SSPSTAT.SMP Off
         Set SSPSTAT.CKE Off
 
-        If SPIClockMode.0 = On Then
+        If SPIClockMode.0 = Off Then
           Set SSPSTAT.CKE On
         End If
         Set SSPCON1.CKP Off
@@ -531,7 +531,7 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
         'Clock idle low (CPOL = 0)
         SPI1CON1.CKP = 0
 
-        If SPIClockMode.0 = On Then
+        If SPIClockMode.0 = Off Then
           SPI1CON1.CKE = 1
         End If
 
@@ -1129,7 +1129,7 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
         'Clock idle low (CPOL = 0)
         SPI2CON1.CKP = 0
 
-        If SPIClockMode.0 = On Then
+        If SPIClockMode.0 = Off Then
           SPI2CON1.CKE = 1
         End If
 
