@@ -65,6 +65,7 @@
     26/03/23 Added GLCD_TYPE_ST7789_320_240 support
     05/02/24 Remove include statements except KX0108.h.  Other are now controlled by glcd.dat
     08/01/25 Added GLCD_TYPE_SSD1306_64x32 support
+    11/03/25 Added GLCDON and GLCDOFF for this KS0108 driver
 
 */
 'Constants that might need to be set
@@ -258,6 +259,9 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
      GLCDCLS = GLCDCLS_KS0108
      FilledBox = FilledBox_KS0108
      Pset = Pset_KS0108
+     GLCDOFF = GLCD_KS0108_OFF
+     GLCDON  = GLCD_KS0108_ON
+      
      glcd_type_string = "KS0108"
      GLCD_WIDTH = 128
      GLCD_HEIGHT = 64

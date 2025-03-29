@@ -37,6 +37,7 @@
 ' 11/02/19  Removed GLCDDirection constant from script as this was impacted KS0108 library
 ' 27/12/24  Add support for Inverted CS1 and CS2 control lines via the constnat GLCD_KS0108_CS_LOW
 ' 31/12/24  Add optimisation in PSET
+' 11/03/25  Added GLCDON and GLCDOFF for this KS0108 driver
 
 'Hardware settings
 'Type
@@ -403,3 +404,80 @@ Function GLCDReadByte_KS0108
   Wait KS0108WriteDelay us
 
 End Function
+
+sub GLCD_KS0108_OFF
+
+    #if GLCD_TYPE = GLCD_TYPE_KS0108
+    
+        // Function to turn off KS0108 GLCD display
+        // Select left controller (chip 0) and send display OFF command
+        
+        #ifdef GLCD_KS0108_CS_LOW
+            GLCD_CS1 = 0    
+            GLCD_CS2 = 1
+        #else
+            GLCD_CS1 = 1
+            GLCD_CS2 = 0
+        #endif
+
+        GLCD_RS = 0     // Command mode (RS low)
+        GLCDWriteByte 0x3E // Display OFF command
+        
+        // Select right controller (chip 1) and send display OFF command
+        #ifdef GLCD_KS0108_CS_LOW
+            GLCD_CS1 = 1    
+            GLCD_CS2 = 0
+        #else
+            GLCD_CS1 = 0
+            GLCD_CS2 = 1
+        #endif
+
+        GLCD_RS = 0     // Command mode (RS low)
+        GLCDWriteByte 0x3E // Display OFF command
+        
+        // Return both chip selects to inactive state
+        GLCD_CS1 = 1
+        GLCD_CS2 = 1
+    
+    #endif
+
+end sub
+
+sub GLCD_KS0108_ON
+ 
+        // Function to turn oN KS0108 GLCD display
+        // Select left controller (chip 0) and send display OFF command
+
+        #ifdef GLCD_KS0108_CS_LOW
+            GLCD_CS1 = 0    
+            GLCD_CS2 = 1
+        #else
+            GLCD_CS1 = 1
+            GLCD_CS2 = 0
+        #endif
+
+        GLCD_RS = 0     // Command mode (RS low)
+        GLCDWriteByte 0x3F // Display ON command
+        
+        // Select right controller (chip 1) and send display On command
+        #ifdef GLCD_KS0108_CS_LOW
+            GLCD_CS1 = 1    
+            GLCD_CS2 = 0
+        #else
+            GLCD_CS1 = 0
+            GLCD_CS2 = 1
+        #endif
+
+        GLCD_RS = 0     // Command mode (RS low)
+        GLCDWriteByte 0x3F // Display ON command
+        
+        // Return both chip selects to active state
+        #ifdef GLCD_KS0108_CS_LOW
+            GLCD_CS1 = 1    
+            GLCD_CS2 = 1
+        #else
+            GLCD_CS1 = 0
+            GLCD_CS2 = 0
+        #endif
+	 
+end sub

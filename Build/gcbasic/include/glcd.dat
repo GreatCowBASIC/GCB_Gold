@@ -15,9 +15,6 @@
 '
 ' Index #1 below is should always be a  comment, this is shown only for completeness
 ' glcd_ks0108.h is automatically loaded via glcd.h
-' 1,glcd_type_ks0108,glcd_ks0108.h
-
-' added to support bigfonts
 1,glcd_type_ks0108,glcd_ssd1289.h
 2,glcd_type_st7735,glcd_st7735.h
 3,glcd_type_st7920,glcd_st7920.h
@@ -52,6 +49,7 @@
 32,glcd_type_ili9488,glcd_ili9488.h&glcd_ssd1289.h
 33,glcd_type_st7567,glcd_st7567.h
 34,glcd_type_st7789_320_240,glcd_st7789.h&glcd_ssd1289.h
-35,lt7686_800_480_blue,glcd_lt7686.h
-36,lt7686_1024_600_blue,glcd_lt7686.h
-37,lt7686_1024_600_black,glcd_lt7686.h
+35,lt7686_800_480_blue,glcd_lt7686.h&glcd_ili9341.h
+36,lt7686_1024_600_blue,glcd_lt7686.h&glcd_ili9341.h
+37,lt7686_1024_600_black,glcd_lt7686.h&glcd_ili9341.h
+38,GLCD_TYPE_SSD1306_64x32,glcd_ssd1306.h

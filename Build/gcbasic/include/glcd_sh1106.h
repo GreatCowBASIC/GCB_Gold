@@ -23,6 +23,7 @@
 ' 18/08/2017: Improved speed of GLCDDrawChar and Pset in low RAM GLCD mode (Joseph Realmuto)
 ' 21/07/2020: Added SPI support - software only
 ' 07/08/2020: Added #ifdef S4Wire_DATA isolation
+' 26/03/2025: Added GLCD_OLED_FONT and improved inter character control to support Foreground & Background controls
 
 'Notes:
 ' Supports SH1106 controller only.
@@ -198,7 +199,6 @@ end sub
 
 Sub InitGLCD_SH1106
 
-      GLCDFontWidth = 5
       dim PrintLocX, PrintLocY as word
 
       #DEFINE DO_SH1106         GLCD_DO
@@ -279,16 +279,29 @@ Sub InitGLCD_SH1106
     Write_Command_SH1106(SH1106_DISPLAYALLON_RESUME)           ' 0xA4
     Write_Command_SH1106(SH1106_DISPLAYON)                     ' 0xAF Turn ON oled panel
 
+    'Default Colours
+    #ifdef DEFAULT_GLCDBACKGROUND
+      GLCDBACKGROUND = DEFAULT_GLCDBACKGROUND
+    #endif
 
-    'Colours
-    GLCDBackground = 0
-    GLCDForeground = 1
-    GLCDFontWidth = 6
+    #ifndef DEFAULT_GLCDBACKGROUND
+      GLCDBACKGROUND = TFT_BLACK
+    #endif  
+
+    GLCDForeground = TFT_WHITE
+
+    #ifndef GLCD_OLED_FONT
+      GLCDFontWidth = 6
+    #endif
+
+    #ifdef GLCD_OLED_FONT
+      GLCDFontWidth = 5
+    #endif
+
     GLCDfntDefault = 0
     GLCDfntDefaultsize = 1
-    GLCDfntDefaultHeight = 7
-   ' initialise global variable. Required variable for Circle in all DEVICE DRIVERS- DO NOT DELETE
-    GLCD_yordinate = 0
+    GLCDfntDefaultHeight = 7  'used by GLCDPrintString and GLCDPrintStringLn
+
     'Clear screen
     GLCDCLS_SH1106
 
@@ -297,9 +310,8 @@ End Sub
 
 '''Clears the GLCD screen
 Sub GLCDCLS_SH1106 ( Optional In  GLCDBackground as word = GLCDBackground )
- ' initialise global variable. Required variable for Circle in all DEVICE DRIVERS- DO NOT DELETE
+  ' initialise global variable. Required variable for Circle in all DEVICE DRIVERS- DO NOT DELETE
   GLCD_yordinate = 0
-
 
     #ifndef GLCD_TYPE_SH1106_CHARACTER_MODE_ONLY
       #ifndef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE
@@ -316,23 +328,23 @@ Sub GLCDCLS_SH1106 ( Optional In  GLCDBackground as word = GLCDBackground )
       #endif
     #endif
 
-  '1.14 changed to transaction
-  For SH1106_BufferLocationCalc = 0 to GLCD_HEIGHT-1 step 8
-    Cursor_Position_SH1106 ( 0 , SH1106_BufferLocationCalc )
-    Open_Transaction_SH1106
-      For GLCDTemp = 0 to 127
-        Write_Transaction_Data_SH1106(GLCDBackground)
-      Next
-    Close_Transaction_SH1106
-  Next
-
-  'Removed at 1.14. Retained for documentation only
-    '  Cursor_Position_SH1106 ( 0 , 0 )
-    '  for SH1106_BufferLocationCalc = 0 to GLCD_HEIGHT-1 step 8
-    '    for GLCDTemp = 0 to 127
-    '        Write_Data_SH1106(GLCDBackground)
-    '    Next
-    '  next
+    #IFNDEF S4Wire_DATA
+        For SH1106_BufferLocationCalc = 0 to GLCD_HEIGHT-1 step 8
+          Cursor_Position_SH1106 ( 0 , SH1106_BufferLocationCalc )
+          Open_Transaction_SH1106
+            For GLCDTemp = 0 to 127
+              Write_Transaction_Data_SH1106(GLCDBackground)
+            Next
+          Close_Transaction_SH1106
+        Next
+    #ELSE
+        Cursor_Position_SH1106 ( 0 , 0 )
+      for SH1106_BufferLocationCalc = 0 to GLCD_HEIGHT-1 step 8
+        for GLCDTemp = 0 to 127
+            Write_Data_SH1106(GLCDBackground)
+        Next
+      next
+    #ENDIF
 
   Cursor_Position_SH1106 ( 0 , 0 )
   PrintLocX =0
@@ -346,149 +358,151 @@ End Sub
 '''@param Chars String to display
 '''@param LineColour Line Color, either 1 or 0
 Sub GLCDDrawChar_SH1106(In CharLocX as word, In CharLocY as word, In CharCode, Optional In LineColour as word = GLCDForeground )
-  'moved code from ILIxxxx to support GLCDfntDefaultsize = 1,2,3 etc.
-  'CharCode needs to have 16 subtracted, table starts at char 16 not char 0
 
-    #ifdef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE
+  'This has got a tad complex
+  'We have three major pieces
+  '1 The preamble - this just adjusted color and the input character
+  '2 The code that deals with GCB fontset
+  '3 The code that deals with OLED fontset
+  '
+  'You can make independent change to section 2 and 3 but they are mutual exclusive with many common pieces
 
-     'test if character lies within current page
-      GLCDY_Temp = CharLocY + 7
-      Repeat 3
-        Set C Off
-        Rotate GLCDY_Temp Right
-      End Repeat
-      IF GLCDY_Temp <> _GLCDPage THEN
-       GLCDY_Temp = GLCDY_Temp - 1
-       IF GLCDY_Temp <> _GLCDPage THEN
-         EXIT SUB
-       END IF
-      END IF
+   dim CharCol, CharRow, GLCDTemp as word
 
-    #endif
+   CharCode -= 15
+   CharCol=0
 
-    'invert colors if required
-    if LineColour <> GLCDForeground  then
-      'Inverted Colours
-      GLCDBackground = 1
-      GLCDForeground = 0
-    end if
+   #ifndef GLCD_OLED_FONT
 
-    dim CharCol, CharRow as word
-    CharCode -= 15
+        if CharCode>=178 and CharCode<=202 then
+           CharLocY=CharLocY-1
+        end if
 
-    #ifdef GLCD_EXTENDEDFONTSET1
-     if CharCode>=178 and CharCode<=202 then
-        CharLocY=CharLocY-1
-     end if
-    #endif
-
-    CharCol=1
-
-    Cursor_Position_SH1106 ( CharLocX, CharLocY )
-
-    #ifndef S4Wire_DATA
-     #ifdef GLCD_TYPE_SH1106_CHARACTER_MODE_ONLY
-      #ifndef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE
-       Open_Transaction_SH1106
-      #endif
-     #endif
-    #endif
-
-    For CurrCharCol = 1 to 5
-      Select Case CurrCharCol
-        Case 1: ReadTable GLCDCharCol3, CharCode, CurrCharVal
-        Case 2: ReadTable GLCDCharCol4, CharCode, CurrCharVal
-        Case 3: ReadTable GLCDCharCol5, CharCode, CurrCharVal
-        Case 4: ReadTable GLCDCharCol6, CharCode, CurrCharVal
-        Case 5: ReadTable GLCDCharCol7, CharCode, CurrCharVal
-      End Select
-
-      #ifndef GLCD_TYPE_SH1106_CHARACTER_MODE_ONLY         ' Same as code below. Repeated as the Define is the limitation
-        CharRow=0
-        For CurrCharRow = 1 to 8
-            CharColS=0
-            For Col=1 to GLCDfntDefaultsize
-                  CharRowS=0
-                  For Row=1 to GLCDfntDefaultsize
-                      if CurrCharVal.0=1 then
-                         PSet [word]CharLocX + CharCol+ CharColS, [word]CharLocY + CharRow+CharRowS, LineColour
-                      Else
-                         PSet [word]CharLocX + CharCol+ CharColS, [word]CharLocY + CharRow+CharRowS, GLCDBackground
-                      End if
-                      CharRowS +=1
-                  Next Row
-                  CharColS +=1
-            Next Col
-          Rotate CurrCharVal Right
-          CharRow +=GLCDfntDefaultsize
+        //~ major change - this was 1 to 5 which is the character width,
+        //~ but, this means when the GLCDFontWidth is padded out by the increment to the next char
+        //~ there is no PSET/COLOR control.  So, use GLCDFontWidth + 1 to control the color in the inter-char pixels
+        For CurrCharCol = 1 to GLCDFontWidth + 1
+          Select Case CurrCharCol
+            Case 1: ReadTable GLCDCharCol3, CharCode, CurrCharVal
+            Case 2: ReadTable GLCDCharCol4, CharCode, CurrCharVal
+            Case 3: ReadTable GLCDCharCol5, CharCode, CurrCharVal
+            Case 4: ReadTable GLCDCharCol6, CharCode, CurrCharVal
+            Case 5: ReadTable GLCDCharCol7, CharCode, CurrCharVal
+            Case Else: CurrCharVal = 0  //~ The interchar PSET value
+          End Select
+          CharRow=0
+          For CurrCharRow = 1 to 8
+              CharColS=0
+              For Col=1 to GLCDfntDefaultsize
+                    CharColS +=1
+                    CharRowS=0
+                    For Row=1 to GLCDfntDefaultsize
+                        CharRowS +=1
+                        if CurrCharVal.0=1 then
+                           PSet [word]CharLocX + CharCol+ CharColS, [word]CharLocY + CharRow+CharRowS, LineColour
+                        Else
+                           PSet [word]CharLocX + CharCol+ CharColS, [word]CharLocY + CharRow+CharRowS, GLCDBACKGROUND
+                        End if
+                    Next Row
+              Next Col
+            Rotate CurrCharVal Right
+            CharRow +=GLCDfntDefaultsize
+          Next
+          CharCol +=GLCDfntDefaultsize
         Next
-        CharCol +=GLCDfntDefaultsize
-      #endif
 
-      #ifdef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE         ' Same as code above. Repeated as the Define is the limitation
-        CharRow=0
-        For CurrCharRow = 1 to 8
-            CharColS=0
-            For Col=1 to GLCDfntDefaultsize
-                  CharRowS=0
-                  For Row=1 to GLCDfntDefaultsize
-                      GLCDY = [word]CharLocY + CharRow + CharRowS
-                       if CurrCharVal.0=1 then
-                          PSet [word]CharLocX + CharCol + CharColS, GLCDY, LineColour
-                       Else
-                          PSet [word]CharLocX + CharCol + CharColS, GLCDY, GLCDBackground
-                       End if
-                      CharRowS +=1
-                  Next Row
-                  CharColS +=1
-            Next Col
-          Rotate CurrCharVal Right
-          CharRow +=GLCDfntDefaultsize
-        Next
-        CharCol +=GLCDfntDefaultsize
-      #endif
+    #endif
 
-    ' Handles specific draw sequence. This caters for write only of a bit value. No read operation.
+    #ifdef GLCD_OLED_FONT
 
-      #ifdef GLCD_TYPE_SH1106_CHARACTER_MODE_ONLY
+        'Calculate the pointer to the OLED fonts.
+        'These fonts are not multiple tables one is a straight list the other is a lookup table with data.
+        Dim LocalCharCode as word
 
-        #ifndef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE
+        'Get key information and set up the fonts parameters
+        Select case GLCDfntDefaultSize
+            case 1 'This font is two font tables of an index and data
+              CharCode = CharCode - 16
+              ReadTable OLEDFont1Index, CharCode, LocalCharCode
+              ReadTable OLEDFont1Data, LocalCharCode , COLSperfont
+              'If the char is the ASC(32) a SPACE set the fontwidth =1 (not 2)
+              if LocalCharCode = 1 then
+                  GLCDFontWidth = 1
+              else
+                  GLCDFontWidth = COLSperfont+1
+              end if
+              ROWSperfont = 7  'which is really 8 as we start at 0
 
-            GLCDX = ( CharLocX + CurrCharCol -1 )
+            case 2 'This is one font table
+              CharCode = CharCode - 17
+              'Pointer to table of font elements
+              LocalCharCode = (CharCode * 20)
+              COLSperfont = 9  'which is really 10 as we start at 0
 
-             #IFDEF GLCD_PROTECTOVERRUN
-                'anything off screen with be rejected
+              ROWSperfont=15  'which is really 16 as we start at 0
+
+        End Select
 
 
-                if GLCDX => GLCD_WIDTH OR CharLocY => GLCD_HEIGHT Then
-                    exit for
+        'The main loop - loop throught the number of columns
+        For CurrCharCol = 0 to COLSperfont  'number of columns in the font , with two row of data
+
+          'Index the pointer to the code that we are looking for as we need to do this lookup many times getting more font data
+          LocalCharCode++
+          Select case GLCDfntDefaultSize
+              case 1
+                ReadTable OLEDFont1Data, LocalCharCode, CurrCharVal
+
+              case 2
+                #ifndef GLCD_Disable_OLED_FONT2
+                  'Read this 20 times... (0..COLSperfont) [ * 2 ]
+                  ReadTable OLEDFont2, LocalCharCode, CurrCharVal
+                #endif
+                #ifdef GLCD_Disable_OLED_FONT2
+                  CurrCharVal = GLCDBACKGROUND
+                #endif
+          End Select
+
+            'we handle 8 or 16 pixels of height
+            For CurrCharRow = 0 to ROWSperfont
+                'Set the pixel
+                If CurrCharVal.0 = 0 Then
+                          PSet CharLocX + CurrCharCol, CharLocY + CurrCharRow, GLCDBACKGROUND
+                Else
+                          PSet CharLocX + CurrCharCol, CharLocY + CurrCharRow, LineColour
+                End If
+
+                Rotate CurrCharVal Right
+
+                'Set to next row of date, a second row
+                if GLCDfntDefaultSize = 2 and CurrCharRow = 7 then
+                  LocalCharCode++
+                  #ifndef GLCD_Disable_OLED_FONT2
+                    ReadTable OLEDFont2, LocalCharCode, CurrCharVal
+                  #endif
+                  #ifdef GLCD_Disable_OLED_FONT2
+                    CurrCharVal = GLCDBACKGROUND
+                  #endif
                 end if
 
-            #ENDIF
+                'It is the intercharacter space, put out one pixel row
+                if CurrCharCol = COLSperfont then
+                    'Put out a white intercharacter pixel/space
+                     GLCDTemp = CharLocX + CurrCharCol
+                     if GLCDfntDefaultSize = 2 then
+                        GLCDTemp++
+                     end if
+                     PSet GLCDTemp , CharLocY + CurrCharRow, GLCDBACKGROUND
+                end if
 
-            If LineColour = 1 Then
-             Write_Transaction_Data_SH1106( CurrCharVal )
-            else
-             Write_Transaction_Data_SH1106( 255 - CurrCharVal )
-            end if
+            Next
 
-        #endif
 
-      #endif
 
-    Next
+        Next
 
-    #ifndef S4Wire_DATA
-     #ifdef GLCD_TYPE_SH1106_CHARACTER_MODE_ONLY
-      #ifndef GLCD_TYPE_SH1106_LOWMEMORY_GLCD_MODE
-       Close_Transaction_SH1106
-      #endif
-     #endif
+
     #endif
-
-    'Restore
-    GLCDBackground = 0
-    GLCDForeground = 1
 
 End Sub
 

@@ -1,5 +1,5 @@
 '    Library to allow the Arduino Duemilanove (mega328) to work with GCBASIC
-'    Copyright (C) 2010-2025 Hugh Considine
+'    Copyright (C) 2010-2024 Hugh Considine
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
 '    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#chip lgt8fx8p, 32
+#chip LGT8F328P, 32
 
 'Startup routine
 #startup lgt8fx8p, 90

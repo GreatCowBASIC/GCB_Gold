@@ -60,8 +60,9 @@
   '    Updated 29/10/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ20
   '    Updated 01/12/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ24
   '    Updated 07/01/24 - Corrected HI2CQ24Stop redirection
-  
+  '    Updated 13/03/24 - Add script check for SLAVE only 18F chip - if a slave ONLY chip then issue an error message
 
+  
 'User changeable constants
 
 
@@ -125,6 +126,20 @@
 #startup HI2CInit, 90
 
 #script
+
+  //Check for SLAVE only 18F chip - if a slave ONLY chip then issue an error message
+  If CHIPSUBFAMILY = 16000 Then
+    If NOVAR(SSPCON2) Then    // check for register
+      If DEF(HI2C_DATA) Then  // check for constant
+        If NODEF(DISABLE_18F_I2C_SLAVE_HARDWARE_WARNING) Then
+          // So, this is an 18F chip, has not got SSP2CON2 and the user has defined HI2C_DATA
+          Warning "Microcontroller does not support hardware I2C, please use software I2C."
+          Warning "add #DEFINE DISABLE_18F_I2C_SLAVE_HARDWARE_WARNING to mask this warning"
+        End If
+      End If 
+    End If 
+  End If
+
 
   IF NODEF(HI2C_BAUD_RATE) THEN
     // Set default HI2C_BAUD_RATE

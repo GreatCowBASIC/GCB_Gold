@@ -50,8 +50,10 @@
 ' 26/09/24 Added AVRDx support
 ' 28/09/24 Added HWSPI2 support for PIC
 ' 02/12/24 Tidied SPI1CON0_EN usage
-' 15/02/24 Revert undocumented SPIClockMode.0 = On change.  This must be 'Off' 
-
+' 15/02/25 Revert undocumented SPIClockMode.0 = On change.  This must be 'Off' 
+' 11/02/25 Revise SPIMODE to support bit2
+' 12/03/25 Revised to support MASTERULTRAFAST mode for K series.
+' 14/03/25 Revised to support HWSPI2 mode for K series.
 
 'To make the PIC pause until it receives an SPI message while in slave mode, set the
 'constant "WaitForSPI" at the start of the program. The value does not matter.
@@ -77,6 +79,9 @@
 #define SPI_CPOL_1 2
 #define SPI_CPHA_0 0
 #define SPI_CPHA_1 1
+#define SPI_SS_0   0    //  to support clearing of SPI1CON1.SSP
+#define SPI_SS_1   4    //  to support setting of SPI1CON1.SSP
+
 
 'SPI Module specific clock options
 #define SSP1_Clock_SMT_match     8
@@ -94,6 +99,7 @@
 
 #script
 
+  // HWSPI - addressess HWSP1
     'Set the SPI Clock Mode if the user has not set it.....
     HWSPIClockModeSCRIPT = 0
     if DEF(HWSPIClockMode) then
@@ -125,6 +131,58 @@
         SPI_BAUD_RATE = INT(ChipMhz/4)*1000
     END IF
 
+    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
+    SPIBAUDRATE_SCRIPT = INT( ChipMHz / INT( SPI_BAUD_RATE  ) / 2 * 1000) + 1
+
+    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
+    SPIBAUDRATE_SCRIPT_MASTER = INT( ChipMHz / INT( SPI_BAUD_RATE /4  ) / 2 * 1000) + 1
+
+    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
+    SPIBAUDRATE_SCRIPT_MASTERSLOW = INT(ChipMHz / INT( SPI_BAUD_RATE / 16  ) / 2 * 1000) + 1
+
+
+  // HWSP2 - addressess HWSP2
+    'Set the SPI Clock Mode if the user has not set it.....
+    HWSPI2ClockModeSCRIPT = 0
+    if DEF(HWSPI2ClockMode) then
+        HWSPI2ClockModeSCRIPT = HWSPI2ClockMode
+    end if
+
+    'Set the SPI Mode if the user had not set it... used in the SPI libraries
+    userspecifiedHWSPI2Mode = 0
+    if HWSPI2Mode then
+        HWSPI2MODESCRIPT = HWSPI2Mode
+        userspecifiedHWSPI2Mode = 1
+    end if
+
+    if userspecifiedHWSPI2Mode = 0 then
+        HWSPI2MODESCRIPT = MasterFast
+        'If the ChipMHz > 32 then user Master NOT MasterFast
+        if ChipMHz > 32 then
+            HWSPI2MODESCRIPT = Master
+        end if
+        userspecifiedHWSPIMode = 1
+    end if
+
+    'create a constant, as this IS needed, if the user have not defined
+    USERHASDEFINETHESPI2_BAUD_RATE = 0
+    IF SPI2_BAUD_RATE THEN
+        USERHASDEFINETHESPI2_BAUD_RATE = 1
+    END IF
+    IF USERHASDEFINETHESPI2_BAUD_RATE = 0 THEN
+        SPI2_BAUD_RATE = INT(ChipMhz/4)*1000
+    END IF
+
+    'Calculate SPI Baud Rate for SPI2mode modules on K42 per datasheet
+    SPI2BAUDRATE_SCRIPT = INT( ChipMHz / INT( SPI2_BAUD_RATE  ) / 2 * 1000) + 1
+
+    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
+    SPI2BAUDRATE_SCRIPT_MASTER = INT( ChipMHz / INT( SPI2_BAUD_RATE /4  ) / 2 * 1000) + 1
+
+    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
+    SPI2BAUDRATE_SCRIPT_MASTERSLOW = INT(ChipMHz / INT( SPI2_BAUD_RATE / 16  ) / 2 * 1000) + 1
+
+    // End of SPI and SPI2 management
 
     'calculate a delay if needed
     SPI1DELAY_SCRIPT = 1
@@ -156,15 +214,6 @@
         SPI1DELAY_SCRIPT = 1
     end if
 
-    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
-    SPIBAUDRATE_SCRIPT = INT( ChipMHz / INT( SPI_BAUD_RATE  ) / 2 * 1000) + 1
-
-    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
-    SPIBAUDRATE_SCRIPT_MASTER = INT( ChipMHz / INT( SPI_BAUD_RATE /4  ) / 2 * 1000) + 1
-
-    'Calculate SPI Baud Rate for SPImode modules on K42 per datasheet
-    SPIBAUDRATE_SCRIPT_MASTERSLOW = INT(ChipMHz / INT( SPI_BAUD_RATE / 16  ) / 2 * 1000) + 1
-
     If ChipFamily = 122 then
 
       'There are hard coded clock cycles to permit the data (a byte to exit the buffer before the CS line is changed.
@@ -174,7 +223,7 @@
       If HWSPIMode = Master  then
           SPIDELAY_SCRIPT_MASTER = 16
       End if
-      If HWSPIMode = MasterFastthen
+      If HWSPIMode = MasterFast then
           SPIDELAY_SCRIPT_MASTER = 1
       End if
       If HWSPIMode = MasterUltraFast then
@@ -336,7 +385,7 @@ Sub SPIMode (In SPICurrentMode)
 
 
         #ifdef SPI_BAUD_RATE_REGISTER
-         'override the script calculation
+          // override the script calculation
           SPI1BAUD = SPI_BAUD_RATE_REGISTER
         #endif
 
@@ -464,7 +513,7 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
 
         'Turn off SPI
         '(Prevents any weird glitches during setup)
-        Set SSPCON1.SSPEN Off ;(Prevents any weird glitches during setup)
+        Set SSPCON1.SSPEN Off
 
         'Set clock pulse settings
         Set SSPSTAT.SMP Off
@@ -513,23 +562,25 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
 
 
     #ifdef Var(SPI1CON0)
-        'Supports K mode SPI using the specific SPI module
 
-        'Turn off SPI
-        '(Prevents any weird glitches during setup)
+        // Supports newer SPI module using the specific SPI module
+
+        //~Turn off SPI
+        //~(Prevents any weird glitches during setup)
         #if BIT(SPI1CON0_EN)
         SPI1CON0_EN = 0
         #else
           SPI1CON0.EN = 0
         #endif
 
-        'Set clock pulse settings to middle
-        SPI1CON1.SMP = 0
-
-        'Data write on rising (idle > active) clock (CPHA = 1)
-        SPI1CON1.CKE = 0
-        'Clock idle low (CPOL = 0)
-        SPI1CON1.CKP = 0
+        //~Clear register
+        //~ Data write on rising (idle > active) clock (CPHA = 1)
+        //~ Clock idle low (CPOL = 0)
+        //~ Set clock pulse settings to middle
+        //~ SPI1CON1.SMP = 0
+        //~  SPI1CON1.CKE = 0
+        //~  SPI1CON1.CKP = 0
+        SPI1CON1 = 0x00
 
         If SPIClockMode.0 = Off Then
           SPI1CON1.CKE = 1
@@ -539,65 +590,94 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
           SPI1CON1.CKP = 1
         End If
 
-        SPI1CON1 = 0x40
+        #IF BIT(SSP)
+          If SPIClockMode.2 = On Then
+            SPI1CON1.SSP = 1
+          End If
+        #ENDIF
 
         'Transfer
         SPI1CON2 = SPI1CON2 or 3
 
+        //~Set the ports as required
         #ifdef SPI1_DC
           dir SPI1_DC       out
+        #endif
+        #ifdef SPI_DC
+          dir SPI_DC       out
         #endif
 
         #ifdef SPI1_CS
           dir SPI1_CS       out
         #endif
+        #ifdef SPI_CS
+          dir SPI_CS       out
+        #endif
+
 
         #ifdef SPI1_RESET
           dir SPI1_RESET    out
+        #endif
+        #ifdef SPI_RESET
+          dir SPI_RESET    out
         #endif
 
         #ifdef SPI1_DI
           dir SPI1_DI       in
         #endif
+        #ifdef SPI_DI
+          dir SPI_DI       in
+        #endif
 
         #ifdef SPI1_DO
           dir SPI1_DO       out
+        #endif
+        #ifdef SPI_DO
+          dir SPI_DO       out
         #endif
 
         #ifdef SPI1_SCK
           dir SPI1_SCK      out
         #endif
+        #ifdef SPI_SCK
+          dir SPI_SCK      out
+        #endif
 
-        'Select mode and clock
+        // Select clock source
         SPI1CLK = SSP1_FOSC
 
+        // Supports newer SPI module using the specific SPI module
         Select Case SPICurrentMode
-            Case MasterFast or MasterUltraFast
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT
+
+            Case MasterUltraFast
+              // assumed that 0 is fastest
+              SPI1BAUD = 0
+              SPI1CON0.MST = 1
+            Case MasterFast
+              // see CDF file for SPIBAUDRATE_SCRIPT
               SPI1BAUD = SPIBAUDRATE_SCRIPT
               SPI1CON0.MST = 1
             Case Master
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTER
+              // see CDF file for SPIBAUDRATE_SCRIPT_MASTER
               SPI1BAUD = SPIBAUDRATE_SCRIPT_MASTER
               SPI1CON0.MST = 1
             Case MasterSlow
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTERSLOW
+              // see CDF file for SPIBAUDRATE_SCRIPT_MASTERSLOW
               SPI1BAUD = SPIBAUDRATE_SCRIPT_MASTERSLOW
               SPI1CON0.MST = 1
             Case Slave
               SPI1CON0.MST = 0
-            #ifdef SPI1_SCK
-              dir SPI1_SCK      in
-            #endif
+              #ifdef SPI1_SCK
+                dir SPI1_SCK      in
+              #endif
 
             Case SlaveSS
               SPI1CON0.MST = 0
-            #ifdef SPI1_SCK
-              dir SPI1_SCK      in
-            #endif
+              #ifdef SPI1_SCK
+                dir SPI1_SCK      in
+              #endif
 
         End Select
-
 
         #ifdef SPI_BAUD_RATE_REGISTER
         'override the script calculation
@@ -1014,15 +1094,19 @@ Sub SPI2Mode (In SPICurrentMode)
 
         Select Case SPICurrentMode
           Case MasterFast or MasterUltraFast
-            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT
+            // Assumption that 0 is fastest
+            SPI2BAUD = 0
+            SPI2CON0.MST = 1
+          Case MasterFast
+            // See cdf file for SPIBAUDRATE_SCRIPT
             SPI2BAUD = SPIBAUDRATE_SCRIPT
             SPI2CON0.MST = 1
           Case Master
-            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTER
+            // See cdf file for SPIBAUDRATE_SCRIPT_MASTER
             SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTER
             SPI2CON0.MST = 1
           Case MasterSlow
-            asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTERSLOW
+            // See cdf file for SPIBAUDRATE_SCRIPT_MASTERSLOW
             SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTERSLOW
             SPI2CON0.MST = 1
           Case Slave
@@ -1121,13 +1205,8 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
         '(Prevents any weird glitches during setup)
         SPI2CON0_EN = 0
 
-        'Set clock pulse settings to middle
-        SPI2CON1.SMP = 0
-
-        'Data write on rising (idle > active) clock (CPHA = 1)
-        SPI2CON1.CKE = 0
-        'Clock idle low (CPOL = 0)
-        SPI2CON1.CKP = 0
+        'Clear register
+        SPI2CON1 = 0
 
         If SPIClockMode.0 = Off Then
           SPI2CON1.CKE = 1
@@ -1137,7 +1216,11 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
           SPI2CON1.CKP = 1
         End If
 
-        SPI2CON1 = 0x40
+        #IF BIT(SSP)
+          If SPIClockMode.2 = On Then
+            SPI2CON1.SSP = 1
+          End If
+        #ENDIF
 
         'Transfer
         SPI2CON2 = SPI2CON2 or 3
@@ -1170,18 +1253,29 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
         SPI2CLK = SSP1_FOSC
 
         Select Case SPICurrentMode
-            Case MasterFast or MasterUltraFast
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT
-              SPI2BAUD = SPIBAUDRATE_SCRIPT
+
+            Case MasterUltraFast
+              // assumed that 0 is fastest
+              SPI2BAUD = 0
+              SPI2CON0.MST = 1
+            Case MasterFast
+              // see CDF file for SPI2BAUDRATE_SCRIPT
+              SPI2BAUD = SPI2BAUDRATE_SCRIPT
               SPI2CON0.MST = 1
             Case Master
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTER
-              SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTER
+              // see CDF file for SPI2BAUDRATE_SCRIPT_MASTER
+              SPI2BAUD = SPI2BAUDRATE_SCRIPT_MASTER
               SPI2CON0.MST = 1
             Case MasterSlow
-              asm showdebug Script value is calculated as SPIBAUDRATE_SCRIPT_MASTERSLOW
-              SPI2BAUD = SPIBAUDRATE_SCRIPT_MASTERSLOW
+              // see CDF file for SPI2BAUDRATE_SCRIPT_MASTERSLOW
+              SPI2BAUD = SPI2BAUDRATE_SCRIPT_MASTERSLOW
               SPI2CON0.MST = 1
+            Case Slave
+              SPI1CON0.MST = 0
+              #ifdef SPI1_SCK
+                dir SPI1_SCK      in
+              #endif
+
             Case Slave
               SPI2CON0.MST = 0
             #ifdef SPI2_SCK
@@ -1196,9 +1290,9 @@ Sub SPI2Mode (In SPICurrentMode, In SPIClockMode)
 
         End Select
 
-        #ifdef SPI_BAUD_RATE_REGISTER
+        #ifdef SPI2_BAUD_RATE_REGISTER
         'override the script calculation
-          SPI2BAUD = SPI_BAUD_RATE_REGISTER
+          SPI2BAUD = SPI2_BAUD_RATE_REGISTER
         #endif
 
         'Enable SPI
