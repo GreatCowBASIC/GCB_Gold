@@ -1,5 +1,5 @@
 'English messages.dat for GCBASIC
-'Translation last updated 2025.01.01 by Evan R. Venn
+'Translation last updated 2024.08.15 by Evan R. Venn
 
 'Common Messages
 AnyKey = "Press any key to continue"
@@ -64,7 +64,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-If you have any questions, please email me: evanvennn@users.sourceforge.net
+If you have any questions, please email me: w_cholmondeley@users.sourceforge.net
 End Block
 
 Startup = "GCBASIC (%Version%)"
@@ -144,6 +144,10 @@ ChoosingProgrammer = "Choosing programmer ..."
 ProgrammerSkipped = "%prog% skipped"
 ProgrammerSelected = "%prog% selected"
 SerialPortLockedorNotAvailable = "Serial port %port% not available - check your programmer serial port setting or check serial port is not exclusively open in another serial application"
+SerialPortAutoSelectionNotPossible = "Automatic serial port not possible. Either more that one serial port: AUTO requires only one serial port as programmer port"
+SerialPortAutoSelectionNoPorts = "Automatic serial port not possible. No serial ports"
+SerialPortAutoSelection = "Automatic serial port selected: %port%"
+
 ProgrammerNotFound = "Programmer executable not found - " + %PrgExe% 
 USART_NO_BAUD_RATE = "USART setup incorrect. No baud rate specified - missing USART setup"
 NO_USART2 = "RAISECOMPILERERROR:No USART 2, but, USART2_BAUD_RATE is defined"
@@ -369,6 +373,7 @@ SynErrIncorrectByteDestination = "Syntax Error - cannot assign string to byte va
 SynErrIncorrectWordDestination = "Syntax Error - cannot assign string to word variable. Use WordToString()"
 SynErrIncorrectLongDestination = "Syntax Error - cannot assign string to long variable. Use LongToString()"
 SynErrIncorrectSingleDestination = "Syntax Error - cannot assign string to single variable. Use SingleToString()"
+SynErrIncorrectArrayAssignment = "Syntax Error - Direct array load method only supports bytes arrays"
 SynIllegalBitMaths = "Illegal operation:  Bit variables cannot be added or subtracted"
 TableItemInvalid = "Item %item% cannot be stored in the table"
 TableNotFound = "Lookup table %Table% not found"

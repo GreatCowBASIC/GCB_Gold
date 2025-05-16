@@ -54,6 +54,7 @@
 ' 11/02/25 Revise SPIMODE to support bit2
 ' 12/03/25 Revised to support MASTERULTRAFAST mode for K series.
 ' 14/03/25 Revised to support HWSPI2 mode for K series.
+' 22/04/25 Add MEGA328PB SPI support
 
 'To make the PIC pause until it receives an SPI message while in slave mode, set the
 'constant "WaitForSPI" at the start of the program. The value does not matter.
@@ -697,53 +698,112 @@ Sub SPIMode (In SPICurrentMode, In SPIClockMode)
 
   #ifdef AVR
     #if nodef(CHIPAVRDX)
-      'Turn off SPI
-      '(Prevents any weird glitches during setup)
-      Set SPCR.SPE Off
+      #if NoVar(SPCR0)
+        // Legacy AVR Excluding MEGA3208PB
+        'Turn off SPI
+        '(Prevents any weird glitches during setup)
+        Set SPCR.SPE Off
 
-      'Set clock pulse settings
-      Set SPCR.CPHA Off
-      If SPIClockMode.0 = On Then
-        Set SPCR.CPHA On
-      End If
-      Set SPCR.CPOL Off
-      If SPIClockMode.1 = On Then
-        Set SPCR.CPOL On
-      End If
+        'Set clock pulse settings
+        Set SPCR.CPHA Off
+        If SPIClockMode.0 = On Then
+          Set SPCR.CPHA On
+        End If
+        Set SPCR.CPOL Off
+        If SPIClockMode.1 = On Then
+          Set SPCR.CPOL On
+        End If
 
-      'Select mode and clock
-      'Set some mode bits off, can set on later
-      Set SPCR.MSTR Off
-      Set SPSR.SPI2X Off
-      Set SPCR.SPR0 Off
-      Set SPCR.SPR1 Off
+        'Select mode and clock
+        'Set some mode bits off, can set on later
+        Set SPCR.MSTR Off
+        Set SPSR.SPI2X Off
+        Set SPCR.SPR0 Off
+        Set SPCR.SPR1 Off
 
-      Select Case SPICurrentMode
-      Case MasterUltraFast
-        Set SPCR.MSTR On
-        Set SPSR.SPI2X On
+        Select Case SPICurrentMode
+        Case MasterUltraFast
+          Set SPCR.MSTR On
+          Set SPSR.SPI2X On
 
-      Case MasterFast
-        Set SPCR.MSTR On
+        Case MasterFast
+          Set SPCR.MSTR On
 
-      Case Master
-        Set SPCR.MSTR On
-        Set SPCR.SPR0 On
+        Case Master
+          Set SPCR.MSTR On
+          Set SPCR.SPR0 On
 
-      Case MasterSlow
-        Set SPCR.MSTR On
-        Set SPCR.SPR1 On
+        Case MasterSlow
+          Set SPCR.MSTR On
+          Set SPCR.SPR1 On
 
-      'Nothing needed for slave
-      'Case Slave
-      'Case SlaveSS
+        'Nothing needed for slave
+        'Case Slave
+        'Case SlaveSS
 
-      End Select
+        End Select
 
-      'Enable SPI
-      Set SPCR.SPE On
+        'Enable SPI
+        Set SPCR.SPE On
+      #else
+
+        // Legacy AVR including MEGA328PB
+
+        'Turn off SPI
+        '(Prevents any weird glitches during setup)
+        Set SPCR0.SPE0 Off
+
+        'Set clock pulse settings
+        Set SPCR0.CPHA0 Off
+        If SPIClockMode.0 = On Then
+          Set SPCR0.CPHA0 On
+        End If
+        Set SPCR0.CPOL0 Off
+        If SPIClockMode.1 = On Then
+          Set SPCR0.CPOL0 On
+        End If
+
+        'Select mode and clock
+        'Set some mode bits off, can set on later
+        Set SPCR0.MSTR0 Off
+        Set SPSR0.SPI2X0 Off
+        Set SPCR0.SPR00 Off
+        Set SPCR0.SPR01 Off
+
+        Select Case SPICurrentMode
+        Case MasterUltraFast
+          Set SPCR0.MSTR0 On
+          Set SPSR0.SPI2X0 On
+
+        Case MasterFast
+          'No clock divider bits set, fosc/4
+          Set SPCR0.MSTR0 On
+
+        Case Master
+          'fosc/16
+          Set SPCR0.MSTR0 On
+          Set SPCR0.SPR00 On
+
+        Case MasterSlow
+          Set SPCR0.MSTR0 On
+          Set SPCR0.SPR01 On
+          Set SPCR0.SPR00 On  'Added to set the slowest speed (fosc/128)
+
+        Case Slave
+          'Keep MSTR0 Off for slave mode
+
+        Case SlaveSS
+          'Keep MSTR0 Off for slave mode
+          Set SPCR0.SPIE0 On  'Enable SPI interrupt for SS mode
+
+        End Select
+
+        'Enable SPI
+        Set SPCR0.SPE0 On
+
+      #endif
+
     #endif
-
     #if def(CHIPAVRDX)
 
       'Turn off SPI
@@ -846,12 +906,19 @@ Sub HWSPITransfer(In SPITxData, Out SPIRxData)
     #if nodef(CHIPAVRDX)
       'Master mode
       If SPICurrentMode > 10 Then
-        'Put byte to send into buffer
-        'Will start transfer
+        'Put byte to send into buffer, Will start transfer
         #IF ChipFamily <> 122
-          Do
-            SPDR = SPITxData
-          Loop While SPSR.WCOL
+          #IF VAR(SPDR)
+            Do
+              SPDR = SPITxData
+            Loop While SPSR.WCOL
+          #ENDIF
+          #IF VAR(SPDR0)
+              SPDR0 = SPITxData
+              Do 
+                  // Wait for flag
+              Loop While (SPSR0.SPIF0 = 0)
+          #ENDIF  
         #ENDIF
         #IF ChipFamily = 122
           SPFR = SPFR & 0x44 'setup  RDEMPT and WREMPT simutanously to clear buffer
@@ -860,25 +927,41 @@ Sub HWSPITransfer(In SPITxData, Out SPIRxData)
             nop
           End Repeat
         #ENDIF
-      'Slave mode
+
       Else
+        'Slave mode
         'Retry until send succeeds
-        Do
-          SPDR = SPITxData
-        Loop While SPSR.WCOL = On
+        #IF VAR(SPDR)
+          Do
+            SPDR = SPITxData
+          Loop While SPSR.WCOL
+        #ENDIF
+        #IF VAR(SPDR0)
+          Do While SPSR0.WCOL0
+            SPDR0 = SPITxData
+          Loop
+        #ENDIF
       End If
 
-      'Read buffer
-      'Same for master and slave
+      'Read buffer, same for master and slave
       #IF ChipFamily <> 122
-        Wait While SPSR.SPIF = Off
+          #IF VAR(SPDR)
+            Wait While SPSR.SPIF = Off
+          #ENDIF
+          #IF VAR(SPDR0)
+            Wait While SPSR0.SPIF0 = Off
+          #ENDIF
       #ENDIF
-
       #IF ChipFamily = 122
         'Chipfmaily 122 has different registers.... and, is so fast...
         Wait While ( SPSR.SPIF = Off and RDEMPT = 0 )
       #ENDIF
-      SPIRxData = SPDR
+      #IF VAR(SPDR)
+        SPIRxData = SPDR
+      #ENDIF
+      #IF VAR(SPDR0)
+        SPIRxData = SPDR0
+      #ENDIF
     #endif
 
     #if def(CHIPAVRDX)
@@ -1031,6 +1114,27 @@ Macro HWSPI_Fast_Write_18bits_Macro
     SPIRxData = SPI1RXB
 
   #endif
+
+  #IF VAR(SPDR0)
+    SPDR0 = HWSPI_Send_18bits_U
+    Do 
+        // Wait for flag
+    Loop While (SPSR0.SPIF0 = 0)
+ 
+    SPIRxData = SPDR0
+    SPDR0 = HWSPI_Send_18bits_H
+    Do 
+        // Wait for flag
+    Loop While (SPSR0.SPIF0 = 0)
+ 
+    SPIRxData = SPDR0
+    SPDR0 = HWSPI_Send_18bits
+    Do 
+        // Wait for flag
+    Loop While (SPSR0.SPIF0 = 0)
+ 
+    SPIRxData = SPDR0
+  #ENDIF
 
 End Macro
 

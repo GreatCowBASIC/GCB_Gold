@@ -40,6 +40,19 @@
   ' 26/03/25  Cleaned up the code a bit (removed leftovers and commented out parts).
   ' 28/03/25  Add 8bit support to ReadPixel_ILI9341 - return 24bit color.
 
+  ' 29/03/25  Change GLCDCLS IFDEF BIT(WCOL) to Var(SSPBUF) or Var(SPI1CON0) to ensure HW SPI routines are called when they can be used
+  ' 31/03/25  Changed RGB888toRGB565 to prevent overflow.
+  ' 31/03/25  - Added 2.4 times faster but b/w only "SUB GLCDCLS_FastBW_ILI9341()". (Uwe Seifert)
+  '             Due to compatibility only for new "full 8bit data port" (GLCD_DATA_PORT is defined, ILI9341_8BIT_MODE_SCRIPT=2).
+  '             Only available if ILI9341_8BIT_CLSFASTBW_ENABLE is defined.
+  '           - Adapted Sub InitGLCD_ILI9341 to use this new CLS (due to compatibility only for new "full 8bit data port"). (Uwe Seifert)
+  '           - Moved "display on" down after CLS for "full 8bit data port".
+  '           - Revised Function ReadPixel_ILI9341() to work for parallel modes. (Uwe Seifert)
+  '               Only for hardware version with 74xx245 level shifter whose DIR pin ist connected to RD! Due to lack of other tested only with this special hardware.
+  ' 07/02/25 Changed ReadPixel_ILI9341 to support 8bit UNO Shield operations.
+  
+
+
 #ignore
 #script
 
@@ -453,8 +466,19 @@ Sub InitGLCD_ILI9341
     GLCDfntDefaultHeight = 7  'used by GLCDPrintString and GLCDPrintStringLn
 
     GLCDRotateState = Portrait
+
     'Clear screen
-    GLCDCLS
+    #IFDEF ILI9341_8BIT_MODE_SCRIPT 2  // Use faster CLS if "full 8bit data port" and faster CLS activated, else use standard CLS.
+      #IFDEF ILI9341_8BIT_CLSFASTBW_ENABLE
+        GLCDCLS_FastBW_ILI9341  // use faster CLS
+      #ELSE
+        GLCDCLS  // use standard CLS
+      #ENDIF
+    #ELSE
+      GLCDCLS  // use standard CLS
+    #ENDIF
+
+    SendCommand_ILI9341(ILI9341_DISPON)    'Display on
 
   #endif
 
@@ -678,68 +702,68 @@ Sub GLCDCLS_ILI9341 ( Optional In  GLCDBACKGROUND as word = GLCDBACKGROUND )
         HWSPI_Send_Word = GLCDBACKGROUND
     #ENDIF
 
-    ILI9341_CS = 0
+      ILI9341_CS=0
 
-    #ifdef ILI9341_SPI_MODE_SCRIPT 1
-      'SPI mode
-    set ILI9341_DC ON
-    #endif
+      #ifdef ILI9341_SPI_MODE_SCRIPT 1
+        'SPI mode
+      set ILI9341_DC ON
+      #endif
 
     #if ILI9341_8BIT_MODE_SCRIPT = 1 or  ILI9341_8BIT_MODE_SCRIPT = 2
-      '8bit mode or Full 8bit Data Port
-      ILI9341_RS = 1
-      ILI9341_RD = 1
-    #endif
+        '8bit mode or Full 8bit Data Port
+        ILI9341_RS = 1
+        ILI9341_RD = 1
+      #endif
 
-    'repeat 320*240 times... this is faster!
-    repeat 2 ' ILI9341_GLCD_WIDTH
+      'repeat 320*240 times... this is faster!
+      repeat 2 ' ILI9341_GLCD_WIDTH
 
-      repeat 38400  'ILI9341_GLCD_HEIGHT
+        repeat 38400  'ILI9341_GLCD_HEIGHT
 
-        #ifdef ILI9341_SPI_MODE_SCRIPT 1
-            'SPI handler
+          #ifdef ILI9341_SPI_MODE_SCRIPT 1
+              'SPI handler
 
-          #ifdef ILI9341_HardwareSPI
+            #ifdef ILI9341_HardwareSPI
 
-            #ifdef PIC
+              #ifdef PIC
 
-              #ifdef bit(WCOL)
-                  FastHWSPITransfer  ILI9341SendWord_h
-                  FastHWSPITransfer  ILI9341SendWord
-              #else
-                  !//! Unhandled SPI condition - report to Forum for support
+                #if Var(SSPBUF) or Var(SPI1CON0)
+                    FastHWSPITransfer  ILI9341SendWord_h
+                    FastHWSPITransfer  ILI9341SendWord
+                #else
+                    !//! Unhandled SPI condition - report to Forum for support
+                #endif
+
+              #endif
+
+
+              #ifdef AVR
+                'Fast clear screen - use a macro to keep code simple
+                HWSPI_Fast_Write_Word_Macro GLCDBACKGROUND
               #endif
 
             #endif
 
-
-            #ifdef AVR
-              'Fast clear screen - use a macro to keep code simple
-              HWSPI_Fast_Write_Word_Macro GLCDBACKGROUND
+            #ifndef ILI9341_HardwareSPI
+                  SendWord_ILI9341 ( GLCDBACKGROUND )
             #endif
 
+            'end of SPI
           #endif
 
-          #ifndef ILI9341_HardwareSPI
-                SendWord_ILI9341 ( GLCDBACKGROUND )
+          #ifdef ILI9341_8BIT_MODE_SCRIPT 1
+
+            ILI9341_WR = 1
+            PORTD = (PORTD & 0B00000011) | ((ILI9341SendWord_h) & 0B11111100)
+            PORTB = (PORTB & 0B11111100) | ((ILI9341SendWord_h) & 0B00000011)
+            ILI9341_WR = 0
+
+            ILI9341_WR = 1
+            PORTD = (PORTD & 0B00000011) | ((ILI9341SendWord) & 0B11111100)
+            PORTB = (PORTB & 0B11111100) | ((ILI9341SendWord) & 0B00000011)
+            ILI9341_WR = 0
+
           #endif
-
-          'end of SPI
-        #endif
-
-        #ifdef ILI9341_8BIT_MODE_SCRIPT 1
-
-          ILI9341_WR = 1
-          PORTD = (PORTD & 0B00000011) | ((ILI9341SendWord_h) & 0B11111100)
-          PORTB = (PORTB & 0B11111100) | ((ILI9341SendWord_h) & 0B00000011)
-          ILI9341_WR = 0
-
-          ILI9341_WR = 1
-          PORTD = (PORTD & 0B00000011) | ((ILI9341SendWord) & 0B11111100)
-          PORTB = (PORTB & 0B11111100) | ((ILI9341SendWord) & 0B00000011)
-          ILI9341_WR = 0
-
-        #endif
 
         #ifdef ILI9341_8BIT_MODE_SCRIPT 2
           // Full 8bit Data Port
@@ -754,13 +778,105 @@ Sub GLCDCLS_ILI9341 ( Optional In  GLCDBACKGROUND as word = GLCDBACKGROUND )
         #endif
 
 
+        end repeat
+
       end repeat
 
-    end repeat
-
-    ILI9341_CS = 1
-
+      ILI9341_CS = 1
+    
 End Sub
+
+'''Clears the GLCD screen about 2.4 times faster than standard CLS, but only in black or white.
+'''It needs more and additional memory, so you have to activate with a "#DEFINE ILI9341_8BIT_CLSFASTBW_ENABLE" in your program.
+'''Works only with full 8bit data port (ILI9341_8BIT_MODE_SCRIPT=2).
+'''@param GLCDCLS_FastBWColor_ILI9341 defines background color. Only 0 (black) and 255 (white) meaningful. Defaults to 0.
+SUB GLCDCLS_FastBW_ILI9341(OPTIONAL IN GLCDCLS_FastBWColor_ILI9341 AS BYTE = 0)
+  #IFDEF ILI9341_8BIT_MODE_SCRIPT 2
+    #IFDEF ILI9341_8BIT_CLSFASTBW_ENABLE
+
+      GLCD_yordinate=0  // Initialise global variable. Required variable for Circle in all DEVICE DRIVERS - DO NOT DELETE.
+      DIM GLCDCLS_FastBWColor_ILI9341 AS BYTE
+
+      SetAddressWindow_ILI9341 (0,0,ILI9341_GLCD_WIDTH-1,ILI9341_GLCD_HEIGHT-1)
+      // Write same value to low and high byte several times.
+      ILI9341_CS=0
+      ILI9341_RS=1
+      ILI9341_RD=1
+      ILI9341_GLCD_DATA_PORT=GLCDCLS_FastBWColor_ILI9341
+      // Repeat 153600 (=48*100*32=320x240*2) times. Works about 2.4 times faster than standard CLS.
+      REPEAT 48
+        REPEAT 100
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+          ILI9341_WR=0
+          ILI9341_WR=1
+        END REPEAT
+      END REPEAT
+      ILI9341_CS=1
+    #ENDIF
+  #ENDIF
+END SUB
+
 
 '''Draws a string at the specified location on the GLCD
 '''@param StringLocX X coordinate for message
@@ -1389,34 +1505,199 @@ Function  ReadPixel_ILI9341(In ILI9341_GLCDX as word, In ILI9341_GLCDY as word )
 
 
       #ifdef ILI9341_8BIT_MODE_SCRIPT 1
-        '8bit mode
+        // 8bit mode for UNO shield
 
-          ILI9341_CS = 0
+        //~ Activate chip select (CS) to begin communication with display
+        ILI9341_CS = 0
 
-          ILI9341_RS = 1
-          ILI9341_RD = 1
-          ILI9341_WR = 1
+        //Send Command
+        //~ Set Register Select (RS) low to indicate command mode
+        ILI9341_RS = 0
+        //~ Keep Read (RD) high as we're not reading
+        ILI9341_RD = 1
 
-          'Dummy read
-          ReadPixel_ILI9341 = 0
-          ILI9341_WR = 0
-          ILI9341_WR = 1
+        //~ Set Write (WR) low to begin write cycle
+        ILI9341_WR = 0
+        //~ Send upper 6 bits of CASET command to PORTD
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_CASET) & 0B11111100);
+        //~ Send lower 2 bits of CASET command to PORTB
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_CASET) & 0B00000011);
+        //~ Set Write high to complete write cycle
+        ILI9341_WR  = 1
 
-          ILI9341_WR = 0
-          ILI9341_WR = 1
-          ReadPixel_ILI9341_u = ( PORTD & 0B11111100 ) | ( PORTB & 0B00000011 )
+        //Send Data
+        //~ Set Register Select high to indicate data mode
+        ILI9341_RS = 1
+        //~ Keep Read high as we're not reading
+        ILI9341_RD = 1
 
-          ILI9341_WR = 0
-          ILI9341_WR = 1
-          ReadPixel_ILI9341_h = ( PORTD & 0B11111100 ) | ( PORTB & 0B00000011 )
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send high byte of X coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDX_H) & 0B11111100);
+        //~ Send high byte of X coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDX_H) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
 
-          ILI9341_WR = 0
-          ILI9341_WR = 1
-          ReadPixel_ILI9341   = ( PORTD & 0B11111100 ) | ( PORTB & 0B00000011 )
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send low byte of X coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDX) & 0B11111100);
+        //~ Send low byte of X coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDX) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
 
-          ILI9341_CS = 1
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send high byte of X end coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDX_H) & 0B11111100);
+        //~ Send high byte of X end coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDX_H) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
 
-        'endif 8bit
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send low byte of X end coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDX) & 0B11111100);
+        //~ Send low byte of X end coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDX) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //Send Command
+        //~ Set back to command mode
+        ILI9341_RS = 0
+        //~ Keep Read high as we're not reading
+        ILI9341_RD = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send PASET command (Page Address Set) (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_PASET) & 0B11111100);
+        //~ Send PASET command (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_PASET) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //Send Data
+        //~ Set to data mode
+        ILI9341_RS = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send high byte of Y coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDY_H) & 0B11111100);
+        //~ Send high byte of Y coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDY_H) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send low byte of Y coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDY) & 0B11111100);
+        //~ Send low byte of Y coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDY) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send high byte of Y end coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDY_H) & 0B11111100);
+        //~ Send high byte of Y end coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDY_H) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send low byte of Y end coordinate (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_GLCDY) & 0B11111100);
+        //~ Send low byte of Y end coordinate (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_GLCDY) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //~ Prepare to read pixel data
+
+        //~ Send Read Memory Command (RAMRD)
+        //Send Command
+        //~ Set to command mode
+        ILI9341_RS = 0
+        //~ Keep Read high as we're not reading yet
+        ILI9341_RD = 1
+
+        //~ Begin write cycle
+        ILI9341_WR = 0
+        //~ Send RAMRD command (Read Memory) (upper 6 bits)
+        PORTD = (PORTD & 0B00000011) | ((ILI9341_RAMRD) & 0B11111100);
+        //~ Send RAMRD command (lower 2 bits)
+        PORTB = (PORTB & 0B11111100) | ((ILI9341_RAMRD) & 0B00000011);
+        //~ Complete write cycle
+        ILI9341_WR  = 1
+
+        //~ Switch to data mode for reading pixel      
+
+        //~ Set data lines to input mode
+        dir  ILI9341_DB7 IN
+        dir  ILI9341_DB6 IN
+        dir  ILI9341_DB5 IN
+        dir  ILI9341_DB4 IN
+        dir  ILI9341_DB3 IN
+        dir  ILI9341_DB2 IN
+        dir  ILI9341_DB1 IN
+        dir  ILI9341_DB0 IN
+
+        //~ Set to data mode for reading
+        ILI9341_RS = 1
+        
+        //~ Dummy read (required by some ILI9341 implementations)
+        //~ Clear error flag
+        ReadPixel_ILI9341_e = 0
+        //~ Begin read cycle
+        ILI9341_RD = 0
+        //~ End read cycle (dummy read)
+        ILI9341_RD = 1
+
+        //~ Begin read cycle
+        ILI9341_RD = 0
+        //~ End read cycle
+        ILI9341_RD = 1
+        //~ Read first byte of pixel data (typically the red component in RGB565)
+        ReadPixel_ILI9341_u = ( PIND & 0B11111100 ) | ( PINB & 0B00000011 )
+
+        //~ Begin read cycle
+        ILI9341_RD = 0
+        //~ End read cycle
+        ILI9341_RD = 1
+        //~ Read second byte of pixel data (typically the green component in RGB565)
+        ReadPixel_ILI9341_h = ( PIND & 0B11111100 ) | ( PINB & 0B00000011 )
+
+        //~ Begin read cycle
+        ILI9341_RD = 0
+        //~ End read cycle
+        ILI9341_RD = 1
+        //~ Read third byte of pixel data (typically the blue component in RGB565)
+        [BYTE]ReadPixel_ILI9341   = ( PIND & 0B11111100 ) | ( PINB & 0B00000011 )
+
+        //~ Deactivate chip select to end communication
+        ILI9341_CS = 1
+
+        //~ Return data pins to output mode for future operations
+        dir  ILI9341_DB7 OUT
+        dir  ILI9341_DB6 OUT
+        dir  ILI9341_DB5 OUT
+        dir  ILI9341_DB4 OUT
+        dir  ILI9341_DB3 OUT
+        dir  ILI9341_DB2 OUT
+        dir  ILI9341_DB1 OUT
+        dir  ILI9341_DB0 OUT
+
+        // end of 8bit mode for UNO shield
       #endif
 
     #ifdef ILI9341_8BIT_MODE_SCRIPT 2
@@ -1514,25 +1795,25 @@ Function  ReadPixel_ILI9341(In ILI9341_GLCDX as word, In ILI9341_GLCDY as word )
         //~ Dummy read (required by some ILI9341 implementations)
         ReadPixel_ILI9341_e = 0
         ILI9341_RD = 0
-        wait 1 ms
+        
         ILI9341_RD = 1
 
         //~ Read pixel data bytes
         //~ First byte
         ILI9341_RD = 0
-        wait 1 ms
+        
         ILI9341_RD = 1
         ReadPixel_ILI9341_u = ILI9341_GLCD_DATA_PORT
 
         //~ Second byte (high byte of color)
         ILI9341_RD = 0
-        wait 1 ms
+        
         ILI9341_RD = 1
         ReadPixel_ILI9341_h = ILI9341_GLCD_DATA_PORT
 
         //~ Third byte (low byte of color)
         ILI9341_RD = 0
-        wait 1 ms
+        
         ILI9341_RD = 1
         [BYTE]ReadPixel_ILI9341 = ILI9341_GLCD_DATA_PORT
 

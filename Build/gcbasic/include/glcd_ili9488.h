@@ -23,6 +23,7 @@
 '  25/03/2023:      Edited  release for testing
 '  06/04/2023:      Revised with hardware tested - Only 18bit Color, SPI, PIC tested. AVR or PIC with UNO 8 bit shield not tested. 
 '  14/04/2023:      Revised color scheme
+'  22/04/2025:      Revised to additional SPI Support, improve performance.
 
 '
 'Hardware settings
@@ -349,22 +350,23 @@ Sub InitGLCD_ILI9488
         #ifdef ILI9488_HardwareSPI
           ' harware SPI mode
           asm showdebug SPI constant used equates to HWSPIMODESCRIPT
-          SPIMode HWSPIMODESCRIPT, 0
+          SPIMode HWSPIMODESCRIPT, HWSPIClockModeSCRIPT          
         #endif
 
-       Set ILI9488_CS On
-       Set ILI9488_DC On
+        Set ILI9488_CS On
+        Set ILI9488_DC On
 
 
         'Reset display
-        Wait 50 ms
-        Set ILI9488_RST On
-        Wait 5 ms
-        'Reset sequence (lower line for at least 10 us)
-        Set ILI9488_RST Off
-        Wait 20 us
-        Set ILI9488_RST On
-        Wait 150 ms
+          Wait 50 ms
+          Set ILI9488_RST On
+          Wait 50 ms
+          'Reset sequence (lower line for at least 10 us)
+          Set ILI9488_RST Off
+          Wait 150 us
+          Set ILI9488_RST On
+          Wait 150 ms
+
 
         SendCommand_ILI9488(ILI9488_CMD_POSITIVE_GAMMA_CORRECTION)
         SendData_ILI9488(0x00)
@@ -382,7 +384,6 @@ Sub InitGLCD_ILI9488
         SendData_ILI9488(0x16)
         SendData_ILI9488(0x1A)
         SendData_ILI9488(0x0F)
-
 
         SendCommand_ILI9488(ILI9488_CMD_NEGATIVE_GAMMA_CORRECTION)
         SendData_ILI9488(0x00)
@@ -452,14 +453,14 @@ Sub InitGLCD_ILI9488
 
         Dim GLCDbackground, GLCDForeground as Long
         'Default Colours
-        GLCDForeground = ILI9488_WHITE
+        GLCDForeground = ILI9488_TFT_WHITE
         'Default Colours
         #ifdef DEFAULT_GLCDBACKGROUND
           GLCDbackground = DEFAULT_GLCDBACKGROUND
         #endif
 
         #ifndef DEFAULT_GLCDBACKGROUND
-          GLCDbackground = ILI9488_BLACK
+          GLCDbackground = ILI9488_TFT_BLACK
         #endif
 
         'Variables required for device
@@ -638,127 +639,133 @@ Sub GLCDCLS_ILI9488 ( Optional In  GLCDbackground as Long = GLCDbackground )
 
     Dim ILI9488SendLong as Long
 
-    SetAddressWindow_ILI9488 ( 0, 0, GLCD_WIDTH  , GLCD_HEIGHT )
+    SetAddressWindow_ILI9488 ( 0, 0, GLCD_WIDTH - 1 , GLCD_HEIGHT -1 )
     ILI9488SendLong = [LONG]GLCDbackground
 
-    #ifdef Var(SPI1TCNTL)
+    #if Var(SPI1TCNTL) or Var(SPCR0)
       HWSPI_Send_18bits =  ILI9488SendLong
     #endif
 
     set ILI9488_CS OFF
     set ILI9488_DC ON
     Repeat 153600
-      #ifndef UNO_8bit_Shield
-          #ifdef ILI9488_HardwareSPI
-            #ifdef PIC
-              #ifndef Var(SSPCON1)
-                #ifdef Var(SSPCON)
-                  Dim SSPCON1 Alias SSPCON
+
+        #ifndef UNO_8bit_Shield
+            #ifdef ILI9488_HardwareSPI
+              #ifdef PIC
+                #ifndef Var(SSPCON1)
+                  #ifdef Var(SSPCON)
+                    Dim SSPCON1 Alias SSPCON
+                  #endif
+                #endif
+                #ifdef Var(SPI1TCNTL)
+                  //~ Tested and validated
+                  // FastHWSPITransfer  ILI9488SendLong
+                  // FastHWSPITransfer  ILI9488SendLong_H
+                  // FastHWSPITransfer  ILI9488SendLong_U
+                  HWSPI_Fast_Write_18bits_Macro
+
+                #else
+                  'Clear WCOL
+                  Set SSPCON1.WCOL Off
+                  'Put byte to send into buffer
+                  'Will start transfer
+                  SSPBUF = ILI9488SendLong_u
+                  Wait While SSPSTAT.BF = Off
+                  Set SSPSTAT.BF Off
+                  #if ChipFamily 16
+                    ILI9488TempOut = SSPBUF
+                  #endif
+
+                  'Clear WCOL
+                  Set SSPCON1.WCOL Off
+                  'Put byte to send into buffer
+                  'Will start transfer
+                  SSPBUF = ILI9488SendLong_h
+                  Wait While SSPSTAT.BF = Off
+                  Set SSPSTAT.BF Off
+                  #if ChipFamily 16
+                    ILI9488TempOut = SSPBUF
+                  #endif
+
+                  'Clear WCOL
+                  Set SSPCON1.WCOL Off
+                  'Put byte to send into buffer
+                  'Will start transfer
+                  SSPBUF = ILI9488SendLong
+                  Wait While SSPSTAT.BF = Off
+                  Set SSPSTAT.BF Off
+                  #if ChipFamily 16
+                    ILI9488TempOut = SSPBUF
+                  #endif
+
                 #endif
               #endif
-              #ifdef Var(SPI1TCNTL)
-                //~ Tested and validated
-                // FastHWSPITransfer  ILI9488SendLong
-                // FastHWSPITransfer  ILI9488SendLong_H
-                // FastHWSPITransfer  ILI9488SendLong_U
-                HWSPI_Fast_Write_18bits_Macro
+              #ifdef AVR
+                #if NoVar(SPCR0)
+                  'Master mode only
+                  SPDR = ILI9488SendLong_u
+                  Do
 
-              #else
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9488SendLong_u
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9488TempOut = SSPBUF
+                  Loop While SPSR.WCOL
+                  'Read buffer
+                  'Same for master and slave
+                  Wait While SPSR.SPIF = Off
+
+                  SPDR = ILI9488SendLong_h
+                  Do
+
+                  Loop While SPSR.WCOL
+                  'Read buffer
+                  'Same for master and slave
+                  Wait While SPSR.SPIF = Off
+
+                  'Master mode only
+                  SPDR = [BYTE]ILI9488SendLong
+                  Do
+
+                  Loop While SPSR.WCOL
+                  'Read buffer
+                  'Same for master and slave
+                  Wait While SPSR.SPIF = Off
                 #endif
-
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9488SendLong_h
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9488TempOut = SSPBUF
-                #endif
-
-                'Clear WCOL
-                Set SSPCON1.WCOL Off
-                'Put byte to send into buffer
-                'Will start transfer
-                SSPBUF = ILI9488SendLong
-                Wait While SSPSTAT.BF = Off
-                Set SSPSTAT.BF Off
-                #if ChipFamily 16
-                  ILI9488TempOut = SSPBUF
-                #endif
-
+                #if Var(SPCR0)
+                  
+                    HWSPI_Fast_Write_18bits_Macro
+                  
+                #endif              
               #endif
-            #endif
-            #ifdef AVR
-                'Master mode only
-                SPDR = ILI9488SendWord_u
-                Do
-
-                Loop While SPSR.WCOL
-                'Read buffer
-                'Same for master and slave
-                Wait While SPSR.SPIF = Off
-
-                SPDR = ILI9488SendWord_h
-                Do
-
-                Loop While SPSR.WCOL
-                'Read buffer
-                'Same for master and slave
-                Wait While SPSR.SPIF = Off
-
-                'Master mode only
-                SPDR = ILI9488SendWord
-                Do
-
-                Loop While SPSR.WCOL
-                'Read buffer
-                'Same for master and slave
-                Wait While SPSR.SPIF = Off
 
             #endif
 
-          #endif
-
-          #ifndef ILI9488_HardwareSPI
-            Send_18bits_ILI9488 ( GLCDbackground )
-          #endif
-
-      #endif
-
-      #ifdef UNO_8bit_Shield
-            ! No tested therefore not supported
-            GLCDCLS_HiBytePortion1 = (PORTD & 0B00000011) | ((ILI9488SendWord_H) & 0B11111100)
-            GLCDCLS_HiBytePortion2 = (PORTB & 0B11111100) | ((ILI9488SendWord_H) & 0B00000011)
-            GLCDCLS_LoBytePortion1 =  (PORTD & 0B00000011) | ((ILI9488SendWord) & 0B11111100)
-            GLCDCLS_LoBytePortion2 =  (PORTB & 0B11111100) | ((ILI9488SendWord) & 0B00000011)
-            
-            #ifdef AVR
-              'Write 8 bit bus for AVR
-              PORTD = GLCDCLS_HiBytePortion1
-              PORTB = GLCDCLS_HiBytePortion2
-              set ILI9488_WR OFF
-              set ILI9488_WR ON
-              PORTD = GLCDCLS_LoBytePortion1
-              PORTB = GLCDCLS_LoBytePortion2
-              set ILI9488_WR OFF
-              set ILI9488_WR ON
+            #ifndef ILI9488_HardwareSPI
+              Send_18bits_ILI9488 ( GLCDbackground )
             #endif
-      #endif
+
+        #endif
+
+        #ifdef UNO_8bit_Shield
+              ! No tested therefore not supported
+              GLCDCLS_HiBytePortion1 = (PORTD & 0B00000011) | ((ILI9488SendWord_H) & 0B11111100)
+              GLCDCLS_HiBytePortion2 = (PORTB & 0B11111100) | ((ILI9488SendWord_H) & 0B00000011)
+              GLCDCLS_LoBytePortion1 =  (PORTD & 0B00000011) | ((ILI9488SendWord) & 0B11111100)
+              GLCDCLS_LoBytePortion2 =  (PORTB & 0B11111100) | ((ILI9488SendWord) & 0B00000011)
+              
+              #ifdef AVR
+                'Write 8 bit bus for AVR
+                PORTD = GLCDCLS_HiBytePortion1
+                PORTB = GLCDCLS_HiBytePortion2
+                set ILI9488_WR OFF
+                set ILI9488_WR ON
+                PORTD = GLCDCLS_LoBytePortion1
+                PORTB = GLCDCLS_LoBytePortion2
+                set ILI9488_WR OFF
+                set ILI9488_WR ON
+              #endif
+        #endif
 
     end repeat
     set ILI9488_CS ON;
-
 
 End Sub
 
@@ -1022,7 +1029,7 @@ End Sub
 '''Send a command to the ILI9488 GLCD
 '''@param ILI9488SendByte Command to send
 '''@hide
-sub  SendCommand_ILI9488( IN ILI9488SendByte as byte )
+sub  SendCommand_ILI9488( IN SPITxData as byte )
 
     dim ILI9488TempOut as Byte
 
@@ -1032,7 +1039,7 @@ sub  SendCommand_ILI9488( IN ILI9488SendByte as byte )
 
       #ifdef ILI9488_HardwareSPI
         'Hardware SPI ****************************************
-         SPITransfer  ILI9488SendByte,  ILI9488TempOut
+         SPITransfer  SPITxData,  SPIRxData
          set ILI9488_CS ON;
          exit sub
       #endif
@@ -1041,13 +1048,13 @@ sub  SendCommand_ILI9488( IN ILI9488SendByte as byte )
       'Software SPI ****************************************
       repeat 8
 
-        if ILI9488SendByte.7 = ON  then
+        if SPITxData.7 = ON  then
           set ILI9488_DO ON;
         else
           set ILI9488_DO OFF;
         end if
         SET GLCD_SCK On;
-        rotate ILI9488SendByte left
+        rotate SPITxData left
         set GLCD_SCK Off;
 
       end repeat
@@ -1063,8 +1070,8 @@ sub  SendCommand_ILI9488( IN ILI9488SendByte as byte )
       set ILI9488_DC OFF;
 
       #ifdef AVR
-      PORTD = (PORTD & 0B00000011) | ((ILI9488SendByte) & 0B11111100)
-      PORTB = (PORTB & 0B11111100) | ((ILI9488SendByte) & 0B00000011)
+      PORTD = (PORTD & 0B00000011) | ((SPITxData) & 0B11111100)
+      PORTB = (PORTB & 0B11111100) | ((SPITxData) & 0B00000011)
       #endif
 
 
@@ -1080,7 +1087,7 @@ end Sub
 '''Send a data byte to the ILI9488 GLCD
 '''@param ILI9488SendByte Byte to send
 '''@hide
-sub  SendData_ILI9488( IN ILI9488SendByte as byte )
+sub  SendData_ILI9488( IN SPITxData as byte )
 
     #ifndef UNO_8bit_Shield
       set ILI9488_CS OFF;
@@ -1088,7 +1095,7 @@ sub  SendData_ILI9488( IN ILI9488SendByte as byte )
 
       #ifdef ILI9488_HardwareSPI
         'Hardware SPI ****************************************
-         SPITransfer  ILI9488SendByte,  ILI9488TempOut
+         SPITransfer  SPITxData,  SPIRxData
          set ILI9488_CS ON;
          exit sub
       #endif
@@ -1097,13 +1104,13 @@ sub  SendData_ILI9488( IN ILI9488SendByte as byte )
       'Software SPI ****************************************
       repeat 8
 
-        if ILI9488SendByte.7 = ON then
+        if SPITxData.7 = ON then
           set ILI9488_DO ON;
         else
           set ILI9488_DO OFF;
         end if
         SET GLCD_SCK On;
-        rotate ILI9488SendByte left
+        rotate SPITxData left
         set GLCD_SCK Off;
 
       end Repeat
@@ -1118,8 +1125,8 @@ sub  SendData_ILI9488( IN ILI9488SendByte as byte )
       set ILI9488_DC ON;
 
       #ifdef AVR
-      PORTD = (PORTD & 0B00000011) | ((ILI9488SendByte) & 0B11111100)
-      PORTB = (PORTB & 0B11111100) | ((ILI9488SendByte) & 0B00000011)
+      PORTD = (PORTD & 0B00000011) | ((SPITxData) & 0B11111100)
+      PORTB = (PORTB & 0B11111100) | ((SPITxData) & 0B00000011)
       #endif
 
       set ILI9488_WR OFF

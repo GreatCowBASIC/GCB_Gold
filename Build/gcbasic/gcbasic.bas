@@ -1,1246 +1,1277 @@
-' GCBASIC - A BASIC Compiler for microcontrollers
-' Copyright (C) 2006 - 2024 Hugh Considine, Evan R. Venn and the GCBASIC team
-'
-' This program is free software; you can redistribute it and/or modify
-' it under the terms of the GNU General Public License as published by
-' the Free Software Foundation; either version 2 of the License, or
-' (at your option) any later version.
-'
-' This program is distributed in the hope that it will be useful,
-' but WITHOUT ANY WARRANTY; without even the implied warranty of
-' MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-' GNU General Public License for more details.
-'
-' You should have received a copy of the GNU General Public License
-' along with this program; if not, write to the Free Software
-' Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-'
-'If you have any questions about the source code, please email me: hconsidine at internode.on.net
-'Any other questions, please email me or see the GCBASIC forums.
+/'GCBASIC - A BASIC Compiler for microcontrollers
+  Copyright (C) 2006 - 2025 Hugh Considine, Evan R. Venn and the GCBASIC team
+  
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  
+  If you have any questions about the source code, please email me: hconsidine at internode.on.net
+  Any other questions, please email me or see the GCBASIC forums.
+  '/
 
 'Array sizes
-#Define MAX_PROG_PAGES 20
+  #Define MAX_PROG_PAGES 20
 'Number of buckets to use in hash maps - increasing makes operations faster but uses more RAM
-#Define HASH_MAP_BUCKETS 512
-
-#Define RESERVED_WORDS 1024
-
-#Define MAXTABLEITEMS 65536
-
-Type PICASInc
-  Value as String
-  NumVal as Integer
-End Type
-
-Type PICASCfg
-  Value as String
-  State as String
-  Config as String
-End Type
-
-Type PICASPatch
-  Source as String
-  Destination as String
-End Type
-
-Dim Shared ReverseIncFileLookup ( 5000) as PICASInc
-Dim Shared ReverseCfgFileLookup ( 10000) as PICASCfg
-Dim Shared Patches(100) as PICASPatch
-
-'31k types
-Type _31kCfg
-  'Chip32Support_OSC,Chip32Support_Register, Chip32Support_ANDMask,Chip32Support_ORValue
-  State as Integer
-  OSCType as String
-  OSCRegister as String
-  Value as Integer
-End Type
-Dim Shared _31kSupported as _31kCfg
-
-'Type for sections of code returned from subs
-Type LinkedListElement
-  Value As String
-  NumVal As Integer
-  MetaData As Any Pointer
-  Prev As LinkedListElement Pointer
-  Next As LinkedListElement Pointer
-End Type
-
-Type HashMap
-  Buckets(HASH_MAP_BUCKETS) As LinkedListElement Pointer
-End Type
-
-'Meta data for program line
-Type ProgLineMeta
-  RequiredBank As Integer 'Bank chip needs for this icon, -1 if N/A
-  VarInBank As String 'Variable in the bank that is to be changed to
-
-  IsAutoPageSel As Integer 'Set to -1 if line is automatically added pagesel
-
-  'List of commands that lead to this one
-  PrevCommands As LinkedListElement Pointer
-  'List of commands that this one leads to
-  NextCommands As LinkedListElement Pointer
-
-  AsmCommand As Integer 'Index of asm instruction on line. -1 if none.
-  LineSize As Integer 'Size of line in words.
-
-  isLabel as Integer
-  isPICAS as Integer
-  IsESEG  as Integer
-
-  OrgLine as String
-
-  RawConfig as string
-
-  Conditional as Integer
-
-End Type
-
-Type ConstMeta
-  Value As String
-  Startup As String
-End Type
-
-Type OriginType
-  FileNo As Integer
-  LineNo As Integer
-  SubNo As Integer
-End Type
-
-Type SourceFileType
-  FileName As String
-  RequiresConversion As Integer = 0
-
-  InitSub As String
-  InitSubUsed As Integer
-  InitSubPriority As Integer = 100
-  InitSubFound As Integer = 0
-
-  IncludeOrigin As String
-
-  OptionExplicit As Integer
-
-  UserInclude as Integer = 0
-  SystemInclude as Integer = 0
-  Ignore as Integer = 0
-
-  RequiredModules As LinkedListElement Pointer
-End Type
-
-Type VariableType
-  Name As String
-  Type As String
-  Size As Integer
-  Pointer As String
-  Alias As String
-  Origin As String
-
-  FixedLocation As Integer
-  Location As Integer
-  BitVarLocation As String
-  IsSharedBank As Integer
-  ExplicitDeclaration As Integer
-
-  FixedSize As Integer
-  Used As Integer
-
-  NeedsSequentialLoc As Integer ' Set if individual bits accessed, and must have bytes in sequential order
-  UndeclaredError As Integer ' Set if option explicit used and this variable wasn't declared
-
-  AllocOnly as Integer  'Set to -1 if this variable is an ALLOC (allocation memory only)
-
-End Type
-
-Type VariableListElement
-  Name As String
-  Value As String
-  IsArray As Integer
-End Type
-
-Type IntData
-  Vector As String
-  VectorLoc As Integer
-  EventName As String
-  EnableBit As String
-  FlagBit As String
-  Handler As String
-End Type
-
-Type SubParam
-  Name As String
-  Type As String
-  Dir As Integer '1 - in, 2 - out, 3 - in/out
-  Default As String
-End Type
-
-Type SubType
-  Name As String
-  SourceFile As Integer
-  Origin As String
-
-  IsMacro As Integer
-  IsFunction As Integer
-  IsData As Integer
-  ReturnType As String
-  Params(50) As SubParam
-  ParamCount As Integer
-  Overloaded As Integer
-
-  'Variables in subroutine
-  Variables As HashMap
-  VarsRead As Integer
-
-  'Flags
-  Required As Integer
-  Compiled As Integer
-  NoReturn As Integer
-  HasFinalGoto As Integer
-
-  'If ends in goto, record sub jumped to
-  FinalGotoDest As String
-
-  'If overloaded function, alias for return value
-  ReturnAlias As String
-
-  'Call tree
-  CallList As LinkedListElement Pointer 'Outgoing calls
-  CallerList As LinkedListElement Pointer 'Incoming calls
-
-  'Assembly bit variable used to save IntOn/IntOff state
-  IntStateSaveVar As String
-
-  'Original BASIC size (for compilation report)
-  OriginalLOC As Integer
-
-  'Program memory page selection hints
-  HexSize As Integer
-  DestPage As Integer
-  FirstPage As Integer
-  LocationSet As Integer
-  MaxHexSize As Integer 'Highest recorded size
-  CallsFromPage(MAX_PROG_PAGES) As Integer 'Record calls from each page
-
-  'Temporary variables used (replace if they overlap with variables in a calling subroutine)
-  TemporaryVars As LinkedListElement Pointer
-
-  'Sub code
-  CodeStart As LinkedListElement Pointer
-
-End Type
-
-Type DataTableType
-  Name As String
-  Type As String
-  Origin As String
-  StoreLoc As Integer '0 = Flash, 1 = Data EEPROM
-  Used As Integer
-  SourceFile As String 'Used if table loaded from file
-
-  RawItems As LinkedListElement Pointer
-  CurrItem As LinkedListElement Pointer
-
-  Items As Integer
-  Item(MAXTABLEITEMS) As LongInt
-  IsEEPromData As Integer
-  IsData As Integer
-  FixedLoc As Integer
-End Type
-
-Type ProgString
-  Value As String
-  Used As Integer
-End Type
-
-Type SubCallType
-  Called As SubType Pointer
-  Caller As SubType Pointer
-  CalledID As Integer
-  Origin As String
-  Param(50, 2) As String
-  Params As Integer
-  CallSig As String
-End Type
-
-Type SysVarType
-  Name As String
-  Location As Integer
-  Parent As String
-  AVRAlias As Integer
-End Type
-
-Type AsmCommand
-  Syntax As String
-  Words As Integer
-  Word(4) As String
-
-  Cmd As String
-  Params As Integer
-  Param(25) As String
-
-  FamilyVariant(10) As Integer
-  FamilyVariants As Integer = 0
-
-  Alternative As AsmCommand Pointer 'Need this to allow for multiple commands with same name
-End Type
-
-Type ConfigOp
-  Op As String
-  Loc As Integer
-  Val As Integer
-End Type
-
-Type ConfigSetting
-  Name As String 'Name of config setting
-  Setting As LinkedListElement Pointer 'Points to current option
-  Options As LinkedListElement Pointer 'List of potential settings
-End Type
-
-Type CalcVar
-  MaxType As String
-  Status As String
-  CurrentType As String
-  CurrentValue As String
-  High As Integer
-End Type
-
-Type ExternalTool
-  Name As String
-  Type As String
-  DispName As String
-  Cmd As String
-  Params As String
-  WorkingDir As String
-  ExtraParam(5, 2) As String
-  ExtraParams As Integer
-
-  'Conditions for use
-  UseIf As String
-
-  'Allow programmers to require config or option settings
-  ProgConfig As String
-  ProgOptions As String
-End Type
-
-Type FileConverterType
-  Name As String
-  Desc As String
-  InFormat(10) As String
-  InFormats As Integer
-  OutFormat As String
-  ExeName As String
-  Params As String
-  DeleteTarget As Integer
-End Type
-
-'Type to store generated code
-Type CodeSection
-  CodeList As LinkedListElement Pointer
-  CodeEnd As LinkedListElement Pointer
-End Type
-
-'Type to store a program memory page
-Type ProgMemPageType
-  StartLoc As Integer
-  EndLoc As Integer
-  CodeSize As Integer
-  MaxSize As Integer
-  PageSize as Integer
-End Type
-
-'Type to store a RAM bank
-Type DataMemBankType
-  StartLoc As Integer 'Start address of bank
-  EndLoc As Integer 'End address of bank
-  DataSize As Integer 'Amount of bank currently used
-End Type
-
-'Type to store info on which page is best
-Type AllocationOrderType
-  Page As Integer
-  Calls As Integer
-End Type
-
-'Type to store usage info on an I/O pin
-Type PinDirType
-  'Name of the pin stored in LinkedListElement
-  'This type used as metadata
-  'Record pin reads and writes
-  WrittenTo As Integer
-  ReadFrom As Integer
-  'Set to -1 if whole port set, but direction may not be known
-  WholePort As Integer
-  'Record pin direction settings
-  SetOut As Integer
-  SetIn As Integer
-  'Allowed directions (from chip data)
-  AllowedDirections As String
-  'If Dir command sets entire port to constant, store here
-  'Set to -1 if set by a variable
-  WholePortDir As Integer
-End Type
+  #Define HASH_MAP_BUCKETS 512
+
+  #Define RESERVED_WORDS 1024
+
+  #Define MAXTABLEITEMS 65536
+  #DEFINE MAXPARAMS 50
+
+'Start of Types
+  Type PICASInc
+    Value as String
+    NumVal as Integer
+  End Type
+
+  Type PICASCfg
+    Value as String
+    State as String
+    Config as String
+  End Type
+
+  Type PICASPatch
+    Source as String
+    Destination as String
+  End Type
+
+  Dim Shared ReverseIncFileLookup ( 5000) as PICASInc
+  Dim Shared ReverseCfgFileLookup ( 10000) as PICASCfg
+  Dim Shared Patches(100) as PICASPatch
+
+  '31k types
+  Type _31kCfg
+    'Chip32Support_OSC,Chip32Support_Register, Chip32Support_ANDMask,Chip32Support_ORValue
+    State as Integer
+    OSCType as String
+    OSCRegister as String
+    Value as Integer
+  End Type
+  Dim Shared _31kSupported as _31kCfg
+
+  'Type for sections of code returned from subs
+  Type LinkedListElement
+    Value As String
+    NumVal As Integer
+    MetaData As Any Pointer
+    Prev As LinkedListElement Pointer
+    Next As LinkedListElement Pointer
+  End Type
+
+  Type HashMap
+    Buckets(HASH_MAP_BUCKETS) As LinkedListElement Pointer
+  End Type
+
+  'Meta data for program line
+  Type ProgLineMeta
+    RequiredBank As Integer 'Bank chip needs for this icon, -1 if N/A
+    VarInBank As String 'Variable in the bank that is to be changed to
+
+    IsAutoPageSel As Integer 'Set to -1 if line is automatically added pagesel
+
+    'List of commands that lead to this one
+    PrevCommands As LinkedListElement Pointer
+    'List of commands that this one leads to
+    NextCommands As LinkedListElement Pointer
+
+    AsmCommand As Integer 'Index of asm instruction on line. -1 if none.
+    LineSize As Integer 'Size of line in words.
+
+    isLabel as Integer
+    isPICAS as Integer
+    IsESEG  as Integer
+
+    OrgLine as String
+
+    RawConfig as string
+
+    Conditional as Integer
+
+  End Type
+
+  Type ConstMeta
+    Value As String
+    Startup As String
+  End Type
+
+  Type OriginType
+    FileNo As Integer
+    LineNo As Integer
+    SubNo As Integer
+  End Type
+
+  Type SourceFileType
+    FileName As String
+    RequiresConversion As Integer = 0
+
+    InitSub As String
+    InitSubUsed As Integer
+    InitSubPriority As Integer = 100
+    InitSubFound As Integer = 0
+
+    IncludeOrigin As String
+
+    OptionExplicit As Integer
+
+    UserInclude as Integer = 0
+    SystemInclude as Integer = 0
+    Ignore as Integer = 0
+
+    RequiredModules As LinkedListElement Pointer
+  End Type
+
+  Type VariableType
+    Name As String
+    Type As String
+    Size As Integer
+    Pointer As String
+    Alias As String
+    Origin As String
+
+    FixedLocation As Integer
+    Location As Integer
+    BitVarLocation As String
+    IsSharedBank As Integer
+    ExplicitDeclaration As Integer
+
+    FixedSize As Integer
+    Used As Integer
+
+    NeedsSequentialLoc As Integer ' Set if individual bits accessed, and must have bytes in sequential order
+    UndeclaredError As Integer ' Set if option explicit used and this variable wasn't declared
+
+    AllocOnly as Integer  'Set to -1 if this variable is an ALLOC (allocation memory only)
+
+  End Type
+
+  Type VariableListElement
+    Name As String
+    Value As String
+    IsArray As Integer
+    SharedMemory As Integer = 0
+  End Type
+
+  Type IntData
+    Vector As String
+    VectorLoc As Integer
+    EventName As String
+    EnableBit As String
+    FlagBit As String
+    Handler As String
+  End Type
+
+  Type SubParam
+    Name As String
+    Type As String
+    Dir As Integer '1 - in, 2 - out, 3 - in/out
+    Default As String
+  End Type
+
+  Type SubType
+    Name As String
+    SourceFile As Integer
+    Origin As String
+
+    IsMacro As Integer
+    IsFunction As Integer
+    IsData As Integer
+    ReturnType As String
+    Params(50) As SubParam
+    ParamCount As Integer
+    Overloaded As Integer
+
+    'Variables in subroutine
+    Variables As HashMap
+    VarsRead As Integer
+
+    'Flags
+    Required As Integer
+    Compiled As Integer
+    NoReturn As Integer
+    HasFinalGoto As Integer
+
+    'If ends in goto, record Sub jumped to
+    FinalGotoDest As String
+
+    'If overloaded function, alias for return value
+    ReturnAlias As String
+
+    'Call tree
+    CallList As LinkedListElement Pointer 'Outgoing calls
+    CallerList As LinkedListElement Pointer 'Incoming calls
+
+    'Assembly bit variable used to save IntOn/IntOff state
+    IntStateSaveVar As String
+
+    'Original BASIC size (for compilation report)
+    OriginalLOC As Integer
+
+    'Program memory page selection hints
+    HexSize As Integer
+    DestPage As Integer
+    FirstPage As Integer
+    LocationSet As Integer
+    MaxHexSize As Integer 'Highest recorded size
+    CallsFromPage(MAX_PROG_PAGES) As Integer 'Record calls from each page
+
+    'Temporary variables used (replace if they overlap with variables in a calling subroutine)
+    TemporaryVars As LinkedListElement Pointer
+
+    'Sub code
+    CodeStart As LinkedListElement Pointer
+
+  End Type
+
+  Type DataTableType
+    Name As String
+    Type As String
+    Origin As String
+    StoreLoc As Integer '0 = Flash, 1 = Data EEPROM
+    Used As Integer
+    SourceFile As String 'Used if table loaded from file
+
+    RawItems As LinkedListElement Pointer
+    CurrItem As LinkedListElement Pointer
+
+    Items As Integer
+    Item(MAXTABLEITEMS) As LongInt
+    IsEEPromData As Integer
+    IsData As Integer
+    FixedLoc As Integer
+  End Type
+
+  Type ProgString
+    Value As String
+    Used As Integer
+  End Type
+
+  Type SubCallType
+    Called As SubType Pointer
+    Caller As SubType Pointer
+    CalledID As Integer
+    Origin As String
+    Param(MAXPARAMS, 2) As String
+    Params As Integer
+    CallSig As String
+  End Type
+
+  Type SysVarType
+    Name As String
+    Location As Integer
+    Parent As String
+    AVRAlias As Integer
+  End Type
+
+  Type AsmCommand
+    Syntax As String
+    Words As Integer
+    Word(4) As String
+
+    Cmd As String
+    Params As Integer
+    Param(25) As String
+
+    FamilyVariant(10) As Integer
+    FamilyVariants As Integer = 0
+
+    Alternative As AsmCommand Pointer 'Need this to allow for multiple commands with same name
+  End Type
+
+  Type ConfigOp
+    Op As String
+    Loc As Integer
+    Val As Integer
+  End Type
+
+  Type ConfigSetting
+    Name As String 'Name of config setting
+    Setting As LinkedListElement Pointer 'Points to current option
+    Options As LinkedListElement Pointer 'List of potential settings
+  End Type
+
+  Type CalcVar
+    MaxType As String
+    Status As String
+    CurrentType As String
+    CurrentValue As String
+    High As Integer
+  End Type
+
+  Type ExternalTool
+    Name As String
+    Type As String
+    DispName As String
+    Cmd As String
+    Params As String
+    WorkingDir As String
+    ExtraParam(5, 2) As String
+    ExtraParams As Integer
+
+    'Conditions for use
+    UseIf As String
+
+    'Allow programmers to require config or option settings
+    ProgConfig As String
+    ProgOptions As String
+  End Type
+
+  Type FileConverterType
+    Name As String
+    Desc As String
+    InFormat(10) As String
+    InFormats As Integer
+    OutFormat As String
+    ExeName As String
+    Params As String
+    DeleteTarget As Integer
+  End Type
+
+  'Type to store generated code
+  Type CodeSection
+    CodeList As LinkedListElement Pointer
+    CodeEnd As LinkedListElement Pointer
+  End Type
+
+  'Type to store a program memory page
+  Type ProgMemPageType
+    StartLoc As Integer
+    EndLoc As Integer
+    CodeSize As Integer
+    MaxSize As Integer
+    PageSize as Integer
+  End Type
+
+  'Type to store a RAM bank
+  Type DataMemBankType
+    StartLoc As Integer 'Start address of bank
+    EndLoc As Integer 'End address of bank
+    DataSize As Integer 'Amount of bank currently used
+  End Type
+
+  'Type to store info on which page is best
+  Type AllocationOrderType
+    Page As Integer
+    Calls As Integer
+  End Type
+
+  'Type to store usage info on an I/O pin
+  Type PinDirType
+    'Name of the pin stored in LinkedListElement
+    'This type used as metadata
+    'Record pin reads and writes
+    WrittenTo As Integer
+    ReadFrom As Integer
+    'Set to -1 if whole port set, but direction may not be known
+    WholePort As Integer
+    'Record pin direction settings
+    SetOut As Integer
+    SetIn As Integer
+    'Allowed directions (from chip data)
+    AllowedDirections As String
+    'If Dir command sets entire port to constant, store here
+    'Set to -1 if set by a variable
+    WholePortDir As Integer
+  End Type
 
 'Subs in this file
-declare SUB Add18FBanks(CompSub As SubType Pointer)
-declare SUB AddBankCommands(CompSub As SubType Pointer)
-declare SUB AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage As Integer, ByRef CurrPagePos As Integer, ByRef DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer )
-declare Sub AddMainEndCode
-declare Sub AddMainInitCode
-declare Sub AddPageCommands(CompSub As SubType Pointer)
-declare Sub AddInterruptCode
-declare SUB AddSysVarBits (CompSub As SubType Pointer)
-declare SUB BuildMemoryMap
-declare SUB CalcConfig
-declare Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As String, OriginIn As String, NeverLast As Integer)
-declare Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As AsmCommand Pointer = 0, GotoPos As AsmCommand Pointer = 0) As Integer
-declare Sub CalcSubSize(CurrSub As SubType Pointer)
-declare FUNCTION CastOrder (InType As String) As Integer
-declare Sub CheckConstName (ConstName As String, Origin As String)
-declare Sub CheckClockSpeed
-declare Sub CompileProgram
-declare Sub CompileSubroutine(CompSub As SubType Pointer)
-declare Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0)
-declare FUNCTION CompileCalcAdd(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-declare FUNCTION CompileCalcCondition(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-declare FUNCTION CompileCalcLogic(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-declare FUNCTION CompileCalcMult(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
-declare Function CompileCalcUnary(CodeSection As CodeSection Pointer, Act As String, V2 As String, Origin As String, AnswerIn As String) As String
-declare Function CompileConditions (Condition As String, IfTrue As String, Origin As String, CompSub As SubType Pointer = 0) As LinkedListElement Pointer
-declare Sub CompileDim (CurrSub As SubType Pointer)
-declare SUB CompileDir (CompSub As SubType Pointer)
-declare SUB CompileDo (CompSub As SubType Pointer)
-declare SUB CompileExitSub (CompSub As SubType Pointer)
-declare SUB CompileFor (CompSub As SubType Pointer)
-declare Sub CompileGoto (CompSub As SubType Pointer)
-declare SUB CompileIF (CompSub As SubType Pointer)
-declare Sub CompileIntOnOff (CompSub As SubType Pointer)
-declare SUB CompileOn (CompSub As SubType Pointer)
-declare SUB CompilePot (CompSub As SubType Pointer)
-declare SUB CompileReadTable (CompSub As SubType Pointer)
-declare SUB CompileRepeat (CompSub As SubType Pointer)
-declare Sub CompileReturn (CompSub As SubType Pointer)
-declare SUB CompileRotate (CompSub As SubType Pointer)
-declare SUB CompileSelect (CompSub As SubType Pointer)
-declare SUB CompileSet (CompSub As SubType Pointer)
-declare Function CompileString (InLine As String, Origin As String) As LinkedListElement Pointer
-declare Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Pointer
-declare Sub CompileSubCalls (CompSub As SubType Pointer)
-declare SUB CompileTables
-declare SUB CompileVars (CompSub As SubType Pointer)
-declare Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, InvertBitCopy As Integer = 0) As LinkedListElement Pointer
-declare SUB CompileWait (CompSub As SubType Pointer)
-declare Function CompileWholeArray (InLine As String, Origin As String) As LinkedListElement Pointer
-declare Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
-declare Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny As Integer = 0) As Integer
-declare Sub CreateCallTree
-declare Sub CreateReservedWordsList
-declare Sub DisplayProgram
-declare Sub DisplayCallTree
-declare Sub ExtAssembler
-declare Sub PICASAssembler
-declare Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
-declare Sub FinalOptimise
-declare Sub FindAssembly (CompSub As SubType Pointer)
-declare Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As LinkedListElement Pointer = 0, CheckedLines As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-declare Sub FindUncompiledLines
-declare Function FixBit (InBit As String, Origin As String) As String
-declare SUB FixFunctions (CompSub As SubType Pointer)
-declare Sub FixPointerOps (CompSub As SubType Pointer)
-declare Sub FixSinglePinSet
-declare Sub FixTemporaryVariables
-declare Sub FreeCalcVar (VarName As String)
-declare Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
-declare Function GenerateAutoPinDir As LinkedListElement Pointer
-declare Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As String, CurrSub As SubType Pointer = 0, SetStatus As Integer = -1) As LinkedListElement Pointer
-declare Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointer
-declare Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As String, CurrSub As SubType Pointer, CanSkip As Integer) As LinkedListElement Pointer
-declare Function GenerateVectorCode As LinkedListElement Pointer
-declare Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As String) As String
-declare Function GetCalcVar (VarTypeIn As String) As String
-declare Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListElement Pointer = 0, FindCallers As Integer = 0) As LinkedListElement Pointer
-declare FUNCTION GetDestSub(Origin As String) As Integer
-declare Sub GetEqConfig
-declare Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
-declare Function GetLinearLoc(Location As Integer) As Integer
-declare Function GetNonLinearLoc(Location As Integer) As Integer
-declare Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Pointer
-declare Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
-declare Function GetRealIOName(InName As String) As String
-declare Function GetRegisterLoc(RegName As String) As Integer
-declare Function GetSysVar(VarName As String) As SysVarType Pointer
-declare Function GetSysVarName(Address as Integer) As String
-declare Function GetSysVarAliasName(Lookup as String) As String
-declare FUNCTION GetSub(Origin As String) As String
-declare Function GetSubFullName(SubIndex As Integer) As String
-declare FUNCTION GetSubID(Origin As String) As Integer
-declare Function GetSubSig(CurrentSub As SubType) As String
-declare Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
-declare Function GetTool(ToolName As String) As ExternalTool Pointer
-declare SUB InitCompiler
-declare FUNCTION IsArray (VarName As String, CurrSub As SubType Pointer) As Integer
-declare Function IsNonBanked(Location As Integer) As Integer
-declare Function IsInAccessBank(VarNameIn As String) As Integer
-declare Function IsIOPinName(PinName As String) As Integer
-declare Function IsIOReg (RegNameIn As String) As Integer
-declare Function IsIORegDX (RegNameIn As String) As Integer
-declare Function IsLowIOReg (RegNameIn As String) As Integer
-declare Function IsLowRegister(VarName As String) As Integer
-declare Function IsRegister (VarName As String) As Integer
-declare FUNCTION IsString (InData As String, CurrSub As SubType Pointer) As Integer
-declare Function IsUnaryOp (InData As String) As Integer
-declare Sub LoadConverters
-declare FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
-declare Sub LogError(InMessage As String, Origin As String = "")
-declare Sub LogOutputMessage(InMessage As String)
-declare Sub LogWarning(InMessage As String, Origin As String = "")
-declare Sub MergeSubroutines
-declare FUNCTION Message (InData As String) As String
-declare Function ModeAVR As Integer
-declare Function ModePIC As Integer
-declare Function ModeZ8 As Integer
-declare Function NewCodeSection As CodeSection Pointer
-declare Function NewProgLineMeta As ProgLineMeta Pointer
-declare Function NewSubroutine(SubName As String) As SubType Pointer
-declare Sub OptimiseCalls
-declare SUB OptimiseIF(CompSub As SubType Pointer = 0)
-declare Sub OptimiseIncrement(CompSub As SubType Pointer)
-declare Sub PreparePageData
-declare Sub PrepareProgrammer
-declare SUB ProcessArrays (CompSub As SubType Pointer)
-declare SUB ProcessWords ()
-declare Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue As String, RegType As String, Origin As String) As String
-declare SUB ReadChipData
-declare SUB ReadPICASChipData
-declare Sub ReadOptions(OptionsIn As String)
-declare Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
-declare Function ReplaceFnNames(InName As String) As String
-declare Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn As String = "") As Integer
-declare Sub RetrySubRequests
-declare Sub SetCalcTempType (CalcVar As String, NewType As String)
-declare Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
-declare SUB ShowBlock (BlockIn As String)
-declare SUB SplitLines (CompSub As SubType Pointer)
-declare Function TempRemove(Removed As String) As String
-declare Sub TidyProgram
-declare Sub TidySubroutine(CompSub As SubType Pointer)
-declare Function TranslateFile(InFile As String) As String
-declare FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
-declare FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
-declare Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
-declare Sub UpdateSubMap
-declare Sub UpgradeCalcVar (VarName As String, VarType As String)
-declare Sub ValueChanged(VarName As String, VarValue As String)
-declare Sub ValidateParameterIsValid ( inline as String, FunctionParam as String, Origin as String )
-declare FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
-declare Sub WriteAssembly
-declare Sub WriteCompilationReport
-declare SUB WriteErrorLog
+  declare Sub Add18FBanks(CompSub As SubType Pointer)
+  declare Sub AddBankCommands(CompSub As SubType Pointer)
+  declare Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage As Integer, ByRef CurrPagePos As Integer, DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer )
+  declare Sub AddMainEndCode
+  declare Sub AddMainInitCode
+  declare Sub AddPageCommands(CompSub As SubType Pointer)
+  declare Sub AddInterruptCode
+  declare Sub AddSysVarBits (CompSub As SubType Pointer)
+  declare Sub BuildMemoryMap
+  declare Sub CalcConfig
+  declare Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As String, OriginIn As String, NeverLast As Integer)
+  declare Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As AsmCommand Pointer = 0, GotoPos As AsmCommand Pointer = 0) As Integer
+  declare Sub CalcSubSize(CurrSub As SubType Pointer)
+  declare Function CastOrder (InType As String) As Integer
+  declare Sub CheckConstName (ConstName As String, Origin As String)
+  declare Sub CheckClockSpeed
+  declare Sub CompileProgram
+  declare Sub CompileSubroutine(CompSub As SubType Pointer)
+  declare Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0)
+  declare Function CompileCalcAdd(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+  declare Function CompileCalcCondition(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+  declare Function CompileCalcLogic(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+  declare Function CompileCalcMult(CodeSection As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+  declare Function CompileCalcUnary(CodeSection As CodeSection Pointer, Act As String, V2 As String, Origin As String, AnswerIn As String) As String
+  declare Function CompileConditions (Condition As String, IfTrue As String, Origin As String, CompSub As SubType Pointer = 0) As LinkedListElement Pointer
+  declare Sub CompileDim (CurrSub As SubType Pointer)
+  declare Sub CompileDir (CompSub As SubType Pointer)
+  declare Sub CompileDo (CompSub As SubType Pointer)
+  declare Sub CompileExitSub (CompSub As SubType Pointer)
+  declare Sub CompileFor (CompSub As SubType Pointer)
+  declare Sub CompileGoto (CompSub As SubType Pointer)
+  declare Sub CompileIF (CompSub As SubType Pointer)
+  declare Sub CompileIntOnOff (CompSub As SubType Pointer)
+  declare Sub CompileOn (CompSub As SubType Pointer)
+  declare Sub CompilePot (CompSub As SubType Pointer)
+  declare Sub CompileReadTable (CompSub As SubType Pointer)
+  declare Sub CompileRepeat (CompSub As SubType Pointer)
+  declare Sub CompileReturn (CompSub As SubType Pointer)
+  declare Sub CompileRotate (CompSub As SubType Pointer)
+  declare Sub CompileSelect (CompSub As SubType Pointer)
+  declare Sub CompileSet (CompSub As SubType Pointer)
+  declare Function CompileString (InLine As String, Origin As String) As LinkedListElement Pointer
+  declare Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Pointer
+  declare Sub CompileSubCalls (CompSub As SubType Pointer)
+  declare Sub CompileTables
+  declare Sub CompileVars (CompSub As SubType Pointer)
+  declare Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, InvertBitCopy As Integer = 0) As LinkedListElement Pointer
+  declare Sub CompileWait (CompSub As SubType Pointer)
+  declare Function CompileWholeArray (InLine As String, Origin As String) As LinkedListElement Pointer
+  declare Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
+  declare Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny As Integer = 0) As Integer
+  declare Sub CreateCallTree
+  declare Sub CreateReservedWordsList
+  declare Sub DisplayProgram
+  declare Sub DisplayCallTree
+  declare Sub ExtAssembler
+  declare Sub PICASAssembler
+  declare Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
+  declare Sub FinalOptimise
+  declare Sub FindAssembly (CompSub As SubType Pointer)
+  declare Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As LinkedListElement Pointer = 0, CheckedLines As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+  declare Sub FindUncompiledLines
+  declare Function FixBit (InBit As String, Origin As String) As String
+  declare Sub FixFunctions (CompSub As SubType Pointer)
+  declare Sub FixPointerOps (CompSub As SubType Pointer)
+  declare Sub FixSinglePinSet
+  declare Sub FixTemporaryVariables
+  declare Sub FreeCalcVar (VarName As String)
+  declare Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
+  declare Function GenerateAutoPinDir As LinkedListElement Pointer
+  declare Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As String, CurrSub As SubType Pointer = 0, SetStatus As Integer = -1) As LinkedListElement Pointer
+  declare Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointer
+  declare Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As String, CurrSub As SubType Pointer, CanSkip As Integer) As LinkedListElement Pointer
+  declare Function GenerateVectorCode As LinkedListElement Pointer
+  declare Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As String) As String
+  declare Function GetCalcVar (VarTypeIn As String) As String
+  declare Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListElement Pointer = 0, FindCallers As Integer = 0) As LinkedListElement Pointer
+  declare Function GetDestSub(Origin As String) As Integer
+  declare Sub GetEqConfig
+  declare Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
+  declare Function GetLinearLoc(Location As Integer) As Integer
+  declare Function GetNonLinearLoc(Location As Integer) As Integer
+  declare Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Pointer
+  declare Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
+  declare Function GetRealIOName(InName As String) As String
+  declare Function GetRegisterLoc(RegName As String) As Integer
+  declare Function GetSysVar(VarName As String) As SysVarType Pointer
+  declare Function GetSysVarName(Address as Integer) As String
+  declare Function GetSysVarAliasName(Lookup as String) As String
+  declare Function GetSub(Origin As String) As String
+  declare Function GetSubFullName(SubIndex As Integer) As String
+  declare Function GetSubID(Origin As String) As Integer
+  declare Function GetSubSig(CurrentSub As SubType) As String
+  declare Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
+  declare Function GetTool(ToolName As String) As ExternalTool Pointer
+  declare Sub InitCompiler
+  declare Function IsArray (VarName As String, CurrSub As SubType Pointer) As Integer
+  declare Function IsNonBanked(Location As Integer) As Integer
+  declare Function IsInAccessBank(VarNameIn As String) As Integer
+  declare Function IsIOPinName(PinName As String) As Integer
+  declare Function IsIOReg (RegNameIn As String) As Integer
+  declare Function IsIORegDX (RegNameIn As String) As Integer
+  declare Function IsLowIOReg (RegNameIn As String) As Integer
+  declare Function IsLowRegister(VarName As String) As Integer
+  declare Function IsRegister (VarName As String) As Integer
+  declare Function IsString (InData As String, CurrSub As SubType Pointer) As Integer
+  declare Function IsUnaryOp (InData As String) As Integer
+  declare Sub LoadConverters
+  declare Function LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
+  declare Sub LogError(InMessage As String, Origin As String = "")
+  declare Sub LogOutputMessage(InMessage As String)
+  declare Sub LogWarning(InMessage As String, Origin As String = "")
+  declare Sub MergeSubroutines
+  declare Function Message (InData As String) As String
+  declare Function ModeAVR As Integer
+  declare Function ModePIC As Integer
+  declare Function ModeZ8 As Integer
+  declare Function NewCodeSection As CodeSection Pointer
+  declare Function NewProgLineMeta As ProgLineMeta Pointer
+  declare Function NewSubroutine(SubName As String) As SubType Pointer
+  declare Sub OptimiseCalls
+  declare Sub OptimiseIF(CompSub As SubType Pointer = 0)
+  declare Sub OptimiseIncrement(CompSub As SubType Pointer)
+  declare Sub PreparePageData
+  declare Sub PrepareProgrammer
+  declare Sub ProcessArrays (CompSub As SubType Pointer)
+  declare Sub ProcessWords ()
+  declare Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue As String, RegType As String, Origin As String) As String
+  declare Sub ReadChipData
+  declare Sub ReadPICASChipData
+  declare Sub ReadOptions(OptionsIn As String)
+  declare Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
+  declare Function ReplaceFnNames(InName As String) As String
+  declare Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn As String = "") As Integer
+  declare Sub RetrySubRequests
+  declare Sub SetCalcTempType (CalcVar As String, NewType As String)
+  declare Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
+  declare Sub ShowBlock (BlockIn As String)
+  declare Sub SplitLines (CompSub As SubType Pointer)
+  declare Function TempRemove(Removed As String) As String
+  declare Sub TidyProgram
+  declare Sub TidySubroutine(CompSub As SubType Pointer)
+  declare Function TranslateFile(InFile As String) As String
+  declare Function TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
+  declare Function TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
+  declare Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
+  declare Sub UpdateSubMap
+  declare Sub UpgradeCalcVar (VarName As String, VarType As String)
+  declare Sub ValueChanged(VarName As String, VarValue As String)
+  declare Sub ValidateParameterIsValid ( inline as String, FunctionParam as String, Origin as String )
+  declare Function VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
+  declare Sub WriteAssembly
+  declare Sub WriteCompilationReport
+  declare Sub WriteErrorLog
 
 'Subs in assembly.bi
-declare Sub AddAsmSymbol(SymName As String, SymValue As String)
-declare Sub AsmOptimiser (CompSub As SubType Pointer)
-declare FUNCTION AsmTidy (DataSource As String, StoredGCASM as integer = -1 ) As String
-declare Function ConfigTidy (DataSource As String ) As String
-declare SUB AssembleProgram
-declare Sub BuildAsmSymbolTable
-declare Function GetConfigBaseLoc As Integer
-declare FUNCTION IsASM (DataSource As String, ParamCount As Integer = -1) As AsmCommand Pointer
-declare Function IsASMConst (DataSource As String) As Integer
-declare Function IsHexConfigValid(HexFile As String, ConfigSettings As String) As Integer
-declare Function IsForVariant(FoundCmd As AsmCommand Pointer) As Integer
+  declare Sub AddAsmSymbol(SymName As String, SymValue As String)
+  declare Sub AsmOptimiser (CompSub As SubType Pointer)
+  declare Function AsmTidy (DataSource As String, StoredGCASM as integer = -1 ) As String
+  declare Function ConfigTidy (DataSource As String ) As String
+  declare Sub AssembleProgram
+  declare Sub BuildAsmSymbolTable
+  declare Function GetConfigBaseLoc As Integer
+  declare Function IsASM (DataSource As String, ParamCount As Integer = -1) As AsmCommand Pointer
+  declare Function IsASMConst (DataSource As String) As Integer
+  declare Function IsHexConfigValid(HexFile As String, ConfigSettings As String) As Integer
+  declare Function IsForVariant(FoundCmd As AsmCommand Pointer) As Integer
 
 'Subs in variables.bi
-declare Function AddFinalVar(VarName As String, VarLoc As String, VarIsArray As Integer = 0) As Integer
-declare Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSubIn As SubType Pointer, VarPointerIn As String, OriginIn As String, FixedLocation As Integer = -1, ExplicitDeclaration As Integer = 0, Used As Integer = -1)
-declare SUB AllocateRAM
-declare Function CalcAliasLoc(LocationIn As String) As Integer
-declare Function GetWholeSFR(BitName As String) As String
-declare Function GetSFRBitValue(BitName As String) As String
-declare Function HasSFR(SFRName As String) As Integer
-declare Function HasSFRBit(BitName As String) As Integer
-declare Function IsNumberString(gstring As String) As Integer
-declare Sub MakeSFR (UserVar As String, SFRAddress As Integer, AVRAlias As Integer = 0 )
-declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
-declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
+  declare Function AddFinalVar(VarName As String, VarLoc As String, VarIsArray As Integer = 0) As Integer
+  declare Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSubIn As SubType Pointer, VarPointerIn As String, OriginIn As String, FixedLocation As Integer = -1, ExplicitDeclaration As Integer = 0, Used As Integer = -1)
+  declare Sub AllocateRAM
+  declare Function CalcAliasLoc(LocationIn As String) As Integer
+  declare Function GetWholeSFR(BitName As String) As String
+  declare Function GetSFRBitValue(BitName As String) As String
+  declare Function HasSFR(SFRName As String) As Integer
+  declare Function HasSFRBit(BitName As String) As Integer
+  declare Function IsNumberString(gstring As String) As Integer
+  declare Sub MakeSFR (UserVar As String, SFRAddress As Integer, AVRAlias As Integer = 0 )
+  declare Sub RequestVariable(VarName As String, CurrSub As SubType Pointer)
+  declare Function GetReversePICASIncFileLookupValue( address As integer ) As String
 
 'Subs in preprocessor.bi
-declare function LongToString(value as ulong) as string
-declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
-declare Function CheckSysVarDef(ConditionIn As String) As String
-declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
-declare SUB OptimiseAVRDx ()
-declare SUB PrepareBuiltIn ()
-declare SUB PreProcessor ()
-declare Sub ProcessSame (DirectiveIn As String)
-declare Sub ReadTableValues
-declare SUB RemIfDefs ()
-declare Function RemoveSpacesfromCommands ( CO as String, Param as String ) As String
-declare SUB ReplaceConstants ()
-declare Function ReplaceConstantsLine (DataSourceIn As String, IncludeStartup As Integer) As String
-declare SUB RunScripts ()
-declare Sub TidyInputSource (CompSub As SubType Pointer)
-declare Sub TableString (DataSource As String, TF As String )
+  declare Function LongToString(value as ulong) as string
+  declare Sub AddConstant(ConstName As String, ConstValue As String, ConstStartup As String = "", ReplaceExisting As Integer = -1)
+  declare Function CheckSysVarDef(ConditionIn As String) As String
+  declare Sub LoadTableFromFile(DataTable As DataTableType Pointer)
+  declare Sub OptimiseAVRDx ()
+  declare Sub PrepareBuiltIn ()
+  declare Sub PreProcessor ()
+  declare Sub ProcessSame (DirectiveIn As String)
+  declare Sub ReadTableValues
+  declare Sub RemIfDefs ()
+  declare Function RemoveSpacesfromCommands ( CO as String, Param as String ) As String
+  declare Sub ReplaceConstants ()
+  declare SUB ExpandShifts ()
+  declare Function ReplaceConstantsLine (DataSourceIn As String, IncludeStartup As Integer) As String
+  declare Sub RunScripts ()
+  declare Sub TidyInputSource (CompSub As SubType Pointer)
+  declare Sub TableString (DataSource As String, TF As String )
 
 'Subs in utils.bi
-declare Function AddFullPath(CurrPath As String, FullPathIn As String = "") As String
-declare SUB Calculate (SUM As String)
-declare FUNCTION CountOccur (Source As String, Search As String, SearchWhole As Integer = 0) As Integer
-declare FUNCTION CountSubstring (Source As String, Search As String) As Integer
-declare Function DelType (InString As String) As String
-declare FUNCTION GetByte (DataSource As String, BS As Integer) As String
-declare Function GetElements(InData As String, DivChar As String = "", IncludeDividers As Integer = 0) As LinkedListElement Pointer
-declare Function GetFileLine(Origin As String) As String
-declare Function GetNextTempVar(CurrVar As String) As String
-declare Function GetOriginString(OriginIn As OriginType Pointer) As String
-declare Function GetDoubleBytes (InValue As Double) As ULongInt
-declare Function GetSingleBytes (InValue As Single) As UInteger
-declare Function GetString(StringName As String, UsedInProgram As Integer = -1) As String
-declare Sub GetTokens(InData As String, OutArray() As String, ByRef OutSize As Integer, DivChar As String = "", IncludeDividers As Integer = 0)
-declare Function GetTypeLetter(InType As String) As String
-declare Function GetTypeSize(InType As String) As Integer
-declare Function GetVarByteNumber(VarName As String) As Integer
-declare Function HashMapCreate As HashMap Pointer
-declare Function HashMapCalcHash(Key As String) As Integer
-declare Sub HashMapDestroy(Map As HashMap Pointer)
-declare Sub HashMapDelete(Map As HashMap Pointer, Key As String, DeleteMeta As Integer = -1)
-declare Function HashMapGet(Map As HashMap Pointer, Key As String) As Any Pointer
-declare Function HashMapGetStr(Map As HashMap Pointer, Key As String) As String
-declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As String, ReplaceExisting As Integer = -1) As Integer
-declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As Any Pointer, ReplaceExisting As Integer = -1) As Integer
-declare Function HashMapToList(Map As HashMap Pointer, Sorted As Integer = 0) As LinkedListElement Pointer
-declare FUNCTION IsCalc (Temp As String) As Integer
-declare FUNCTION IsCalcDivider (Temp As String) As Integer
-declare FUNCTION IsConst (Temp As String) As Integer
-declare FUNCTION IsDivider (Temp As String) As Integer
-declare Function IsFloatType(InType As String) As Integer
-declare Function IsIntType(InType As String) As Integer
-declare FUNCTION IsLet(Temp As String) As Integer
-declare Function IsSysTemp(VarNameIn As String) As Integer
-declare Function IsValidName(InName As String) As Integer
-declare Function IsValidValue(InValue As LongInt, TypeIn As String) As Integer
-declare Function LinkedListCreate As LinkedListElement Pointer
-declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchMeta As Any Pointer) As LinkedListElement Pointer
-declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchValue As String) As LinkedListElement Pointer
-declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewLine As String, NewNumVal As Integer = 0) As LinkedListElement Pointer
-declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewData As Any Pointer) As LinkedListElement Pointer
-declare Function LinkedListInsertList (Location As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-declare Function LinkedListAppend (ListIn As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
-declare Function LinkedListDelete (Location As LinkedListElement Pointer, DeleteMeta As Integer = -1) As LinkedListElement Pointer
-declare Function LinkedListDeleteList (StartLoc As LinkedListElement Pointer, EndLoc As LinkedListElement Pointer) As LinkedListElement Pointer
-declare Sub LinkedListPrint(StartNode As LinkedListElement Pointer)
-declare Sub LinkedListPrintwithComments(StartNode As LinkedListElement Pointer)
-declare Function LinkedListSize(StartNode As LinkedListElement Pointer) As Integer
-declare FUNCTION MakeDec (DataSource As String) As LongInt
-declare FUNCTION MakeDecFloat (DataSource As String) As Double
-declare Function NCase(InValue As String) As String
-declare Function NextCodeLine(CodeLine As LinkedListElement Pointer) As LinkedListElement Pointer
-declare Function PrefIsYes(CheckVal As String, YesVal As Integer = -1) As Integer
-declare SUB Replace (DataVar As String, Find As String, Rep As String)
-declare SUB ReplaceAll (DataVar As String, Find As String, Rep As String)
-declare Function ReplaceToolVariables(InData As String, FNExtension As String = "", FileNameIn As String = "", Tool As ExternalTool Pointer = 0) As String
-declare SUB SCICONV (STemp As String)
-declare Function ShortFileName(InName As String) As String
-declare FUNCTION ShortName (NameIn As String) As String
-declare Function SubSigMatch (SubSigIn As String, CallSigIn As String) As Integer
-declare Sub WaitForKeyOrTimeout
-declare Function WholeINSTR (DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
-declare Function WholeInstrLoc(DataSource As String, FindTemp As String) As Integer
-declare SUB WholeReplace (DataVar As String, Find As String, Rep As String)
-declare Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret() As String)
+  declare Function AddFullPath(CurrPath As String, FullPathIn As String = "") As String
+  declare Sub Calculate (SUM As String)
+  declare Function CountOccur (Source As String, Search As String, SearchWhole As Integer = 0) As Integer
+  declare Function CountSubstring (Source As String, Search As String) As Integer
+  declare Function DelType (InString As String) As String
+  declare Function GetByte (DataSource As String, BS As Integer) As String
+  declare Function GetElements(InData As String, DivChar As String = "", IncludeDividers As Integer = 0) As LinkedListElement Pointer
+  declare Function GetFileLine(Origin As String) As String
+  declare Function GetNextTempVar(CurrVar As String) As String
+  declare Function GetOriginString(OriginIn As OriginType Pointer) As String
+  declare Function GetDoubleBytes (InValue As Double) As ULongInt
+  declare Function GetSingleBytes (InValue As Single) As UInteger
+  declare Function GetString(StringName As String, UsedInProgram As Integer = -1) As String
+  declare Sub GetTokens(InData As String, OutArray() As String, ByRef OutSize As Integer, DivChar As String = "", IncludeDividers As Integer = 0)
+  declare Function GetTypeLetter(InType As String) As String
+  declare Function GetTypeSize(InType As String) As Integer
+  declare Function GetVarByteNumber(VarName As String) As Integer
+  declare Function HashMapCreate As HashMap Pointer
+  declare Function HashMapCalcHash(Key As String) As Integer
+  declare Sub HashMapDestroy(Map As HashMap Pointer)
+  declare Sub HashMapDelete(Map As HashMap Pointer, Key As String, DeleteMeta As Integer = -1)
+  declare Function HashMapGet(Map As HashMap Pointer, Key As String) As Any Pointer
+  declare Function HashMapGetStr(Map As HashMap Pointer, Key As String) As String
+  declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As String, ReplaceExisting As Integer = -1) As Integer
+  declare Function HashMapSet OverLoad (Map As HashMap Pointer, Key As String, Value As Any Pointer, ReplaceExisting As Integer = -1) As Integer
+  declare Function HashMapToList(Map As HashMap Pointer, Sorted As Integer = 0) As LinkedListElement Pointer
+  declare Function IsCalc (Temp As String) As Integer
+  declare Function IsCalcDivider (Temp As String) As Integer
+  declare Function IsConst (Temp As String) As Integer
+  declare Function IsDivider (Temp As String) As Integer
+  declare Function IsFloatType(InType As String) As Integer
+  declare Function IsIntType(InType As String) As Integer
+  declare Function IsLet(Temp As String) As Integer
+  declare Function IsSysTemp(VarNameIn As String) As Integer
+  declare Function IsValidName(InName As String) As Integer
+  declare Function IsValidValue(InValue As LongInt, TypeIn As String) As Integer
+  declare Function LinkedListCreate As LinkedListElement Pointer
+  declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchMeta As Any Pointer) As LinkedListElement Pointer
+  declare Function LinkedListFind OverLoad (StartNode As LinkedListElement Pointer, SearchValue As String) As LinkedListElement Pointer
+  declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewLine As String, NewNumVal As Integer = 0) As LinkedListElement Pointer
+  declare Function LinkedListInsert OverLoad (Location As LinkedListElement Pointer, NewData As Any Pointer) As LinkedListElement Pointer
+  declare Function LinkedListInsertList (Location As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+  declare Function LinkedListAppend (ListIn As LinkedListElement Pointer, NewList As LinkedListElement Pointer, NewListEndIn As LinkedListElement Pointer = 0) As LinkedListElement Pointer
+  declare Function LinkedListDelete (Location As LinkedListElement Pointer, DeleteMeta As Integer = -1) As LinkedListElement Pointer
+  declare Function LinkedListDeleteList (StartLoc As LinkedListElement Pointer, EndLoc As LinkedListElement Pointer) As LinkedListElement Pointer
+  declare Sub LinkedListPrint(StartNode As LinkedListElement Pointer)
+  declare Sub LinkedListPrintwithComments(StartNode As LinkedListElement Pointer)
+  declare Function LinkedListSize(StartNode As LinkedListElement Pointer) As Integer
+  declare Function MakeDec (DataSource As String) As LongInt
+  declare Function MakeDecFloat (DataSource As String) As Double
+  declare Function NCase(InValue As String) As String
+  declare Function NextCodeLine(CodeLine As LinkedListElement Pointer) As LinkedListElement Pointer
+  declare Function PrefIsYes(CheckVal As String, YesVal As Integer = -1) As Integer
+  declare Sub Replace (DataVar As String, Find As String, Rep As String)
+  declare Sub ReplaceAll (DataVar As String, Find As String, Rep As String)
+  declare Function ReplaceToolVariables(InData As String, FNExtension As String = "", FileNameIn As String = "", Tool As ExternalTool Pointer = 0) As String
+  declare Sub SCICONV (STemp As String)
+  declare Function ShortFileName(InName As String) As String
+  declare Function ShortName (NameIn As String) As String
+  declare Function SubSigMatch (SubSigIn As String, CallSigIn As String) As Integer
+  declare Sub WaitForKeyOrTimeout
+  declare Function WholeINSTR (DataIn As String, FindIn As String, SearchAgain As Integer = -1) As Integer
+  declare Function WholeInstrLoc(DataSource As String, FindTemp As String) As Integer
+  declare Sub WholeReplace (DataVar As String, Find As String, Rep As String)
+  declare Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret() As String)
 
-'Initialise
-'Misc Vars
-DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, CompiledSBC, InsertLineNo
-DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
-DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
-DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
-Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX, overridelowleveldatfileextextension, overridelowleveldatfileextextensionmessage, overridetestdatfilemessage
-Dim Shared As Integer MainProgramSize, StatsUsedRam, RegBytesUsed = 0
-DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
-DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
-Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages, MuteDonate
-DIM SHARED As Integer SubSizeCount, PCUpper, Bootloader, HighFSR, NoBankLocs
-DIM SHARED As Integer RegCount, IntCount, AllowOverflow, SysInt, HMult, AllowInterrupt
-Dim Shared As Integer ToolCount, ChipEEPROM, DataTables, ProgMemPages, PauseAfterCompile
-Dim Shared As Integer gUSDelaysInaccurate, IntOscSpeeds, PinDirShadows, CompileSkipped
-Dim Shared As Integer PauseTimeout, OldSBC, ReserveHighProg, HighTBLPTRBytes, FirstESEG
-Dim Shared As Single ChipMhz, ChipMaxSpeed, FileConverters
-Dim Shared As Single StartTime, CompEndTime, AsmEndTime, ProgEndTime
-Dim Shared As Double DebugTime, StatsUsedProgram
-Dim Shared As String ChipPICASDataFile,ChipPICASConfigFile,ChipPICASRoot, Conditionaldebugfile
-Dim Shared As Integer StringConCatLengthAdapted = 0
-dim shared As integer WholeINSTRdebug = 0
+'Initialise Misc Vars
+  DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, CompiledSBC, InsertLineNo
+  DIM SHARED As Integer COC, BVC, PCC, CVCC, TCVC, CAAC, ISRC, IISRC, RPLC, ILC, SCT
+  DIM SHARED As Integer CSC, CV, COSC, MemSize, FreeRAM, FoundCount, PotFound, IntLevel
+  DIM SHARED As Integer ChipGPR, ChipRam, ConfWords, DataPass, ChipFamily, ChipFamilyVariant, ChipSubFamily, PSP, ChipProg, IntOscSpeedValid, ChipMinimumBankSelect
+  Dim Shared As Integer ChipPins, UseChipOutLatches, AutoContextSave, LaxSyntax, PICASdebug, PICASDEBUGmessageShown, DATfileinspection, NoSummary, ConfigDisabled, UserCodeOnlyEnabled, ChipIO, ChipADC, methodstructuredebug, floatcapability, compilerdebug, ChipAVRDX, overridelowleveldatfileextextension, overridelowleveldatfileextextensionmessage, overridetestdatfilemessage
+  Dim Shared As Integer MainProgramSize, StatsUsedRam, RegBytesUsed = 0
+  DIM SHARED As Integer VBS, MSGC, PreserveMode, SubCalls, IntOnOffCount, ExitValue, OutPutConfigOptions
+  DIM SHARED As Integer UserInt, PauseOnErr, USDC, MRC, GCGB, ALC, DCOC, SourceFiles, IgnoreSourceFiles
+  Dim Shared As Integer WarningsAsErrors, FlashOnly, SkipHexCheck, ShowProgressCounters, muteBanners, ExtendedVerboseMessages, MuteDonate
+  DIM SHARED As Integer SubSizeCount, PCUpper, Bootloader, HighFSR, NoBankLocs
+  DIM SHARED As Integer RegCount, IntCount, AllowOverflow, SysInt, HMult, AllowInterrupt
+  Dim Shared As Integer ToolCount, ChipEEPROM, DataTables, ProgMemPages, PauseAfterCompile
+  Dim Shared As Integer gUSDelaysInaccurate, IntOscSpeeds, PinDirShadows, CompileSkipped
+  Dim Shared As Integer PauseTimeout, OldSBC, ReserveHighProg, HighTBLPTRBytes, FirstESEG
+  Dim Shared As Single ChipMhz, ChipMaxSpeed, FileConverters
+  Dim Shared As Single StartTime, CompEndTime, AsmEndTime, ProgEndTime
+  Dim Shared As Double DebugTime, StatsUsedProgram
+  Dim Shared As String ChipPICASDataFile,ChipPICASConfigFile,ChipPICASConfigFileV3,ChipPICASRoot, Conditionaldebugfile, LastOrigin
+  Dim Shared As Integer StringConCatLengthAdapted = 0
+  Dim shared As integer WholeINSTRdebug = 0
+  Dim Shared As Boolean nonAsciiFound = False
+  Dim Shared As String DefaultInitSys: DefaultInitSys = "InitSys"
 
 'Assembler vars
-DIM SHARED As Integer ToAsmSymbols
-DIM SHARED As String  SelectedAssembler
+  DIM SHARED As Integer ToAsmSymbols
+  DIM SHARED As String  SelectedAssembler
 
 'Code Array
-Dim Shared CompilerOutput As CodeSection Pointer
-DIM SHARED As LinkedListElement Pointer AsmProg, AsmProgLoc
+  Dim Shared CompilerOutput As CodeSection Pointer
+  DIM SHARED As LinkedListElement Pointer AsmProg, AsmProgLoc
 
 'Sub arrays
-Dim Shared Subroutine(10000) As SubType Pointer: SBC = 0: MainSBC = 0: CompiledSBC = 0
-Dim Shared Subroutines As HashMap Pointer
+  Dim Shared Subroutine(10000) As SubType Pointer: SBC = 0: MainSBC = 0: CompiledSBC = 0
+  Dim Shared Subroutines As HashMap Pointer
 
 'Processing Arrays
-DIM SHARED Constants As HashMap Pointer
-Dim Shared SourceFile(100) As SourceFileType: SourceFiles = 0
-Dim Shared IgnoreSourceFile(100) As SourceFileType: IgnoreSourceFiles = 0
-DIM SHARED TempData(300) As String
-DIM SHARED CheckTemp(300) As String
-Dim SHARED SysVars As HashMap Pointer
-DIM SHARED SysVarBits As HashMap Pointer
-DIM SHARED FILE(300) As String
-Redim SHARED FreeMem(1) As Integer
-Redim SHARED VarLoc(1) As Integer
-DIM SHARED MemRanges(100) As String: MRC = 0
-Dim Shared NoBankLoc(10) As DataMemBankType: NoBankLocs = 0
-Dim SHARED StringStore(0 To 1000) As ProgString: SSC = 0: SASC = 0
-Dim Shared ConfigOps(700) As ConfigOp: COC = 0
-Dim Shared ConfigSettings As LinkedListElement Pointer
-Dim Shared EqConfigSettings As LinkedListElement Pointer
-Dim Shared ChipConfigCode As CodeSection Pointer
-DIM SHARED DefCONFIG(700) As String: DCOC = 0
-DIM SHARED ConfigMask(20) As Integer
-DIM SHARED DataTable(500) As DataTableType: DataTables = 0
-DIM SHARED Messages(1 TO 2, 500) As String: MSGC = 0
-DIM SHARED ASMCommands As HashMap Pointer
-DIM SHARED ASMSymbols As HashMap Pointer
-Dim Shared ToAsmSymbol(500, 1 To 2) As String: ToAsmSymbols = 0
-DIM SHARED FinalVarList As HashMap Pointer
-DIM Shared FinalRegList(100) As VariableListElement: FRLC = 0
-DIM Shared FinalAliasList(8000) As VariableListElement: FALC = 0
-DIM SHARED PreserveCode(60000) As String: PCC = 0
-Dim Shared CalcVars(100) As CalcVar: TCVC = 0
-Dim Shared As String AllSysSubs, UsedSysSubs
-Dim Shared RegList(512, 2) As String: RegCount = 0
-Dim Shared CalcAtAsm(2000) As String: CAAC = 0
-Dim Shared CalcTempType(3) As String
-Dim Shared Interrupts(200) As IntData: IntCount = 0
-Dim Shared IntInitCode As CodeSection Pointer
-Dim Shared IntHandlerCode As CodeSection Pointer
-Dim Shared Tool(200) As ExternalTool: ToolCount = 0
-Dim Shared ToolVariables As LinkedListElement Pointer
-Dim Shared ProgMemPage(MAX_PROG_PAGES) As ProgMemPageType: ProgMemPages = 0
-Dim Shared IntOscSpeed(20) As Double: IntOscSpeeds = 0
-Dim Shared FileConverter(50) As FileConverterType: FileConverters = 0
-Dim Shared AttemptedCallList As LinkedListElement Pointer
-Dim Shared OutConfig(16) As String
-Dim Shared PinDirections As LinkedListElement Pointer
-Dim Shared PinDirShadow(20) As String
-Dim Shared GlitchFreeOutputs As HashMap Pointer
-Dim Shared ReservedWords( RESERVED_WORDS ) as String
+  DIM SHARED Constants As HashMap Pointer
+  Dim Shared SourceFile(100) As SourceFileType: SourceFiles = 0
+  Dim Shared IgnoreSourceFile(100) As SourceFileType: IgnoreSourceFiles = 0
+  DIM SHARED TempData(300) As String
+  DIM SHARED CheckTemp(300) As String
+  Dim SHARED SysVars As HashMap Pointer
+  DIM SHARED SysVarBits As HashMap Pointer
+  DIM SHARED FILE(300) As String
+  Redim SHARED FreeMem(1) As Integer
+  Redim SHARED VarLoc(1) As Integer
+  DIM SHARED MemRanges(100) As String: MRC = 0
+  Dim Shared NoBankLoc(10) As DataMemBankType: NoBankLocs = 0
+  Dim SHARED StringStore(0 To 1000) As ProgString: SSC = 0: SASC = 0
+  Dim Shared ConfigOps(700) As ConfigOp: COC = 0
+  Dim Shared ConfigSettings As LinkedListElement Pointer
+  Dim Shared EqConfigSettings As LinkedListElement Pointer
+  Dim Shared ChipConfigCode As CodeSection Pointer
+  DIM SHARED DefCONFIG(700) As String: DCOC = 0
+  DIM SHARED ConfigMask(20) As Integer
+  DIM SHARED DataTable(500) As DataTableType: DataTables = 0
+  DIM SHARED Messages(1 TO 2, 500) As String: MSGC = 0
+  DIM SHARED ASMCommands As HashMap Pointer
+  DIM SHARED ASMSymbols As HashMap Pointer
+  Dim Shared ToAsmSymbol(500, 1 To 2) As String: ToAsmSymbols = 0
+  DIM SHARED FinalVarList As HashMap Pointer
+  DIM Shared FinalRegList(100) As VariableListElement: FRLC = 0
+  DIM Shared FinalAliasList(8000) As VariableListElement: FALC = 0
+  DIM SHARED PreserveCode(60000) As String: PCC = 0
+  Dim Shared CalcVars(100) As CalcVar: TCVC = 0
+  Dim Shared As String AllSysSubs, UsedSysSubs
+  Dim Shared RegList(512, 2) As String: RegCount = 0
+  Dim Shared CalcAtAsm(2000) As String: CAAC = 0
+  Dim Shared CalcTempType(3) As String
+  Dim Shared Interrupts(200) As IntData: IntCount = 0
+  Dim Shared IntInitCode As CodeSection Pointer
+  Dim Shared IntHandlerCode As CodeSection Pointer
+  Dim Shared Tool(200) As ExternalTool: ToolCount = 0
+  Dim Shared ToolVariables As LinkedListElement Pointer
+  Dim Shared ProgMemPage(MAX_PROG_PAGES) As ProgMemPageType: ProgMemPages = 0
+  Dim Shared IntOscSpeed(20) As Double: IntOscSpeeds = 0
+  Dim Shared FileConverter(50) As FileConverterType: FileConverters = 0
+  Dim Shared AttemptedCallList As LinkedListElement Pointer
+  Dim Shared OutConfig(16) As String
+  Dim Shared PinDirections As LinkedListElement Pointer
+  Dim Shared PinDirShadow(20) As String
+  Dim Shared GlitchFreeOutputs As HashMap Pointer
+  Dim Shared ReservedWords( RESERVED_WORDS ) as String
+  
+'Shared Variables
+  Dim Shared As String Star80
+  Dim Shared As String Pad32
 
-Dim Shared As String Star80
-Dim Shared As String Pad32
+  Dim Shared As String ChipName, OSCType, CONFIG, Intrpt, gcOPTION, ChipProgrammerName
+  Dim Shared As String ChipOscSource
+  Dim Shared As String CDF, AFI, FI, OFI, HFI, ID, Version, buildVersion, ProgDir, CLD, LabelEnd, VersionSuffix
+  Dim Shared As String PrgExe, PrgParams, PrgDir, AsmExe, AsmParams, PrgName, HexAppend
+  Dim Shared As ExternalTool Pointer AsmTool, PrgTool
+  Dim Shared As String CompReportFormat, globalSettingsFile
 
-Dim Shared As String ChipName, OSCType, CONFIG, Intrpt, gcOPTION, ChipProgrammerName
-Dim Shared As String ChipOscSource
-Dim Shared As String CDF, AFI, FI, OFI, HFI, ID, Version, buildVersion, ProgDir, CLD, LabelEnd, VersionSuffix
-Dim Shared As String PrgExe, PrgParams, PrgDir, AsmExe, AsmParams, PrgName, HexAppend
-Dim Shared As ExternalTool Pointer AsmTool, PrgTool
-Dim Shared As String CompReportFormat, globalSettingsFile
-
-Dim Shared As Integer CDFSupport = 0
-Dim Shared As Integer CDFFileHandle
-Dim Shared As Integer AFISupport = 0
-Dim Shared As Integer StoredGCASM = 0
-Dim Shared As Integer MakeHexMode = 1
-Dim Shared As Integer Columnwidth = 77
-Dim Shared As UByte   ReservedwordC = 0
-Dim Shared As Integer ChipMhzCalculated = 0
-
+  Dim Shared As Integer CDFSupport = 0
+  Dim Shared As Integer CDFFileHandle
+  Dim Shared As Integer AFISupport = 0
+  Dim Shared As Integer StoredGCASM = 0
+  Dim Shared As Integer MakeHexMode = 1
+  Dim Shared As Integer Columnwidth = 77
+  Dim Shared As UByte   ReservedwordC = 0
+  Dim Shared As Integer ChipMhzCalculated = 0
+  Dim Shared As Integer DataBlockCount = 0
+  Dim Shared As Integer RequiredModuleCheck = 1
+  Dim Shared as Integer RandomNumber
+  Dim Shared As Integer enumcounter = 0
 'Config correct code
-Dim Shared as string adaptedConfigLine
-Dim Shared as string configarray()
-Dim Shared as Integer configarraycounter
+  Dim Shared as string adaptedConfigLine
+  Dim Shared as string configarray()
+  Dim Shared as Integer configarraycounter = 0
+  Dim Shared As Integer enumstate = 0
+  
 
-'PICAS Converter
-Dim Shared as string currentLineElements()
-Dim Shared as Integer patchCounter = 0
-
-#Define DISABLEOPTIMISATION "f122 jmp"
-#Define INVALIDARRAYVALUE -9999
-
-#Define MAX_OUTPUT_MESSAGES 200
-Dim Shared As String OutMessage(MAX_OUTPUT_MESSAGES)
-Dim Shared As Integer OutMessages, ErrorsFound
-
-#Define TYPECHECKSIZE 40
-
-Dim Shared As String UserDefineStartLabel
-
-Dim As Integer CD, T, PD
+'Support for #OPTION USERCODEONLY
+  Dim Shared As String UserDefineStartLabel
+  Dim As Integer CD, T, PD
 
 
-const   ChipFamily18FxxQ10 as integer = 16100
-const   ChipFamily18FxxQ43 as integer = 16101
-const   ChipFamily18FxxQ41 as integer = 16102
-const   ChipFamily18FxxK42 as integer = 16103
-const   ChipFamily18FxxK40 as integer = 16104
-const   ChipFamily18FxxQ40 as integer = 16105
-const   ChipFamily18FxxQ84 as integer = 16106
-const   ChipFamily18FxxK83 as integer = 16107
-const   ChipFamily18FxxQ83 as integer = 16108
-const   ChipFamily18FxxQ71 as integer = 16109
-const   ChipFamily18FxxQ20 as integer = 16110
-const   ChipFamily18FxxQ24 as integer = 16111
+'PICAS Converter misc vars
+  Dim Shared as string currentLineElements()
+  Dim Shared as Integer patchCounter = 0
 
-' Compiler debug constants
-const   cCOMPILECALCADD     as integer = 1
-const   cVAR_SET            as integer = 2
-const   cCALCOPS            as integer = 4
-const   cCOMPILECALCMULT    as integer = 8
-const   cGENERATEAUTOPINDIR as integer = 16
-const   cAVRDXDEBUG         as integer = 32
-const   cGCASMDEBUG         as integer = 64
+'Constants
+  #Define DISABLEOPTIMISATION "f122 jmp"
+  #Define INVALIDARRAYVALUE -9999
 
+  #Define MAX_OUTPUT_MESSAGES 200
+  Dim Shared As String OutMessage(MAX_OUTPUT_MESSAGES)
+  Dim Shared As Integer OutMessages, ErrorsFound
 
+  #Define TYPECHECKSIZE 40
 
-const   INSERTFILENOTOPEN = 1
-const   INSERTFILEOPEN    = 2
-const   INSERTFILEPROCESS = 3
-const   INSERTFILEEOF     = 4
+  const   ChipFamily18FxxQ10 as integer = 16100
+  const   ChipFamily18FxxQ43 as integer = 16101
+  const   ChipFamily18FxxQ41 as integer = 16102
+  const   ChipFamily18FxxK42 as integer = 16103
+  const   ChipFamily18FxxK40 as integer = 16104
+  const   ChipFamily18FxxQ40 as integer = 16105
+  const   ChipFamily18FxxQ84 as integer = 16106
+  const   ChipFamily18FxxK83 as integer = 16107
+  const   ChipFamily18FxxQ83 as integer = 16108
+  const   ChipFamily18FxxQ71 as integer = 16109
+  const   ChipFamily18FxxQ20 as integer = 16110
+  const   ChipFamily18FxxQ24 as integer = 16111
 
 
+'Compiler USER DEBUG constants
+  const   cCOMPILECALCADD     as integer = 1
+  const   cVAR_SET            as integer = 2
+  const   cCALCOPS            as integer = 4
+  const   cCOMPILECALCMULT    as integer = 8
+  const   cGENERATEAUTOPINDIR as integer = 16
+  const   cAVRDXDEBUG         as integer = 32
+  const   cGCASMDEBUG         as integer = 64
+  const   cCOMPILESUB         as integer = 128
+  const   cCOMPILEUPDATESUBMAP as integer = 256
+  const   cEXPANDSHIFTS        as integer = 512
+  
 
-'Other GCBASIC source files
-#include "utils.bi"
-#include "assembly.bi"
-#include "preprocessor.bi"
-#include "variables.bi"
+  const   INSERTFILENOTOPEN = 1
+  const   INSERTFILEOPEN    = 2
+  const   INSERTFILEPROCESS = 3
+  const   INSERTFILEEOF     = 4
 
-'FreeBASIC libraries
-#include "file.bi"
-#Include "string.bi"
+
+'Add the other GCBASIC source files
+  #include "utils.bi"
+  #include "assembly.bi"
+  #include "preprocessor.bi"
+  #include "variables.bi"
+
+'Include FreeBASIC libraries
+  #include "file.bi"
+  #Include "string.bi"
 
 'Close any open files, delete old error log
-CLOSE
-IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
+  CLOSE
+  IF Dir("ERRORS.TXT") <> "" THEN KILL "ERRORS.TXT"
 
 'Get random number seed
-Randomize Timer
+  Randomize Timer
 
-'Set version
-Version = "2024.10.17"
-buildVersion = "1441"
+'SET GCBASIC VERSION
+  Version = "2025.05.04"
+  buildVersion = "1483"
+'Construct compiler message for each Operating System
+  #ifdef __FB_DARWIN__  'OS X/macOS
+    #ifndef __FB_64BIT__
+      Version = Version + " (Darwin 32 bit)"
+    #else
+      Version = Version + " (Darwin 64 bit)"
+    #endif
+  #elseif defined (__FB_FREEBSD__)
+    #ifndef __FB_64BIT__
+      Version = Version + " (FreeBSD 32 bit)"
+    #else
+      Version = Version + " (FreeBSD 64 bit)"
+    #endif
+  #elseif defined (__FB_LINUX__)
+    #ifndef __FB_64BIT__
+      Version = Version + " (Linux 32 bit)"
+    #else
+      Version = Version + " (Linux 64 bit)"
+    #endif
+  #elseif defined (__FB_WIN32__)  'Need to test first as WIN32 matches both 32 and 64 bit
+    #ifdef __FB_64BIT__
+        Version = Version + " (Windows 64 bit)"
+    #else
+        Version = Version + " (Windows 32 bit)"
+    #endif
+  #endif
 
-#ifdef __FB_DARWIN__  'OS X/macOS
-  #ifndef __FB_64BIT__
-    Version = Version + " (Darwin 32 bit)"
-  #else
-    Version = Version + " (Darwin 64 bit)"
-  #endif
-#elseif defined (__FB_FREEBSD__)
-  #ifndef __FB_64BIT__
-    Version = Version + " (FreeBSD 32 bit)"
-  #else
-    Version = Version + " (FreeBSD 64 bit)"
-  #endif
-#elseif defined (__FB_LINUX__)
-  #ifndef __FB_64BIT__
-    Version = Version + " (Linux 32 bit)"
-  #else
-    Version = Version + " (Linux 64 bit)"
-  #endif
-#elseif defined (__FB_WIN32__)  'Need to test first as WIN32 matches both 32 and 64 bit
-   #ifdef __FB_64BIT__
-       Version = Version + " (Windows 64 bit)"
-   #else
-       Version = Version + " (Windows 32 bit)"
-   #endif
-#endif
-
-Version = Version + " : Build " + buildVersion
+  Version = Version + " : Build " + buildVersion
 
 
 'Initialise assorted variables
-Star80 = ";********************************************************************************"
-Pad32 = "                                 "
-SysInt = 0
-IntLevel = 0
-AllowInterrupt = 0
-ErrorsFound = 0
-PinDirShadows = 0
-MainProgramSize = 0
-StatsUsedRam = 0
-StatsUsedProgram = 0
-UseChipOutLatches = -1
-AutoContextSave = -1
-LaxSyntax = 0
-PICASdebug = false
-methodstructuredebug = false
-floatcapability =  0 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
-compilerdebug = 0
-overridelowleveldatfileextextension = 0
-overridelowleveldatfileextextensionmessage = 0
-overridetestdatfilemessage=0
-PICASDEBUGmessageShown = false
-DATfileinspection = true
-NoSummary = 0
-ReserveHighProg = 0
-ConfigDisabled = 0
-UserCodeOnlyEnabled = 0
-ExitValue = 0
-ToolVariables = LinkedListCreate
-CompileSkipped = 0
-OldSBC = -1
-DebugTime = 0
-MakeHexMode = 1
-Conditionaldebugfile = ""
-SelectedAssembler = "GCASM"
-VersionSuffix = ""
-ChipAVRDX = 0
-FirstESEG = 0      'Used to ensure only one .ESEG AVR control is added to AVR ASM
-AddConstant("CHIPASSEMBLER", SelectedAssembler )
+  Star80 = ";********************************************************************************"
+  Pad32 = "                                 "
+  SysInt = 0
+  IntLevel = 0
+  AllowInterrupt = 0
+  ErrorsFound = 0
+  PinDirShadows = 0
+  MainProgramSize = 0
+  StatsUsedRam = 0
+  StatsUsedProgram = 0
+  UseChipOutLatches = -1
+  AutoContextSave = -1
+  LaxSyntax = 0
+  PICASdebug = false
+  methodstructuredebug = false
+  floatcapability =  0 '  1 = singles, 2 = doubles, 4 = longint, 8 = uLongINT
+  compilerdebug = 0
+  overridelowleveldatfileextextension = 0
+  overridelowleveldatfileextextensionmessage = 0
+  overridetestdatfilemessage=0
+  PICASDEBUGmessageShown = false
+  DATfileinspection = true
+  NoSummary = 0
+  ReserveHighProg = 0
+  ConfigDisabled = 0
+  UserCodeOnlyEnabled = 0
+  ExitValue = 0
+  ToolVariables = LinkedListCreate
+  CompileSkipped = 0
+  OldSBC = -1
+  DebugTime = 0
+  MakeHexMode = 1
+  Conditionaldebugfile = ""
+  SelectedAssembler = "GCASM"
+  VersionSuffix = ""
+  ChipAVRDX = 0
+  FirstESEG = 0      'Used to ensure only one .ESEG AVR control is added to AVR ASM
+  AddConstant("CHIPASSEMBLER", SelectedAssembler )
+  ChipProgrammerName=""
+  _31kSupported.State = 0
 
-ChipProgrammerName=""
-_31kSupported.State = 0
+'Initialise various size counters
+  USDC = 0 'US delay loops
+  RPLC = 0 'Repeat loops
+  WSC = 0 'Wait Until/While loops
+  DLC = 0 'Do loops
+  SCT = 0 'Select Case
+  gUSDelaysInaccurate = 0 'Set if variable len US delays will be wrong
+  IntOnOffCount = 0 'Count IntOn/IntOff
 
-'Various size counters
-USDC = 0 'US delay loops
-RPLC = 0 'Repeat loops
-WSC = 0 'Wait Until/While loops
-DLC = 0 'Do loops
-SCT = 0 'Select Case
-gUSDelaysInaccurate = 0 'Set if variable len US delays will be wrong
-IntOnOffCount = 0 'Count IntOn/IntOff
-
-'Show startup messages, and read COMMAND
-StartTime = Timer
-InitCompiler
+'Show startup messages, InitCompiler and handle command line parameters
+  StartTime = Timer
+  InitCompiler
 
 'Initialise code sections and lists
-CompilerOutput = NewCodeSection
-IntInitCode = NewCodeSection
-IntHandlerCode = NewCodeSection
-ChipConfigCode = NewCodeSection
+  CompilerOutput = NewCodeSection
+  IntInitCode = NewCodeSection
+  IntHandlerCode = NewCodeSection
+  ChipConfigCode = NewCodeSection
 
-AttemptedCallList = LinkedListCreate
-ConfigSettings = LinkedListCreate
-PinDirections = LinkedListCreate
-Constants = HashMapCreate
-AsmProg = LinkedListCreate
-AsmProgLoc = AsmProg
-GlitchFreeOutputs = HashMapCreate
+  AttemptedCallList = LinkedListCreate
+  ConfigSettings = LinkedListCreate
+  PinDirections = LinkedListCreate
+  Constants = HashMapCreate
+  AsmProg = LinkedListCreate
+  AsmProgLoc = AsmProg
+  GlitchFreeOutputs = HashMapCreate
 
-SysVars = HashMapCreate
-SysVarBits = HashMapCreate
-ASMCommands = HashMapCreate
+  SysVars = HashMapCreate
+  SysVarBits = HashMapCreate
+  ASMCommands = HashMapCreate
 
-CreateReservedWordsList()
-If  ErrorsFound Then Goto Fin 
-'Load files and tidy them up
-PreProcessor
+  CreateReservedWordsList()
+  If  ErrorsFound Then Goto Fin 
 
-If Not ErrorsFound Then
+'Call PreProcessor - Load files and tidy them up, a lot...
+  PreProcessor
 
-  If FlashOnly Then
-    Print Message("SkippingCompile")
-    CompEndTime = Timer
-    AsmEndTime = CompEndTime
-    CompileSkipped = -1
-    GoTo DownloadProgram
-  End If
+'If no PreProcessor error(s) then continue to next phase of compilation
+  If Not ErrorsFound Then
 
-  'Compile
-  CompileProgram
-
-  'Allocate RAM
-  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("AllocateRAM")
-  AllocateRAM
-
-  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("TidyCode")
-  TidyProgram
-
-  'Combine subs
-  IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("LocatingSubs")
-  MergeSubroutines
-
-  'Final optimisation
-  FinalOptimise
-
-  If VBS = 1 THEN PRINT : PRINT SPC(5); Message("WritingASM")
-  WriteAssembly
-  CompEndTime = Timer
-
-  'error check.. has program exceeded avialable progmem
-  If StatsUsedProgram + ReserveHighProg > ChipProg Then
-    Dim Temp As String
-
-    PRINT
-    PRINT Message("Summary")
-    PRINT SPC(5); Message("DataRead")
-    PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
-    PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
-    PRINT SPC(5); Message("ChipUsage")
-    Temp = Message("UsedProgram")
-    Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
-    Replace Temp, "%total%", Str(ChipProg)
-    If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
-    PRINT SPC(10); Temp
-    Temp = Message("UsedRAM")
-    Replace Temp, "%used%", Str(StatsUsedRam+RegBytesUsed)
-    Replace Temp, "%total%", Str(ChipRAM)
-    If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
-    PRINT SPC(10); Temp
-
-
-    LogError Message ("OutOfProgMemExceeded")
-  End if
-
-  'If no errors, show success message and assemble
-  IF Not ErrorsFound THEN
-    'Success message
-    PRINT Message("CompiledSuccess");
-    '  IF VBS = 0 THEN
-    '    PRINT
-    '  Else
-      Dim Temp As String
-      Temp = Trim(Str(CompEndTime - StartTime))
-      IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-      PRINT Message("CompTime") + Temp + Message("CompSecs")
-      If NoSummary = 0 Then
-        PRINT
-        PRINT Message("Summary")
-
-        PRINT SPC(5); Message("DataRead")
-
-        PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
-        PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
-        PRINT SPC(5); Message("ChipUsage")
-        Temp = Message("UsedProgram")
-        Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
-        Replace Temp, "%total%", Str(ChipProg)
-        If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
-        PRINT SPC(10); Temp
-        Temp = Message("UsedRAM")
-        Replace Temp, "%used%",  Str(StatsUsedRam+RegBytesUsed)
-        Replace Temp, "%total%", Str(ChipRAM)
-        If ChipRAM <> 0 Then 
-          If StatsUsedRam+RegBytesUsed = 0 Then
-            Temp += " (0%)"
-          Else
-            Temp += Format( (StatsUsedRAM+RegBytesUsed) / ChipRAM, " (###.##%)")
-          End If
-        End If
-
-
-        PRINT SPC(10); Temp
-
-
-        OscType = ""
-        If ModePIC Then
-          If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
-            OscType = " (" + Message("CRIntOsc") + ")"
-          Else
-            OscType = " (" + Message("CRExtOsc") + ")"
-          End If
-        End If
-        If ChipAVRDX Then
-          If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
-            OscType = " (" + Message("CRIntOsc") + ")"
-          Else
-            OscType = " (" + Message("CRExtOsc") + ")"
-          End If
-        End If
-
-        PRINT SPC(10);
-        If ModePIC Then
-            Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType;
-        Else
-            Print "OSC: " + Str(ChipMhz) + "Mhz" + OscType;
-        End If
-        If ChipMhzCalculated = 0 Then
-          Print
-        Else
-          Print " : Frequency calculated by compiler"
-        End If
-      End If
-  '  END IF
-
-    If ModeAVR then
-          AFISupport = 0
-    End IF
-
-    If AsmExe <> "" and MakeHexMode = 1 Then
-
-      IF UCase(AsmExe) = "GCASM" THEN
-        'Internal assembler
-        PRINT
-        PRINT Message("MakeASM")
-        AssembleProgram
-
-      ELSEIF instr(UCase(AsmExe),"PIC-AS") > 0 THEN
-
-        'AssembleProgram
-        PRINT
-        PRINT Message("MakeS")
-        PICASAssembler
-        'IF Not ErrorsFound THEN PRINT Message("PICASMSuccess")
-
-
-      Else
-        ExtAssembler
-      END If
-
-      AsmEndTime = Timer
-      'If VBS = 1 Then
-      ' Dim Temp As String
-      ' Temp = Trim(Str(AsmEndTime - CompEndTime))
-      ' IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-      ' PRINT Message("AsmTime") + Temp + Message("CompSecs")
-      'End If
-
-        IF Not ErrorsFound THEN
-          Dim Temp As String
-          Temp = Trim(Str(AsmEndTime - CompEndTime))
-          IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-          PRINT Message("ASMSuccess") + Message("AsmTime") + Temp + Message("CompSecs")
-        End If
-
+    If FlashOnly Then
+      Print Message("SkippingCompile")
+      CompEndTime = Timer
+      AsmEndTime = CompEndTime
+      CompileSkipped = -1
+      GoTo DownloadProgram
     End If
 
+    'Compile
+    CompileProgram
 
+    'Allocate RAM
+    IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("AllocateRAM")
+    AllocateRAM
 
+    IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("TidyCode")
+    TidyProgram
 
-  End If
-  AsmEndTime = Timer
+    'Combine subs
+    IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("LocatingSubs")
+    MergeSubroutines
 
-  'Download program
-  DownloadProgram:
-    IF (  PrgExe <> "" AND  Ucase(RIGHT(PrgExe,4)) <> "NONE"  AND AsmExe <> "" ) AND ErrorsFound = 0 THEN
-      PRINT
+    'Final optimisation
+    FinalOptimise
+
+    If VBS = 1 THEN PRINT : PRINT SPC(5); Message("WritingASM")
+    WriteAssembly
+    CompEndTime = Timer
+
+    'error check.. has program exceeded avialable progmem
+    If StatsUsedProgram + ReserveHighProg > ChipProg Then
       Dim Temp As String
-      Temp = Message("SendToPIC")
-      Replace Temp, "%PrgName%", Trim(Str(PrgName))
-      PRINT Temp
-      PrgExe = ReplaceToolVariables(PrgExe, "hex",, PrgTool)
-      PrgParams = ReplaceToolVariables(PrgParams, "hex",, PrgTool)
 
-      #ifdef __FB_WIN32__  'Need to test as WIN32 matches both 32 and 64 bit
-          if dir(PrgExe)="" then
-              'Temp = "Programmer executable " + PrgExe + " does not exist"
-              Temp = Message("ProgrammerNotFound")
-              Replace Temp, "%PrgExe%", PrgExe
-              LogError Temp
-          End if
-      #endif
+      PRINT
+      PRINT Message("Summary")
+      PRINT SPC(5); Message("DataRead")
+      PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
+      PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
+      PRINT SPC(5); Message("ChipUsage")
+      Temp = Message("UsedProgram")
+      Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
+      Replace Temp, "%total%", Str(ChipProg)
+      If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
+      PRINT SPC(10); Temp
+      Temp = Message("UsedRAM")
+      Replace Temp, "%used%", Str(StatsUsedRam+RegBytesUsed)
+      Replace Temp, "%total%", Str(ChipRAM)
+      If ChipRAM <> 0 Then Temp += Format(StatsUsedRAM / ChipRAM, " (###.##%)")
+      PRINT SPC(10); Temp
 
-      If ErrorsFound = 0 Then
-        IF VBS = 1 THEN PRINT SPC(5);"Calling    : " + PrgExe
-        IF VBS = 1 THEN PRINT SPC(5);  "Parameters : " + PrgParams
+
+      LogError Message ("OutOfProgMemExceeded")
+    End if
+
+    'If no errors, show success message and assemble
+    IF Not ErrorsFound THEN
+      'Success message
+      PRINT Message("CompiledSuccess");
+      '  IF VBS = 0 THEN
+      '    PRINT
+      '  Else
+        Dim Temp As String
+        Temp = Trim(Str(CompEndTime - StartTime))
+        IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+        PRINT Message("CompTime") + Temp + Message("CompSecs")
+        If NoSummary = 0 Then
+          PRINT
+          PRINT Message("Summary")
+
+          PRINT SPC(5); Message("DataRead")
+
+          PRINT SPC(10); Message("InLines") + Str(MainProgramSize)
+          PRINT SPC(10); Message("Subs" ) + " User: " + Str( MainSBC - 1 ) + " ; System: " + Str(CompiledSBC - MainSBC ) + " of " + Str(SBC -  MainSBC - 1 )+ " ; Total: " + Str( MainSBC - 1 + CompiledSBC - MainSBC )
+          PRINT SPC(5); Message("ChipUsage")
+          Temp = Message("UsedProgram")
+          Replace Temp, "%used%", Str(StatsUsedProgram + ReserveHighProg)
+          Replace Temp, "%total%", Str(ChipProg)
+          If ChipProg <> 0 Then Temp += Format((StatsUsedProgram + ReserveHighProg) / ChipProg, " (###.##%)")
+          PRINT SPC(10); Temp
+          Temp = Message("UsedRAM")
+          Replace Temp, "%used%",  Str(StatsUsedRam+RegBytesUsed)
+          Replace Temp, "%total%", Str(ChipRAM)
+          If ChipRAM <> 0 Then 
+            If StatsUsedRam+RegBytesUsed = 0 Then
+              Temp += " (0%)"
+            Else
+              Temp += Format( (StatsUsedRAM+RegBytesUsed) / ChipRAM, " (###.##%)")
+            End If
+          End If
 
 
-        Dim As String SaveCurrDir
-        SaveCurrDir = CurDir
-        If PrgDir <> "" Then ChDir ReplaceToolVariables(PrgDir, "hex")
+          PRINT SPC(10); Temp
 
-        ExitValue = Exec(PrgExe, PrgParams)
 
-        'Check for programmer success, should have 0 exit value
-        If ExitValue <> 0 And (LCase(PrgExe) <> "none" And LCase(Right(PrgExe, 5)) <> "\none") Then
-          Dim Temp As String
-          Temp = Message("WarningProgrammerFail")
-          Replace Temp, "%status%", Trim(Str(ExitValue))
-          LogWarning Temp
-        Else
-          ExitValue = 0
-          ProgEndTime = Timer
+          OscType = ""
+          If ModePIC Then
+            If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
+              OscType = " (" + Message("CRIntOsc") + ")"
+            Else
+              OscType = " (" + Message("CRExtOsc") + ")"
+            End If
+          End If
+          If ChipAVRDX Then
+            If HashMapGet(Constants, "CHIPUSINGINTOSC") <> 0 Then
+              OscType = " (" + Message("CRIntOsc") + ")"
+            Else
+              OscType = " (" + Message("CRExtOsc") + ")"
+            End If
+          End If
 
-          If VBS = 1 Then
-            Dim Temp As String
-            Temp = Trim(Str(ProgEndTime - AsmEndTime))
-            IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-            PRINT Message("ProgTime") + Temp + Message("CompSecs")
+          PRINT SPC(10);
+          If ModePIC Then
+              Print "OSC: " + ChipOscSource + ", " + Str(ChipMhz) + "Mhz" + OscType;
+          Else
+              Print "OSC: " + Str(ChipMhz) + "Mhz" + OscType;
+          End If
+          If ChipMhzCalculated = 0 Then
+            Print
+          Else
+            Print " : Frequency calculated by compiler"
           End If
         End If
-        ChDir SaveCurrDir
-      End If
-    END If
-  ProgEndTime = Timer
+    '  END IF
 
-  'Issue message
-End If
-If MuteDonate = -1 then
-  IF Not ErrorsFound and MuteBanners = -1 THEN
-      Randomize timer
-      Select Case  int(Rnd * (10 - 1) + 1)
+      If ModeAVR then
+            AFISupport = 0
+      End IF
+
+      If AsmExe <> "" and MakeHexMode = 1 Then
+
+        IF UCase(AsmExe) = "GCASM" THEN
+          'Internal assembler
+          PRINT
+          PRINT Message("MakeASM")
+          AssembleProgram
+
+        ELSEIF instr(UCase(AsmExe),"PIC-AS") > 0 THEN
+
+          'AssembleProgram
+          PRINT
+          PRINT Message("MakeS")
+          PICASAssembler
+          'IF Not ErrorsFound THEN PRINT Message("PICASMSuccess")
+
+
+        Else
+          ExtAssembler
+        END If
+
+        AsmEndTime = Timer
+        'If VBS = 1 Then
+        ' Dim Temp As String
+        ' Temp = Trim(Str(AsmEndTime - CompEndTime))
+        ' IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+        ' PRINT Message("AsmTime") + Temp + Message("CompSecs")
+        'End If
+
+          IF Not ErrorsFound THEN
+            Dim Temp As String
+            Temp = Trim(Str(AsmEndTime - CompEndTime))
+            IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+            PRINT Message("ASMSuccess") + Message("AsmTime") + Temp + Message("CompSecs")
+          End If
+
+      End If
+
+
+
+
+    End If
+    AsmEndTime = Timer
+
+    'Download program
+    DownloadProgram:
+      IF (  PrgExe <> "" AND  Ucase(RIGHT(PrgExe,4)) <> "NONE"  AND AsmExe <> "" ) AND ErrorsFound = 0 THEN
+        PRINT
+        Dim Temp As String
+        Temp = Message("SendToPIC")
+        Replace Temp, "%PrgName%", Trim(Str(PrgName))
+        PRINT Temp
+        PrgExe = ReplaceToolVariables(PrgExe, "hex",, PrgTool)
+        PrgParams = ReplaceToolVariables(PrgParams, "hex",, PrgTool)
+
+        #ifdef __FB_WIN32__  'Need to test as WIN32 matches both 32 and 64 bit
+            if dir(PrgExe)="" then
+                'Temp = "Programmer executable " + PrgExe + " does not exist"
+                Temp = Message("ProgrammerNotFound")
+                Replace Temp, "%PrgExe%", PrgExe
+                LogError Temp
+            End if
+        #endif
+
+        If ErrorsFound = 0 Then
+          IF VBS = 1 THEN PRINT SPC(5);"Calling    : " + PrgExe
+          IF VBS = 1 THEN PRINT SPC(5);  "Parameters : " + PrgParams
+
+
+          Dim As String SaveCurrDir
+          SaveCurrDir = CurDir
+          If PrgDir <> "" Then ChDir ReplaceToolVariables(PrgDir, "hex")
+
+          ExitValue = Exec(PrgExe, PrgParams)
+
+          'Check for programmer success, should have 0 exit value
+          If ExitValue <> 0 And (LCase(PrgExe) <> "none" And LCase(Right(PrgExe, 5)) <> "\none") Then
+            Dim Temp As String
+            Temp = Message("WarningProgrammerFail")
+            Replace Temp, "%status%", Trim(Str(ExitValue))
+            LogWarning Temp
+          Else
+            ExitValue = 0
+            ProgEndTime = Timer
+
+            If VBS = 1 Then
+              Dim Temp As String
+              Temp = Trim(Str(ProgEndTime - AsmEndTime))
+              IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+              PRINT Message("ProgTime") + Temp + Message("CompSecs")
+            End If
+          End If
+          ChDir SaveCurrDir
+        End If
+      END If
+    ProgEndTime = Timer
+
+    'Issue message
+  End If
+
+'If mute donation then show messages
+
+  If MuteDonate = 0 then
+
+    Randomize timer
+    
+    IF Not ErrorsFound THEN
+      BEEP
+      randomNumber = int(Rnd * (10 - 1) + 1)
+      
+      Select Case randomNumber
         Case 1,2,3:
       Print
       Print "Enjoying GCBASIC ?"
       Print
-      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
-
+      Print "Donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/"
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
+      
         Case 4,5,6:
       Print
-      Print "Finding GCBASIC useful ?"
+      Print "Using GCBASIC ?"
       Print
-      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
-
-        Case 7,8,9:
-      Print
-      Print "Spreading the word about using GCBASIC ?"
-      Print
-      Print "Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
+      Print "Please donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ "
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
 
         Case Else
+      Print
+      Print "Developing solutions using GCBASIC ?"
+      Print
+      Print "Donate to help support the operational costs. Donate here https://gcbasic.com/donate/ "
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
 
-      'Nothing
+      End Select  
+      SLEEP 2000
+      BEEP
+    End if
+    
+  Else
 
-      End Select
-  End if
-Else  
-  beep
-    Print
-    Print "Please support GCBASIC - donate to the operational costs of providing GCBASIC."
-    Print
-    Print "Goto to http://paypal.me/gcbasic and donate. $25 is the typical donation, but, donate what you can."
-    sleep 2000
-    Print
-    Print
-  Beep
-End If
+    If ErrorsFound = 0 Then
+      Randomize timer
+      randomNumber = int(Rnd * (10 - 1) + 1) 
+      If randomNumber = 9  Then
+        Print 
+        Print "Visit https://ko-fi.com/gcstudio/posts to see the latest news on GCSTUDIO and GCBASIC"
+        Print
+      End If
+    End If
+  End If  
 'Write compilation report
-WriteCompilationReport
 
-Fin:
+  WriteCompilationReport
+
+ Fin:
 'Write errors to file
-WriteErrorLog
+  WriteErrorLog
 
-If VBS = 1 Then
+  If VBS = 1 Then
+    Dim Temp As String
+    Temp = Trim(Str(ProgEndTime - StartTime))
+    IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+    PRINT ""
+    PRINT Message("TotalTime") + Temp + Message("CompSecs")
+  End If
+
+  If DebugTime > 0 Then
+    Color 14
+    Print "DebugTime:"; DebugTime; " s"
+    Color 7
+  End If
+
+'End of program and Pause and wait for key at end of compilation
+
+  If PauseAfterCompile Then
+    Print
+    WaitForKeyOrTimeout
+  End If
+
   Dim Temp As String
-  Temp = Trim(Str(ProgEndTime - StartTime))
-  IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-  PRINT ""
-  PRINT Message("TotalTime") + Temp + Message("CompSecs")
-End If
+  Temp = Message("Success")
+  'Print
+  Print Temp
 
-If DebugTime > 0 Then
-  Color 14
-  Print "DebugTime:"; DebugTime; " s"
-  Color 7
-End If
+ Finishs:
+ Close
+ End ExitValue
 
-'End of program
-'Pause and wait for key at end of compilation?
-If PauseAfterCompile Then
-  Print
-  WaitForKeyOrTimeout
-End If
 
-Dim Temp As String
-Temp = Message("Success")
-'Print
-Print Temp
-
-Finishs:
-Close
-End ExitValue
-
-SUB Add18FBanks(CompSub As SubType Pointer)
+/'
+Start of subs in this GCBASIC source file - these are in alpabetic order NOT functional order, chip family specific order
+'/
+Sub Add18FBanks(CompSub As SubType Pointer)
   Dim As String TempData, First8, VarName
   Dim As Integer PD, ConstFound, FC
 
@@ -1278,10 +1309,10 @@ SUB Add18FBanks(CompSub As SubType Pointer)
     End If
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB AddBankCommands(CompSub As SubType Pointer)
+Sub AddBankCommands(CompSub As SubType Pointer)
   'Scans through program, adds banksel instructions where needed
 
   'Not used for AVR
@@ -1689,8 +1720,226 @@ SUB AddBankCommands(CompSub As SubType Pointer)
       CurrLine = CurrLine->Next
     Loop
   End If
+  
+  End Sub
 
-End Sub
+Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage as Integer, ByRef CurrPagePos As Integer, DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer)
+
+  '*WRITE DATA* *WRITE DATABLOCK*
+
+  'Only do this once.
+  If NonChipFamily16DataBlocksNotAdded = 0 then Exit Sub
+  If DataBlockCount > 0 and ModePIC Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
+  If DataBlockCount > 0 and ModeAVR Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous." )
+  Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState, LogWarningCounter = 0, CurrEPTable, OrgPosOffset
+  Dim as String ASMInstruction, Prefix, EPTempData
+
+  For CurrEPTable = 1 TO DataTables
+    'Examine all tables
+
+    EPTempData = ""
+
+    With DataTable(CurrEPTable)
+
+      If .Items > 0 AND .IsData = -1 and DataBlockCount > 0 Then              
+        'Get data. Where .items the number of items and ISDATA table
+        OrgPosOffset = 0
+
+        If .Type = "BYTE" Then
+
+          'ORG counter
+          OrgPosOffset = OrgPosOffset + ( .Items * 2 )
+
+          If ModePIC Then
+            ' determine prefix
+            If Instr(UCase(AsmExe), "GCASM") > 0 Then
+              ASMInstruction = "de"
+              ' GBASIC Assember needs 0x34 as the high byte
+              If ChipFamily = 16 Then
+                Prefix =""
+              Else
+                Prefix ="34"
+              End If
+            ElseIf Instr(UCase(AsmExe), "MPASM") > 0 Then
+              ASMInstruction = "de"
+              Prefix ="00"
+            Else
+              ASMInstruction = "db"
+              Prefix = ""
+            End IF
+          Else
+              ' All AVR use .db prefix
+              ASMInstruction = ".db"
+              Prefix = ""
+          End If
+
+          StatsUsedProgram = StatsUsedProgram + Int( ( .items / 2 ) + 0.5 )
+          'iterate the items
+          For CurrEPItem = 1 To .Items
+            ' process to create data strng as BYTE
+            EPTempData = EPTempData + ", 0x" + Prefix + Right("0"+HEX(.Item(CurrEPItem)),2)                  
+          Next
+          If ModeAVR Then
+            'Add additional data to ensure 'Warning		.cseg .db misalignment - padding zero byte' is resolved
+            If ( .Items MOD 2 ) = 1 Then
+              EPTempData = EPTempData + ", 0x00 ; .db alignment pad"
+            End If
+          End If
+
+
+        Else  ' Therefore, WORD
+
+          'ORG counter
+          OrgPosOffset = OrgPosOffset + ( .Items * 1 )
+          If ModePIC Then           
+            ASMInstruction = "dw"
+          Else
+            ASMInstruction = ".dw"
+          End If
+
+          StatsUsedProgram = StatsUsedProgram + .items
+
+          'iterate the items
+          For CurrEPItem = 1 To .Items Step 1
+            ' process to check the data strng
+            If MODEPIC Then
+              If ChipFamily <> 16 Then
+                If .Item(CurrEPItem) > 16383 Then
+                    LogWarning message("DataBlockExceeds")
+                    LogWarningCounter = LogWarningCounter + 1
+                    If LogWarningCounter = 11 then
+                      LogError message("DataBlockExceedsTooMany")
+                    End If 
+                End If
+              End If
+            Else
+              ' AVR - is this too big?
+              If .Item(CurrEPItem) > 65535 Then
+                LogWarning message("DataBlockExceedsAVR")
+                LogWarningCounter = LogWarningCounter + 1
+                If LogWarningCounter = 11 then
+                  LogError message("DataBlockExceedsTooManyAVR")
+                End If 
+              End If
+            End If
+            ' process to create data strng as BYTE
+            EPTempData = EPTempData + ", 0x" + Right("0000"+HEX(.Item(CurrEPItem)),4)
+          Next
+        End If   ' End of Word / If..
+
+        ' Tidy DATABlock string
+        If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
+        
+        'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
+        If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
+            EPDataLoc = EPDataLoc + 1
+        End If
+
+        If HashMapGet(Constants, Trim(.Name) ) = 0 Then
+          AddConstant(Trim(.Name), Str(CurrPagePos))
+        Else
+          LogError "Duplicate DATA label: '" + Ucase(Trim(.Name)) + "'"
+        End If
+
+        'Create DATA block label
+        If ModePIC Then  
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)  )
+          GetMetaData(Currline)->IsLabel = -1
+          CurrLine = LinkedListInsert(CurrLine, ";  Number of items " + str(.items) )
+          
+        Else
+          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)+":"   )
+          GetMetaData(Currline)->IsLabel = -1
+          CurrLine = LinkedListInsert(CurrLine, ";  Number of items " + str(.items) )
+          
+        End If
+
+        If trim(EPTempData) <> "" Then 
+          'Do not push out empty structure, as this will cause an error in MPASM etc
+
+          EPTempData = EPTempData +","  'add additional delimter to make this routine work as we use the "," in the instrev()
+
+          Dim as Integer FirstDelimiter, PosOfComma, LastValidPostOfComma, WordCounter, PageSize
+          Dim as String StringCut, StringOut
+
+          StringCut = EPTempData
+          PageSize = ProgMemPage(CurrPage-1).PageSize
+          StringOut = ""
+          FirstDelimiter = 1
+          WordCounter = 0
+          
+          'print "Address page", currpage, ProgMemPages, CurrPagePos
+
+          Do
+            ' Only output width that MPASM can cope with
+            PosOfComma = InStr( FirstDelimiter,  StringCut, "," )
+            ' Less the Maxsize AND not at end of string AND ( is NOT MPASM and LESS the 120 chars )
+            ' Print CurrPagePos + 1 , PosOfComma  
+            If PosOfComma <> 0 AND PosOfComma < 120 Then
+                'update outstring
+                StringOut = Mid ( StringCut, 1, PosOfComma )
+                  WordCounter = WordCounter + 1
+                'print "s1 = ",stringout +"| "+Str(PosOfComma)+"| "+ hex(CurrPagePos)
+                FirstDelimiter = PosOfComma + 1
+                LastValidPostOfComma = PosOfComma
+            Else
+  
+                'Current ORG
+                If PageSize <> 0 Then
+                  CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(CurrPagePos) )
+                End if
+                'Remove any comma at the end
+                If right( Trim(StringOut),1) = "," Then StringOut = Left( StringOut,Len(StringOut)-1)
+                
+                'Insert into list
+                CurrLine = LinkedListInsert(CurrLine, "  " + ASMInstruction + " " + StringOut )
+
+                'Update the CurrPagePos            
+                CurrPagePos = CurrPagePos + WordCounter
+
+                'Tidy the string
+                StringCut = trim(Mid ( StringCut, LastValidPostOfComma +1 ))
+
+                ' print CurrPagePos, CurrPagePos MOD .MaxSize, wordcounter, PosOfComma, Len(StringCut)
+                
+                FirstDelimiter = 1
+                WordCounter = 0
+                ' print CurrPagePos, Int ( CurrPagePos / PageSize ), CurrPage - 1 , Int ( CurrPagePos / PageSize ) <> CurrPage  - 1
+                If PageSize <> 0  and CurrPage > 0 Then
+                  If Int ( CurrPagePos / PageSize ) <> CurrPage - 1  Then
+                    If CurrPage <= ProgMemPages Then
+                      'Increment the page - this is required to page control and ORG statements ( later in this method)
+                      CurrPage = CurrPage + 1
+                      CurrLine = LinkedListInsert(CurrLine,  "; Page Increment ")
+                    End if
+                  End If
+                End If
+            End If
+          Loop While PosOfComma > 0 And Len(StringCut) <> 0
+        End If        
+        CurrLine = LinkedListInsert(CurrLine, "		; End of DATA_BLOCK" )
+        'move down as we dont need to align on every table
+        IF AFISupport = 1 and ModePIC and ChipFamily = 16 Then
+          'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
+          CurrLine = LinkedListInsert(CurrLine, " ALIGN 2 ; ASM 2-byte boundary alignment.")
+        End if
+
+        EPDataLoc += (.Items + 1)
+      End IF
+    End With
+
+    
+    ' Unset .IsData to ensure this is specific table is not handled again
+    If DataTable(CurrEPTable).IsData = -1 then 
+      DataTable(CurrEPTable).IsData = 0
+      DataTable(CurrEPTable).Used = 0
+      ' We have processed a DataBlock, so, reduce the counter
+      DataBlockCount = DataBlockCount - 1
+    End If
+
+  Next
+  
+  End Sub
 
 Sub AddPageCommands(CompSub As SubType Pointer)
 
@@ -1743,7 +1992,7 @@ Sub AddPageCommands(CompSub As SubType Pointer)
       Loop
       If NextLine <> 0 Then
         If Left(NextLine->Value, 6) = " call " Then
-          'Next line is a call, find the sub it is calling and what page it is on
+          'Next line is a call, find the Sub it is calling and what page it is on
           GetTokens(NextLine->Value, TempData(), TempDataCount)
           NextCallTarget = TempData(2)
           NextCalledSub = LocationOfSub(NextCallTarget, "")
@@ -1759,8 +2008,8 @@ Sub AddPageCommands(CompSub As SubType Pointer)
         RestorePage = 0
       End If
 
-      'If called sub ends in goto, restore
-      'May have linked list: called sub > goto sub > another goto sub
+      'If called Sub ends in goto, restore
+      'May have linked list: called Sub > goto Sub > another goto sub
       'Need to check if called sub's goto, or any other goto will change page
       'GotoSub = Subroutine(NextCalledSub)
       GotoSub = Subroutine(CalledSub)
@@ -1772,9 +2021,9 @@ Sub AddPageCommands(CompSub As SubType Pointer)
         End If
       Loop
 
-      'If called sub is IndCall, may need to restore page
+      'If called Sub is IndCall, may need to restore page
       If UCase(CallTarget) = "INDCALL" Then
-        'Any sub could be called from IndCall. So, if any subs off page 0, restore needed
+        'Any Sub could be called from IndCall. So, if any subs off page 0, restore needed
         For CheckSub = 1 To SBC
           If Subroutine(CheckSub)->Required And Subroutine(CheckSub)->DestPage <> 0 Then
             RestorePage = -1
@@ -1869,8 +2118,8 @@ Sub AddPageCommands(CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub AddMainEndCode
   Dim As LinkedListElement Pointer CurrPos
@@ -1904,7 +2153,7 @@ Sub AddMainEndCode
     Print "Unsupported family, Main"
 
   End If
-End Sub
+  End Sub
 
 Sub AddMainInitCode
   'Add initialisation code to start of Main routine
@@ -1917,7 +2166,7 @@ Sub AddMainInitCode
 
   CurrLine = Subroutine(0)->CodeStart
 
-  'Mark Main sub as destined for first page
+  'Mark Main Sub as destined for first page
   Subroutine(0)->FirstPage = -1
 
   'Set up stack (AVR and Z8)
@@ -2036,8 +2285,8 @@ Sub AddMainInitCode
   'Comment start of main program
   CurrLine = LinkedListInsert(CurrLine, "")
   CurrLine = LinkedListInsert(CurrLine, ";Start_of_the_main_program")
-
-End Sub
+  
+  End Sub
 
 Sub AddInterruptCode
   Dim As Integer IntSubLoc, CurrVect
@@ -2054,7 +2303,7 @@ Sub AddInterruptCode
   Dim As String RegItem(100), TempData(20), Temp
   Dim As Integer HandlerID, RegItems, CurrReg, SV, CurrBit, DataCount, PCHUsed
 
-  'Update list of sub calls
+  'Update list of Sub calls
   RetrySubRequests
 
   'Make list of all variables that may need saving
@@ -2190,7 +2439,7 @@ Sub AddInterruptCode
         CurrCalled = HandlerSubs->Next
         Do While CurrCalled <> 0
           CalledSub = CurrCalled->MetaData
-          'Search sub lines
+          'Search Sub lines
           CurrLine = CalledSub->CodeStart->Next
           Do While CurrLine <> 0
             'Search line for variables to back up
@@ -2279,9 +2528,9 @@ Sub AddInterruptCode
       End With
     End If
     With *Subroutine(IntSubLoc)
-      'Interrupt sub must go on first page
+      'Interrupt Sub must go on first page
       .FirstPage = -1
-      'Interrupt sub doesn't need return added
+      'Interrupt Sub doesn't need return added
       .NoReturn = -1
       'Subroutine is required
       .Required = -1
@@ -2588,8 +2837,8 @@ Sub AddInterruptCode
   If SaveVars <> 0 Then
     LinkedListDeleteList(SaveVars, 0)
   End If
-
-End Sub
+  
+  End Sub
 
 Sub AddSysVarBits (CompSub As SubType Pointer)
   Dim As String TempData, BitName
@@ -2648,10 +2897,10 @@ Sub AddSysVarBits (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB BuildMemoryMap
+Sub BuildMemoryMap
 
   'Dimension arrays
   REDIM FreeMem (MemSize + 10) As Integer
@@ -2717,10 +2966,10 @@ SUB BuildMemoryMap
     Next
   End If
   FreeRAM = T
+  
+  End Sub
 
-End SUB
-
-SUB CalcConfig
+Sub CalcConfig
 
   Dim As Integer configreport
   Dim As String ConfigReportFileName
@@ -3138,8 +3387,8 @@ SUB CalcConfig
   If OutPutConfigOptions = 0 then
     Close #configreport
   End if
-
-END SUB
+  
+  End Sub
 
 Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As String, OriginIn As String, NeverLast As Integer)
 
@@ -3165,7 +3414,7 @@ Sub CalcOps (OutList As CodeSection Pointer, SUM As String, AV As String, Ops As
   End If
 
   SearchStart = 1
-SearchForOpAgain:
+  SearchForOpAgain:
   'Initialise
   CalcIsBad = 0
   Answer = ""
@@ -3377,8 +3626,8 @@ SearchForOpAgain:
   'Print Answer, SUM
 
   Goto SearchForOpAgain
-
-END SUB
+  
+  End Sub
 
 Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As AsmCommand Pointer, GotoPos As AsmCommand Pointer) As Integer
   'Calculates the size in words of an assembly code line
@@ -3534,7 +3783,7 @@ Function CalcLineSize(CurrLine As String, ThisSubPage As Integer, CallPos As Asm
   End If
 
   Return InstSize
-End Function
+  End Function
 
 Sub CalcSubSize(CurrSub As SubType Pointer)
 
@@ -3559,11 +3808,11 @@ Sub CalcSubSize(CurrSub As SubType Pointer)
     GotoPos = 0
   EndIf
 
-  'Add page selection commands to sub so that size is accurate
+  'Add page selection commands to Sub so that size is accurate
   '(Will remove and re-add all page selection commands)
   AddPageCommands(CurrSub)
 
-  'Find the page this sub is intended for
+  'Find the page this Sub is intended for
   ThisSubPage = CurrSub->DestPage
 
   FinalSize = 0
@@ -3596,10 +3845,10 @@ Sub CalcSubSize(CurrSub As SubType Pointer)
   If FinalSize > CurrSub->MaxHexSize Then
     CurrSub->MaxHexSize = FinalSize
   End If
+  
+  End Sub
 
-End Sub
-
-FUNCTION CastOrder (InType As String) As Integer
+Function CastOrder (InType As String) As Integer
   Select Case UCase(Trim(InType))
     Case "BIT": Return 0
     Case "BYTE": Return 1
@@ -3613,16 +3862,16 @@ FUNCTION CastOrder (InType As String) As Integer
     Case "STRING": Return 8
     Case Else: Return -1
   End Select
-END FUNCTION
+  END FUNCTION
 
-/'* \brief return a tag value
-\param ConstName As String, Origin As String
-\returns Nothing
+  /'* \brief return a tag value
+  \param ConstName As String, Origin As String
+  \returns Nothing
 
-This sub validates the constname against a set of rules.
-Issues Warning if the constname is not valid.
+  This Sub validates the constname against a set of rules.
+  Issues Warning if the constname is not valid.
 
-'/
+  '/
 Sub CheckConstName (ConstName As String, Origin As String)
 
   Dim As String TempData
@@ -3652,19 +3901,19 @@ Sub CheckConstName (ConstName As String, Origin As String)
     Replace TempData, "%name%", ConstName
     LogWarning TempData, Origin
   END If
-End Sub
+  End Sub
 
-/'* \brief return a tag value
-\param None
-\returns Nothing
+  /'* \brief return a tag value
+  \param None
+  \returns Nothing
 
-Check speed that has been selected for the system clock, using information from DAT.
-The available clock speed are in the array IntOscSpeeds()
-If it is 0 Mhz, need to set to highest possible
-If it is too high, show a warning
+  Check speed that has been selected for the system clock, using information from DAT.
+  The available clock speed are in the array IntOscSpeeds()
+  If it is 0 Mhz, need to set to highest possible
+  If the clock speed exceeds the maximum, i.e. overclocking, then show a warning
 
 
-'/
+  '/
 Sub CheckClockSpeed
 
   Dim As Integer CurrSpeed
@@ -3698,20 +3947,20 @@ Sub CheckClockSpeed
     'Show warning if speed too high
     LogWarning(Message("WarningOverclocked"))
   End If
+  
+  End Sub
 
-End Sub
+  /'* \brief return a tag value
+  \param None
 
-/'* \brief return a tag value
-\param None
+  This Sub compiles the source program.
+  The preprocessor has aleady transformed the source files.
 
-This sub compiles the source program.
-The preprocessor has aleady transformed the source files.
-
-Checks every sub in program, compile those that need to be compiled.
-The approach includes the need to check again once a sub has been compiled, because that sub may require other subs.
+  Checks every Sub in program, compile those that need to be compiled.
+  The approach includes the need to check again once a Sub has been compiled, because that Sub may require other subs.
 
 
-'/
+  '/
 
 Sub CompileProgram
 
@@ -3726,8 +3975,8 @@ Sub CompileProgram
 
   'Request initialisation routine
   If UserCodeOnlyEnabled = 0 then
-      RequestSub(0, "InitSys")
-      SubLoc = LocationOfSub("InitSys", "")
+      RequestSub(0, DefaultInitSys)
+      SubLoc = LocationOfSub(DefaultInitSys, "")
       If SubLoc > 0 Then
         SourceFile(Subroutine(SubLoc)->SourceFile).InitSubUsed = -1
       End If
@@ -3819,18 +4068,18 @@ Sub CompileProgram
   If ChipFamily = 12 Then
     FixSinglePinSet
   End If
+  
+  End Sub
 
-End Sub
 
+  /'* \brief return a tag value
+  \param CompSub as pointer
 
-/'* \brief return a tag value
-\param CompSub as pointer
+  This Sub compiles the subroutines.
 
-This sub compiles the subroutines.
+  Supports use of ExtendedVerboseMessages= n | y in INI file to enable extended complilation messages
 
-Supports use of ExtendedVerboseMessages= n | y in INI file to enable extended complilation messages
-
-'/
+  '/
 Sub CompileSubroutine(CompSub As SubType Pointer)
 
   If VBS = 1 Then
@@ -3905,15 +4154,14 @@ Sub CompileSubroutine(CompSub As SubType Pointer)
   If ExtendedVerboseMessages Then Print Spc(15); "Done"
   CompSub->Compiled = -1
   CompiledSBC =  CompiledSBC + 1
-End Sub
+  End Sub
 
+  /'* \brief return a tag value
+  \param SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0
 
-/'* \brief return a tag value
-\param SUM As String, AV As String, Origin As String, ByRef OutList As CodeSection Pointer = 0, NeverLast As Integer = 0
+  This Sub compiles the CALC maths
 
-This sub compiles the CALC maths
-
-'/
+  '/
 
   ' 'Check AV (the target variable) is not the source variable
   ' Dim sourcevariablepos as integer
@@ -4002,16 +4250,16 @@ Sub CompileCalc (SUM As String, AV As String, Origin As String, ByRef OutList As
     End If
     FindLine = FindLine->Next
   Loop
+  
+  End Sub
 
-End Sub
+  /'* \brief return a tag value
+  \param OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String
 
-/'* \brief return a tag value
-\param OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String
+  This Sub compiles the ADD and SUBTRACTION maths
 
-This sub compiles the ADD and SUBTRACTION maths
-
-'/
-FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+  '/
+Function CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
 
   Dim OutVal As LongInt
   Dim As String V1Type, V2Type, CalcType, DestType, AV, R1, R2, Temp, V1Org, V2Org
@@ -4451,13 +4699,13 @@ FUNCTION CompileCalcAdd(OutList As CodeSection Pointer, V1 As String, Act As Str
   Next
 
   'Replace sum with answer variable
- AddSubAnswer:
+  AddSubAnswer:
   OutList->CodeEnd = CurrLine
   Return AV
+  
+  End Function
 
-END FUNCTION
-
-FUNCTION CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+Function CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
 
   Dim As String V1O, V2O, V1Type, V2Type, CalcType, DestType, AV, R1, R2, AVH, CT1, CT2, SNT
   Dim As Integer SourceSub, DestSub
@@ -4587,7 +4835,7 @@ FUNCTION CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act 
     CurrLine = LinkedListInsertList(CurrLine, CompileVarSet(V2, CT2, Origin))
   End If
 
-  'Decide which sub to use
+  'Decide which Sub to use
   IF Act = "=" Or Act = "~" THEN SNT = "SysCompEqual"
   'IF Act = "<" Or Act = ">" THEN SNT = "SysCompLessThan"
   'IF Act = "{" OR Act = "}" THEN SNT = "SysCompLessOrEqual"
@@ -4624,10 +4872,10 @@ FUNCTION CompileCalcCondition(OutList As CodeSection Pointer, V1 As String, Act 
   AV = "SysByteTempX"
   OutList->CodeEnd = CurrLine
   Return AV
+  
+  End Function
 
-END FUNCTION
-
-FUNCTION CompileCalcLogic (OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+Function CompileCalcLogic (OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
 
   Dim As String V1O, V2O, V1Type, V2Type, CalcType, DestType, AV, R1, R2
   Dim As String CurrV1, CurrV2, CurrAct, Temp, Cmd, Ovr
@@ -4826,10 +5074,10 @@ FUNCTION CompileCalcLogic (OutList As CodeSection Pointer, V1 As String, Act As 
 
   OutList->CodeEnd = CurrLine
   Return AV
+  
+  End Function
 
-END FUNCTION
-
-FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
+Function CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As String, V2 As String, Origin As String, Answer As String) As String
 
   Dim As String V1O, V2O, V1Type, V2Type, CalcType, DestType, AV, R1, R2, AVH, SNT
   Dim As String Temp
@@ -4979,7 +5227,7 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
     Goto MultDivAnswer
   End If
 
-  'Decide which sub to call
+  'Decide which Sub to call
   IF Act = "*" THEN SNT = "SysMultSub"
   IF Act = "/" THEN SNT = "SysDivSub"
   IF Act = "%" THEN SNT = "SysDivSub"
@@ -5013,8 +5261,8 @@ FUNCTION CompileCalcMult (OutList As CodeSection Pointer, V1 As String, Act As S
  MultDivAnswer:
   OutList->CodeEnd = CurrLine
   Return AV
-
-END FUNCTION
+  
+  End Function
 
 Function CompileCalcUnary(OutList As CodeSection Pointer, Act As String, V2 As String, Origin As String, Answer As String) As String
 
@@ -5216,8 +5464,8 @@ Function CompileCalcUnary(OutList As CodeSection Pointer, Act As String, V2 As S
 
   OutList->CodeEnd = CurrLine
   Return AV
-
-End Function
+  
+  End Function
 
 Function CompileConditions (Condition As String, IfTrue As String, Origin As String, CompSub As SubType Pointer = 0) As LinkedListElement Pointer
 
@@ -5803,7 +6051,7 @@ Function CompileConditions (Condition As String, IfTrue As String, Origin As Str
           IF OP = ">" THEN Swap V1, V2
           'Take bigger from smaller. V2 should be bigger. Take V2 from V1
           'mov small into W
-          'sub big from W
+          'Sub big from W
           IF IsConst(V1) And ChipFamily = 12 THEN
             If InStr(V1, "@") <> 0 Then
               CurrLine = LinkedListInsert(CurrLine, " movlw " + V1)
@@ -5841,7 +6089,7 @@ Function CompileConditions (Condition As String, IfTrue As String, Origin As Str
           IF OP = "{" THEN Swap V1, V2
           'Take smaller from bigger. V1 should be bigger or equal. Take V2 from V1
           'mov small into W
-          'sub big from W
+          'Sub big from W
 
           IF IsConst(V1) And ChipFamily = 12 THEN
             If InStr(V1, "@") <> 0 Then
@@ -5949,7 +6197,7 @@ Function CompileConditions (Condition As String, IfTrue As String, Origin As Str
   END IF
 
   Return OutList
-End Function
+ End Function
 
 Sub CompileDim (CurrSub As SubType Pointer)
   Dim As String VarName, VarType, VarAlias, VarFixedLocIn, Origin, InLine, SiStr, Temp
@@ -5964,7 +6212,7 @@ Sub CompileDim (CurrSub As SubType Pointer)
   Dim NewVarList(100) As String
   NewVarCount = 0
 
-  'Mark sub as having had variables read
+  'Mark Sub as having had variables read
   'Haven't actually read them yet (won't until end of this sub)
   'But might cause an infinite loop if this isn't set
   CurrSub->VarsRead = -1
@@ -6044,7 +6292,7 @@ Sub CompileDim (CurrSub As SubType Pointer)
         Else
           'Not supported, but can be added later if needed
         End If
-        'Print "Var loc:"; VarFixedLoc
+        ' Print "Var loc: "; Varname, VarFixedLoc
 
         'If also an alias, show an error. Can't be in two locations at once
         If IsAlias Then
@@ -6124,6 +6372,7 @@ Sub CompileDim (CurrSub As SubType Pointer)
           If IsAlias Then
             AddVar(InLine, VarType, Si, CurrSub, "ALIAS:" + VarAlias, Origin, , -1, 0)
           Else
+            ' print InLine, VarType, Si, CurrSub, "REAL", Origin, VarFixedLoc, -1, 0;
             AddVar(InLine, VarType, Si, CurrSub, "REAL", Origin, VarFixedLoc, -1, 0)
           End If
         End If
@@ -6132,10 +6381,10 @@ Sub CompileDim (CurrSub As SubType Pointer)
     process_next_line:
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-End Sub
-
-SUB CompileDir (CompSub As SubType Pointer)
+Sub CompileDir (CompSub As SubType Pointer)
 
   Dim As String Origin, InLine, VarName, Port, Temp, Direction
   Dim As String TrisPort, PortLetter
@@ -6149,8 +6398,8 @@ SUB CompileDir (CompSub As SubType Pointer)
   CurrLine = CompSub->CodeStart->Next
   Do While CurrLine <> 0
     InLine = CurrLine->Value
-    IF Left(InLine, 4) = "DIR " Then
 
+    IF Left(InLine, 4) = "DIR " Then
       Origin = ""
       IF INSTR(InLine, ";?F") <> 0 THEN
         Origin = Mid(InLine, INSTR(InLine, ";?F"))
@@ -6348,6 +6597,12 @@ SUB CompileDir (CompSub As SubType Pointer)
 
         'Generate code
         If ModePIC Then
+          'Generate error when the output port is missing.  PORTC.   No bit address
+          If Right(Trim(Varname),1) = "." Then
+            Temp = Message("NotIO")
+            Replace Temp, "%var%", InLine
+            LogError temp , Origin
+          End If 
           Replace VarName, ".", ","
           If Direction = "IN" Then
             CurrLine->Value = " bsf " + VarName
@@ -6371,9 +6626,9 @@ SUB CompileDir (CompSub As SubType Pointer)
     End If
     CurrLine = CurrLine->Next
   Loop
-END SUB
+ END SUB
 
-SUB CompileDo (CompSub As SubType Pointer)
+Sub CompileDo (CompSub As SubType Pointer)
   FoundCount = 0
   Dim As String InLine, Temp, Origin, Mode, Condition, LoopOrigin
   Dim As Integer DL, CP, ExitFound, WD
@@ -6529,10 +6784,10 @@ SUB CompileDo (CompSub As SubType Pointer)
     CurrLine = CurrLine->Next
   Loop
   FoundCount = DLC
+  
+  End Sub
 
-END SUB
-
-SUB CompileExitSub (CompSub As SubType Pointer)
+Sub CompileExitSub (CompSub As SubType Pointer)
 
   Dim As String Temp
   Dim As LinkedListElement Pointer CurrLine
@@ -6561,10 +6816,10 @@ SUB CompileExitSub (CompSub As SubType Pointer)
     END IF
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB CompileFor (CompSub As SubType Pointer)
+Sub CompileFor (CompSub As SubType Pointer)
 
   Dim As String InLine, Origin, Temp, ErrorOrigin
   Dim As String LoopVar, StartValue, EndValue, StepValue, LoopVarType
@@ -6642,7 +6897,7 @@ SUB CompileFor (CompSub As SubType Pointer)
         End if
 
       END IF
-'Print "For variable:"; LoopVar; " start:"; StartValue; " end:"; EndValue; " step:"; StepValue
+  'Print "For variable:"; LoopVar; " start:"; StartValue; " end:"; EndValue; " step:"; StepValue
 
       EndValueConstantInitialValue = val(EndValue)
 
@@ -6835,7 +7090,7 @@ SUB CompileFor (CompSub As SubType Pointer)
 
         If StepExists Then
 
- 'new NEXT code
+  'new NEXT code
 
           '#1 only add the new logic handle an integer... code only needed if an integer
           If TypeOfVar(StepValue, CompSub) = "INTEGER" then
@@ -6927,7 +7182,7 @@ SUB CompileFor (CompSub As SubType Pointer)
 
             LoopLoc = LinkedListInsert(LoopLoc, "ELSE" + Origin)
 
- 'Positive handler starts here with the encoded "ELSE" above
+  'Positive handler starts here with the encoded "ELSE" above
           End if  '#1  do not handle an integer... code above is needed only when an integer
 
           'Pseudo code - positive or assumed constant 1
@@ -7041,7 +7296,7 @@ SUB CompileFor (CompSub As SubType Pointer)
   Loop
 
   FoundCount = FLC
-End SUB
+  End Sub
 
 Sub CompileGoto (CompSub As SubType Pointer)
   'Compile GOSUBs, GOTOs and labels
@@ -7115,10 +7370,10 @@ Sub CompileGoto (CompSub As SubType Pointer)
     END IF
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-End Sub
-
-SUB CompileIF (CompSub As SubType Pointer)
+Sub CompileIF (CompSub As SubType Pointer)
   FoundCount = 0
   Dim As String Origin, Temp, L1, L2, Condition, EndBlock, LastIfOrigin
   Dim As Integer FoundIF, IL, ELC, IT, TL, FE, DelSection, DelEndIf, EndIfUsed, PrevSectionSkipped
@@ -7380,7 +7635,7 @@ SUB CompileIF (CompSub As SubType Pointer)
   IF FoundIF THEN GOTO COMPILEIFS
 
   FoundCount = ILC
-END SUB
+  End Sub
 
 Sub CompileIntOnOff (CompSub As SubType Pointer)
   Dim As String LineTemp, TempData, Origin
@@ -7447,10 +7702,10 @@ Sub CompileIntOnOff (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-End Sub
-
-SUB CompileOn (CompSub As SubType Pointer)
+Sub CompileOn (CompSub As SubType Pointer)
   Dim As String LineTemp, Origin, TempData, EnableBit, FlagBit
   Dim As String OnType, OnCondition, OnJumpTo
   Dim As String IntSource, IntEvent
@@ -7522,7 +7777,7 @@ SUB CompileOn (CompSub As SubType Pointer)
           If OnJumpTo <> "IGNORE" Then
             HandlerSubLoc = RequestSub(0, OnJumpTo)
             If HandlerSubLoc = -1 Then
-              'Error, handler sub not found
+              'Error, handler Sub not found
               TempData = Message("SubNotFound")
               Replace TempData, "%sub%", OnJumpTo
               LogError TempData, Origin
@@ -7645,10 +7900,10 @@ SUB CompileOn (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB CompilePot (CompSub As SubType Pointer)
+Sub CompilePot (CompSub As SubType Pointer)
   FoundCount = 0
 
   Dim As String LineTemp, Port, OutVar, Origin
@@ -7694,10 +7949,10 @@ SUB CompilePot (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB CompileReadTable (CompSub As SubType Pointer)
+Sub CompileReadTable (CompSub As SubType Pointer)
   Dim As String InLine, Origin, TableName, TableLoc, OutVar, Temp
   Dim As Integer CD, TableID, TableBytes, OutBytes, CurrTableByte, ItemLoc, ItemVal
   Dim As Integer LargeTable
@@ -7907,9 +8162,9 @@ SUB CompileReadTable (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
-END SUB
+  End Sub
 
-SUB CompileRepeat (CompSub As SubType Pointer)
+Sub CompileRepeat (CompSub As SubType Pointer)
 
   Dim As String InLine, Origin, Temp, RepCount, NewOrigin, RepValType
   Dim As Integer RVN, RL, EV, FE, FS, RepNone, CheckZero, CurrByte
@@ -8103,7 +8358,7 @@ SUB CompileRepeat (CompSub As SubType Pointer)
     CurrLine = CurrLine->Next
   Loop
   FoundCount = RPLC
-END SUB
+  End Sub
 
 Sub CompileReturn (CompSub As SubType Pointer)
   Dim As String InLine, Origin
@@ -8152,10 +8407,10 @@ Sub CompileReturn (CompSub As SubType Pointer)
     END IF
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-End Sub
-
-SUB CompileRotate (CompSub As SubType Pointer)
+Sub CompileRotate (CompSub As SubType Pointer)
 
   FoundCount = 0
   Dim As String InLine, Origin, Temp, VarName, VarType, Direction, RotateReg
@@ -8286,8 +8541,8 @@ SUB CompileRotate (CompSub As SubType Pointer)
     CompileNextRotate:
     CurrLine = CurrLine->Next
   Loop
-
-END SUB
+  
+  End Sub
 
 Function CompileString (InLine As String, Origin As String) As LinkedListElement Pointer
   Dim As String DestVar, Temp, ArrayName, StringToCopy
@@ -8460,9 +8715,9 @@ Function CompileString (InLine As String, Origin As String) As LinkedListElement
   'CurrLine = LinkedListInsert(CurrLine, "INTON")
 
   Return OutList
-End Function
+  End Function
 
-SUB CompileSelect (CompSub As SubType Pointer)
+Sub CompileSelect (CompSub As SubType Pointer)
   FoundCount = 0
   Dim As String InLine, Origin, Temp, SelectValue, Condition, NextCaseLabel
   Dim As String ElseCaseLabel, RepValType, SCastType
@@ -8841,10 +9096,10 @@ SUB CompileSelect (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB CompileSet (CompSub As SubType Pointer)
+Sub CompileSet (CompSub As SubType Pointer)
   FoundCount = 0
   Dim As String InLine, Origin, Temp
   Dim As String VarName, VarBit, Status
@@ -8916,7 +9171,7 @@ SUB CompileSet (CompSub As SubType Pointer)
   BADSET:
     CurrLine = CurrLine->Next
   Loop
-END SUB
+  End Sub
 
 Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Pointer
 
@@ -8939,7 +9194,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
 
   StringConstCount = 0
 
-  'Load code to call sub into OutList
+  'Load code to call Sub into OutList
   With (*InCall)
     If .Called->IsMacro Then
       'Dealing with a macro
@@ -9094,7 +9349,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
             S = VAL(Temp)
           Else
             'If no origin present, make one up so variable assignments work
-            'As long as sub (S) is correct, it will work properly
+            'As long as Sub (S) is correct, it will work properly
             '(except for maybe giving misleading error locations)
             F = 0
             L = 0
@@ -9132,7 +9387,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
 
         'Pass string using SYSTEMPARRAY
         IF C = 4 Or C = 5 THEN
-          'On 16F1, should pass reference to string location if sub will not be changing it
+          'On 16F1, should pass reference to string location if Sub will not be changing it
           If C = 4 And ChipFamily = 15 And (*.Called).Params(CD).Dir = 1 Then
             'Print "Opportunity for optimisation: "; *.Called.Params(CD).Name; " = "; .Param(CD, 1)
             'Destination array
@@ -9214,10 +9469,10 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
             End If
             If SourceArrayPtr = 0 Then
               'This should never run
-'              Color 12
-'              Print "Internal error in CompileSubCall: A GCBASIC library method " + ReplaceFnNames(SourceArray) + " exists but the return variable does not. Is this a call to a Subroutine rather than a Function? "
-'              Print "(in " + .Caller->Name + ", calling " + SourceArray + ")"
-'              Color 7
+  '              Color 12
+  '              Print "Internal error in CompileSubCall: A GCBASIC library method " + ReplaceFnNames(SourceArray) + " exists but the return variable does not. Is this a call to a Subroutine rather than a Function? "
+  '              Print "(in " + .Caller->Name + ", calling " + SourceArray + ")"
+  '              Color 7
               Dim temp as String
               Temp = Message( "CannotHandleFunctionCall")
               Replace ( Temp, "%fn" , ReplaceFnNames(SourceArray) )
@@ -9225,7 +9480,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
               GoTo CompileNextParam
             End If
 
-            'Remove function name from SourceArray
+            'Remove Function name from SourceArray
             SourceArray = Chr(31) + Str(LocOfFn) + Chr(31)
 
           'SourceArray is not a function
@@ -9271,7 +9526,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
           ArrayHandler = "Sys" + DestArray + "Handler"
           AddVar ArrayHandler, "WORD", 1, 0, "REAL", .Origin, , -1 'Make handler global
 
-          'May need to hide function names in array names
+          'May need to hide Function names in array names
           Do While InStr(SourceArray, .Called->Name) <> 0
             Replace (SourceArray, .Called->Name, Chr(31) + Str((*InCall).CalledID) + Chr(31))
           Loop
@@ -9316,9 +9571,9 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
         CompileNextParam:
       Next
 
-      'Mark sub as required
+      'Mark Sub as required
       .Called->Required = -1
-      'Mark file sub came from as used
+      'Mark file Sub came from as used
       SourceFile(.Called->SourceFile).InitSubUsed = -1
 
     End If
@@ -9332,7 +9587,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
   CurrPos = LinkedListInsertList(CurrPos, AfterCode)
 
   Return OutList
-End Function
+  End Function
 
 Sub CompileSubCalls(CompSub As SubType Pointer)
 
@@ -9360,12 +9615,16 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
   'Prepare hash map of subs
   UpdateSubMap
 
+  If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB )  Then
+    Print "128 CompileSubCalls :  Call UpdateSubMap successful"
+  End if
+
   'Find functions
   CurrLine = CompSub->CodeStart->Next
   Origin = ""
   Do While CurrLine <> 0
 
-    'Check if startup sub is needed for the line because of a constant
+    'Check if startup Sub is needed for the line because of a constant
     DO WHILE INSTR(UCase(CurrLine->Value), ";STARTUP") <> 0
       Temp = VAL(Mid(CurrLine->Value, INSTR(UCase(CurrLine->Value), ";STARTUP") + 8))
       TempData = ";STARTUP" + Str(Temp)
@@ -9380,19 +9639,29 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
 
     FindFunctionsAgain:
     TempLine = CurrLine->Value
+
     NewOrigin = ""
     IF INSTR(TempLine, ";?F") <> 0 Then
       NewOrigin = MID(TempLine, INSTR(TempLine, ";?F"))
       If NewOrigin <> "" Then
         Origin = NewOrigin
+        LastOrigin = Origin
       End If
     End If
 
     'Don't check "ON " statements for functions
     If UCASE(Left(TempLine, 3)) = "ON " Then Goto NextLineFunctions
 
+    If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB )  and ( INSTR(UCase(TempLine), "PRESERVE") = 0 AND INSTR(UCase(TempLine), "REPROCES") = 0 ) Then
+      Print "128 CompileSubCalls :  Process " + (TempLine)
+    End if
+
     'Split up line
     LineElements = GetElements(TempLine)
+
+    If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB )  and ( INSTR(UCase(TempLine), "PRESERVE") = 0 AND INSTR(UCase(TempLine), "REPROCES") = 0 ) Then
+      Print "128 CompileSubCalls :       GetElements successful "
+    End if
 
     'Run through list of functions
     CurrElement = LineElements->Next
@@ -9401,6 +9670,11 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
       MatchingSubs = HashMapGet(Subroutines, UCase(CurrElement->Value))
       MatchingSub = MatchingSubs
       Do While MatchingSub <> 0
+
+        If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+          Print "128 CompileSubCalls :       Found matching Sub"
+        End if
+
         'Line contains call to this subroutine
         CurrSub = MatchingSub->NumVal
 
@@ -9415,7 +9689,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
         FoundFunction = WholeINSTR(TempLine, FunctionName, 0)
 
         'Avoid calling functions from themselves
-        'Note: ignores overloaded sub and function with same name, need to detect that later
+        'Note: ignores overloaded Sub and Function with same name, need to detect that later
         If FoundFunction = 2 And Subroutine(CurrSub)->IsFunction Then
           If CompSub->Name = Subroutine(CurrSub)->Name Then FoundFunction = 0
         END IF
@@ -9433,6 +9707,11 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
         'If it does, call a sub, and get the value after
         IF FoundFunction = 2 THEN
           'Print "Found function: "; FunctionName
+
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       Found function: " + FunctionName 
+          End if
+
           'Check if a temp variable should be used
           UseTempVar = 0
           If Subroutine(CurrSub)->IsFunction Then
@@ -9442,7 +9721,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
               TempVarName = "SysFn" + FunctionType + Str(TempVarCount(FunctionTypeID))
               AddVar TempVarName, FunctionType, 1, CompSub, "REAL", Origin, , -1
             End If
-            'Add a variable for the function result
+            'Add a variable for the Function result
             AddVar Subroutine(CurrSub)->Name, FunctionType, 1, Subroutine(CurrSub), "REAL", Origin, , -1
             AddVar Subroutine(CurrSub)->Name, FunctionType, 1, CompSub, "REAL", Origin, , -1
           End If
@@ -9454,7 +9733,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
             TempLine = Trim(Mid(TempLine, 7))
           End If
 
-          'Replace the function in the line
+          'Replace the Function in the line
           'Get whatever is to the left of the function
           BeforeFn = LEFT(TempLine, INSTR(UCase(TempLine), FunctionName) - 1)
 
@@ -9464,7 +9743,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
             Goto SearchLineAgain
           End If
 
-          'Get the parameters of the function and the text after it
+          'Get the parameters of the Function and the text after it
           FunctionParams = ""
 
           AfterFn = MID(TempLine, INSTR(UCase(TempLine), UCase(FunctionName)) + LEN(FunctionName))
@@ -9536,34 +9815,51 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
               AfterFn = ""
             End If
           Else
-            'No brackets - nothing or everything after sub/function name is a parameter
+            'No brackets - nothing or everything after sub/Function name is a parameter
             If BracketsRequired Then
-              'If we have a function without brackets, no parameters
+              'If we have a Function without brackets, no parameters
               FunctionParams = ""
             Else
-              'If we have a sub without brackets, everything after the name is a parameter
+              'If we have a Sub without brackets, everything after the name is a parameter
               FunctionParams = Trim(AfterFn)
               AfterFn = ""
             End If
           End If
 
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       FunctionParams: " + FunctionParams 
+          End if
+
           ValidateParameterIsValid( Subroutine(CurrSub)->Name, FunctionParams, Origin )
+
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       FunctionParams: Validated" 
+          End if
 
           'Remove origin from FunctionParams
           IF INSTR(FunctionParams, ";?F") <> 0 Then
             FunctionParams = RTrim(Left(FunctionParams, InStr(FunctionParams, ";?F") - 1))
           End If
 
-          'Detect cases where overloaded sub and function have same name, and return of function is set
-          'Need to detect here or the sub will be called with = return value as a parameter.
+          'Detect cases where overloaded Sub and Function have same name, and return of Function is set
+          'Need to detect here or the Sub will be called with = return value as a parameter.
           If Subroutine(CurrSub)->Overloaded And Left(FunctionParams, 1) = "=" Then
             Replace TempLine, FunctionName, CHR(30) + STR(CurrSub) + CHR(30)
             Goto SearchLineAgain
           End If
 
-          'Prepare sub call
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       Extracting Parameters" 
+          End if
+
+          'Prepare Sub call
           'Print "Calling:"; FunctionName, "Params:"; FunctionParams
           ExtractParameters(NewSubCall, FunctionName, FunctionParams, Origin)
+        
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       ExtractParameters: Successful" 
+          End if
+
           With NewSubCall
             .Called = Subroutine(CurrSub)
             .Caller = CompSub
@@ -9571,7 +9867,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
             .Origin = Origin
           End With
 
-          'Check function being called matches current function best
+          'Check Function being called matches current Function best
           If Subroutine(CurrSub)->Overloaded Then
             MatchScore = SubSigMatch(GetSubSig(*Subroutine(CurrSub)), NewSubCall.CallSig)
             BetterMatch = 0
@@ -9588,7 +9884,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
               FindMatch = FindMatch->Next
             Loop
 
-            'Skip this sub if it's not the best
+            'Skip this Sub if it's not the best
             If BetterMatch Then
               Replace TempLine, FunctionName, CHR(30) + STR(CurrSub) + CHR(30)
               Goto SearchLineAgain
@@ -9637,9 +9933,14 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
 
           'Write back code
           'Print DS, BeforeFn, FunctionName, FunctionParams, AfterFn
+          If (( compilerdebug and cCOMPILESUB ) = cCOMPILESUB ) Then
+            Print "128 CompileSubCalls :       Write back: ";
+            Print BeforeFn, FunctionName, FunctionParams, AfterFn 
+          End if
+
           If Subroutine(CurrSub)->IsFunction Then
 
-            'If vars are empty we can assume the function as no assignment.
+            'If vars are empty we can assume the Function as no assignment.
             If Len(Trim(BeforeFn)) = 0 and Len(Trim(AfterFn)) = 0 and Len(Trim(FunctionParams)) = 0 Then
               Dim Temp as String
               Temp = Message("MissingFunctionAssignment")
@@ -9700,7 +10001,7 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
   CurrLine = CompSub->CodeStart->Next
   Do While CurrLine <> 0
 
-    'Delete any lines with just a sub name
+    'Delete any lines with just a Sub name
     If Left(CurrLine->Value, 1) = Chr(31) And InStr(CurrLine->Value, "=") = 0 Then
       CurrLine = LinkedListDelete(CurrLine)
     Else
@@ -9709,8 +10010,8 @@ Sub CompileSubCalls(CompSub As SubType Pointer)
     End If
     CurrLine = CurrLine->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub CompileTables
   Dim As String Temp, Source, Table, ThisItem
@@ -9732,7 +10033,7 @@ Sub CompileTables
   IF StringTablesUsed THEN
     IF VBS = 1 THEN PRINT : PRINT SPC(5); Message("StringTable")
 
-    'Create sub for string tables
+    'Create Sub for string tables
     TableSub = NewSubroutine("SysStringTables")
     SBC += 1: Subroutine(SBC) = TableSub
     CurrLine = TableSub->CodeStart
@@ -9851,7 +10152,7 @@ Sub CompileTables
           LargeTable = -1
         End If
 
-        'Create sub for data tables
+        'Create Sub for data tables
         'Need to create a table for each byte in data
         For CurrTableByte = 0 To GetTypeSize(DataTable(PD).Type) - 1
           Table = GetByte("TABLE" + DataTable(PD).Name, CurrTableByte)   'was capitalised
@@ -10047,8 +10348,8 @@ Sub CompileTables
 
     NEXT
   End IF
-
-END SUB
+  
+  End Sub
 
 Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, InvertBitCopy As Integer = 0) As LinkedListElement Pointer
 
@@ -10102,6 +10403,9 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
     End If
 
   Else
+
+
+
     SType = TypeOfVar(Source, CurrentSub)
     If IsConst(Source) Then SType = "CONST"
     IF INSTR(Source, ";STRING") <> 0 THEN
@@ -10183,20 +10487,27 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
       End if
 
       'All add .0 when nn to give nn.0
-      If Instr(Source,".") = 0 And Trim(Source) = Trim(Str(VAL(Source))) Then
-        Source = Source + ".0"
+      If Instr(Source,".") = 0 Then 
+        If Trim(Source) = Trim(Str(VAL(Source))) Then
+          Source = Source + ".0"
+        End If
       End if
     End If
 
     'Remove Leading 0
-    Do While Left(Source,1) = "0" And Mid( Source, 2, 1) <> "."
-      Source = Mid(Source, 2)
-    Loop 
+    If Left(Source,1) = "0" Then
+      Do While Left(Source,1) = "0" And Mid( Source, 2, 1) <> "."
+        Source = Mid(Source, 2)
+      Loop 
+    End If
 
     'Remove trailing 0
+    If Right(Source,1) = "0" Then
       Do While Right(Source,1) = "0" And Mid( Source, Len(Source)-1, 1) <> "."
-      Source = Mid(Source, 1, Len(Source) - 1)
-    Loop 
+        Source = Mid(Source, 1, Len(Source) - 1)
+      Loop
+    End If
+
   ElseIf SType = "BIT" and ( Dtype = "SINGLE" or Dtype = "DOUBLE" ) Then
       'check for double decimal point
       If CountOccur( Source, ".") > 1 Then
@@ -11065,9 +11376,9 @@ Function CompileVarSet (SourceIn As String, Dest As String, Origin As String, In
   End Select
 
   Return OutList
-End Function
+  End Function
 
-SUB CompileVars (CompSub As SubType Pointer)
+Sub CompileVars (CompSub As SubType Pointer)
   Dim As String InLine, Origin, Temp, DestVar, SourceData
   Dim As String VarType, SourceOld, ErrorTemp, OriginalDest
   Dim As Integer CD, PD, T, DisableInt, CTR, AIC, CanSkip
@@ -11158,7 +11469,7 @@ SUB CompileVars (CompSub As SubType Pointer)
             GOTO CompNextVar
       END IF
 
-      'Call another sub to generate code
+      'Call another Sub to generate code
       If IsCalc(SourceData) Then
 
         'Use temporary variable? (Needed for bit destinations)
@@ -11338,10 +11649,10 @@ SUB CompileVars (CompSub As SubType Pointer)
   CompNextVar:
     CurrLine = CurrLine->Next
   Loop
+  
+  End Sub
 
-END SUB
-
-SUB CompileWait (CompSub As SubType Pointer)
+Sub CompileWait (CompSub As SubType Pointer)
 
   'Time Intervals: us, 10us, ms, 10ms, s, m, h
   Dim As String InLine, Origin, Temp, Value, Unit, Condition
@@ -11530,8 +11841,8 @@ SUB CompileWait (CompSub As SubType Pointer)
   EndWaitCompile:
     CurrLine = CurrLine->Next
   Loop
-
-END SUB
+  
+  End Sub
 
 Function CompileWholeArray (InLine As String, Origin As String) As LinkedListElement Pointer
 
@@ -11614,7 +11925,7 @@ Function CompileWholeArray (InLine As String, Origin As String) As LinkedListEle
   Next
 
   Return OutList
-End Function
+  End Function
 
 Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
 
@@ -11669,7 +11980,7 @@ Function ConfigNameMatch(ConfigIn As String, ConfigNameIn As String) As Integer
 
   'No match found
   Return 0
-End Function
+  End Function
 
 Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny As Integer = 0) As Integer
   'MatchAny is set when checking if ConfigValueIn is any internal oscillator, not just the fastest one
@@ -11750,12 +12061,66 @@ Function ConfigValueMatch(ConfigIn As String, ConfigValueIn As String, MatchAny 
 
   'No match found
   Return 0
-
-End Function
+  
+  End Function
 
 Sub CreateCallTree
+  End Sub
 
-End Sub
+Sub CreateReservedWordsList
+  dim ReservedWordFile as string
+  dim ReservedWordIn as string
+  dim ReservedWordCounter as Integer
+  dim As Byte ReservedwordLoop = 0
+
+  'Detect GCBASIC install directory
+  ID = ExePath
+  If ID = "" Or ID = "." THEN
+    ID = CURDIR
+    #IFDEF __FB_UNIX__
+      If Right(ID, 1) = "/" Then ID = Left(ID, Len(ID) - 1)
+    #ELSE
+      If Right(ID, 1) = "\" Then ID = Left(ID, Len(ID) - 1)
+    #ENDIF
+  End If
+
+  'Read list
+  #IFDEF __FB_UNIX__
+    ReservedWordFile = ID + "/reservedwords.dat"
+  #ELSE
+    ReservedWordFile = ID + "\reservedwords.dat"
+  #ENDIF
+  IF Dir(ReservedWordFile) = "" THEN
+    PRINT "Cannot find " + ReservedWordFile
+    Print
+    PRINT "GCBASIC cannot operate without this file"
+    If PauseOnErr = 1 THEN
+      PRINT
+      PRINT "Press any key to continue"
+      Sleep
+    END IF
+    END
+  END IF
+
+  ReservedWordCounter = 0
+  OPEN ReservedWordFile FOR INPUT AS #1
+  Do While NOT EOF(1)
+      Line Input #1,  ReservedWordIn
+      ReservedWords( ReservedWordCounter )  = ReservedWordIn
+      ' print ReservedWords( ReservedWordCounter )
+      ReservedWordCounter = ReservedWordCounter +1
+      For ReservedwordLoop = 1 to len ( ReservedWordIn )
+          If ReservedWordCounter > 1 then
+            ReservedwordC = ReservedwordC + ASC( Mid(ReservedWordIn,ReservedwordLoop ,1) )
+          End if
+      Next 
+  Loop
+  CLOSE  #1
+  If Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) ) + ReservedwordC <> 255 Then
+      LogError "Invalid Reservedwords.dat - reinstall GCBASIC toolchain"
+  End If
+  ReservedwordC = Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) )       
+  End Sub
 
 Sub DisplayCallTree
 
@@ -11783,8 +12148,8 @@ Sub DisplayCallTree
 
     End If
   Next
-
-End Sub
+  
+  End Sub
 
 Sub ExtAssembler
   Dim As String DataSource, ErrFile, Temp
@@ -11835,12 +12200,13 @@ Sub ExtAssembler
       Exit For
     End If
   Next
+  
+  End Sub
 
-End Sub
 
 
-'Call PIC-AS
 Sub PICASAssembler
+  'Call PIC-AS
   Dim As String DataSource, ErrFile, Temp
   Dim As Integer PD, Result, LBracePos, RBracePos
   Dim as string ErrorArray()
@@ -11904,22 +12270,6 @@ Sub PICASAssembler
 
 
 
-'        'just format the output. Oh my... a real issue to sort this out!
-'        if instr( DataSource, "\\" ) > 0 then
-'          StringSplit ( DataSource, "\\",-1,ErrorArray() )
-'        else
-'          StringSplit ( DataSource, "\",-1,ErrorArray() )
-'        end if
-'
-'        Temp  = mid ( ErrorArray( ubound(ErrorArray)), 2 )
-'
-'        Replace( Temp, ":: e", ": E" )
-'        LBracePos = Instr ( Temp, "(" )-1
-'        RBracePos = Instr ( Temp, ")" )+2
-'
-'        Temp = Left( Temp, LBracePos) + mid( temp, RBracePos, 255   )
-'        replace ( temp, ":", " (")
-'        replace ( temp, ":", "): ")
 
         ErrorsFound = -1
         LogOutputMessage DataSource+" "
@@ -11948,9 +12298,8 @@ Sub PICASAssembler
       Exit For
     End If
   Next
-
-End Sub
-
+  
+  End Sub
 
 Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
 
@@ -11966,7 +12315,7 @@ Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, 
   End With
 
   'Get parameters
-  'Find sub calls with parameters in program
+  'Find Sub calls with parameters in program
   TrimParams = CallParams
   SubSig = ""
 
@@ -12000,6 +12349,17 @@ Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, 
           .Param(.Params, 2) = TypeOfValue(ReplaceFnNames(.Param(.Params, 1)), Subroutine(GetSubID(Origin)), -1)
           'Print .Param(.Params, 1) + " is a " + .Param(.Params, 2)
           SubSig += GetTypeLetter(.Param(.Params, 2))
+          If .Params + 1 = MAXPARAMS Then
+
+              If (( compilerdebug and cCOMPILEUPDATESUBMAP ) = cCOMPILEUPDATESUBMAP )  Then
+                Print "256 CompileUpdateSubMap: Call to " + CalledSubName + " = maximum number of parameters exceeded " 
+              End if
+          
+              temp = Message("MaxParametersExceeded")
+              Replace temp, "%param%", str(MAXPARAMS)
+              LogError temp, origin
+              Exit For
+          End If
           .Params += 1
           .Param(.Params, 1) = ""
         Else
@@ -12017,7 +12377,7 @@ Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, 
       .CallSig = SubSig
     End With
   End If
-End Sub
+  End Sub
 
 Sub FinalOptimise
 
@@ -12029,8 +12389,8 @@ Sub FinalOptimise
 
   'Check for uncompiled lines
   FindUncompiledLines
-
-End Sub
+  
+  End Sub
 
 Sub FindAssembly (CompSub As SubType Pointer)
   Dim As String Temp, CalledSub
@@ -12086,7 +12446,7 @@ Sub FindAssembly (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
-End Sub
+  End Sub
 
 Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As LinkedListElement Pointer, CheckedLines As LinkedListElement Pointer) As LinkedListElement Pointer
   'Will accept a code line and an optional output list
@@ -12192,7 +12552,7 @@ Function FindPotentialBanks(CurrLine As LinkedListElement Pointer, OutList As Li
   End If
 
   Return OutList
-End Function
+  End Function
 
 Sub FindUncompiledLines
   'Search the compiler output listing for uncompiled lines
@@ -12240,7 +12600,7 @@ Sub FindUncompiledLines
 
     CurrLine = CurrLine->Next
   Loop
-End Sub
+  End Sub
 
 Function FixBit (InBit As String, Origin As String) As String
   'Fix any references to bits > 7
@@ -12293,10 +12653,10 @@ Function FixBit (InBit As String, Origin As String) As String
 
   'Return unchanged
   Return InBit
+  
+  End Function
 
-End Function
-
-SUB FixFunctions(CompSub As SubType Pointer)
+Sub FixFunctions(CompSub As SubType Pointer)
 
   'Fix functions that are used by DO and WAIT, so they are updated inside
   'the loops
@@ -12363,8 +12723,8 @@ SUB FixFunctions(CompSub As SubType Pointer)
     CurrLine = CurrLine->Next
   Loop
 
-
-END SUB
+  
+  End Sub
 
 Sub FixPointerOps (CompSub As SubType Pointer)
 
@@ -12423,8 +12783,8 @@ Sub FixPointerOps (CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub FixSinglePinSet
   'Deal with pin direction setting on 12 bit PIC
@@ -12609,8 +12969,8 @@ Sub FixSinglePinSet
       End If
     End If
   End If
-
-End Sub
+  
+  End Sub
 
 Sub FixTemporaryVariables
   'Find any temporary variables that will be overwritten by subroutines, and rename to prevent
@@ -12646,7 +13006,7 @@ Sub FixTemporaryVariables
 
   'Search for conflicts
   'Basic algorithm:
-  'Create visit list, fill with main sub and everything called from it
+  'Create visit list, fill with main Sub and everything called from it
   'For each item on visit list
   ' - Check that it does not steal any variables from its callers
   ' - Add all subroutines called to visit list
@@ -12657,7 +13017,7 @@ Sub FixTemporaryVariables
   Do While VisitListPos <> 0
     CurrSub = VisitListPos->MetaData
 
-    'Check that this sub does not interfere with callers
+    'Check that this Sub does not interfere with callers
     'Get all subroutines that call current sub, build hash map of used temporary vars
     UsedTempVars = HashMapCreate
     CallerList = GetCalledSubs(CurrSub, , -1)
@@ -12672,7 +13032,7 @@ Sub FixTemporaryVariables
       CallerListPos = CallerListPos->Next
     Loop
 
-    'Check if any temp variables in this sub are used by callers
+    'Check if any temp variables in this Sub are used by callers
     CheckVar = CurrSub->TemporaryVars->Next
     Do While CheckVar <> 0
       If HashMapGetStr(UsedTempVars, CheckVar->Value) <> "" Then
@@ -12747,8 +13107,8 @@ Sub FixTemporaryVariables
         Do While SearchPos <> 0
           If SearchPos->MetaData = CalledListPos->MetaData Then Exit Do
           If SearchPos->Next = 0 Then
-            'Called sub is not later in visit list already, so add
-            '(Unless a called sub calls this one, then we have recursion and adding will lock up compiler)
+            'Called Sub is not later in visit list already, so add
+            '(Unless a called Sub calls this one, then we have recursion and adding will lock up compiler)
             If LinkedListFind(CallerList, CurrSub) = 0 Then
               LinkedListInsert(SearchPos, CalledListPos->MetaData)
             End If
@@ -12766,8 +13126,8 @@ Sub FixTemporaryVariables
 
     VisitListPos = VisitListPos->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub FreeCalcVar (VarName As String)
   'Mark a calc var as available for reuse
@@ -12790,7 +13150,7 @@ Sub FreeCalcVar (VarName As String)
       CalcVars(CD).Status = "A"
     Next
   End If
-End Sub
+  End Sub
 
 Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
 
@@ -12948,7 +13308,7 @@ Function GenerateArrayPointerSet(DestVar As String, DestPtr As Integer, CurrSub 
   End If
 
   Return OutList
-End Function
+  End Function
 
 Function GenerateAutoPinDir As LinkedListElement Pointer
   'Generates automatic pin direction setting code
@@ -13017,7 +13377,6 @@ Function GenerateAutoPinDir As LinkedListElement Pointer
             CurrLine = LinkedListInsert(CurrLine, "DIR " + CurrPin->Value + " OUT")
           End If
         End If
-
         SkipPinDirSet:
 
       'Checking a port
@@ -13059,7 +13418,7 @@ Function GenerateAutoPinDir As LinkedListElement Pointer
   Loop
 
   Return OutList
-End Function
+  End Function
 
 Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As String, CurrSub As SubType Pointer = 0, SetStatus As Integer = -1) As LinkedListElement Pointer
   'Set a given bit either on or off
@@ -13158,6 +13517,7 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
 
     If ModePIC Then
       CurrLine = LinkedListInsert(CurrLine, " movlw " + Str(BitAndValue))
+      
       CurrLine = LinkedListInsert(CurrLine, " andwf " + VarBit + ", W")
       CurrLine = LinkedListInsert(CurrLine, " movwf SysByteTempX")
       If SetStatus Then
@@ -13301,7 +13661,7 @@ Function GenerateBitSet(BitNameIn As String, NewStatus As String, Origin As Stri
   End If
 
   Return OutList
-End Function
+  End Function
 
 Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointer
 
@@ -13387,7 +13747,7 @@ Function GenerateExactDelay(ByVal Cycles As Integer) As LinkedListElement Pointe
   Loop While Cycles > 0
 
   Return OutList
-End Function
+  End Function
 
 Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As String, CurrSub As SubType Pointer, CanSkip As Integer) As LinkedListElement Pointer
   'Generate code to set multiple bits in destvar to appropriate values from sourcedata.
@@ -13432,7 +13792,7 @@ Function GenerateMultiSet(SourceData As String, DestVar As String, Origin As Str
   Loop
 
   Return OutList
-End Function
+  End Function
 
 Function GenerateVectorCode As LinkedListElement Pointer
 
@@ -13456,11 +13816,11 @@ Function GenerateVectorCode As LinkedListElement Pointer
             CurrLine = LinkedListInsert(CurrLine, " goto BASPROGRAMSTART")
             CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(Bootloader + 4))
             IntLoc = LocationOfSub("INTERRUPT", "")   'was capitalised
-        Else
+        Else 
             CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(Bootloader))
             CurrLine = LinkedListInsert(CurrLine, " pagesel " + UserDefineStartLabel)
             CurrLine = LinkedListInsert(CurrLine, " goto " + UserDefineStartLabel)
-        End If
+          End If
 
         If IntLoc = 0 Then
           If UserCodeOnlyEnabled = 0 then
@@ -13498,12 +13858,12 @@ Function GenerateVectorCode As LinkedListElement Pointer
           CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(Bootloader))
           CurrLine = LinkedListInsert(CurrLine, " goto "+ UserDefineStartLabel)
           'No Interrupt handler is supported
-'          CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(Bootloader + 8))
-'          If LocationOfSub("INTERRUPT", "") = 0 Then     'was capitalised
-'            CurrLine = LinkedListInsert(CurrLine, " retfie")
-'          Else
-'            CurrLine = LinkedListInsert(CurrLine, " goto INTERRUPT")
-'          End If
+          '          CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(Bootloader + 8))
+          '          If LocationOfSub("INTERRUPT", "") = 0 Then     'was capitalised
+          '            CurrLine = LinkedListInsert(CurrLine, " retfie")
+          '          Else
+          '            CurrLine = LinkedListInsert(CurrLine, " goto INTERRUPT")
+          '          End If
           CurrLine = LinkedListInsert(CurrLine, "")
           CurrLine = LinkedListInsert(CurrLine, Star80)
           CurrLine = LinkedListInsert(CurrLine, "")
@@ -13524,7 +13884,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
 
     End If
 
-    'Add ON ... GOSUB code
+    'Add ON ... GOSub code
     VectsAdded = 0
     CurrentVect = 0
     ISRC = 0
@@ -13575,7 +13935,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
 
   'Z8 vectors
   ElseIf ModeZ8 Then
-    'Add ON ... GOSUB code
+    'Add ON ... GOSub code
     For IntLoc = 1 To IntCount
       With Interrupts(IntLoc)
         If UCase(.Vector) = "RESET" Then
@@ -13595,7 +13955,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
   End If
 
   Return OutList
-End Function
+  End Function
 
 Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As String) As String
   'Decide which type a calculation returns
@@ -13620,7 +13980,7 @@ Function GetCalcType(VT1 As String, Act As String, VT2 As String, AnswerType As 
 
   'Other operations return answer type if known
   Return AnswerType
-End Function
+  End Function
 
 Function GetCalcVar (VarTypeIn As String) As String
   'Get a calc var, and return its name
@@ -13742,8 +14102,8 @@ Function GetCalcVar (VarTypeIn As String) As String
     End If
   End With
   Return "SysTemp" + Str(OutVar)
-
-End Function
+  
+  End Function
 
 Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListElement Pointer, FindCallers As Integer) As LinkedListElement Pointer
   'If FindCallers is 0, gets a list of all subs called from CurrSub, and any subs called from those.
@@ -13793,16 +14153,16 @@ Function GetCalledSubs(CurrSub As SubType Pointer, ExistingList As LinkedListEle
   End With
 
   Return OutList
-End Function
+  End Function
 
-FUNCTION GetDestSub(Origin As String) As Integer
+Function GetDestSub(Origin As String) As Integer
   Dim As String Temp
 
   If Origin = "ALL" OR Origin = "" Then Return 0
   If InStr(Origin, "D") = 0 Then Return GetSubID(Origin)
   Return VAL(Trim(Mid(Origin, INSTR(Origin, "D") + 1)))
-
-END FUNCTION
+  
+  End Function
 
 Sub GetEqConfig
   'Generate a list of all config names/settings that are equivalent
@@ -13811,7 +14171,7 @@ Sub GetEqConfig
 
   If ModePIC Then
     'EqConfigSettings is a linked list of linked lists
-    'Each sub list in the list contains all equivalent settings
+    'Each Sub list in the list contains all equivalent settings
     EqConfigSettings = LinkedListCreate
     EqSettingsLoc = EqConfigSettings
 
@@ -13860,8 +14220,8 @@ Sub GetEqConfig
     CurrLoc = LinkedListInsert(CurrLoc, "CCPMX")
 
   End If
-
-End Sub
+  
+  End Sub
 
 Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
 
@@ -13891,7 +14251,7 @@ Function GetLabelList(CompSub As SubType Pointer) As LinkedListElement Pointer
   Loop
 
   Return LabelList
-End Function
+  End Function
 
 Function GetLinearLoc(Location As Integer) As Integer
   'On 16F1 chips, convert a non-linear address to a linear address
@@ -13908,8 +14268,8 @@ Function GetLinearLoc(Location As Integer) As Integer
   If BankLoc < 32 Then Return Location
   If BankLoc > 111 Then Return Location
 
-  Return &H2000 + Bank * 80 + (BankLoc - 32)
-End Function
+  Return &H2000 + Bank * 80 + (BankLoc - 32)  
+  End Function
 
 Function GetNonLinearLoc(Location As Integer) As Integer
   'On 16F1 chips, convert a linear address to a non-linear address
@@ -13930,7 +14290,7 @@ Function GetNonLinearLoc(Location As Integer) As Integer
   BankLoc = (TempLoc - 80 * Bank) + 32
 
   Return Bank * 128 + BankLoc
-End Function
+  End Function
 
 Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Pointer
   'Get the ProgLineMeta object for the current line
@@ -13945,8 +14305,8 @@ Function GetMetaData(CurrLine As LinkedListElement Pointer) As ProgLineMeta Poin
   End If
 
   Return CurrLine->MetaData
-
-End Function
+  
+  End Function
 
 Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
   'Get the PinDirections list element metadata for the pin
@@ -14043,8 +14403,8 @@ Function GetPinDirection(PinNameIn As String) As PinDirType Pointer
 
   'Return direction data
   Return PinDirItem
-
-End Function
+  
+  End Function
 
 Function GetRealIOName(InName As String) As String
   'Used on AVR to improve compatibility with existing GCBASIC programs
@@ -14065,7 +14425,7 @@ Function GetRealIOName(InName As String) As String
   End If
 
   Return OutName
-End Function
+  End Function
 
 Function GetRegisterLoc(RegName As String) As Integer
 
@@ -14185,13 +14545,13 @@ Function GetRegisterLoc(RegName As String) As Integer
   End If
 
   Return DestLoc
-
-End Function
+  
+  End Function
 
 Function GetSysVar(VarName As String) As SysVarType Pointer
   'Look up system variable in hash map
-  Return CPtr(SysVarType Pointer, HashMapGet(SysVars, VarName))
-End Function
+  Return CPtr(SysVarType Pointer, HashMapGet(SysVars, VarName))  
+  End Function
 
 Function GetSysVarAliasName( Lookup as String ) As String
   'Look up system alias in hash map, if the retrun string has leadng "ALIAS_" then remove
@@ -14233,8 +14593,8 @@ Function GetSysVarAliasName( Lookup as String ) As String
     End If
     CurrItem = CurrItem->Next
   Loop
-  Return ""
-End Function
+  Return ""  
+  End Function
 
 Function GetSysVarName(Address as Integer) As String
   'Look up system variable in hash map
@@ -14255,8 +14615,8 @@ Function GetSysVarName(Address as Integer) As String
 
     CurrItem = CurrItem->Next
   Loop
-  Return ""
-End Function
+  Return ""  
+  End Function
 
 
 Function GetSub(Origin As String) As String
@@ -14273,8 +14633,8 @@ Function GetSub(Origin As String) As String
   IF INSTR(Temp, "(") <> 0 Then Temp = Left(Temp, INSTR(Temp, "(") - 1)
   IF INSTR(Temp, " ") <> 0 Then Temp = Left(Temp, INSTR(Temp, " ") - 1)
   IF Temp = "" THEN Temp = "ALL"
-  GetSub = Trim(UCase(Temp))
-END Function
+  GetSub = Trim(UCase(Temp))  
+  End Function
 
 Function GetSubFullName(SubIndex As Integer) As String
 
@@ -14282,7 +14642,7 @@ Function GetSubFullName(SubIndex As Integer) As String
   Dim As SubType Pointer CompSub
   CompSub = Subroutine(SubIndex)
 
-  'Get the name that the sub will receive when written to the asm
+  'Get the name that the Sub will receive when written to the asm
   If CompSub->Overloaded Then
     SubNameOut = CompSub->Name + Str(SubIndex)
   Else
@@ -14293,17 +14653,17 @@ Function GetSubFullName(SubIndex As Integer) As String
   End If
 
   Return SubNameOut
-End Function
+  End Function
 
-FUNCTION GetSubID(Origin As String) As Integer
+Function GetSubID(Origin As String) As Integer
   Dim As String Temp
 
   If Origin = "ALL" OR Origin = "" Then Return 0
   Temp = UCase(Trim(Mid(Origin, INSTR(Origin, "S") + 1)))
   IF INSTR(Temp, "D") <> 0 THEN Temp = Left(Temp, INSTR(Temp, "D") - 1)
   Return VAL(Temp)
-
-END Function
+  
+  End Function
 
 Function GetSubSig(CurrentSub As SubType) As String
   Dim As String OutData, NewData
@@ -14324,10 +14684,10 @@ Function GetSubSig(CurrentSub As SubType) As String
   End With
 
   Return OutData
-End Function
+  End Function
 
 Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
-  'Parse a text representation of a single sub parameter, and output a
+  'Parse a text representation of a single Sub parameter, and output a
   'matching SubParam item
   'If ForceIn = -1, parameter will be treated as input
 
@@ -14391,8 +14751,8 @@ Function GetSubParam (ParamIn As String, ForceIn As Integer) As SubParam
   End With
 
   Return ParamOut
-
-End Function
+  
+  End Function
 
 Function GetTool(ToolName As String) As ExternalTool Pointer
   'Returns a pointer to the tool named by ToolName, or 0 if nothing found
@@ -14407,9 +14767,9 @@ Function GetTool(ToolName As String) As ExternalTool Pointer
   Next
 
   Return 0
-End Function
+  End Function
 
-SUB InitCompiler
+Sub InitCompiler
 
   'Misc temp vars
   Dim As String Temp, DataSource, MessagesFile, LangMessagesFile, LangName, MsgName, MsgVal
@@ -14442,7 +14802,7 @@ SUB InitCompiler
   PauseOnErr = 1
   WarningsAsErrors = 0
   MuteBanners = -1
-  MuteDonate = -1
+  MuteDonate = 0
   ExtendedVerboseMessages= 0
   PreserveMode = 0
   PauseAfterCompile = 0
@@ -15114,8 +15474,8 @@ SUB InitCompiler
 
   'Start Compile
   IF VBS = 0 Then   PRINT Message("CompilingShortname") Else  PRINT Message("Compiling")
-
-END SUB
+  
+  End Sub
 
 Function IsArray (VarNameIn As String, CurrSub As SubType Pointer) As Integer
   IsArray = 0
@@ -15142,8 +15502,8 @@ Function IsArray (VarNameIn As String, CurrSub As SubType Pointer) As Integer
       Return -1
     End If
   End If
-
-End FUNCTION
+  
+  End Function
 
 Function IsNonBanked(Location As Integer) As Integer
   'Returns -1 if the location does not require banking
@@ -15166,8 +15526,8 @@ Function IsNonBanked(Location As Integer) As Integer
   Else
     Return -1
   End If
-
-End Function
+  
+  End Function
 
 Function IsInAccessBank(VarNameIn As String) As Integer
   'Check if a specified variable is located in the access bank
@@ -15175,8 +15535,9 @@ Function IsInAccessBank(VarNameIn As String) As Integer
   Dim As String VarName
   Dim As SysVarType Pointer FoundVar
 
-  '18F only at this stage
-  If ChipFamily <> 16 Then Return 0
+  '18F only at this stage 
+  ' If statement below remove at build 1446
+  ' If ChipFamily <> 16 Then Return 0
 
   VarName = UCase(Trim(VarNameIn))
 
@@ -15193,7 +15554,7 @@ Function IsInAccessBank(VarNameIn As String) As Integer
     Return -1
   End If
   Return 0
-End Function
+  End Function
 
 Function IsIOPinName(PinNameIn As String) As Integer
   Dim PinName As String
@@ -15213,7 +15574,7 @@ Function IsIOPinName(PinNameIn As String) As Integer
   End If
 
   Return -1
-End Function
+  End Function
 
 Function IsIORegDX (RegNameIn As String) As Integer
   Dim RegName As String
@@ -15237,7 +15598,7 @@ Function IsIORegDX (RegNameIn As String) As Integer
   End If
 
   Return 0
-End Function
+  End Function
 
 Function IsIOReg (RegNameIn As String) As Integer
   Dim RegName As String
@@ -15284,7 +15645,7 @@ Function IsIOReg (RegNameIn As String) As Integer
   Next
 
   Return 0
-End Function
+  End Function
 
 Function IsLowIOReg (RegNameIn As String) As Integer
   Dim RegName As String
@@ -15329,7 +15690,7 @@ Function IsLowIOReg (RegNameIn As String) As Integer
   Next
 
   Return 0
-End Function
+  End Function
 
 Function IsLowRegister(VarName As String) As Integer
   'Note, this can only be run accurately after AllocateRAM has run
@@ -15365,7 +15726,7 @@ Function IsLowRegister(VarName As String) As Integer
 
   'Default to most restrictive but safest option
   Return -1
-End Function
+  End Function
 
 Function IsRegister (VarName As String) As Integer
   Dim As String Temp, Source, SourceLowByte
@@ -15464,9 +15825,9 @@ Function IsRegister (VarName As String) As Integer
   Next
 
   Return 0
-End Function
+  End Function
 
-FUNCTION IsString (InData As String, CurrSub As SubType Pointer) As Integer
+Function IsString (InData As String, CurrSub As SubType Pointer) As Integer
   IsString = 0
   Dim As Integer PD
 
@@ -15475,15 +15836,15 @@ FUNCTION IsString (InData As String, CurrSub As SubType Pointer) As Integer
 
   'String var?
   If TypeOfVar(InData, CurrSub) = "STRING" Then Return -1
-END Function
+  END Function
 
 Function IsUnaryOp (InData As String) As Integer
 
   If InData = "-" Then Return -1
   If InData = "!" Then Return -1
   Return 0
-
-End Function
+  
+  End Function
 
 Sub LoadConverters
   'Loads file format converters
@@ -15547,18 +15908,18 @@ Sub LoadConverters
 
   'Restore directory
   ChDir SaveDir
+  
+  End Sub
 
-End Sub
+Function LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
 
-FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
-
-  'SubNameIn - name of sub to find
-  'SubSigIn - signature of sub to find, leave blank to find all. If blank, may
+  'SubNameIn - name of Sub to find
+  'SubSigIn - signature of Sub to find, leave blank to find all. If blank, may
   '           need to also set AllowVague to suppress error if multiple
   '           overloaded subs match name
-  'Origin - Location sub is called from. Used for error reporting. Optional
+  'Origin - Location Sub is called from. Used for error reporting. Optional
   'AllowVague - Set to -1 to suppress error if multiple overloaded subs are
-  '             found and no signature provided. First matching sub will be
+  '             found and no signature provided. First matching Sub will be
   '             returned.
 
   'Sub name coming in can be just the name with parameters seperate or missing,
@@ -15620,7 +15981,7 @@ FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
     T = SubElement->NumVal
     Temp = UCase(Trim(Subroutine(T)->Name))
 
-    'Early exit if sub not overloaded or vague allowed, return first found sub
+    'Early exit if Sub not overloaded or vague allowed, return first found sub
     If Not Subroutine(T)->Overloaded Or AllowVague Then
       Return T
     End If
@@ -15631,10 +15992,10 @@ FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
       Return T
     End If
 
-    'Record that a sub was found with the right name
+    'Record that a Sub was found with the right name
     FoundSameName = -1
 
-    'Check if found sub signature matches call signature
+    'Check if found Sub signature matches call signature
     If SubSig <> "" Then
       ThisScore = SubSigMatch(GetSubSig(*Subroutine(T)), SubSig)
       If ThisScore > BestMatch Then
@@ -15645,9 +16006,9 @@ FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
     'No call signature supplied
     Else
       'If this happens, there is a bug in the compiler
-      'Or there is a sub with no params
+      'Or there is a Sub with no params
 
-      'Found sub has no parameters, so it matches
+      'Found Sub has no parameters, so it matches
       If Subroutine(T)->ParamCount = 0 Then
         Return T
 
@@ -15675,8 +16036,8 @@ FUNCTION LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
   Else
     Return BestMatchLoc
   End If
-
-END FUNCTION
+  
+  End Function
 
 Sub LogError(InMessage As String, Origin As String = "")
 
@@ -15711,8 +16072,8 @@ Sub LogError(InMessage As String, Origin As String = "")
 
 
   ErrorsFound = -1
-  LogOutputMessage Origin + InMessage + "E"
-End Sub
+  LogOutputMessage Origin + InMessage + "E"  
+  End Sub
 
 Sub LogOutputMessage(InMessage As String)
 
@@ -15743,12 +16104,12 @@ Sub LogOutputMessage(InMessage As String)
   'Log message
   OutMessages += 1
   OutMessage(OutMessages) = InMessage
-
-End Sub
+  
+  End Sub
 
 Sub LogWarning(InMessage As String, Origin As String = "")
-  LogOutputMessage Origin + InMessage + "W"
-End Sub
+  LogOutputMessage Origin + InMessage + "W"  
+  End Sub
 
 Sub OptimiseCalls
 
@@ -15946,10 +16307,10 @@ Sub OptimiseCalls
 
     HashMapDestroy(Labels)
   Loop While CallChanged
-  'Print "Optimised calls in "; ProgramScans; " attempts"
-End Sub
+  'Print "Optimised calls in "; ProgramScans; " attempts"  
+  End Sub
 
-SUB OptimiseIF (CompSub As SubType Pointer = 0)
+Sub OptimiseIF (CompSub As SubType Pointer = 0)
   'Optimise compiled IF statements. Replace this:
   ' conditional skip
   ' goto LABEL
@@ -16086,8 +16447,8 @@ SUB OptimiseIF (CompSub As SubType Pointer = 0)
 
     CurrLine = CurrLine->Next
   Loop
-
-END SUB
+  
+  End Sub
 
 Sub OptimiseIncrement(CompSub As SubType Pointer)
   'PIC only
@@ -16112,8 +16473,8 @@ Sub OptimiseIncrement(CompSub As SubType Pointer)
 
     CurrLine = CurrLine->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub PreparePageData
   'Generate prog mem page data
@@ -16198,8 +16559,8 @@ Sub PreparePageData
       .PageSize = PageSize
     End With
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub PrepareProgrammer
   'Prepare programmer tool
@@ -16240,10 +16601,10 @@ Sub PrepareProgrammer
             'Found programmer with conditions, check
             Cmd = Ucase(.UseIf)
 
-'            If VBS = 1 Then
-'                Print Spc(10);
-'                Print "USEIF " + Cmd;
-'            End If
+            '            If VBS = 1 Then
+            '                Print Spc(10);
+            '                Print "USEIF " + Cmd;
+            '            End If
             OldCmd = ""
             RecDetect = 0
             Do While OldCmd <> Cmd
@@ -16255,16 +16616,16 @@ Sub PrepareProgrammer
             Loop
             'Change <> to ~
             If Instr( Cmd, "<>" ) > 0 then Replace Cmd, "<>","~"
-'            If VBS = 1 Then
-'                Print Spc(4);
-'                Print " equates to '" + Cmd+"' = ";
-'            End If
-            Calculate Cmd
-            If Val(Cmd) <> 0 Then
-              'Condition is true, use programmer
-              'Found programmer with no conditions, use
-              If VBS = 1 Then
-'                Print " = -" + Trim(Cmd)
+                '            If VBS = 1 Then
+                '                Print Spc(4);
+                '                Print " equates to '" + Cmd+"' = ";
+                '            End If
+                            Calculate Cmd
+                            If Val(Cmd) <> 0 Then
+                              'Condition is true, use programmer
+                              'Found programmer with no conditions, use
+                              If VBS = 1 Then
+                '                Print " = -" + Trim(Cmd)
                 Print Spc(10);
                 Temp = Message("ProgrammerSelected")
                 Replace Temp, "%prog%", .DispName
@@ -16343,10 +16704,10 @@ Sub PrepareProgrammer
       PrgExe = ID + "\" + PrgExe
     End If
   #EndIf
+  
+  End Sub
 
-End Sub
-
-SUB ProcessArrays (CompSub As SubType Pointer)
+Sub ProcessArrays (CompSub As SubType Pointer)
   Dim As String InLine, Origin, Temp, AV, ArrayName, ArrayType, ArrayPosition
   Dim As String ArrayHandler, AppendArrayPosition, AliasLoc, OldLine
   Dim As Integer ATV, ArraysInLine, CD, SS, UseTempVar, ArrayElementSize, CurrByte
@@ -16417,15 +16778,15 @@ SUB ProcessArrays (CompSub As SubType Pointer)
 
     'Does the line contain an array?
     LastArray = Variables->Next
-CheckArrayAgain:
+  CheckArrayAgain:
     ArrayFound = 0
     CurrVarLoc = LastArray
     Do While CurrVarLoc <> 0
       CurrVar = CurrVarLoc->MetaData
       With *CurrVar
         If .Size > 1 Then
-'WholeINSTRdebug=-1
-'print origin; "{"+str(WholeINSTR(InLine, .Name ))+"} "
+          'WholeINSTRdebug=-1
+          'print origin; "{"+str(WholeINSTR(InLine, .Name ))+"} "
           IF ( WholeINSTR(InLine, .Name ) = 2 AND INSTR(InLine, "(") <> 0)  THEN
             IF WholeINSTR(InLine, .Name + "()") = 2 THEN
               ArrayFound = 0
@@ -16442,7 +16803,7 @@ CheckArrayAgain:
               EXIT Do
             End If
           END IF
-'WholeINSTRdebug=0          
+          'WholeINSTRdebug=0          
         END IF
       End With
 
@@ -16456,7 +16817,7 @@ CheckArrayAgain:
       FOR SS = LEN(InLine) TO 1 STEP -1
         IF Mid(InLine, SS, 1) = " " THEN InLine = Mid(InLine, SS + 1): Exit For
       NEXT
-      'High and Low are built in assembler function on AVR, ignore them
+      'High and Low are built in assembler Function on AVR, ignore them
       If ModeAVR And (UCase(Trim(InLine)) = "LOW" OR UCase(Trim(InLine)) = "HIGH") Then Goto CompileArraysNextLine
       'Casting operations
       If Left(InLine, 1) = "[" And Right(InLine, 1) = "]" Then Goto CompileArraysNextLine
@@ -16715,8 +17076,8 @@ CheckArrayAgain:
     CurrLine->Value = ReplaceFnNames(CurrLine->Value)
     CurrLine = CurrLine->Next
   Loop
-
-END SUB
+  
+  End Sub
 
 Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue As String, RegType As String, Origin As String) As String
   'Take any value, and put it into a register
@@ -16781,138 +17142,268 @@ Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue A
   'OutList = CompileVarSet(SourceValue, OutVar, Origin)
   LinkedListInsertList(OutList, CompileVarSet(SourceValue, OutVar, Origin))
   Return OutVar
-
-End Function
+  
+  End Function
 
 Sub ReadPICASChipData
-
   'Get filename
-#IFDEF __FB_UNIX__
-  'not supported
-#ELSE
+  #IFDEF __FB_UNIX__
+    'not supported
+  #ELSE
 
-  'read the INC in and put into ARRAY   ReverseIncFileLookup(
-  dim as string InLine, tmpfilename
-  dim as integer ffile, fresult,findex
-  dim as string SearchExe
-  dim as integer F, Result, ChipSupported
+    'read the INC in and put into ARRAY   ReverseIncFileLookup(
+    dim as string InLine, tmpfilename
+    dim as integer ffile, fresult,findex
+    dim as string SearchExe
+    dim as integer F, Result, ChipSupported
 
-'ChipPICASConfigFile,ChipPICASRoot
+    'ChipPICASConfigFile,ChipPICASRoot
 
-  ChipPICASRoot = Left( AsmExe, InStrRev( ReplaceToolVariables(AsmExe,,, AsmTool), "\"))
-  ChipPICASRoot = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\")-1)
-  ChipPICASRoot = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\")-1)
-  ChipPICASDataFile = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\include\proc\pic"+LCase(ChipName) + ".inc"
-  ChipPICASDataFile = mid(ChipPICASDataFile, 2)
+    ChipPICASRoot = Left( AsmExe, InStrRev( ReplaceToolVariables(AsmExe,,, AsmTool), "\"))
+    ChipPICASRoot = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\")-1)
+    ChipPICASRoot = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\")-1)
+    ChipPICASDataFile = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\include\proc\pic"+LCase(ChipName) + ".inc"
+    ChipPICASDataFile = mid(ChipPICASDataFile, 2)
 
-  ChipPICASConfigFile = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\dat\cfgmap\"+LCase(ChipName) + ".cfgmap"
-  ChipPICASConfigFile = mid( ChipPICASConfigFile , 2)
+    ChipPICASConfigFile = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\dat\cfgmap\"+LCase(ChipName) + ".cfgmap"
+    ChipPICASConfigFile = mid( ChipPICASConfigFile , 2)
 
-  SearchExe =  AsmExe
-  ReplaceAll ( SearchExe, Chr(34), "" )
-  if trim(dir(SearchExe)) = "" Then
-    LogError Message("PICASAssemblerNotFound")
-    LogError ChipPICASRoot+"\bin\pic-as.exe " + Message( "PICASNotFound" )
+    ChipPICASConfigFileV3 = Left( ChipPICASRoot , InStrRev( ChipPICASRoot , "\"))+"pic\dat\cfgdata\"+LCase(ChipName) + ".cfgdata"
+    ChipPICASConfigFileV3 = mid( ChipPICASConfigFileV3 , 2)
+
+    SearchExe =  AsmExe
+    replace SearchExe, "\\","\"
+
+    ReplaceAll ( SearchExe, Chr(34), "" )
+    If right(SearchExe, 1) = "\" Then SearchExe = Left(SearchExe, len(SearchExe)-1)
+    If trim(dir(SearchExe)) = "" Then
+      LogError Message("PICASAssemblerNotFound")
+      LogError ChipPICASRoot+"\bin\pic-as.exe " + Message( "PICASNotFound" )      
+      WriteErrorLog
+      ErrorsFound = - 1
+      End
+    End If
+
+    'Now check if chip is supported
+    tmpfilename = FI
+    replace ( tmpfilename, ".GCB", ".tmp")
+    kill tmpfilename
+    F = FreeFile
     
-    WriteErrorLog
-    ErrorsFound = - 1
-    end
-  end If
+    'Execute the PIC-AS compiler to provide a list of the chips
+    Result = Shell( chr(34)+chr(34)+SearchExe+chr(34)+" -mprint-devices > " + chr(34) + tmpfilename + chr(34) + chr(34) )
+    Open tmpfilename For Input As #F
+    ChipSupported = 0
 
-  'Now check if chip is supported
-  tmpfilename = FI
-  replace ( tmpfilename, ".GCB", ".tmp")
-  kill tmpfilename
-  F = FreeFile
+    DO WHILE NOT EOF(F)
+      LINE INPUT #F, InLine
+      If Instr( Ucase(Inline), Ucase(ChipName) ) > 0 Then      
+          ChipSupported = -1
+      End if
+    Loop
+    Close #F
+    kill tmpfilename
+    if ChipSupported = 0 Then
+      LogError Message("PICASChipNotSupported")
+      WriteErrorLog
+      ErrorsFound = - 1
+      End
+    End if
+
   
-  'Execute the PIC-AS compiler to provide a list of the chips
-  Result = Shell( chr(34)+chr(34)+SearchExe+chr(34)+" -mprint-devices > " + chr(34) + tmpfilename + chr(34) + chr(34) )
-  Open tmpfilename For Input As #F
-  ChipSupported = 0
+    'now check that the chip data file is present
+      findex = 0
+      ' Find the first free file number.
+      ffile = FreeFile
+      if trim(dir(ChipPICASDataFile)) = "" Then
+          'Try 3.xx location
+          Replace ChipPICASDataFile ,"-AS\PIC", ""
+          if trim(dir(ChipPICASDataFile)) = "" Then
+            LogError Message("PICASChipNotSupported")
+            WriteErrorLog
+            ErrorsFound = - 1
+            end
+          End If
+      End if
 
-  DO WHILE NOT EOF(F)
-    LINE INPUT #F, InLine
-    If Instr( Ucase(Inline), Ucase(ChipName) ) > 0 Then
-        ChipSupported = -1
-    End if
-  Loop
-  Close #F
-  kill tmpfilename
-  if ChipSupported = 0 Then
-    LogError Message("PICASChipNotSupported")
-    WriteErrorLog
-    ErrorsFound = - 1
-    End
-  End if
+      fresult = OPEN ( ChipPICASDataFile For Input As ffile )
+      If fresult <> 0 then
+          LogError Message("PICASNotFound")
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+      End if
 
- 
-  'now check that the chip data file is present
-    findex = 0
-    ' Find the first free file number.
-    ffile = FreeFile
-     if trim(dir(ChipPICASDataFile)) = "" Then
-        LogError Message("PICASChipNotSupported")
-        WriteErrorLog
-        ErrorsFound = - 1
-        end
-    End if
-
-    fresult = OPEN ( ChipPICASDataFile For Input As ffile )
-    If fresult <> 0 then
-        LogError Message("PICASNotFound")
-        WriteErrorLog
-        ErrorsFound = - 1
-        end
-    End if
-
-    DO WHILE NOT EOF(ffile)
-      LINE INPUT #ffile, InLine
-      if left( InLine,7) =  "#define" and instr( inline, "BANKMASK") = 0  <> 0 then
-        'read next line
+      DO WHILE NOT EOF(ffile)
         LINE INPUT #ffile, InLine
+        if left( InLine,7) =  "#define" and instr( inline, "BANKMASK") = 0  <> 0 then
+          'read next line
+          LINE INPUT #ffile, InLine
 
-        If instr( ucase(inline), "EQU") > 0 then
-          ReverseIncFileLookup( findex ).Value = trim(mid(inline, 1, instr(inline," equ ")-5))
-          ReverseIncFileLookup( findex ).NumVal = val("&h"+trim( mid( inline,instr(inline," equ ")+5,  InStr( inline,chr(34) ) -1 )  ))
-          findex = findex +1
+          If instr( ucase(inline), "EQU") > 0 then
+            ReverseIncFileLookup( findex ).Value = trim(mid(inline, 1, instr(inline," equ ")-5))
+            ReverseIncFileLookup( findex ).NumVal = val("&h"+trim( mid( inline,instr(inline," equ ")+5,  InStr( inline,chr(34) ) -1 )  ))
+            findex = findex +1
+          end if
         end if
-      end if
 
-    LOOP
-    Close #ffile
+      LOOP
+      Close #ffile
 
+    'print ChipPICASConfigFile
+    'print ChipPICASConfigFileV3
+    'Check that the cfg data is present
+      findex = 0
+      ' Find the first free file number.
+      ffile = FreeFile
+      fresult = OPEN ( ChipPICASConfigFile For Input As ffile )
+      Select Case fresult
+        Case 0:
+          DO WHILE NOT EOF(ffile)
+            LINE INPUT #ffile, InLine
+            if instr( inline, ":") <> 0 and instr( inline, "=") <> 0 then
+              'read next line
+              'PLLSEL_PLL3X:PLLSEL=PLL3X
+              ReverseCfgFileLookup( findex ).Value = trim(mid(inline, instr(inline,":")+1, instr(inline,"=")-instr(inline,":")-1 ))
+              ReverseCfgFileLookup( findex ).State = trim(mid(inline, instr(inline,"=")+1))
+              ReverseCfgFileLookup( findex ).Config = ReverseCfgFileLookup( findex ).Value+"="+ReverseCfgFileLookup( findex ).State
+                  'print ReverseCfgFileLookup( findex ).Value
+                  'print ReverseCfgFileLookup( findex ).State
+                  'print ReverseCfgFileLookup( findex ).Config
+              findex = findex +1
 
-   'Check that the cfg data is present
-    findex = 0
-    ' Find the first free file number.
-    ffile = FreeFile
-    fresult = OPEN ( ChipPICASConfigFile For Input As ffile )
-    DO WHILE NOT EOF(ffile)
-      LINE INPUT #ffile, InLine
-      if instr( inline, ":") <> 0 and instr( inline, "=") <> 0 then
-         'read next line
-         'PLLSEL_PLL3X:PLLSEL=PLL3X
-         ReverseCfgFileLookup( findex ).Value = trim(mid(inline, instr(inline,":")+1, instr(inline,"=")-instr(inline,":")-1 ))
-         ReverseCfgFileLookup( findex ).State = trim(mid(inline, instr(inline,"=")+1))
-         ReverseCfgFileLookup( findex ).Config = ReverseCfgFileLookup( findex ).Value+"="+ReverseCfgFileLookup( findex ).State
-         '  ReverseCfgFileLookup( findex ).Config
+            end if
 
-         findex = findex +1
+          LOOP
+          Close #ffile
+        Case 2: 
+          Dim CSetting as String = ""
+          ' fall back option inrtoduce at PIC-AS v3.00
+          if trim(dir(ChipPICASConfigFileV3)) = "" Then replace ChipPICASConfigFileV3,"-AS\PIC", ""
+          fresult = OPEN ( ChipPICASConfigFileV3 For Input As ffile )
+          Select Case fresult
+            Case 0
+              DO WHILE NOT EOF(ffile)
+                LINE INPUT #ffile, InLine
+                Dim as String cfgdata()
+                
+                if (left(inline,1) <> "#") and ( instr( inline, ":") <> 0 ) then
 
-      end if
+                  '# for each CWORD the configuration settings are listed as
+                  '# 
+                  '#     CSetting:<mask>:<name>[,<alias list>]:<description>
+                  '# 
+                  '# lastly for each CSetting all possible values are listed as
+                  '# 
+                  '#     CVALUE:<value>:<name>[,<alias list>]:<description>
+                  'CSetting:3:FOSC:Oscillator Selection bits
+                  'CVALUE:3:EXTRC,_RC_OSC:RC oscillator
+                  'CVALUE:2:HS,_HS_OSC:HS oscillator
+                  'CVALUE:1:XT,_XT_OSC:XT oscillator
+                  'CVALUE:0:LP,_LP_OSC:LP oscillator
 
-    LOOP
-    Close #ffile
+                  StringSplit ( InLine, ":",-1,cfgdata() )
+                  
+                  If Ucase( Trim(cfgdata(0))) = "CSETTING" Then
+                    ReverseCfgFileLookup( findex ).Value = Trim(cfgdata(2))
+                    CSetting = Trim(cfgdata(1))         
+                  End If
+                  
+                  If Ucase( Trim(cfgdata(0))) = "CVALUE" and CSetting  <> "" Then
+                    If Ucase( Trim(cfgdata(1))) = CSetting Then
+                      If Instr(cfgdata(2), ",") > 0 Then
+                        ReverseCfgFileLookup( findex ).State = Left(Trim(cfgdata(2)),Instr(cfgdata(2), ",")-1)
+                      Else
+                        ReverseCfgFileLookup( findex ).State = Trim(cfgdata(2))
+                      End If
+                      ReverseCfgFileLookup( findex ).Config = ReverseCfgFileLookup( findex ).Value+"="+ReverseCfgFileLookup( findex ).State                    
+                      CSetting = ""
+                          'print ReverseCfgFileLookup( findex ).Value
+                          'print ReverseCfgFileLookup( findex ).State
+                          'print ReverseCfgFileLookup( findex ).Config
+                      findex = findex +1
+                    End If
+                  End If
+                        
+                end if
 
+              LOOP
+              Close #ffile
+          Case 2  
+            LogError "PIC-AS file not found " +  ChipPICASConfigFileV3
+            LogError "Cannot continue with PIC-AS compilation"
+            WriteErrorLog
+            ErrorsFound = - 1
+            end          
+            Case 3: 
+              LogError "PIC-AS file I/O error " +  ChipPICASConfigFileV3
+              LogError "Cannot continue with PIC-AS compilation"
+              WriteErrorLog
+              ErrorsFound = - 1
+              end
+            Case 8: 
+              LogError "No privileges (e.g., permission denied) " +  ChipPICASConfigFileV3
+              LogError "Cannot continue with PIC-AS compilation"
+              WriteErrorLog
+              ErrorsFound = - 1
+              end
+            Case 13: 
+              LogError "PIC-AS Termination request signal " +  ChipPICASConfigFileV3
+              LogError "Cannot continue with PIC-AS compilation"
+              WriteErrorLog
+              ErrorsFound = - 1
+              end
+            Case 14: 
+              LogError "PIC-AS Abnormal termination signal " +  ChipPICASConfigFileV3
+              LogError "Cannot continue with PIC-AS compilation"
+              WriteErrorLog
+              ErrorsFound = - 1
+              end
+            Case 15: 
+              LogError "PIC-AS Quit request signal " +  ChipPICASConfigFileV3
+              LogError "Cannot continue with PIC-AS compilation"
+              WriteErrorLog
+              ErrorsFound = - 1
+              end
+          End Select
+        Case 3: 
+          LogError "PIC-AS file I/O error " +  ChipPICASConfigFile
+          LogError "Cannot continue with PIC-AS compilation"
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+        Case 8: 
+          LogError "No privileges (e.g., permission denied) " +  ChipPICASConfigFile
+          LogError "Cannot continue with PIC-AS compilation"
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+        Case 13: 
+          LogError "PIC-AS Termination request signal " +  ChipPICASConfigFile
+          LogError "Cannot continue with PIC-AS compilation"
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+        Case 14: 
+          LogError "PIC-AS Abnormal termination signal " +  ChipPICASConfigFile
+          LogError "Cannot continue with PIC-AS compilation"
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+        Case 15: 
+          LogError "PIC-AS Quit request signal " +  ChipPICASConfigFile
+          LogError "Cannot continue with PIC-AS compilation"
+          WriteErrorLog
+          ErrorsFound = - 1
+          end
+      End Select
+    'AS inc file not found, show error and quit
+    '  LogError Message("PICASChipNotSupported")
 
-   'AS inc file not found, show error and quit
-  '  LogError Message("PICASChipNotSupported")
+  #ENDIF
+  End Sub
 
-#ENDIF
-
-End Sub
-
-SUB ReadChipData
+Sub ReadChipData
   Dim As String TempData, TempList(20)
   Dim As String ReadDataMode, ChipDataFile, InLine, SFRName
   Dim As String PinName, PinDir, ConstName, ConstValue
@@ -16925,32 +17416,32 @@ SUB ReadChipData
   Dim As AsmCommand Pointer NewAsmCommand, FindAsmCommand
 
   'Get filename
-#IFDEF __FB_UNIX__
-  ChipDataFile = ID + "/chipdata/" + LCase(ChipName) + ".dat"
-#ELSE
-  ChipDataFile = ID + "\chipdata\" + ChipName + ".dat"
-#ENDIF
+  #IFDEF __FB_UNIX__
+    ChipDataFile = ID + "/chipdata/" + LCase(ChipName) + ".dat"
+  #ELSE
+    ChipDataFile = ID + "\chipdata\" + ChipName + ".dat"
+  #ENDIF
 
-      'Check that the chip data is present
-      If OPEN(ChipDataFile For Input As #1) <> 0 Then
-        'Chip file not found. If ChipName contains LF, try loading F file
-        If InStr(LCase(ChipName), "lf") <> 0 Then
-          TempData = ChipName
-          Replace TempData, "lf", "f"
+  'Check that the chip data is present
+  If OPEN(ChipDataFile For Input As #1) <> 0 Then
+    'Chip file not found. If ChipName contains LF, try loading F file
+    If InStr(LCase(ChipName), "lf") <> 0 Then
+      TempData = ChipName
+      Replace TempData, "lf", "f"
 
-          #IFDEF __FB_UNIX__
-            ChipDataFile = ID + "/chipdata/" + LCase(TempData) + ".dat"
-          #ELSE
-            ChipDataFile = ID + "\chipdata\" + TempData + ".dat"
-          #EndIf
-          If Open(ChipDataFile For Input As #1) = 0 Then GoTo ChipDataFileOpened
-        End If
+      #IFDEF __FB_UNIX__
+        ChipDataFile = ID + "/chipdata/" + LCase(TempData) + ".dat"
+      #ELSE
+        ChipDataFile = ID + "\chipdata\" + TempData + ".dat"
+      #EndIf
+      If Open(ChipDataFile For Input As #1) = 0 Then GoTo ChipDataFileOpened
+    End If
 
-        'Chip data still not found, show error and quit
-        LogError Message("ChipNotSupported")
-        WriteErrorLog
-        END
-      End If
+    'Chip data still not found, show error and quit
+    LogError Message("ChipNotSupported")
+    WriteErrorLog
+    END
+  End If
   ChipDataFileOpened:
   IF VBS = 1 THEN PRINT SPC(10); ChipDataFile
 
@@ -17228,7 +17719,7 @@ SUB ReadChipData
 
     'Pinout data
     ElseIf Left(ReadDataMode, 6) = "[pins-" Then
-      'Get first pin function and data direction from line
+      'Get first pin Function and data direction from line
       TempData = Mid(InLine, InStr(InLine, ",") + 1)
       If InStr(TempData, ",") <> 0 Then
         TempData = Trim(Left(TempData, InStr(TempData, ",") - 1))
@@ -17549,8 +18040,8 @@ SUB ReadChipData
       HighTBLPTRBytes = 2
     End If
   End If
-
-End Sub
+  
+  End Sub
 
 Sub ReadOptions(OptionsIn As String)
   'Process #option statements
@@ -17668,8 +18159,8 @@ Sub ReadOptions(OptionsIn As String)
 
     CurrElement = CurrElement->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
 
@@ -17680,7 +18171,7 @@ Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
 
   'Record outgoing call in CompSub
   With *CompSub
-    'Check for sub in list already
+    'Check for Sub in list already
     FindCall = .CallList->Next
     Do While FindCall <> 0
       If FindCall->MetaData = CalledSub Then
@@ -17699,7 +18190,7 @@ Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
 
   'Record incoming call in CalledSub
   With *CalledSub
-    'Check for sub in list already
+    'Check for Sub in list already
     FindCall = .CallerList->Next
     Do While FindCall <> 0
       If FindCall->MetaData = CompSub Then
@@ -17714,11 +18205,11 @@ Sub RecordSubCall(CompSub As SubType Pointer, CalledSub As SubType Pointer)
     FindCall = LinkedListInsert(.CallerList, CompSub)
     FindCall->NumVal = 1
   End With
-
-End Sub
+  
+  End Sub
 
 Function ReplaceFnNames(InName As String) As String
-  'Replace tokens in sub names with actual names
+  'Replace tokens in Sub names with actual names
 
   Dim As String OutName
   Dim As Integer Temp
@@ -17743,13 +18234,13 @@ Function ReplaceFnNames(InName As String) As String
   Loop
 
   Return OutName
-End Function
+  End Function
 
 Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn As String = "") As Integer
-  'Will return index of sub in Subroutine
-  'Requester is used to log which sub calls which
+  'Will return index of Sub in Subroutine
+  'Requester is used to log which Sub calls which
   'If Requester is 0, it will be set to main sub
-  'If sub not found, will return -1
+  'If Sub not found, will return -1
 
   Dim As Integer CurrSub, BestMatchPos, BestMatch, ThisMatch, InReqList
   Dim As String SubName, SubSig
@@ -17763,7 +18254,7 @@ Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn 
     Requester = Subroutine(0)
   End If
 
-  'If no sub being called, exit before recording attempt
+  'If no Sub being called, exit before recording attempt
   If SubName = "" Then
     Return -1
   End If
@@ -17800,7 +18291,7 @@ Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn 
     With *ReqListPos
       If .MetaData <> 0 Then
         ReqListData = .MetaData
-        'Put sub name in .Value, sub sig in .MetaData->Value, caller in .MetaData->MetaData
+        'Put Sub name in .Value, Sub sig in .MetaData->Value, caller in .MetaData->MetaData
         If ReqListData->MetaData = Requester Then
           If LCase(.Value) = LCase(SubName) And LCase(ReqListData->Value) = LCase(SubSigIn) Then
             InReqList = -1
@@ -17822,7 +18313,7 @@ Function RequestSub(Requester As SubType Pointer, SubNameIn As String, SubSigIn 
   End If
 
   Return -1
-End Function
+  End Function
 
 Sub RetrySubRequests
   'Check AttemptedCallList for calls that could not be recorded
@@ -17840,8 +18331,8 @@ Sub RetrySubRequests
 
     ReqListPos = ReqListPos->Next
   Loop
-
-End Sub
+  
+  End Sub
 
 Sub SetCalcTempType (CalcVar As String, NewType As String)
 
@@ -17853,8 +18344,8 @@ Sub SetCalcTempType (CalcVar As String, NewType As String)
     Case "B": CalcTempType(2) = UCASE(TRIM(NewType))
     Case "X": CalcTempType(3) = UCASE(TRIM(NewType))
   End Select
-
-End Sub
+  
+  End Sub
 
 Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Pointer, Origin As String) As LinkedListElement Pointer
 
@@ -17888,9 +18379,9 @@ Function SetStringPointers (V1 As String, V2 As String, CurrSub As SubType Point
   CurrLine = LinkedListInsertList(CurrLine, GenerateArrayPointerSet(V2, 1, CurrSub, Origin))
 
   Return OutList
-End Function
+  End Function
 
-SUB ShowBlock (BlockIn As String)
+Sub ShowBlock (BlockIn As String)
 
   Dim As String Block, Temp, LineIn, DispLine
   Dim As Integer InBlock
@@ -17921,10 +18412,10 @@ SUB ShowBlock (BlockIn As String)
     End If
   LOOP
   CLOSE #9
+  
+  End Sub
 
-END SUB
-
-SUB SplitLines (CompSub As SubType Pointer)
+Sub SplitLines (CompSub As SubType Pointer)
 
   Dim As String Temp, LastHalf
   Dim As LinkedListElement Pointer CurrLine
@@ -17941,8 +18432,8 @@ SUB SplitLines (CompSub As SubType Pointer)
       CurrLine = CurrLine->Next
     End If
   Loop
-
-END SUB
+  
+  End Sub
 
 Function TempRemove(Removed As String) As String
   'Temporarily remove something from a line. Can be replaced later with ReplaceFnNames
@@ -17950,8 +18441,8 @@ Function TempRemove(Removed As String) As String
   'Record removed item
   PCC += 1: PreserveCode(PCC) = Removed
 
-  Return Chr(29) + Str(PCC) + Chr(29)
-End Function
+  Return Chr(29) + Str(PCC) + Chr(29)  
+  End Function
 
 Sub TidyProgram
   Dim As Integer CurrSub
@@ -17963,12 +18454,12 @@ Sub TidyProgram
       End If
     End With
   Next
-
-End Sub
+  
+  End Sub
 
 Sub TidySubroutine(CompSub As SubType Pointer)
 
-  'Fix function calls
+  'Fix Function calls
   FixFunctions(CompSub)
 
   'Set Bank
@@ -17987,8 +18478,8 @@ Sub TidySubroutine(CompSub As SubType Pointer)
 
   'Replace incf/btfss Z with incfsz (PIC)
   OptimiseIncrement (CompSub)
-
-End Sub
+  
+  End Sub
 
 Function TranslateFile(InFile As String) As String
   'Translates file to GCBASIC format
@@ -18077,7 +18568,7 @@ Function TranslateFile(InFile As String) As String
   Loop While Converted
 
   Return OutFile
-End Function
+  End Function
 
 Sub ValueChanged(VarName As String, VarValue As String)
 
@@ -18087,7 +18578,7 @@ Sub ValueChanged(VarName As String, VarValue As String)
   CV = VAL(Mid(Trim(VarName), 8))
 
   CalcVars(CV).CurrentValue = VarValue
-End Sub
+  End Sub
 
 Sub WriteAssembly
   Dim As String Temp, VarDecLine, PICASVarDecLine, AddedBits, BitName
@@ -18143,19 +18634,18 @@ Sub WriteAssembly
       PRINT #1, ";Program compiled by GCBASIC (" + Version + ") for Microchip AVR Assembler using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
   End If
   Print #1, ";Need help? "
-  Print #1, ";  Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
+  Print #1, ";  Please donate to help support the operational costs of the project.  Donate via https://gcbasic.com/donate/"
   Print #1, ";  "
   Print #1, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
   Print #1, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
   Print #1, ";or, email us:"
-  Print #1, ";   w_cholmondeley at users dot sourceforge dot net"
   Print #1, ";   evanvennn at users dot sourceforge dot net"
   PRINT #1, Star80
 
   if AFISupport = 1 then
       ' AS file
       PRINT #2, ";Program compiled by GCBASIC (" + Version + ") for Microchip PIC-AS using " +  __FB_SIGNATURE__ + "/" + __DATE_ISO__+" CRC"+STR(ReservedwordC)
-      Print #2, ";  Please donate to help support the operational costs of the project.  Donate via http://paypal.me/gcbasic"
+      Print #2, ";  Please donate to help support the operational costs of the project.  Donate via https://gcbasic.com/donate/"
       Print #2, ";  "
       Print #2, ";  See the GCBASIC forums at http://sourceforge.net/projects/gcbasic/forums,"
       Print #2, ";  Check the documentation and Help at http://gcbasic.sourceforge.net/help/,"
@@ -18170,6 +18660,7 @@ Sub WriteAssembly
       Print #2, ";   Programmer       : " + PrgExe
       Print #2, ";   Output file      : " + OFI
       Print #2, ";   Float Capability : " + VersionSuffix
+      If RequiredModuleCheck = 0  then Print #2, ";   Option Required  : Disabled "
       Print #2, Star80
   
   End if
@@ -18182,12 +18673,15 @@ Sub WriteAssembly
   Print #1, ";   Programmer       : " + PrgExe
   Print #1, ";   Output file      : " + OFI
   Print #1, ";   Float Capability : " + VersionSuffix
+  If  RequiredModuleCheck = 0 then Print #1, ";   Option Required  : Disabled "
   Print #1, Star80
   Print #1, ""
   If ModePIC Then
     'asm
     PRINT #1, ";Set up the assembler options (Chip type, clock source, other bits and pieces)"
     PRINT #1, " LIST p=" + ChipName + ", r=DEC"
+    PRINT #1, " TITLE       "+ CHR(34)+SourceFile(1).FileName+CHR(34)
+    PRINT #1, " SUBTITLE    "+ CHR(34)+date+CHR(32)+time+CHR(34)
     'Workaround for 16C5x chips
     If Len(ChipName) = 5 And Left(ChipName, 2) = "16" And Mid(ChipName, 4, 1) = "5" Then
       PRINT #1, "#include <P16" + Mid(ChipName, 3, 1) + "5X.inc>"
@@ -18202,8 +18696,8 @@ Sub WriteAssembly
           PRINT #2, ";PROCESSOR   " + ChipName
           PRINT #2, " PAGEWIDTH   180"
           PRINT #2, " RADIX       DEC"
-          PRINT #2, " TITLE       "+ CHR(34)+AFI+CHR(34)
-          PRINT #2, " SUBTITLE    "+ CHR(34)+date+CHR(34)
+          PRINT #2, " TITLE       "+ CHR(34)+SourceFile(1).FileName+CHR(34)
+          PRINT #2, " SUBTITLE    "+ CHR(34)+date+CHR(32)+time+CHR(34)
           PRINT #2, ""
           PRINT #2, "; Reverse lookup file(s)"
           PRINT #2, "; "+ChipPICASDataFile
@@ -18459,6 +18953,7 @@ Sub WriteAssembly
     PRINT #1, Star80
     PRINT #1, ""
     PRINT #1, ";Set aside memory locations for variables"
+    If ModePIC Then PRINT #1, ";  Shared/Access RAM = (SA)"
 
     If AFISupport = 1 then
       PRINT #2, Star80
@@ -18471,12 +18966,23 @@ Sub WriteAssembly
       With *CPtr(VariableListElement Pointer, CurrLine->MetaData)
         If ModePIC and AFISupport = 1 then
           'PICAS
-          PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value))
+          If IsInAccessBank(.Name) Then
+            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value)) + " (SA)"
+            'ASM
+            VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value)) + " (SA)"
+          Else
+            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value))
+            'ASM
+            VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value))
+          End IF
           localoutline = "Global "+.Name
-          'ASM
-          VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value))
+
         ElseIf ModePIC Or ModeZ8 Then
-          VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value))
+          If IsInAccessBank(.Name) Then
+            VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value)) + " (SA)"
+          Else
+            VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value))
+          End If
         ElseIf ModeAVR Then
           VarDecLine = ".EQU " + .Name + "=" + trim(.Value) +"          ; 0x"+ Hex(val(.Value))
         Else
@@ -18818,7 +19324,7 @@ Sub WriteAssembly
                       erase currentLineElements
 
                       'Inspect for a space - threfore, must be more that one paramater
-                      if instr(trim(outline), " ") <> 0 then
+                      if instr(trim(outline), " ") <> 0 and left(trim(outline),1) <> ";"  then
                         Dim tmpOutLine as String = outline
                         replaceall ( tmpOutLine, "(", " " )
                         replaceall ( tmpOutLine, ")", " " )
@@ -19113,8 +19619,8 @@ Sub WriteAssembly
     Print message ("PICASMWriteDotS")
   end if
 
-
-End Sub
+  
+  End Sub
 
 Sub WriteCompilationReport
   'Create a report on compilation process
@@ -19123,6 +19629,8 @@ Sub WriteCompilationReport
   Dim As Integer F, CurrSubNo, CurrBank, CurrBankLoc
   Dim As SubType Pointer CurrSub, CalledSub
   Dim As LinkedListElement Pointer ListItem
+
+  If nonAsciiFound = -1 then Exit Sub
 
   'Save typing
   RF = CompReportFormat
@@ -19168,7 +19676,7 @@ Sub WriteCompilationReport
   'Write compiler information
   If RF = "html" Then
 
-    If MuteBanners = -1 Then
+    If MuteDonate = 0 Then
 
         Randomize timer
         Select Case  int(Rnd * (10 - 1) + 1)
@@ -19307,7 +19815,7 @@ Sub WriteCompilationReport
         ListItem = ListItem->Next
       Loop
 
-      'Write information
+        'Write information
       If RF = "html" Then
         OutData = "<tr><td>" + CurrSub->Name + "</td>"
         OutData += "<td>" + Str(CurrSub->OriginalLOC) + "</td>"
@@ -19341,10 +19849,10 @@ Sub WriteCompilationReport
     Print #F, ""
   End If
   Close #F
+  
+  End Sub
 
-End Sub
-
-SUB WriteErrorLog
+Sub WriteErrorLog
   Dim As String Temp, MessageType, NewErr, ErrorFileName
   Dim As Integer CD, CS, PD, F1, L1, F2, L2, F, L, S, I, T
   Dim As Integer ERC, WRC, SortEnd
@@ -19352,11 +19860,21 @@ SUB WriteErrorLog
   'Set error log filename
   ErrorFileName = "Errors.txt"
 
-  'Exit sub if no errors are present
+  'Exit Sub if no errors are present
   IF OutMessages = 0 Then
     Kill ErrorFileName
     EXIT Sub
   End If
+
+  'Establish name of hex file to delete
+  HFI = OFI
+  For PD = Len(HFI) To 1 Step -1
+    If Mid(HFI, PD, 1) = "." Then
+      HFI = Left(HFI, PD) + "hex"
+      Exit For
+    End If
+  Next
+
 
   'Sort error list
   'Print "Sort error list"
@@ -19471,7 +19989,7 @@ SUB WriteErrorLog
       'Display errors in 77 columns neatly
       '77 chosen because it allows for the whole thing to fit in a Windows command
       'prompt, the screen is normally 80 columns but the scrollbar takes away 3.
-ShowError:
+  ShowError:
       IF LEN(Temp) <= Columnwidth THEN PRINT SPC(1); Temp
       IF LEN(Temp) > Columnwidth THEN
         FOR T = Columnwidth TO 1 STEP -1
@@ -19490,6 +20008,11 @@ ShowError:
     ExitValue = &Hdeadbeef
   End If
 
+  'Delete Hex is errors only, warning are OK
+
+  If ERC > 0 Then
+    IF Dir(HFI) <> "" THEN KILL HFI
+  End If
 
   'Write error log
   If ERC > 0 Or( WarningsAsErrors = -1 and WRC > 0) Then
@@ -19507,8 +20030,8 @@ ShowError:
   IF PauseOnErr = 1 And ErrorsFound Then
     WaitForKeyOrTimeout
   END IF
-
-END SUB
+  
+  End Sub
 
 Sub MergeSubroutines
 
@@ -19525,7 +20048,6 @@ Sub MergeSubroutines
   Dim As Integer IntSubLoc
 
   Dim MaxDestPage as Integer = 0  
-  Dim DataBlockCount as Integer = 0
   Dim CurrEPTable as Integer
   Dim OrgPosOffset as Integer
   Dim NonChipFamily16DataBlocksNotAdded As Integer = -1
@@ -19543,7 +20065,7 @@ Sub MergeSubroutines
   'Generate call tree of program
   CreateCallTree
 
-  'Get location of interrupt sub (if it exists)
+  'Get location of interrupt Sub (if it exists)
   IntSub = 0
   IntSubLoc = LocationOfSub("INTERRUPT", "")   'was capitalised
   If IntSubLoc <> 0 Then
@@ -19681,7 +20203,7 @@ Sub MergeSubroutines
           Next
         Loop
 
-        'Where will this sub fit?
+        'Where will this Sub fit?
         'Note 2/6/2013: Implemented allocation order, and a program went from 7748 to 7761 words
         'Disabled again, more testing needed to see if it produces an overall benefit
         For CurrPage = 1 To ProgMemPages
@@ -19788,9 +20310,9 @@ Sub MergeSubroutines
   If ModePIC Then
     If IntSub <> 0 And ChipFamily <> 16 Then
 
-      'Alter calls in sub (Use long/short calls as needed)
+      'Alter calls in Sub (Use long/short calls as needed)
       AddPageCommands(IntSub)
-      'Add sub code
+      'Add Sub code
       CurrLine = LinkedListInsertList(CurrLine, IntSub->CodeStart)
       'Blank, stars, blank at end
       CurrLine = LinkedListInsert(CurrLine, "")
@@ -19814,6 +20336,7 @@ Sub MergeSubroutines
 
   For CurrEPTable = 1 TO DataTables
     With DataTable(CurrEPTable)
+    
       If .IsData = -1 Then
         DataBlockCount = DataBlockCount +1
       End If       
@@ -19879,7 +20402,7 @@ Sub MergeSubroutines
         For CurrSub = 1 To SubQueueCount
           CurrSubPtr = Subroutine(SubQueue(CurrSub))
           If CurrSubPtr->Required And CurrSubPtr->LocationSet And CurrSubPtr->DestPage = CurrPage Then
-            'Need to put the sub here
+            'Need to put the Sub here
             'Name of sub
             If SubQueue(CurrSub) <> 0 Then
               SubNameOut = GetSubFullName(SubQueue(CurrSub))
@@ -19930,7 +20453,7 @@ Sub MergeSubroutines
         If SourceFile(SourceFileNo).RequiredModules <> 0 Then
           RequiredListPos = SourceFile(SourceFileNo).RequiredModules->Next
         End If
-        Do While RequiredListPos <> 0
+        Do While RequiredListPos <> 0 and RequiredModuleCheck = 1
 
           RequiredCommand = RequiredListPos->Value
           ItemList = GetElements(RequiredCommand, " ")
@@ -19984,7 +20507,7 @@ Sub MergeSubroutines
           RequiredListPos = RequiredListPos->Next
         Loop
 
-        'Need to put the sub here
+        'Need to put the Sub here
         'Name of sub
         If SubQueue(CurrSub) = 0 Then
           If UserCodeOnlyEnabled = 0 Then
@@ -20011,9 +20534,9 @@ Sub MergeSubroutines
         'CurrLine = LinkedListInsert(CurrLine, ";Subroutine size:" + Str(CurrSubPtr->HexSize) + " words")
         CurrLine = LinkedListInsert(CurrLine, SubNameOut + LabelEnd)
         GetMetaData(Currline)->IsLabel = -1
-        'Alter calls in sub (Use long/short calls as needed)
+        'Alter calls in Sub (Use long/short calls as needed)
         AddPageCommands(CurrSubPtr)
-        'Add sub code
+        'Add Sub code
         CurrLine = LinkedListInsertList(CurrLine, CurrSubPtr->CodeStart)
         'Return
         If Not CurrSubPtr->NoReturn Then
@@ -20059,7 +20582,7 @@ Sub MergeSubroutines
         CurrLine = LinkedListInsert(CurrLine, "")
         FirstUnsetSub = 0
       End If
-      'Need to put the sub here
+      'Need to put the Sub here
       'Name of sub
       If SubQueue(CurrSub) = 0 Then
         SubNameOut = "BASPROGRAMSTART"
@@ -20070,7 +20593,7 @@ Sub MergeSubroutines
       GetMetaData(Currline)->IsLabel = -1
       CurrLine = LinkedListInsert(CurrLine, ";This sub size:" + Str(CurrSubPtr->HexSize))
       StatsUsedProgram += CurrSubPtr->HexSize
-      'Add sub code
+      'Add Sub code
       CurrLine = LinkedListInsertList(CurrLine, CurrSubPtr->CodeStart)
       'Return
       If Not CurrSubPtr->NoReturn Then
@@ -20099,9 +20622,12 @@ Sub MergeSubroutines
   Dim As String EPTempData
   Dim As Integer EPAddress, DataTableSwapped
   Dim As DataTableType Temp_DataTableType
+  Dim As Integer TableUSedCounter 
   EPDataHeader = 0
   TableAddressState = 0
   AVRAddressState = 0
+  TableUSedCounter = 0
+
   IF DataTables > 0 Then
 
     'Sort table so GCASM handles TABLE and EEPROM Datasets ORG correctly.
@@ -20120,6 +20646,9 @@ Sub MergeSubroutines
 
     For CurrEPTable = 1 TO DataTables
       If DataTable(CurrEPTable).Used And DataTable(CurrEPTable).StoreLoc = 1 Then
+
+        'Count used tables
+        TableUSedCounter = TableUSedCounter + 1
 
         'Add header (if not added)
         If Not EPDataHeader Then
@@ -20310,17 +20839,18 @@ Sub MergeSubroutines
         'move down as we dont need to align on every table
         IF AFISupport = 1  and ModePIC and ChipFamily = 16 Then
           'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
-          CurrLine = LinkedListInsert(CurrLine, " ALIGN 2 ;X1")
+          CurrLine = LinkedListInsert(CurrLine, " ALIGN 2 ; ASM 2-byte boundary alignment..")
         End if
-
 
       End If
 
     Next
 
     IF AFISupport = 1  and ModePIC and ChipFamily = 16 Then
-      'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
-      CurrLine = LinkedListInsert(CurrLine, " ALIGN 2;X2")
+      If TableUSedCounter > 0 Then
+        'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
+        CurrLine = LinkedListInsert(CurrLine, " ALIGN 2; ASM 2-byte boundary alignment...")
+      End If
     End if
 
   End If
@@ -20349,8 +20879,8 @@ Sub MergeSubroutines
   Next
 
   CompilerOutput->CodeEnd = CurrLine
-
-End Sub
+  
+  End Sub
 
 Function Message (InData As String) As String
 
@@ -20382,22 +20912,22 @@ Function Message (InData As String) As String
   
 
   Return MsgOut
-END FUNCTION
+  END FUNCTION
 
 Function ModeAVR As Integer
   If ChipFamily >= 100 And ChipFamily < 200 Then Return -1
   Return 0
-End Function
+  End Function
 
 Function ModePIC As Integer
   If ChipFamily > 0 And ChipFamily < 100 Then Return -1
   Return 0
-End Function
+  End Function
 
 Function ModeZ8 As Integer
   If ChipFamily > 200 And ChipFamily < 300 Then Return -1
   Return 0
-End Function
+  End Function
 
 Function NewCodeSection As CodeSection Pointer
   Dim As CodeSection Pointer OutSection
@@ -20407,7 +20937,7 @@ Function NewCodeSection As CodeSection Pointer
   OutSection->CodeEnd = OutSection->CodeList
 
   Return OutSection
-End Function
+  End Function
 
 Function NewProgLineMeta As ProgLineMeta Pointer
   Dim As ProgLineMeta Pointer OutMeta
@@ -20424,7 +20954,7 @@ Function NewProgLineMeta As ProgLineMeta Pointer
   End With
 
   Return OutMeta
-End Function
+  End Function
 
 Function NewSubroutine(SubName As String) As SubType Pointer
   Dim As SubType Pointer OutSub
@@ -20442,9 +20972,9 @@ Function NewSubroutine(SubName As String) As SubType Pointer
   End With
 
   Return OutSub
-End Function
+  End Function
 
-FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
+Function TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
 
   Dim As String Temp, TempType, Source
   Dim As String GlobalType, LocalType
@@ -20519,7 +21049,7 @@ FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
   GlobalType = "BYTE"
   If CurrSub <> MainSub Then
 
-    'To proceed any further, sub needs to have dim commands compiled
+    'To proceed any further, Sub needs to have dim commands compiled
     If Not CurrSub->VarsRead Then CompileDim(CurrSub)
 
     'Search var list
@@ -20546,16 +21076,16 @@ FUNCTION TypeOfVar (VarName As String, CurrSub As SubType Pointer) As String
   End If
 
   'Get highest of local and global type
-  '(Unless type in main sub is BIT, then it is a bit)
+  '(Unless type in main Sub is BIT, then it is a bit)
   If CastOrder(LocalType) > CastOrder(GlobalType) And GlobalType <> "BIT" Then
     Return LocalType
   Else
     Return GlobalType
   EndIf
+  
+  End Function
 
-End FUNCTION
-
-FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
+Function TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, SingCharString As Integer = 0) As String
   'SingCharString: 0 = treat single char as byte, -1 = treat single char as string
 
   Dim As String ThisType, FinalType, Temp, ValueTemp, CurrentItem, CurrChar
@@ -20608,7 +21138,7 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
     Return ThisType
   End If
 
-  'Remove function parameters and array indexes
+  'Remove Function parameters and array indexes
   'Find (
   'Then check for an operator or start of string before (
   'If no operator, remove from ( to matching ) inclusive
@@ -20625,7 +21155,7 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
           'Is there something other than a symbol before (
           If Not IsDivider(Mid(ValueName, DelPos - 1, 1)) Then
             'There is a something other than an operator before (
-            'So we have found an array index or function param
+            'So we have found an array index or Function param
             'Find end of index/params
             DelStart = DelPos
             DelLevel = 0
@@ -20740,7 +21270,7 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
     ElseIf InStr(ValueTemp, ".") <> 0 And Not IsConst(Left(ValueTemp, InStr(ValueTemp, ".") - 1)) Then
       ThisType = "BIT"
 
-    'Element is a var (or function result)
+    'Element is a var (or Function result)
     Else
       ThisType = TypeOfVar(ValueTemp, CurrentSub)
       'May be accessing character of string
@@ -20764,8 +21294,8 @@ FUNCTION TypeOfValue (ValueNameIn As String, CurrentSub As SubType Pointer, Sing
   Next
 
   Return FinalType
-
-END FUNCTION
+  
+  End Function
 
 Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
   'Update call counts to other subroutines
@@ -20786,7 +21316,7 @@ Sub UpdateOutgoingCalls (CompSub As SubType Pointer)
     CalledSub->CallsFromPage(CompSub->DestPage) += ListItem->NumVal
     ListItem = ListItem->Next
   Loop
-End Sub
+  End Sub
 
 Sub UpdateSubMap
   'Ensure that the hash map of subroutines is up to date
@@ -20796,9 +21326,9 @@ Sub UpdateSubMap
   'Regenerate if new subroutines have been added and old map is out of date
   If OldSBC <> SBC Then
     Subroutines = HashMapCreate
-    'Copy every sub into map
+    'Copy every Sub into map
     For T = 1 To SBC
-      'Add sub name to hash map, with reference to location in array
+      'Add Sub name to hash map, with reference to location in array
       SubElement = HashMapGet(Subroutines, UCase(Trim(Subroutine(T)->Name)))
       If SubElement = 0 Then
         SubElement = LinkedListCreate
@@ -20809,6 +21339,10 @@ Sub UpdateSubMap
         SubElement = LinkedListInsert(SubElement, UCase(Subroutine(T)->Name), T)
       End If
 
+      If (( compilerdebug and cCOMPILEUPDATESUBMAP ) = cCOMPILEUPDATESUBMAP )  Then
+        Print "256 CompileUpdateSubMap " + Subroutine(T)->Name
+      End if
+
       'Add name in output code as well
       SubElement = HashMapGet(Subroutines, UCase(GetSubFullName(T)))
       If SubElement = 0 Then
@@ -20816,10 +21350,12 @@ Sub UpdateSubMap
         HashMapSet(Subroutines, UCase(GetSubFullName(T)), SubElement)
         SubElement->NumVal = T
       End If
+
+
     Next
     OldSBC = SBC
   End If
-End Sub
+  End Sub
 
 Sub UpgradeCalcVar (VarName As String, VarType As String)
   'Upgrade the type of a calc var
@@ -20845,9 +21381,9 @@ Sub UpgradeCalcVar (VarName As String, VarType As String)
       End If
     End With
   End If
-End Sub
+  End Sub
 
-FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
+Function VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As VariableType Pointer
   Dim As String ArrayName
   Dim As Integer LO
   Dim As SubType Pointer MainSub
@@ -20873,13 +21409,13 @@ FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As Varia
     End If
   End If
 
-  'Check if variable is a function result
+  'Check if variable is a Function result
   LO = LocationOfSub(ArrayNameIn, "", "")
-'  Print ArrayNameIn, LO
+  '  Print ArrayNameIn, LO
   If LO > 0 Then
     With *Subroutine(LO)
       If Subroutine(LO) = 0 Then
-'        Print "Var " + ArrayName + " not found in sub " + CurrSub->Name
+        ' Print "Var " + ArrayName + " not found in Sub " + CurrSub->Name
         Return Cast( VariableType Pointer, INVALIDARRAYVALUE )  'DuplicateFunction name - permitting higher level methods to handle the error
       ElseIf .IsFunction Then
         'Have found function, add a var and then return it
@@ -20893,269 +21429,8 @@ FUNCTION VarAddress (ArrayNameIn As String, CurrSub As SubType Pointer) As Varia
   End If
 
   'Nothing found, return null pointer
-  'Print "Var " + ArrayName + " not found in sub " + CurrSub->Name
+  'Print "Var " + ArrayName + " not found in Sub " + CurrSub->Name
   Return 0
-END FUNCTION
-
-Sub CreateReservedWordsList
-  dim ReservedWordFile as string
-  dim ReservedWordIn as string
-  dim ReservedWordCounter as Integer
-  dim As Byte ReservedwordLoop = 0
-
-  'Detect GCBASIC install directory
-  ID = ExePath
-  If ID = "" Or ID = "." THEN
-    ID = CURDIR
-    #IFDEF __FB_UNIX__
-      If Right(ID, 1) = "/" Then ID = Left(ID, Len(ID) - 1)
-    #ELSE
-      If Right(ID, 1) = "\" Then ID = Left(ID, Len(ID) - 1)
-    #ENDIF
-  End If
-
-  'Read list
-  #IFDEF __FB_UNIX__
-    ReservedWordFile = ID + "/reservedwords.dat"
-  #ELSE
-    ReservedWordFile = ID + "\reservedwords.dat"
-  #ENDIF
-  IF Dir(ReservedWordFile) = "" THEN
-    PRINT "Cannot find " + ReservedWordFile
-    Print
-    PRINT "GCBASIC cannot operate without this file"
-    If PauseOnErr = 1 THEN
-      PRINT
-      PRINT "Press any key to continue"
-      Sleep
-    END IF
-    END
-  END IF
-
-  ReservedWordCounter = 0
-  OPEN ReservedWordFile FOR INPUT AS #1
-  Do While NOT EOF(1)
-      Line Input #1,  ReservedWordIn
-      ReservedWords( ReservedWordCounter )  = ReservedWordIn
-'      print ReservedWords( ReservedWordCounter )
-      ReservedWordCounter = ReservedWordCounter +1
-      For ReservedwordLoop = 1 to len ( ReservedWordIn )
-          If ReservedWordCounter > 1 then
-            ReservedwordC = ReservedwordC + ASC( Mid(ReservedWordIn,ReservedwordLoop ,1) )
-          End if
-      Next 
-  Loop
-  CLOSE  #1
-  If Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) ) + ReservedwordC <> 255 Then
-      LogError "Invalid Reservedwords.dat - reinstall GCBASIC toolchain"
-  End If
-  ReservedwordC = Val( Mid(ReservedWords( 0 ), Instr( ReservedWords( 0 )," ") ) )     
-End Sub
-
-Sub AddDataBlocks ( ByRef CurrLine As LinkedListElement Pointer, ByRef CurrPage as Integer, ByRef CurrPagePos As Integer, ByRef DataBlockCount as Integer, NonChipFamily16DataBlocksNotAdded As Integer)
-
-  '*WRITE DATA* *WRITE DATABLOCK*
-
-  'Only do this once.
-  If NonChipFamily16DataBlocksNotAdded = 0 then Exit Sub
-  If DataBlockCount > 0 and ModePIC Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous and may, or may not, overlap page boundary(ies)." )
-  If DataBlockCount > 0 and ModeAVR Then CurrLine = LinkedListInsert(CurrLine, "; DATA blocks. DATA blocks are contiguous." )
-  Dim As Integer EPDataHeader, EPDataLoc, CurrEPItem, TableAddressState, AVRAddressState, LogWarningCounter = 0, CurrEPTable, OrgPosOffset
-  Dim as String ASMInstruction, Prefix, EPTempData
-
-  For CurrEPTable = 1 TO DataTables
-    'Examine all tables
-
-    EPTempData = ""
-
-    With DataTable(CurrEPTable)
-      
-      If .Items > 0 AND .IsData = -1 and DataBlockCount > 0 Then              
-        'Get data. Where .items the number of items and ISDATA table
-        OrgPosOffset = 0
-
-        If .Type = "BYTE" Then
-
-          'ORG counter
-          OrgPosOffset = OrgPosOffset + ( .Items * 2 )
-
-          If ModePIC Then
-            ' determine prefix
-            If Instr(UCase(AsmExe), "GCASM") > 0 Then
-              ASMInstruction = "de"
-              ' GBASIC Assember needs 0x34 as the high byte
-              Prefix ="34"
-            ElseIf Instr(UCase(AsmExe), "MPASM") > 0 Then
-              ASMInstruction = "de"
-              Prefix ="00"
-            Else
-              ASMInstruction = "db"
-              Prefix = ""
-            End IF
-          Else
-              ' All AVR use .db prefix
-              ASMInstruction = ".db"
-              Prefix = ""
-          End If
-
-          StatsUsedProgram = StatsUsedProgram + Int( ( .items / 2 ) + 0.5 )
-          'iterate the items
-          For CurrEPItem = 1 To .Items
-            ' process to create data strng as BYTE
-            EPTempData = EPTempData + ", 0x" + Prefix + Right("0"+HEX(.Item(CurrEPItem)),2)                  
-          Next
-          If ModeAVR Then
-            'Add additional data to ensure 'Warning		.cseg .db misalignment - padding zero byte' is resolved
-            If ( .Items MOD 2 ) = 1 Then
-              EPTempData = EPTempData + ", 0x00 ; .db alignment pad"
-            End If
-          End If
+  END FUNCTION
 
 
-        Else  ' Therefore, WORD
-
-          'ORG counter
-          OrgPosOffset = OrgPosOffset + ( .Items * 1 )
-          If ModePIC Then           
-            ASMInstruction = "dw"
-          Else
-            ASMInstruction = ".dw"
-          End If
-
-          StatsUsedProgram = StatsUsedProgram + .items
-
-          'iterate the items
-          For CurrEPItem = 1 To .Items Step 1
-            ' process to check the data strng
-            If MODEPIC Then
-              If ChipFamily <> 16 Then
-                If .Item(CurrEPItem) > 16383 Then
-                    LogWarning message("DataBlockExceeds")
-                    LogWarningCounter = LogWarningCounter + 1
-                    If LogWarningCounter = 11 then
-                      LogError message("DataBlockExceedsTooMany")
-                    End If 
-                End If
-              End If
-            Else
-              ' AVR - is this too big?
-              If .Item(CurrEPItem) > 65535 Then
-                LogWarning message("DataBlockExceedsAVR")
-                LogWarningCounter = LogWarningCounter + 1
-                If LogWarningCounter = 11 then
-                  LogError message("DataBlockExceedsTooManyAVR")
-                End If 
-              End If
-            End If
-            ' process to create data strng as BYTE
-            EPTempData = EPTempData + ", 0x" + Right("0000"+HEX(.Item(CurrEPItem)),4)
-          Next
-        End If   ' End of Word / If..
-
-        ' Tidy DATABlock string
-        If Left(EPTempData, 2 ) = ", " Then EPTempData = Mid(EPTempData,3, Len( EPTempData ) ) 
-        
-        'This test ensure the address of the DATA is ALIGNed to 2 for ChipFamily = 16 
-        If (  EPDataLoc/2 <> Int(EPDataLoc/2) and ChipFamily = 16 ) Then
-            EPDataLoc = EPDataLoc + 1
-        End If
-
-        If HashMapGet(Constants, Trim(.Name) ) = 0 Then
-          AddConstant(Trim(.Name), Str(CurrPagePos))
-        Else
-          LogError "Duplicate DATA label: '" + Ucase(Trim(.Name)) + "'"
-        End If
-
-        'Create DATA block label
-        If ModePIC Then  
-          CurrLine = LinkedListInsert(CurrLine, Trim(.Name) + "   ;" + str(.items) )
-          GetMetaData(Currline)->IsLabel = -1
-        Else
-          CurrLine = LinkedListInsert(CurrLine, Trim(.Name)+":"  + "   ;" + str(.items) )
-          GetMetaData(Currline)->IsLabel = -1
-        End If
-
-        If trim(EPTempData) <> "" Then 
-          'Do not push out empty structure, as this will cause an error in MPASM etc
-
-          EPTempData = EPTempData +","  'add additional delimter to make this routine work as we use the "," in the instrev()
-
-          Dim as Integer FirstDelimiter, PosOfComma, LastValidPostOfComma, WordCounter, PageSize
-          Dim as String StringCut, StringOut
-
-          StringCut = EPTempData
-          PageSize = ProgMemPage(CurrPage-1).PageSize
-          StringOut = ""
-          FirstDelimiter = 1
-          WordCounter = 0
-          
-          'print "Address page", currpage, ProgMemPages, CurrPagePos
-
-          Do
-            ' Only output width that MPASM can cope with
-            PosOfComma = InStr( FirstDelimiter,  StringCut, "," )
-            ' Less the Maxsize AND not at end of string AND ( is NOT MPASM and LESS the 120 chars )
-            ' Print CurrPagePos + 1 , PosOfComma  
-            If PosOfComma <> 0 AND PosOfComma < 120 Then
-                'update outstring
-                StringOut = Mid ( StringCut, 1, PosOfComma )
-                  WordCounter = WordCounter + 1
-                'print "s1 = ",stringout +"| "+Str(PosOfComma)+"| "+ hex(CurrPagePos)
-                FirstDelimiter = PosOfComma + 1
-                LastValidPostOfComma = PosOfComma
-            Else
-  
-                'Current ORG
-                If PageSize <> 0 Then
-                  CurrLine = LinkedListInsert(CurrLine, " ORG " + Str(CurrPagePos) )
-                End if
-                'Remove any comma at the end
-                If right( Trim(StringOut),1) = "," Then StringOut = Left( StringOut,Len(StringOut)-1)
-                
-                'Insert into list
-                CurrLine = LinkedListInsert(CurrLine, "  " + ASMInstruction + " " + StringOut )
-
-                'Update the CurrPagePos            
-                CurrPagePos = CurrPagePos + WordCounter
-
-                'Tidy the string
-                StringCut = trim(Mid ( StringCut, LastValidPostOfComma +1 ))
-
-                ' print CurrPagePos, CurrPagePos MOD .MaxSize, wordcounter, PosOfComma, Len(StringCut)
-                
-                FirstDelimiter = 1
-                WordCounter = 0
-                ' print CurrPagePos, Int ( CurrPagePos / PageSize ), CurrPage - 1 , Int ( CurrPagePos / PageSize ) <> CurrPage  - 1
-                If PageSize <> 0  and CurrPage > 0 Then
-                  If Int ( CurrPagePos / PageSize ) <> CurrPage - 1  Then
-                    If CurrPage <= ProgMemPages Then
-                      'Increment the page - this is required to page control and ORG statements ( later in this method)
-                      CurrPage = CurrPage + 1
-                      CurrLine = LinkedListInsert(CurrLine,  "; Page Increment ")
-                    End if
-                  End If
-                End If
-            End If
-          Loop While PosOfComma > 0 And Len(StringCut) <> 0
-        End If        
-        CurrLine = LinkedListInsert(CurrLine, "		; End of DATA_BLOCK" )
-        EPDataLoc += (.Items + 1)
-      End IF
-    End With
-
-    'move down as we dont need to align on every table
-    IF AFISupport = 1 and ModePIC and ChipFamily = 16 Then
-      'There should only one table of this type, and, align may not be needed... but, I do not know if this is the only once....
-      CurrLine = LinkedListInsert(CurrLine, " ALIGN 2 ;X1")
-    End if
-    
-    ' Unset .IsData to ensure this is specific table is not handled again
-    If DataTable(CurrEPTable).IsData = -1 then 
-      DataTable(CurrEPTable).IsData = 0
-      DataTable(CurrEPTable).Used = 0
-    End If
-    ' We have processed a DataBlock, so, reduce the counter
-    DataBlockCount = DataBlockCount - 1
-  Next
-
-End Sub

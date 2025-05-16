@@ -1,4 +1,3 @@
-' ============= Prototype TableString ============= 2021-03-02
 ' GCBASIC - A BASIC Compiler for microcontrollers
 '  Preprocessor
 ' Copyright (C) 2006 - 2024 Hugh Considine and Evan R. Venn
@@ -19,6 +18,7 @@
 '
 'If you have any questions about the source code, please email me: hconsidine at internode.on.net
 'Any other questions, please email me or see the GCBASIC forums.
+
 
 #include "file.bi"
 
@@ -778,7 +778,7 @@ SUB PreProcessor
                 dim newlinein as string
                 LINE INPUT #1, newlinein
                 LC += 1
-                temp = left(temp,len(temp)-2)+" "+trim(newlinein)
+                temp = trim(left(temp,len(temp)-2))+trim(newlinein)
             loop
 
             Temp = LTrim(Temp, Any Chr(9) + " ")
@@ -1025,7 +1025,7 @@ SUB PreProcessor
           LINE INPUT #1, newlinein
           LC = LC + 1
           LCS = LCS + 1
-          DataSource = left(DataSource,len(DataSource)-2)+" "+trim(newlinein)
+          DataSource = trim(left(DataSource,len(DataSource)-2))+trim(newlinein)
 
       loop
 
@@ -1287,7 +1287,7 @@ SUB PreProcessor
       If ReadType = 1 Then
         'Generate warning
         Temp = ";?F" + Str(RF) + "L" + Str(LC) + "S0" + "I" + Str(LCS) + "?"
-        LogWarning(Message("NoClosingQuote"), Temp)
+        LogError(Message("NoClosingQuote"), Temp)
 
         'Store string
         'Check for duplicates
@@ -1448,6 +1448,30 @@ SUB PreProcessor
             END IF
           END IF
 
+          'Handle ENUM data
+          IF Left(DataSource, 5) = "ENUM " and enumstate = 0 THEN
+            enumstate = 1
+            GetTokens DataSource, LineToken(), LineTokens
+            If UCase(LineToken(3)) = "RESET" then enumcounter = 0
+            GOTO LoadNextLine
+          Else
+            If enumstate = 1 then
+              If Ucase(Left(DataSource, 8)) = "END ENUM" Then
+                enumstate = 0
+                GOTO LoadNextLine
+              Else
+                'Get data from line
+                GetTokens DataSource, LineToken(), LineTokens
+                If LineTokens = 1 Then
+                  DataSource = "#DEFINE " + Ucase(LineToken(1)) + " " + Str( enumcounter )
+                  enumcounter = enumcounter + 1
+                Else
+                  DataSource = "#DEFINE " + Trim(DataSource)
+                End if
+              End if
+            End if
+          End If  
+
           'Convert single-line IFs to multiple line
           IF INSTR(DataSource, "IF") <> 0 AND INSTR(DataSource, "THEN") <> 0 AND LEN(DataSource) > INSTR(DataSource, "THEN") + 3 THEN
             Do While InStr(DataSource, "THEN ") <> 0: Replace DataSource, "THEN ", "THEN: ": Loop
@@ -1507,6 +1531,7 @@ SUB PreProcessor
 
 
       MultiCommand:
+
 
           'Make adjustments to line if needed
 
@@ -2055,6 +2080,7 @@ SUB PreProcessor
               GOTO LoadNextLine
 
             ElseIF Left(DataSource, 7) = "#DEFINE" Then
+
               DataSource = DataSource + "':" + Str(RF)
               ForceMain = 1
 
@@ -2127,6 +2153,9 @@ SUB PreProcessor
                 SourceFile(RF).UserInclude = -1
                 GoTo LoadNextLine
               ElseIf WholeINSTR(DataSource, "REQUIRED") <> 0 Then
+                If WholeINSTR(DataSource, "DISABLE") <> 0 Then
+                  RequiredModuleCheck = 0
+                End If
                 With SourceFile(RF)
                   If .RequiredModules = 0 Then
                     .RequiredModules = LinkedListCreate
@@ -2763,6 +2792,46 @@ SUB PreProcessor
   IF VBS = 1 THEN PRINT SPC(5); Message("RunScripts")
   RunScripts
 
+  'Replace Startups
+  IF VBS = 1 THEN PRINT: PRINT SPC(5); Message("ExaminingStartups"): PRINT SPC(5);
+  Dim StartupReplaceFlag as Integer = 0
+  FOR PD = 1 TO SourceFiles
+    IF SourceFile(PD).InitSubFound = 1 Then 
+      If HASHMaPGET(Constants, SourceFile(PD).InitSub ) <> 0 Then 
+        If StartupReplaceFlag = 0 then
+            IF VBS = 1 THEN Print SPC(10);message("StartupRevised")
+            StartupReplaceFlag = 1
+        End If
+        ' Get filename, extract shortname, show message and then set the structure appropiately
+        Dim FI as String
+        FI = SourceFile(PD).filename
+        FI = Mid(FI, InstrRev(FI, "\")+1)
+        If trim(HASHMaPGETStr(Constants, SourceFile(PD).InitSub)) = "" then
+          temp = message("StartupRemoved")
+          replace ( temp, "%s%", SourceFile(PD).InitSub )
+        Else
+          temp = message("StartupRevision")
+          replace ( temp, "%s%", SourceFile(PD).InitSub )
+          Dim dstring as String
+          dstring = Trim(HASHMaPGETStr(Constants, SourceFile(PD).InitSub ))
+          replace ( temp, "%d%", dstring )
+        End If
+        replace ( temp, "%f%", FI )
+        IF VBS = 1 THEN PRINT SPC(15); temp
+        '"Replaced #STARTUP: Changed from " + SourceFile(PD).InitSub + " to " + HASHMaPGETStr(Constants, SourceFile(PD).InitSub )  + " within " + FI
+        'Set the default initsys first
+        If Ucase(SourceFile(PD).InitSub) = "INITSYS" Then DefaultInitSys = Trim(HASHMaPGETStr(Constants, SourceFile(PD).InitSub ))
+        'now replace initsub
+        SourceFile(PD).InitSub =  Trim(HASHMaPGETStr(Constants, SourceFile(PD).InitSub ))
+        If SourceFile(PD).InitSub = "" Then 
+          SourceFile(PD).InitSubUsed = 0
+        End If
+      End If
+    End If
+  Next
+
+
+
   IF VBS = 1 THEN PRINT: PRINT SPC(5); Message("BuildMemoryMap")
   BuildMemoryMap
 
@@ -2787,6 +2856,11 @@ SUB PreProcessor
   ReplaceConstants
   IF VBS = 1 THEN PRINT
 
+  'Expland Shift operations
+  If VBS = 1 THEN PRINT SPC(5); "Expand Shift Operations"
+  ExpandShifts
+  IF VBS = 1 THEN PRINT
+  
 
   'Optimise AVRDx
   If ChipAVRDx then 
@@ -2967,6 +3041,7 @@ SUB RemIfDefs
   Dim As Integer FC, DC, VF, SD, CheckValue, VC, TV, CD, EV, CurrSub, PresPos
   Dim As ConstMeta Pointer FoundConst
   Dim As LinkedListElement Pointer CurrLine, StartDel, EndDel, CurrPos
+  Dim As SysVarType Pointer CurrVar
 
   'Need to scan through main program and all subs
   For CurrSub = 0 To SBC
@@ -3050,7 +3125,7 @@ SUB RemIfDefs
             'Test for BIT() or VAR() but the Cmd must not contain a '.'
             If INSTR(temp,".") > 0  and INSTR(temp,"CHIPMHZ") = 0 Then
             
-              LogError cmd+" - change Conditional test to VAR(registername) or BIT(bitname) cannot use VAR/BIT(registername.bit)", Mid(GetMetaData ( CurrLine)->OrgLine, INSTR(GetMetaData ( CurrLine)->OrgLine, ";?F")) 
+              ' LogError cmd+" - change Conditional test to VAR(registername) or BIT(bitname) cannot use VAR/BIT(registername.bit)", Mid(GetMetaData ( CurrLine)->OrgLine, INSTR(GetMetaData ( CurrLine)->OrgLine, ";?F")) 
             End If
 
 
@@ -3062,6 +3137,17 @@ SUB RemIfDefs
               Temp = Mid(Cmd, INSTR(Cmd, "(") + 1)
               Temp = Trim(Left(Temp, INSTR(Temp, ")") - 1))
 
+              If Instr( Temp, ".") > 0 Then 
+                'Verify if register.bit is valid
+                Dim TempParentRegister as String = Ucase(Trim(Left(Temp, Instr(Temp,".")-1) )) 
+                Temp = Mid( Temp, Instr(Temp, ".")+1)
+
+                CurrVar = HashMapGet(SysVarBits, Temp)
+                If CurrVar->Parent <> TempParentRegister Then
+                  LogError cmd+" - Conditional test BIT(register.bit) has invalid Parent register", Mid(GetMetaData ( CurrLine)->OrgLine, INSTR(GetMetaData ( CurrLine)->OrgLine, ";?F")) 
+                End If
+
+              End If
               'Search for bit in list
               ConstFound = HasSFRBit(ReplaceConstantsLine(Temp, 0))
 
@@ -3090,6 +3176,12 @@ SUB RemIfDefs
               FV = 0: IF INSTR(Cmd, "NOVAR(") <> 0 THEN FV = 1
               Temp = Mid(Cmd, INSTR(Cmd, "(") + 1)
               Temp = Trim(Left(Temp, INSTR(Temp, ")") - 1))
+
+              If Instr( Temp, ".") > 0 Then 
+                'Verify if register does not have .bit
+                LogError cmd+" - Conditional test BIT(register.bit) is invalid. Use Register only with no .[bit]", Mid(GetMetaData ( CurrLine)->OrgLine, INSTR(GetMetaData ( CurrLine)->OrgLine, ";?F")) 
+              End If
+
 
               ConstFound = HasSFR(ReplaceConstantsLine(Temp, 0))
 
@@ -3198,7 +3290,7 @@ SUB RemIfDefs
           'DelMode = 2 > condition is true > remove just #ifdef and #endif
   IfDefProcessed:
 
-' If dumpfile = 1 Then Print "Result:", Val(Cmd)
+  ' If dumpfile = 1 Then Print "Result:", Val(Cmd)
 
           'Swap DelMode when mode is #IFNDEF (1) 'build 1175
           If PMode = 1 Then
@@ -3387,6 +3479,7 @@ SUB RemIfDefs
 
 END SUB
 
+
 SUB OptimiseAVRDx
 
   Dim As String Origin, SourceData, LeftSection
@@ -3466,6 +3559,309 @@ SUB OptimiseAVRDx
   Next
 
 End Sub
+
+SUB ExpandShifts
+  ' Examine source for shift operations
+  ' If constants then 
+
+  Dim As String Origin, SourceData, PadString
+  Dim As Integer CurrSub, WarningMessageCount, ComplexityCount
+  Dim As LinkedListElement Pointer CurrLine, CurrElement, Head, CachedCurrElement
+  Dim As LinkedListElement Pointer OptionElements
+  Dim As Single CurrPerc, PercAdd, PercOld
+  Dim as String tmpSourceData, resultSourceData
+
+
+  PercOld = 0
+  CurrPerc = 0.5
+  PercAdd = 1 / (SBC + 1) * 100
+
+  'Replace constants with their values
+  FOR CurrSub = 0 To SBC
+
+    IF VBS = 1 And ShowProgressCounters Then
+      CurrPerc += PercAdd
+      If Int(CurrPerc) > Int(PercOld) Then
+        PercOld = CurrPerc
+        LOCATE , 60
+        Print Int(CurrPerc);
+        Print "%";
+      End If
+    End If
+
+    CurrLine = Subroutine(CurrSub)->CodeStart->Next
+    Do While CurrLine <> 0
+      SourceData = CurrLine->Value
+      If Instr(SourceData,"<<") > 0 or Instr(SourceData,">>") > 0 Then  
+
+        WarningMessageCount = 0
+        
+        If Instr(SourceData,"=") > 0  Then
+
+          If (( compilerdebug and cEXPANDSHIFTS ) = cEXPANDSHIFTS )  Then
+            Print "512 ExpandShifts  In: " + SourceData
+          End If
+
+          Dim searchIndex as Integer
+          Do While searchIndex < Len( SourceData )
+            searchIndex +=1
+            'Pad out to ensure we can process into the linkedlist using a space as the demimitor
+            If (Mid(SourceData, searchIndex, 2) = "<<") AND ( Mid(SourceData, searchIndex-1, 4) <> " << ") Then
+              SourceData = Left( SourceData, searchIndex - 1 ) + " << " + Mid(SourceData, searchIndex+2)
+            End If
+
+            If (Mid(SourceData, searchIndex, 2) = ">>") AND ( Mid(SourceData, searchIndex-1, 4) <> " >> ") Then 
+              SourceData = Left( SourceData, searchIndex - 1 ) + " >> " + Mid(SourceData, searchIndex+2)
+            End If
+
+            If (Mid(SourceData, searchIndex, 1) = "(") AND ( Mid(SourceData, searchIndex-1, 3) <> " ( ") Then 
+              SourceData = Left( SourceData, searchIndex - 1 ) + " ( " + Mid(SourceData, searchIndex+1)
+            End If
+
+            If (Mid(SourceData, searchIndex, 1) = ")") AND ( Mid(SourceData, searchIndex-1, 3) <> " ) ") Then
+              SourceData = Left( SourceData, searchIndex - 1 ) + " ) " + Mid(SourceData, searchIndex+1)
+            End If
+
+            If (Mid(SourceData, searchIndex, 1) = "#") AND ( Mid(SourceData, searchIndex-1, 3) <> " # ") Then
+              SourceData = Left( SourceData, searchIndex - 1 ) + " # " + Mid(SourceData, searchIndex+1)
+            End If
+
+            If (Mid(SourceData, searchIndex, 1) = "|") AND ( Mid(SourceData, searchIndex-1, 3) <> " | ") Then
+              SourceData = Left( SourceData, searchIndex - 1 ) + " | " + Mid(SourceData, searchIndex+1)
+            End If
+
+            If (Mid(SourceData, searchIndex, 1) = "=") AND ( Mid(SourceData, searchIndex-1, 2) <> "= ") Then
+              SourceData = Left( SourceData, searchIndex - 1 ) + "= " + Mid(SourceData, searchIndex+1)
+            End If
+
+
+          Loop 
+
+
+          ' ==================================================================
+          ' Bitwise Shift Operations Processing
+          ' ==================================================================
+          ' This section processes bitwise shift operations (<< and >>) in source code
+          ' and transforms them into function calls (FnLSL and FnLSR respectively).
+          '
+          ' Algorithm:
+          '   1. Split source data into elements and create linked list
+          '   2. Iterate through list looking for shift operators
+          '   3. When found, handle different cases:
+          '      - Parenthesized expressions: (expr) << bits
+          '      - Constant operands: 4 << 2
+          '      - Variable shifting: var << 2
+          '   4. Transform operations into appropriate function calls
+          '   5. Reconstruct modified source code with proper spacing
+          '
+          ' Note: Nested parentheses are handled by careful brace counting
+          ' ==================================================================
+
+          OptionElements = GetElements(SourceData, " ")
+          Head = OptionElements->Next
+          CurrElement = Head
+
+          ' Main loop - process each element in the linked list
+          Do While CurrElement <> 0
+
+            ' Check if current element is a shift operator
+            If Trim(CurrElement->Value) = "<<" or CurrElement->Value = ">>" Then
+              'found a shift operator
+              If CurrElement->Prev <> 0 and CurrElement->Next <> 0 Then
+                ' Ensure we have elements before and after the operator
+
+                CachedCurrElement = CurrElement
+
+                ' Handle parenthesized in Bitwise shift operators
+                If Trim(CurrElement->Next->Value) = "(" Then
+                  ' Origin = Mid(sourcedata, INSTR(sourcedata, ";?F"))
+                  ' LogError ( "Bitwise shift operators cannot use parenthesized operations", Origin)
+                  Dim rightbraceIndex as Integer = 0
+                  Dim leftbraceIndex as Integer = 0
+                  Dim shiftCalc as String = ""
+
+                  ' Count opened parentheses and start constructing the expression
+                  Do While Trim(CurrElement->Next->Value) = "("              
+                      shiftCalc = shiftCalc + CurrElement->Next->Value
+
+                      CurrElement->Next->Value = ""
+                      CurrElement = CurrElement->Next
+                      leftbraceIndex = leftbraceIndex + 1
+                  Loop
+
+
+                  ' Second loop: Find matching opening parentheses and handle nested parentheses
+                  Do While leftbraceIndex > 0
+
+                      'Ran out of data
+                      If CurrElement->Next = 0 Then Exit Do
+
+                      shiftCalc = shiftCalc + CurrElement->Next->Value
+                      'There may be nested braces....
+                      If Trim(CurrElement->Next->Value) = ")" Then leftbraceIndex = leftbraceIndex - 1
+                      CurrElement->Next->Value = ""
+
+                      'Move pointer
+                      CurrElement = CurrElement->Next
+                      If Trim(CurrElement->Next->Value) = "(" Then leftbraceIndex = leftbraceIndex + 1
+
+                  Loop
+
+                  'restore pointer
+                  CurrElement = CachedCurrElement
+                  CurrElement->Next->Value = shiftCalc
+
+                End If
+
+
+                If Trim(CurrElement->Prev->Value) = ")" Then
+                
+                  ' Case 1: Handling parenthesized expressions like "(expression) << bits"
+                  ' Need to reconstruct the full expression within parentheses
+
+                  Dim as String BitsIn, NumBits, Destvar, ShiftDir
+                  ShiftDir = CurrElement->Value
+
+                  'The SourceData could have a ')' as part of a calc.
+                  'Find the paired '(' and construct the calc.
+                  Dim rightbraceIndex as Integer = 0
+                  Dim leftbraceIndex as Integer = 0
+                  Dim shiftCalc as String = ""
+                  
+                  ' First loop: Count closing parentheses and start constructing the expression
+                  Do While Trim(CurrElement->Prev->Value) = ")"              
+                      shiftCalc = CurrElement->Prev->Value + shiftCalc
+                      CurrElement->Prev->Value = ""
+                      CurrElement = CurrElement->Prev
+                      rightbraceIndex = rightbraceIndex + 1
+                  Loop
+
+                  ' Second loop: Find matching opening parentheses and handle nested parentheses
+                  ' If rightbraceIndex > 0 then there is a ")", need to find the matching "("
+                  Do While rightbraceIndex > 0
+
+                      'Ran out of data
+                      If CurrElement->Prev = 0 Then Exit Do
+
+                      shiftCalc = CurrElement->Prev->Value + shiftCalc
+                      'There may be nested braces....
+                      If Trim(CurrElement->Prev->Value) = "(" Then rightbraceIndex = rightbraceIndex - 1
+                      CurrElement->Prev->Value = ""
+
+                      'Move pointer
+                      CurrElement = CurrElement->Prev
+                      If Trim(CurrElement->Prev->Value) = ")" Then rightbraceIndex = rightbraceIndex + 1
+                      leftbraceIndex = leftbraceIndex + 1
+                  Loop
+                  
+                  'At this point we have exited any nested (..(
+                  'Is this a maths operator ? If not, must be an array
+                  If CountOccur(("=~<>+-*/%&|#!()"), Trim(CurrElement->Prev->Value) ) = 0 Then
+                    'merge the array name with what should be a "(" 
+                    shiftCalc = CurrElement->Prev->Value + shiftCalc
+                    CurrElement->Prev->Value = ""
+                  End If                 
+
+                  'restore pointer
+                  CurrElement = CachedCurrElement
+
+                  ' Get the number of bits to shift by
+                  NumBits = CurrElement->Next->Value
+                  CurrElement->Next->Value = ""
+                  
+                  ' Convert to appropriate function call based on shift direction
+                  If Trim(ShiftDir) = "<<" Then
+                    CurrElement->Value = "FnLSL("+ shiftCalc +","+ NumBits + ")"
+                  Else
+                    CurrElement->Value = "FnLSR("+ shiftCalc +","+ NumBits + ")" 
+                  End If
+                  
+                ElseIF IsConst(CurrElement->Prev->Value) and IsConst(CurrElement->Next->Value)  Then
+                
+                  ' Case 2: Both operands are constants - calculate the result directly
+                  ' Example: 4 << 2 becomes 16
+                  resultSourceData = CurrElement->Prev->Value + CurrElement->Value + CurrElement->Next->Value 
+                  Calculate( resultSourceData )
+                  CurrElement->Value = resultSourceData
+                  CurrElement->Prev->Value = "" 
+                  CurrElement->Next->Value = ""
+                  
+                  ComplexityCount = ComplexityCount -1
+
+                Else
+                
+                  ' Case 3: Standard variable shifting operation
+                  ' Example: variable << 2 becomes FnLSL(variable, 2)
+                  
+                  Dim as String BitsIn, NumBits, Destvar
+                  BitsIn = CurrElement->Prev->Value
+                  NumBits = CurrElement->Next->Value
+
+                  ' Convert to appropriate function call based on shift direction
+                  If Trim(CurrElement->Value) = "<<" Then
+                    CurrElement->Value = "FnLSL("+ BitsIn +","+ NumBits + ")"
+                  Else
+                    CurrElement->Value = "FnLSR("+ BitsIn +","+ NumBits + ")" 
+                  End If
+
+                  ' Clear the original operands since they're now part of the function call
+                  CurrElement->Prev->Value = "" 
+                  CurrElement->Next->Value = ""                  
+
+                End If 
+              Else
+                ' Error case: Shift operator missing operand(s)
+                IF INSTR(sourcedata, ";?F") <> 0 THEN Origin = Mid(sourcedata, INSTR(sourcedata, ";?F"))
+                LogError ( "Incorrect parameters for shift operator", Origin)
+              End If
+            End If
+            NextShiftElement:
+            CurrElement = CurrElement->Next
+          Loop
+
+          'Create the revised output
+          CurrElement = Head
+          SourceData = ""
+          PadString = ""
+          Do While CurrElement <> 0
+            If Trim(CurrElement->Value) = "=" Then
+              SourceData = SourceData + " "
+            End If
+            SourceData = SourceData + Trim(CurrElement->Value) + PadString
+            If Trim(CurrElement->Value) = "=" Then 
+              PadString = " "
+            Else
+              PadString = ""
+            End If
+            CurrElement = CurrElement->Next
+          Loop
+          CurrLine->Value = SourceData
+          If (( compilerdebug and cEXPANDSHIFTS ) = cEXPANDSHIFTS )  Then
+            Print "512 ExpandShifts Out: " + SourceData
+            Print
+          End If
+
+        End if 
+
+        ComplexityCount = CountOccur( Ucase(SourceData), "FNL" )
+        
+        If ComplexityCount > 2 Then
+          If WarningMessageCount = 0 Then
+            WarningMessageCount = 1
+            IF INSTR(SourceData, ";?F") <> 0 THEN Origin = Mid(SourceData, INSTR(SourceData, ";?F"))
+            If INSTR(Origin, ";STARTUP") <> 0 Then Origin = Left(Origin, INSTR(Origin, ";STARTUP") - 1)
+              If HashMapGet(Constants, "MUTEBITWISEERRORS" ) = 0 Then
+                LogError "More than two AND/OR statements - reduce complexity.  Use two lines or more instructions to reduce complexity.", Origin
+              End If
+          End If
+        End If
+
+      End If
+      CurrLine = CurrLine->Next      
+    Loop
+  Next
+
+End SUB
 
 SUB ReplaceConstants
 
@@ -3842,7 +4238,7 @@ Sub TidyInputSource (CompSub As SubType Pointer)
 '    End If
 
 
-    'Replace ++, --, +=, -=
+    'Replace ++, --, +=, -=, #=, |=
     If INSTR(CurrLine->Value, "++") <> 0 THEN
       Origin = ""
       IF INSTR(CurrLine->Value, ";?F") <> 0 Then Origin = Mid(CurrLine->Value, INSTR(CurrLine->Value, ";?F"))
@@ -3853,7 +4249,6 @@ Sub TidyInputSource (CompSub As SubType Pointer)
       IF INSTR(CurrLine->Value, ";?F") <> 0 Then Origin = Mid(CurrLine->Value, INSTR(CurrLine->Value, ";?F"))
       Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "--") - 1)
       CurrLine->Value = Value + "=" + Value + "-1" + Origin
-
     ElseIf INSTR(CurrLine->Value, "+=") <> 0 THEN
       Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "+=") - 1)
       Temp = Mid(CurrLine->Value, INSTR(CurrLine->Value, "+=") + 2)
@@ -3862,6 +4257,18 @@ Sub TidyInputSource (CompSub As SubType Pointer)
       Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "-=") - 1)
       Temp = Mid(CurrLine->Value, INSTR(CurrLine->Value, "-=") + 2)
       CurrLine->Value = Value + "=" + Value + "-" + Temp
+    ElseIF INSTR(CurrLine->Value, "#=") <> 0 THEN
+      Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "#=") - 1)
+      Temp = Mid(CurrLine->Value, INSTR(CurrLine->Value, "#=") + 2)
+      CurrLine->Value = Value + "=" + Value + "#" + Temp
+    ElseIF INSTR(CurrLine->Value, "|=") <> 0 THEN
+      Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "|=") - 1)
+      Temp = Mid(CurrLine->Value, INSTR(CurrLine->Value, "|=") + 2)
+      CurrLine->Value = Value + "=" + Value + "|" + Temp
+    ElseIF INSTR(CurrLine->Value, "^=") <> 0 THEN
+      Value = Left(CurrLine->Value, INSTR(CurrLine->Value, "^=") - 1)
+      Temp = Mid(CurrLine->Value, INSTR(CurrLine->Value, "^=") + 2)
+      CurrLine->Value = Value + "=" + Value + "#" + Temp
     END If
 
     CurrLine = CurrLine->Next
