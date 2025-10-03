@@ -1500,6 +1500,41 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
       For PD = 1 To .ExtraParams
         Do While INSTR(LCase(OutData), "%" + .ExtraParam(PD, 1) + "%") <> 0
 
+          If Lcase(.ExtraParam(PD, 1)) = "port" And Trim(Lcase(.ExtraParam(PD, 2))) = "auto"  Then
+
+              Dim As String portName, portSingle
+              Dim As Integer i
+              Dim PortCounter as Integer = 0
+
+              For i = 1 To 256 ' Test COM ports from COM1 to COM256
+                  portName = Trim("COM" + Trim(Trim(Str(i))+":9600,n,8,1,cs,rs,ds,bin"))
+                  If Open Com ( portName For Binary As #99) = 0 Then
+                    PortCounter = PortCounter + 1
+                    If PortCounter > 1 Then
+                        Close #99
+                        Exit For ' Exit loop after finding 2 open ports                    
+                    End If                    
+                    portSingle = "COM" + Str(i)
+                    Close #99
+                  end If
+              Next
+
+              If PortCounter = 0 Then
+                temp = Message("SerialPortAutoSelectionNoPorts")
+                LogError temp
+                Exit Function
+              ElseIf PortCounter = 1 then 
+                .ExtraParam(PD, 2) = portSingle
+                temp = Message("SerialPortAutoSelection")
+                Replace temp, "%port%", Trim(.ExtraParam(PD, 2))
+                Print temp
+              Else
+                temp = Message("SerialPortAutoSelectionNotPossible")
+                LogError temp
+                Exit Function
+              End If
+
+          End If
           'Check specified Serial Port is avaiable
           If Lcase(.ExtraParam(PD, 1)) = "port" And Left(Trim(Lcase(.ExtraParam(PD, 2))),3) = "com"  Then
               portstring = Trim(.ExtraParam(PD, 2))+":115200,N,8,1"
@@ -1507,6 +1542,7 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
               Open Com portstring as 99
               PortOpenHandler:
               On Error Goto 0
+
               If ERR > 1 Then
                   temp = Message("SerialPortLockedorNotAvailable")
                   Replace temp, "%port%", Trim(.ExtraParam(PD, 2))
@@ -1541,6 +1577,7 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
   Do While INSTR(UCase(OutData), "%FN_NOEXT%") <> 0: Replace OutData, "%FN_NOEXT%", FileNameNoExt: Loop
   Do While INSTR(UCase(OutData), "%CHIPMODEL%") <> 0: Replace OutData, "%CHIPMODEL%", ChipName: Loop
   Do While INSTR(UCase(OutData), "%CHIPPROGRAMMERNAME%") <> 0: Replace OutData, "%CHIPPROGRAMMERNAME%", Chipprogrammername: Loop
+  Do While INSTR(UCase(OutData), "%DFP_LOCATION%") <> 0: Replace OutData, "%DFP_LOCATION%", Left( ChipPICASDataFile, Instr(ChipPICASDataFile, "xc8\") -1 )+"xc8" : Loop
   Do While INSTR(UCase(OutData), "%FILENAMEEEP%") <> 0
     Dim FIEEP as String = FileName
     Replace FIEEP, ".hex", ".eep"
@@ -2271,6 +2308,58 @@ Sub WaitForKeyOrTimeout
   End If
 End Sub
 
+' Function to test if an uppercase method is NOT supported by the active microcontroller
+Function MethodNotSupported(methodString As String) As Boolean
+
+    ' Define list of methods with support indicators
+    Dim methods(0 To 5) As String = {"MODEAVR:SINGLETOSTRING", "MODEAVR:SYSDIVSUBSINGLE", "MODEAVR:SYSMULTSUBSINGLE", "MODEAVR:SINGLEHEX", "MODEAVR:SINGLETOBIN","MODEAVR:_SYSMULTSUBSINGLE"}
+    
+    ' Check active microcontroller type
+    If MODEPIC Then
+        For i As Integer = 0 To UBound(methods)
+            ' Split method string into support type and method name
+            Dim parts() As String
+            StringSplit(Trim(methods(i)), ":", -1, parts())
+            If UBound(parts) < 1 Then Continue For ' Skip malformed entries
+            Dim supportType As String = UCase(Trim(parts(0)))
+            Dim methodName As String = UCase(Trim(parts(1)))
+            
+            ' Check if input matches method name (case-insensitive)
+            If UCase(methodString) = methodName Then
+                ' Method is supported if supportType is MODEPIC or BOTH
+                If supportType = "MODEPIC" Or supportType = "BOTH" Then
+                    Return True ' Not Supported by MODEPIC
+                Else
+                    Return False ' Supported by MODEPIC
+                End If
+            End If
+        Next
+        Return False ' Method test not found, so not supported
+    ElseIf MODEAVR Then
+        For i As Integer = 0 To UBound(methods)
+            ' Split method string into support type and method name
+            Dim parts() As String
+            StringSplit(Trim(methods(i)), ":", -1, parts())
+            If UBound(parts) < 1 Then Continue For ' Skip malformed entries
+            Dim supportType As String = UCase(Trim(parts(0)))
+            Dim methodName As String = UCase(Trim(parts(1)))
+            ' Check if input matches method name (case-insensitive)
+            If UCase(methodString) = methodName Then
+                ' Method is supported if supportType is MODEAVR or BOTH
+                If supportType = "MODEAVR" Or supportType = "BOTH" Then
+                    Return True ' Not Supported by MODEAVR
+                Else
+                    Return False ' Supported by MODEAVR
+                End If
+            End If
+        Next
+        Return False ' Method test not found, so not supported
+    Else
+        ' Invalid microcontroller type (neither MODEPIC nor MODEAVR)
+        Return True ' Treat as unsupported
+    End If
+End Function
+
 'Returns 
 '  0 = if there is no substring match
 '  2 = if perfect match
@@ -2446,6 +2535,9 @@ Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret()
       RetVal(p) = x
       p += 1
    Loop
+   If Count = 0 Then
+    Print "Serious error in compiler in StringSplit() where Count = P.  Report to GCBASIC Forum"
+   End If
    ReDim Ret(Count)
    Ret(0) = Left(Text, RetVal(0) - 1 )
    p = 1

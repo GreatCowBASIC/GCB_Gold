@@ -24,6 +24,7 @@
 '  06/04/2023:      Revised with hardware tested - Only 18bit Color, SPI, PIC tested. AVR or PIC with UNO 8 bit shield not tested. 
 '  14/04/2023:      Revised color scheme
 '  22/04/2025:      Revised to additional SPI Support, improve performance.
+'  04/09/2025:      Revised FilledBox. Much faster!
 
 '
 'Hardware settings
@@ -1372,7 +1373,7 @@ end sub
 '''@param LineX2 Bottom right corner X location
 '''@param LineY2 Bottom right corner Y location
 '''@param LineColour Colour of box (0 = erase, 1 = draw, default is 1)
-Sub FilledBox_ILI9488(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour As Long = GLCDForeground)
+Sub ORG_FilledBox_ILI9488(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour As Long = GLCDForeground)
   dim GLCDTemp, DrawLine as word
   'Make sure that starting point (1) is always less than end point (2)
   If LineX1 > LineX2 Then
@@ -1386,7 +1387,6 @@ Sub FilledBox_ILI9488(In LineX1 as word, In LineY1 as word, In LineX2 as word, I
     LineY2 = GLCDTemp
   End If
 
-
   'Fill with colour
   'Draw lines going across
   For DrawLine = LineX1 To LineX2
@@ -1397,3 +1397,51 @@ Sub FilledBox_ILI9488(In LineX1 as word, In LineY1 as word, In LineX2 as word, I
 
 End Sub
 
+
+Sub FilledBox_ILI9488(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour As Long = GLCDForeground)
+
+    ' initialise global variable. Required variable for Circle in all DEVICE DRIVERS- DO NOT DELETE
+    GLCD_yordinate = 0
+
+    Dim GLCDTemp as word
+
+    select case GLCDRotateState
+      case PORTRAIT  '0 degree
+            // Do nothing       
+      case LANDSCAPE
+            GLCDTemp = LineY1
+            LineY1 = GLCDDeviceWidth - LineX1-1
+            LineX1 = GLCDTemp
+
+            GLCDTemp = LineY2
+            LineY2 = GLCDDeviceWidth - LineX2-1
+            LineX2 = GLCDTemp
+      case PORTRAIT_REV
+            //! to be defined. Add based on LANDSCAPE method
+      case LANDSCAPE_REV
+            //! to be defined. Add based on LANDSCAPE method
+    end select
+
+
+    'Make sure that starting point (1) is always less than end point (2)
+    If LineX1 > LineX2 Then
+      GLCDTemp = LineX1
+      LineX1 = LineX2
+      LineX2 = GLCDTemp
+    End If
+    If LineY1 > LineY2 Then
+      GLCDTemp = LineY1
+      LineY1 = LineY2
+      LineY2 = GLCDTemp
+    End If
+
+
+    SetAddressWindow_ILI9488 ( LineX1, LineY1, LineX2, LineY2 )
+
+    set ILI9488_CS OFF
+    set ILI9488_DC ON
+    Repeat [Long](LineX2 - LineX1 + 1) * (LineY2 - LineY1 + 1)
+      Send_18bits_ILI9488 LineColour
+    End repeat
+    set ILI9488_CS ON;
+End Sub

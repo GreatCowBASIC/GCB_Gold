@@ -24,6 +24,12 @@
 ' 21/07/2020: Added SPI support - software only
 ' 07/08/2020: Added #ifdef S4Wire_DATA isolation
 ' 26/03/2025: Added GLCD_OLED_FONT and improved inter character control to support Foreground & Background controls
+' 13/05/2025: Added special init sequence for Rajguru Electronics 13002-Series display (choose with "#DEFINE GLCD_SubType 13002") (Uwe Seifert)
+'                The display page:
+'                https://www.rajguruelectronics.com/ProductView?tokDatRef=MzA5ODE=&tokenId=MQ==&product=OLED%201.3%20inch%204pin%20RG128x64%20Display%20White
+'                The display data sheet:
+'                https://www.rajguruelectronics.com/Product/30981/300924173758.3%20Inch.pdf
+'
 
 'Notes:
 ' Supports SH1106 controller only.
@@ -238,46 +244,92 @@ Sub InitGLCD_SH1106
    'Setup code for SH1106 controllers
    'Init sequence for 132x64 OLED module
 
-    Write_Command_SH1106(SH1106_DISPLAYOFF)                    ' 0xAE
-    Write_Command_SH1106(SH1106_SETLOWCOLUMN)                  ' 0x02
-    Write_Command_SH1106(SH1106_SETHIGHCOLUMN)                 ' 0x10
-    Write_Command_SH1106(SH1106_SETSTARTLINE)                  ' 0x40
-    Write_Command_SH1106(SH1106_PAGEADDR)                      ' 0xB0
+    #IFDEF GLCD_SubType 13002
+      // use special init (sequence and values according to datasheet) for RG-13002
+      Write_Command_SH1106(SH1106_DISPLAYOFF)          // 0xAE
 
-    Write_Command_SH1106(SH1106_SETCONTRASTCRTL)               ' 0x81
-    Write_Command_SH1106(0x80)                                 ' Contrast = 128
+      Write_Command_SH1106(SH1106_SETDISPLAYCLOCKDIV)  // 0xD5
+      Write_Command_SH1106(0x80)
 
-    Write_Command_SH1106(SH1106_SEGREMAP | 0x1)                ' 0xA1
-    Write_Command_SH1106(SH1106_COMSCANINC)
-    Write_Command_SH1106(SH1106_NORMALDISPLAY)                 ' 0xA6
+      Write_Command_SH1106(SH1106_SETMULTIPLEX)        // 0xA8
+      Write_Command_SH1106(0x3F)
 
-    Write_Command_SH1106(SH1106_SETMULTIPLEX)                  ' 0xA8
-    Write_Command_SH1106(0x3F)                   ' Duty = 1/32
+      Write_Command_SH1106(SH1106_SETDISPLAYOFFSET)    // 0xD3
+      Write_Command_SH1106(0x00)
 
-    Write_Command_SH1106(SH1106_CHARGEPUMP)                    ' 0xAD
-    Write_Command_SH1106(SH1106_EXTERNALVCC)                   ' 0x8B
-    Write_Command_SH1106(SH1106_PUMPVOLTAGE)                   ' 0x30
-    Write_Command_SH1106(SH1106_COMSCANDEC)                    ' 0xC8
+      Write_Command_SH1106(SH1106_SETSTARTLINE)        // 0x40
 
-    Write_Command_SH1106(SH1106_SETDISPLAYOFFSET)              ' 0xD3
-    Write_Command_SH1106(0x00)                                 ' No offset(Y position)
-    Write_Command_SH1106(0x00)                                 ' No offset(Y position)
+      Write_Command_SH1106(SH1106_SEGREMAP | 0x1)      // 0xA1
 
-    Write_Command_SH1106(SH1106_SETDISPLAYCLOCKDIV)            ' 0xD5
-    Write_Command_SH1106(0x50)                                 ' Suggested ratio 0x50
+      Write_Command_SH1106(SH1106_COMSCANDEC)          // 0xC8
 
-    Write_Command_SH1106(SH1106_SETPRECHARGE)                  ' 0xD9
-    Write_Command_SH1106(0x22)
+      Write_Command_SH1106(SH1106_SETCOMPINS)          // 0xDA
+      Write_Command_SH1106(0x12)
 
-    Write_Command_SH1106(SH1106_SETCOMPINS)                    ' 0xDA
-    Write_Command_SH1106(0x12)
+      Write_Command_SH1106(SH1106_SETCONTRASTCRTL)     // 0x81
+      Write_Command_SH1106(0x66)
 
-    Write_Command_SH1106(SH1106_SETVCOMDETECT)                 ' 0xDB
-    Write_Command_SH1106(0x40)
+      Write_Command_SH1106(SH1106_SETPRECHARGE)        // 0xD9
+      Write_Command_SH1106(0xF1)
+
+      Write_Command_SH1106(SH1106_SETVCOMDETECT)       // 0xDB  VCOMH Deselect Level
+      Write_Command_SH1106(0x30)
+
+      Write_Command_SH1106(SH1106_PUMPVOLTAGE | 0x2)   // 0x32  Pump Voltage 8V (power up default)
+
+      Write_Command_SH1106(SH1106_DISPLAYALLON_RESUME) // 0xA4
+
+      Write_Command_SH1106(SH1106_NORMALDISPLAY)       // 0xA6
+
+      GLCDCLS_SH1106(0)                                // avoids glance at power up
+
+      Write_Command_SH1106(0x8D)                       // 0x8D  Set Charge Pump (only mentioned at display datasheet page 11, not at controller datasheet)
+      Write_Command_SH1106(0x14)
+
+      Write_Command_SH1106(SH1106_DISPLAYON)           // 0xAF
+    #ELSE
+      // use standard init
+      Write_Command_SH1106(SH1106_DISPLAYOFF)                    ' 0xAE
+      Write_Command_SH1106(SH1106_SETLOWCOLUMN)                  ' 0x02
+      Write_Command_SH1106(SH1106_SETHIGHCOLUMN)                 ' 0x10
+      Write_Command_SH1106(SH1106_SETSTARTLINE)                  ' 0x40
+      Write_Command_SH1106(SH1106_PAGEADDR)                      ' 0xB0
+
+      Write_Command_SH1106(SH1106_SETCONTRASTCRTL)               ' 0x81
+      Write_Command_SH1106(0x80)                                 ' Contrast = 128
+
+      Write_Command_SH1106(SH1106_SEGREMAP | 0x1)                ' 0xA1
+      Write_Command_SH1106(SH1106_COMSCANINC)
+      Write_Command_SH1106(SH1106_NORMALDISPLAY)                 ' 0xA6
+
+      Write_Command_SH1106(SH1106_SETMULTIPLEX)                  ' 0xA8
+      Write_Command_SH1106(0x3F)                   ' Duty = 1/32
+
+      Write_Command_SH1106(SH1106_CHARGEPUMP)                    ' 0xAD
+      Write_Command_SH1106(SH1106_EXTERNALVCC)                   ' 0x8B
+      Write_Command_SH1106(SH1106_PUMPVOLTAGE)                   ' 0x30
+      Write_Command_SH1106(SH1106_COMSCANDEC)                    ' 0xC8
+
+      Write_Command_SH1106(SH1106_SETDISPLAYOFFSET)              ' 0xD3
+      Write_Command_SH1106(0x00)                                 ' No offset(Y position)
+      Write_Command_SH1106(0x00)                                 ' No offset(Y position)
+
+      Write_Command_SH1106(SH1106_SETDISPLAYCLOCKDIV)            ' 0xD5
+      Write_Command_SH1106(0x50)                                 ' Suggested ratio 0x50
+
+      Write_Command_SH1106(SH1106_SETPRECHARGE)                  ' 0xD9
+      Write_Command_SH1106(0x22)
+
+      Write_Command_SH1106(SH1106_SETCOMPINS)                    ' 0xDA
+      Write_Command_SH1106(0x12)
+
+      Write_Command_SH1106(SH1106_SETVCOMDETECT)                 ' 0xDB
+      Write_Command_SH1106(0x40)
 
 
-    Write_Command_SH1106(SH1106_DISPLAYALLON_RESUME)           ' 0xA4
-    Write_Command_SH1106(SH1106_DISPLAYON)                     ' 0xAF Turn ON oled panel
+      Write_Command_SH1106(SH1106_DISPLAYALLON_RESUME)           ' 0xA4
+      Write_Command_SH1106(SH1106_DISPLAYON)                     ' 0xAF Turn ON oled panel
+    #ENDIF
 
     'Default Colours
     #ifdef DEFAULT_GLCDBACKGROUND
@@ -286,7 +338,7 @@ Sub InitGLCD_SH1106
 
     #ifndef DEFAULT_GLCDBACKGROUND
       GLCDBACKGROUND = TFT_BLACK
-    #endif  
+    #endif
 
     GLCDForeground = TFT_WHITE
 
@@ -302,8 +354,10 @@ Sub InitGLCD_SH1106
     GLCDfntDefaultsize = 1
     GLCDfntDefaultHeight = 7  'used by GLCDPrintString and GLCDPrintStringLn
 
-    'Clear screen
-    GLCDCLS_SH1106
+    #IFNDEF GLCD_SubType 13002
+      // Clear screen
+      GLCDCLS_SH1106
+    #ENDIF
 
 End Sub
 

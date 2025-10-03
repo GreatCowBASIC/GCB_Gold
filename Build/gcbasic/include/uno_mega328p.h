@@ -1,5 +1,5 @@
 '    Library to allow the Arduino Duemilanove (mega328) to work with GCBASIC
-'    Copyright (C) 2010-2025 Hugh Considine
+'    Copyright (C) 2010-2024 Hugh Considine
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -59,8 +59,19 @@
 #define DIGITAL_13 PORTB.5
 
 'On-board devices
-#define LED PORTB.5
-#define BUTTON PORTC.6
+#script
+
+  // Support user definition of LED and BUTTON
+  IF NODEF(LED) Then
+    // Create a Constant
+    LED PORTB.5
+  END IF
+
+  IF NODEF(BUTTON) Then
+    BUTTON = PORTC.6
+  END IF
+  
+#endscript
 
 '''@hide
 Sub InitUno
