@@ -110,6 +110,7 @@
 ' 23/12/2024  Correct double byte read in RECIEVE2
 ' 24/12/2024  Resolve BAUDCONn_BRG16 to BAUDCONn_BRG16 issue where baud rate was not being calculated. 
 '             Added check to ensure baud rate is calculated.
+' 24/11/2025  Add ChipSubFamily = 15006 TX1REG redirection in script section
 
 /*
 
@@ -171,7 +172,7 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 ; in Hsersend sub routine where different chips have
 ; different register or bit names with the same function
 ; -----------------------------------------------------
-#samevar TXREG, TXREG1, U1TXB
+#samevar TXREG, TXREG1, U1TXB, TX1REG
 #samebit TXIF, TX1IF, U1TXIF
 
 #samevar BAUDCON, BAUDCON1
@@ -305,6 +306,11 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
     end if
 
     if ChipSubFamily = 15004 then
+          TXREG = TX1REG
+          RCREG = RC1REG
+    end if
+
+    if ChipSubFamily = 15006 then
           TXREG = TX1REG
           RCREG = RC1REG
     end if
@@ -1967,6 +1973,7 @@ sub HSerSend (In SerData)
             #endif
 
             #ifdef Var(TXREG)
+
                 //~Write The Data Byte To The Usart
                 //~Sets register to value of SerData - where register could be TXREG or TXREG1 or U1TXB set via the #samevar
                 TXREG = SerData

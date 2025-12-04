@@ -138,6 +138,8 @@
 ''' 06/12/2023 Added 9bit and 10Bit CCP1 support, and, HPWM_CCP_MAXDUTYVALUE() to support 9bit and 10Bit operations.
 ''' 23/09/2024 Added AVRDx PWM Fixed Mode support for TCA0/Channel 1
 ''' 11/12/2024 Added CCP1CON_EN support for Fixed Mode operations for 18FxxQ24
+''' 05/11/2025 Revised 9bit and 10Bit CCP1 support to isolate bits.
+
 
 
 
@@ -452,14 +454,15 @@ Sub InitPWM
                 'Set Duty cycle
                 #ifndef Bit(CCP1FMT)
                   
-                  #if PWMCCP1MAXDUTYVALUE < 256
-                    'This is the legacy code to support only one CCPPWM channel 8bit
-                    CCPR1L =  DutyCycleH
-                  #else
-                      'This is the legacy code to support only one CCPPWM channel 9bit or 10bit
-                      DC1B1  = DutyCycleL.7
-                      DC1B0  = DutyCycleL.6
-                      CCPR1L = DutyCycleH
+                  
+                  'This is the legacy code to support only one CCPPWM channel 8bit
+                  CCPR1L =  DutyCycleH
+                  #if PWMCCP1MAXDUTYVALUE > 255
+                      #if bit(DC1B1)
+                        'This is the legacy code to support only one CCPPWM channel 9bit or 10bit
+                        DC1B1  = DutyCycleL.7
+                        DC1B0  = DutyCycleL.6
+                      #endif 
                   #endif
 
                 #endif

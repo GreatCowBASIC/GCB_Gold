@@ -387,8 +387,10 @@ Sub AddVar(VarNameIn As String, VarTypeIn As String, VarSizeIn As Integer, VarSu
   If (VarSize = 1 And VarFound->Size <> 1) Or (VarSize <> 1 And VarFound->Size = 1) Then
     If VarType <> "STRING" And VarFound->Type <> "STRING" Then
       Temp = Message("DupDef")
-      Replace Temp, "%var%", VarName
-      'Print VarName, VarSize, VarFound->Size, VarType, VarFound->Type
+      ReplaceAll   Temp, "%var%", VarName
+      Replace   Temp, "%type%", VarFound->Type
+      
+      ' Print VarName, VarSize, VarFound->Size, VarType, VarFound->Type
       LogError Temp, Origin
     End If
   End If
@@ -660,6 +662,7 @@ SUB AllocateRAM
     With *FinalVar
       IF Left(.Pointer, 8) = "REGISTER" And .Location = -1 Then
         If ModePIC Then
+          ' print .name, GetRegisterLoc(GetByte(.Name, CurrByte))
           'We have a register
           'Allocate the individual bytes
           VarSize = GetTypeSize(.Type) - 1

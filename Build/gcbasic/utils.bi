@@ -2106,7 +2106,8 @@ Sub LinkedListPrint(StartNode As LinkedListElement Pointer)
   CurrPos = StartNode->Next
 
   Do While CurrPos <> 0
-    Print CurrPos->Value    
+    Print CurrPos->Value
+    If GetMetaData( CurrPos )->MacroOrigin <> "" Then Print ,"MacroOrigin: " + GetMetaData( CurrPos )->MacroOrigin     
     CurrPos = CurrPos->Next
   Loop
 End Sub
@@ -2124,8 +2125,13 @@ Sub LinkedListPrintwithComments(StartNode As LinkedListElement Pointer)
       Dim as Integer PresPos
       PresPos = VAL(Mid(CurrPos->Value, 10))
       Print PreserveCode(PresPos)
+    ElseIf Left(CurrPos->Value, 8) = "REPROCES" Then
+      Dim as Integer PresPos
+      PresPos = VAL(Mid(CurrPos->Value, 10))
+      ' Do not diplay the CONSTANTS
+      ' Print PreserveCode(PresPos)
     Else
-      Print CurrPos->Value
+      Print Left(CurrPos->Value+Space(40),40)
     End if
 
   

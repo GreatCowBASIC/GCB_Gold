@@ -37,6 +37,7 @@
 
   Type PICASCfg
     Value as String
+    Org as String
     State as String
     Config as String
   End Type
@@ -91,6 +92,7 @@
     isLabel as Integer
     isPICAS as Integer
     IsESEG  as Integer
+    MacroOrigin as String = ""  ' Used to track original line of code. Used in error logging.
 
     OrgLine as String
 
@@ -138,6 +140,7 @@
     Pointer As String
     Alias As String
     Origin As String
+    MacroLineOrigin As String
 
     FixedLocation As Integer
     Location As Integer
@@ -496,7 +499,11 @@
   declare Function IsUnaryOp (InData As String) As Integer
   declare Sub LoadConverters
   declare Function LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As String = "", AllowVague As Integer = 0) As Integer
-  declare Sub LogError(InMessage As String, Origin As String = "")
+
+  Declare Sub LogError Overload (InMessage As String, Origin As String, MacroOrigin As String)
+  Declare Sub LogError Overload (InMessage As String, Origin As String)
+  Declare Sub LogError Overload (InMessage As String)
+
   declare Sub LogOutputMessage(InMessage As String)
   declare Sub LogToFile (inMessage As String)
   declare Sub LogWarning(InMessage As String, Origin As String = "")
@@ -861,8 +868,8 @@
   Randomize Timer
 
 'SET GCBASIC VERSION
-  Version = "2025.10.04"
-  buildVersion = "1523"
+  Version = "2025.11.16"
+  buildVersion = "1530"
 'Construct compiler message for each Operating System
   #ifdef __FB_DARWIN__  'OS X/macOS
     #ifndef __FB_64BIT__
@@ -1368,6 +1375,9 @@
   Print Temp
   LogtoFile Temp
 
+  'DisplayProgram
+  'DisplayProgramPurged
+ 
  Finishs:
  Close
  End ExitValue
@@ -6899,8 +6909,12 @@ Sub CompileDo (CompSub As SubType Pointer)
 
       'Show error if no loop
       If LoopLoc = 0 Then
-        LogError(Message("DoWithoutLoop"), Origin)
-
+      
+        If GetMetaData( CurrLine )->MacroOrigin <> "" Then 
+           LogError(Message("DoWithoutLoop"), Origin, GetMetaData( CurrLine  )->MacroOrigin )
+        Else
+          LogError(Message("DoWithoutLoop"), Origin)
+        End If
       'Otherwise, compile normally
       Else
         'Get origin of LOOP command
@@ -7648,7 +7662,13 @@ Sub CompileIF (CompSub As SubType Pointer)
         Loop
         'If no end found, error and quit
         If FindEnd = 0 Then
-          LogError(Message("NoEndIf"), Origin)
+
+          If GetMetaData( CurrLine )->MacroOrigin <> "" Then 
+            LogError(Message("NoEndIf"), Origin, GetMetaData( CurrLine  )->MacroOrigin )
+          Else
+            LogError(Message("NoEndIf"), Origin)
+          End If
+
           'Remove faulty If and continue compilation (to find further errors)
           CurrLine = LinkedListDelete(CurrLine)
           GoTo CompileIfs
@@ -7837,7 +7857,13 @@ Sub CompileIF (CompSub As SubType Pointer)
       'If there are too many END IFs, display error
       ElseIf IL < 0 THEN
         IF Origin <> "" THEN
-          LogError Message("ExtraENDIF"), Origin
+
+          If GetMetaData( CurrLine )->MacroOrigin <> "" Then 
+            LogError(Message("ExtraENDIF"), Origin, GetMetaData( CurrLine  )->MacroOrigin )
+          Else
+            LogError(Message("ExtraENDIF"), Origin)
+          End If
+
         END IF
         IL = 0
 
@@ -8969,7 +8995,11 @@ Sub CompileSelect (CompSub As SubType Pointer)
 
       SelectValue = Trim(Mid(InLine, 12))
       If LEN(TRIM(SelectValue)) = 0 then
-          LogError Message("NoSelectVariableParameter"), Origin
+          If GetMetaData( CurrLine )->MacroOrigin <> "" Then 
+            LogError(Message("NoSelectVariableParameter"), Origin, GetMetaData( CurrLine  )->MacroOrigin )
+          Else
+            LogError(Message("NoSelectVariableParameter"), Origin)
+          End If
       End if
 
       ' Ensure SelectValue is NOT decimal
@@ -9343,6 +9373,7 @@ Sub CompileSet (CompSub As SubType Pointer)
       Origin = ""
       IF INSTR(InLine, ";?F") <> 0 THEN
         Origin = Mid(InLine, INSTR(InLine, ";?F"))
+        If GetMetaData( Currline )->MacroOrigin <> "" Then Origin = GetMetaData( Currline )->MacroOrigin             
         InLine = RTrim(Left(InLine, INSTR(InLine, ";?F") - 1))
       END IF
 
@@ -9401,7 +9432,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
   Dim As Integer StringConstLen
   Dim As String Temp, SendOrigin, ReceiveOrigin, SourceArray, DestArray
   Dim As String ArrayHandler, SourceArrayHandler, TempData, NextLine, GenName
-  Dim As String CallCmd, MacroLineOrigin, SourceFunction
+  Dim As String CallCmd, MacroLineOrigin, SourceFunction, MacroLineOriginMetaData
   Dim As LinkedListElement Pointer BeforeCode, AfterCode, BeforePos, AfterPos
   Dim As VariableType Pointer SourcePtr, SourceArrayPtr
 
@@ -9438,6 +9469,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
         MacroLineOrigin = ""
         IF INSTR(TempData, ";?F") <> 0 THEN
           MacroLineOrigin = " " + Mid(TempData, INSTR(TempData, ";?F"))
+          MacroLineOriginMetaData = MacroLineOrigin
           TempData = RTrim(Left(TempData, INSTR(TempData, ";?F") - 1))
           'If macro line has an origin, check if dest line also has one
           If .Origin <> "" Then
@@ -9470,6 +9502,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
             'If line is label, : should be last character
             If NextLine <> "" Then
               CurrPos = LinkedListInsert(CurrPos, Trim(Left(TempData, InStr(TempData, ":") - 1)) + MacroLineOrigin)
+              GetMetaData(CurrPos)->MacroOrigin = MacroLineOriginMetaData
               TempData = NextLine
             End If
           Loop
@@ -9477,6 +9510,7 @@ Function CompileSubCall (InCall As SubCallType Pointer) As LinkedListElement Poi
           'Append insertion origin
           If TempData <> "" Then
             CurrPos = LinkedListInsert(CurrPos, TempData + MacroLineOrigin)
+            GetMetaData(CurrPos)->MacroOrigin = MacroLineOriginMetaData
           End If
         End If
         MacroLine = MacroLine->Next
@@ -12834,6 +12868,10 @@ Sub FindUncompiledLines
   Do While CurrLine <> 0
     IF INSTR(CurrLine->Value, ";?F") <> 0 THEN
       Origin = Mid(CurrLine->Value, INSTR(CurrLine->Value, ";?F"))
+      If GetMetaData( Currline)->MacroOrigin <> "" Then
+          'Recall the original file/line from the metadata
+          Origin = GetMetaData( Currline)->MacroOrigin
+      End If
       TempLine = Trim(Left(CurrLine->Value, InStr(CurrLine->Value, ";?F") - 1))
       'Recognise some block ends
       'These are typically dealt with when the start is found
@@ -16425,10 +16463,24 @@ Function LocationOfSub (SubNameIn As String, SubSigIn As String, Origin As Strin
 
   End Function
 
-Sub LogError(InMessage As String, Origin As String = "")
+Sub LogError Overload (InMessage As String) 
+  LogError(InMessage, "", "" )
+End Sub
+
+Sub LogError Overload (InMessage As String, Origin As String )
+  LogError(InMessage, Origin, "" )
+End Sub
+
+Sub LogError Overload (InMessage As String, Origin As String = "", MacroOrigin As String = "" )
 
   'Error handler to issue more meaning messages to users.
+  If MacroOrigin <> "" Then Origin = MacroOrigin
 
+  'Cleanup
+  If Instr(UCASE(Origin),"?;STARTUP") > 0  Then
+    Origin = Left ( Origin ,Instr(UCASE(Origin),"?;STARTUP") )
+  End If
+  
   'Determine source file
     Dim F as integer
     Dim temp as string
@@ -16436,6 +16488,8 @@ Sub LogError(InMessage As String, Origin As String = "")
 
   If UCase(Left(InMessage, Len("RAISECOMPILERERROR:"))) =  "RAISECOMPILERERROR:"  Then
         Origin = Left(Origin, Instr(Origin, "L"))+""+Mid(Origin, Instr(Origin, "S"))
+
+
         'Remove CATCH: from string
         InMessage = Mid(InMessage,Len("RAISECOMPILERERROR:")+1)
   End If
@@ -17749,7 +17803,8 @@ v3_10:
           LOOP
           Close #ffile
         Case 2:
-          Dim CSetting as String = ""
+
+          DIM AS STRING current_setting
           ' fall back option inrtoduce at PIC-AS v3.00
 
     
@@ -17762,11 +17817,15 @@ v3_10:
           fresult = OPEN ( ChipPICASConfigFileV3 For Input As ffile )
           Select Case fresult
             Case 0
+
+              ' Assume: DIM ReverseCfgFileLookup(1000) AS PICASCfg
+              ' Assume: findex = 0
+
               DO WHILE NOT EOF(ffile)
                 LINE INPUT #ffile, InLine
-                Dim as String cfgdata()
+                DIM AS STRING cfgdata()
 
-                if (left(inline,1) <> "#") and ( instr( inline, ":") <> 0 ) then
+                IF (LEFT(InLine, 1) <> "#") AND (INSTR(InLine, ":") <> 0) THEN
 
                   '# for each CWORD the configuration settings are listed as
                   '#
@@ -17781,33 +17840,37 @@ v3_10:
                   'CVALUE:1:XT,_XT_OSC:XT oscillator
                   'CVALUE:0:LP,_LP_OSC:LP oscillator
 
-                  StringSplit ( InLine, ":",-1,cfgdata() )
+                  StringSplit (InLine, ":", -1, cfgdata())
 
-                  If Ucase( Trim(cfgdata(0))) = "CSETTING" Then
-                    ReverseCfgFileLookup( findex ).Value = Trim(cfgdata(2))
-                    CSetting = Trim(cfgdata(1))
-                  End If
+                  IF UCASE(TRIM(cfgdata(0))) = "CSETTING" THEN
+                    current_setting = TRIM(cfgdata(2))
+                    ' Defer array population to CVALUE
+                  END IF
 
-                  If Ucase( Trim(cfgdata(0))) = "CVALUE" and CSetting  <> "" Then
-                    If Ucase( Trim(cfgdata(1))) = CSetting Then
-                      If Instr(cfgdata(2), ",") > 0 Then
-                        ReverseCfgFileLookup( findex ).State = Left(Trim(cfgdata(2)),Instr(cfgdata(2), ",")-1)
-                      Else
-                        ReverseCfgFileLookup( findex ).State = Trim(cfgdata(2))
-                      End If
-                      ReverseCfgFileLookup( findex ).Config = ReverseCfgFileLookup( findex ).Value+"="+ReverseCfgFileLookup( findex ).State
-                      CSetting = ""
-                          'print ReverseCfgFileLookup( findex ).Value
-                          'print ReverseCfgFileLookup( findex ).State
-                          'print ReverseCfgFileLookup( findex ).Config
-                      findex = findex +1
-                    End If
-                  End If
+                  IF UCASE(TRIM(cfgdata(0))) = "CVALUE" AND current_setting <> "" THEN
+                    ' PRINT current_setting, InLine  ' Debug: Shows active setting and line
+                    
+                    ReverseCfgFileLookup(findex).Value = current_setting
+                    ReverseCfgFileLookup(findex).Org = TRIM(cfgdata(1))  ' Raw <value>, e.g., "3"
+                    
+                    IF INSTR(cfgdata(2), ",") > 0 THEN
+                      ReverseCfgFileLookup(findex).State = LEFT(TRIM(cfgdata(2)), INSTR(cfgdata(2), ",") - 1)
+                    ELSE
+                      ReverseCfgFileLookup(findex).State = TRIM(cfgdata(2))
+                    END IF
+                    
+                    ReverseCfgFileLookup(findex).Config = ReverseCfgFileLookup(findex).Value + "=" + ReverseCfgFileLookup(findex).State
+                    
+                    ' PRINT ReverseCfgFileLookup(findex).Value, 
+                    ' PRINT ReverseCfgFileLookup(findex).State,
+                    ' PRINT ReverseCfgFileLookup(findex).Config  ' Debug: Verify entry
+                    findex = findex + 1
+                  END IF
 
-                end if
-
+                END IF
               LOOP
               Close #ffile
+
           Case 2
             LogError "PIC-AS file not found " +  ChipPICASConfigFileV3
             LogError "Cannot continue with PIC-AS compilation"

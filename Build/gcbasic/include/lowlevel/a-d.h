@@ -154,6 +154,7 @@
 ' 25/11/22 Added isolation for family 15002, 15003 and 15004 for Diffrential handler
 ' 21/09/24 Add ReadADAVRDx and ReadAD10AVRDx. User can control ADC Prescaler via #define AVRX_ADC_PRESC_DIV 16 | 4 - defaults to AVRX_ADC_PRESC_DIV 16 
 ' 22/09/24 Add ReadADAVRDx and ReadAD10AVRDx optimisation constants.  AVRX_ADC_PORTx_PinyCTRL and AVRX_ADC_NOCACHE_PORTx_PinyCTRL
+' 14/11/25 Add isolation of ADCS as the ADCS BIT does not exist on the 16F175xxx. Isolation will ensure non 16F175xx operate as expected 
 /*
 AVRDX ReadAD and ReadAD10 optional control constants added 22/09/24
 
@@ -1716,7 +1717,9 @@ macro LLReadAD (ADLeftAdjust)
         #IFDEF VAR(ADCLK)
 
             'Configure AD clock defaults
-            Set ADCS off 'Clock source = FOSC/ADCLK
+            #IFDEF BIT(ADCS)
+              Set ADCS off 'Clock source = FOSC/ADCLK
+            #ENDIF
             ADCLK = 1 ' default to FOSC/2
 
             'Conversion Clock Speed
@@ -1726,7 +1729,9 @@ macro LLReadAD (ADLeftAdjust)
             #ENDIF
 
             #IFDEF ADSpeed MediumSpeed
+            #IFDEF BIT(ADCS)
              SET ADCS OFF  'ADCON0.4
+            #ENDIF
              ADCLK = 15    'FOSC/16
 
             #ENDIF
