@@ -9,8 +9,7 @@ GCBASIC is an open-source BASIC compiler for PIC microcontrollers and other embe
 
 This Policy applies to the GCBASIC software (including all versions and distributions) and any related documentation or resources provided by the GCBASIC project. By downloading, installing, or using GCBASIC, you acknowledge and agree to the practices described herein.
 
-If you have questions about this Policy, please contact the GCBASIC development team via the project's SourceForge repository (https://sourceforge.net/p/gcbasic/discussion/
-) or email (as shown in the generated asm files).
+If you have questions about this Policy, please contact the GCBASIC development team via the project's SourceForge repository (https://sourceforge.net/p/gcbasic/discussion/) or email (as shown in the generated asm files).
 
 Information We Collect
 
