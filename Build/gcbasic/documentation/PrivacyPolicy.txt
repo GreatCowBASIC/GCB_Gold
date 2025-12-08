@@ -1,0 +1,77 @@
+Privacy Policy for GCBASIC
+
+Effective Date: December 6, 2025
+Last Updated: December 6, 2025
+
+Introduction
+
+GCBASIC is an open-source BASIC compiler for PIC microcontrollers and other embedded systems, developed and maintained by a community of volunteers. This Privacy Policy ("Policy") describes how GCBASIC handles any personal information that may be associated with its use. As an offline desktop application, GCBASIC is designed to respect user privacy by default and does not engage in data collection, tracking, or transmission without explicit user consent.
+
+This Policy applies to the GCBASIC software (including all versions and distributions) and any related documentation or resources provided by the GCBASIC project. By downloading, installing, or using GCBASIC, you acknowledge and agree to the practices described herein.
+
+If you have questions about this Policy, please contact the GCBASIC development team via the project's SourceForge repository (https://sourceforge.net/p/gcbasic/discussion/
+) or email (as shown in the generated asm files).
+
+Information We Collect
+
+GCBASIC operates entirely on your local device and does not collect, store, or transmit any personal data by design. Specifically:
+
+No Automatic Collection: We do not gather information such as your name, email address, IP address, device identifiers, usage logs, or any other personally identifiable information (PII).
+
+User-Provided Data: The software may prompt for optional inputs (e.g., project file paths or compiler flags), but these are stored locally on your device and never shared with us or third parties.
+
+Updates (Optional): If you enable automatic updates via integrated tools (e.g., GCSTUDIO, etc.), only the necessary metadata — such as version numbers — is fetched by your computer from the server. No information is transmitted from your machine back to those servers, and you can disable this feature entirely.
+
+No Telemetry: By principle and design, none of our software transmits telemetry to us or to any third party. Our applications operate entirely without sending usage data, behavioral metrics, or background diagnostics.
+
+We encourage users to review the source code (available under an open-source license) to verify these practices.
+
+How We Use Information
+
+Since GCBASIC collects no personal information, there is no use, processing, or analysis of such data. All operations occur offline, ensuring your code, files, and development activities remain private to your environment.
+
+Sharing and Disclosure
+
+No Sharing: We do not sell, rent, or share any user data with third parties, advertisers, or analytics providers.
+
+Legal Requirements: In rare cases, we may disclose information if required by law (e.g., a court order), but given the absence of collected data, this is unlikely.
+
+Open-Source Contributors: Project metadata (e.g., commit logs) is public on SourceForge but does not include personal user data from end-users.
+
+Data Retention and Storage
+
+No data is retained by the GCBASIC project. Any temporary files created during compilation are stored locally and can be deleted by you at any time.
+
+Security
+
+While GCBASIC itself handles no sensitive data, we recommend:
+
+Keeping your system updated to protect against vulnerabilities.
+
+Reviewing and signing binaries (as discussed in development best practices) to ensure integrity.
+
+The project uses secure coding practices, verifiable through the open-source repository.
+
+We are committed to maintaining the security of the software through community audits and updates.
+
+Children's Privacy
+
+GCBASIC is not intended for use by children under 13 years of age. We do not knowingly collect data from children. If you believe a child has provided information, contact us immediately.
+
+Your Rights
+
+As no personal data is collected, traditional data rights (e.g., access, deletion under GDPR or CCPA) do not apply. However:
+
+You have full control over your local data.
+
+For project-related inquiries, you can request removal of any public contributions via GitHub.
+
+Users in regions with strict privacy laws (e.g., EU GDPR, California CCPA) are protected by the minimal nature of our practices.
+
+Changes to This Policy
+
+We may update this Policy periodically to reflect changes in software features or legal requirements. Significant changes will be announced via the GCBASIC GitHub repository or release notes. Continued use of GCBASIC after updates constitutes acceptance of the revised Policy.
+
+Governing Law
+
+This Policy is governed by the laws of United Kingdom, without regard to conflict of law principles.
