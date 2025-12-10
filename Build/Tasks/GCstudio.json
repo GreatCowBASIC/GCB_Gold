@@ -153,6 +153,81 @@
                 "revealProblems": "onProblem"
             }
         },
+            {
+      "label": "Assemble ASM",
+      "type": "shell",
+      "command": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\GCBASIC.EXE",
+      "args": [
+        "\\\"${fileDirname}\\${fileBasenameNoExtension}.gcb\\\"",
+        "/AO",
+        "/NP",
+        "/S:use.ini",
+        "/F:N",
+        "/P:"
+      ],
+      "options": {
+        "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
+      },
+      "problemMatcher": [
+        {
+          "owner": "gcb",
+          "source": "gcb",
+          "fileLocation": [
+            "autoDetect",
+            "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\include\\lowlevel\\"
+          ],
+          "pattern": [
+            {
+              "severity": 3,
+              "file": 1,
+              "line": 2,
+              "message": 4,
+              "regexp": "^(.*)\\s\\*\\*\\s+\\((\\d+)\\):\\s+(Warning|Error):\\s+(.+)$"
+            }
+          ]
+        },
+        {
+          "owner": "gcb",
+          "source": "gcb",
+          "fileLocation": [
+            "autoDetect",
+            "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\include\\"
+          ],
+          "pattern": [
+            {
+              "severity": 3,
+              "file": 1,
+              "line": 2,
+              "message": 4,
+              "regexp": "^(.*)\\s\\*\\s+\\((\\d+)\\):\\s+(Warning|Error):\\s+(.+)$"
+            }
+          ]
+        },
+        {
+          "owner": "gcb",
+          "source": "gcb",
+          "fileLocation": [
+            "relative",
+            "${fileDirname}"
+          ],
+          "pattern": [
+            {
+              "severity": 3,
+              "file": 1,
+              "line": 2,
+              "message": 4,
+              "regexp": "^(.*)\\s+\\((\\d+)\\):\\s+(Warning|Error):\\s+(.+)$"
+            }
+          ]
+        }
+      ],
+      "group": "build",
+      "presentation": {
+        "showReuseMessage": false,
+        "clear": true,
+        "revealProblems": "onProblem"
+      }
+    },
         {
             "label": "Make ASM [F7]",
             "type": "shell",
