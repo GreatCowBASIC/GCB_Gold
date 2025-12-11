@@ -9,7 +9,8 @@
                 "\\\"${fileDirname}\\${fileBasenameNoExtension}.gcb\\\"",
                     "/NP",
                     "/S:use.ini",
-                    "/F:N"
+                    "/F:N",
+                    "/DO"
             ],
             "options": {
                 "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
@@ -85,7 +86,8 @@
                     "/NP",
                     "/S:use.ini",
                     "/F:N",
-                    "/P:"
+                    "/P:",
+                    "/DO"
             ],
             "options": {
                 "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
@@ -163,7 +165,8 @@
         "/NP",
         "/S:use.ini",
         "/F:N",
-        "/P:"
+        "/P:",
+        "/DO"
       ],
       "options": {
         "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
@@ -237,7 +240,8 @@
                     "/NP",
                     "/S:use.ini",
                     "/H:N",
-                    "/P:"
+                    "/P:",
+                    "/DO"
             ],
             "options": {
                 "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
@@ -313,7 +317,7 @@
             "command": "${execPath}",
             "args": [
                 "-r",
-                "'${fileDirname}\\${fileBasenameNoExtension}.ASM'"
+                "'${fileDirname}\\${fileBasenameNoExtension}.build\\${fileBasenameNoExtension}.ASM'"
             ],
             "presentation": {
                 "showReuseMessage": false,
@@ -329,7 +333,7 @@
             "command": "${execPath}",
             "args": [
                 "-r",
-                "'${fileDirname}\\${fileBasenameNoExtension}.S'"
+                "'${fileDirname}\\${fileBasenameNoExtension}.build\\${fileBasenameNoExtension}.S'"
             ],
             "presentation": {
                 "showReuseMessage": false,
@@ -344,10 +348,11 @@
             "type": "shell",
             "command": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\GCBASIC.EXE",
             "args": [
-                "\\\"${file}\\\"",
+                "\\\"${fileDirname}\\${fileBasenameNoExtension}.gcb\\\"",
                     "/NP",
                     "/S:use.ini",
-                    "/FO"
+                    "/FO",
+                    "/DO"
             ],
             "options": {
                 "cwd": "${env:GCBASIC_INSTALL_PATH}\\gcbasic\\"
@@ -657,7 +662,7 @@
         {
             "label": "Clean Solution",
             "type": "shell",
-            "command": "Remove-Item '${fileDirname}\\*' -Include *.hex,*.lst,*.html,*.asm,*.s,*.cmf,*.d,*.err,*.hxl,*.i,*.map,*.rlf,*.sym,*.o,*.cdf,*.elf,*.pum,*.eep, *.obj",
+            "command": "Remove-Item '${fileDirname}\\*' -Include *.hex,*.lst,*.html,*.asm,*.s,*.cmf,*.d,*.err,*.hxl,*.i,*.map,*.rlf,*.sym,*.o,*.cdf,*.elf,*.pum,*.eep,*.obj -Force; Get-ChildItem '${fileDirname}' -Directory -Filter '*.build' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force",
             "options": {
                 "cwd": "${fileDirname}"
             },
@@ -724,6 +729,22 @@
             "options": {
                 "cwd": "${env:GCBASIC_INSTALL_PATH}\\"
             },
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+                "reveal": "silent",
+                "close": true
+            }
+        },
+        {
+            "label": "Edit Debug Configuration",
+            "type": "shell",
+            "command": "${command:GCDebug.editLaunchConfig}",
             "problemMatcher": [],
             "group": {
                 "kind": "test",
