@@ -1737,8 +1737,10 @@ macro LLReadAD (ADLeftAdjust)
             #ENDIF
 
             #IFDEF ADSpeed LowSpeed
-             SET ADCS OFF  ' ADCON0.4
-             ADCLK = 31    ' FOSC/32
+              #IFDEF BIT(ADCS)
+               SET ADCS OFF  ' ADCON0.4
+              #ENDIF
+              ADCLK = 31    ' FOSC/32
             #ENDIF
         #ENDIF
 

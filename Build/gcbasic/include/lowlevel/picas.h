@@ -22,7 +22,7 @@ Function _HexPICAS(In SysValTemp) As String * 3
 
 End Function
 
-#IFDEF PICAS AND NDEF(AVR)
+#IFDEF PICAS AND NODEF(AVR)
     'This redirection is required as LINE() is a reserved word in PIC-AS
     #DEFINE LINE _LINE
 #ENDIF

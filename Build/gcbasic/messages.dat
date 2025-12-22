@@ -21,9 +21,10 @@ Getting Started with GCBASIC for more info.
 
 Command line parameters:
 GCBASIC [/O:output.asm] [/A:assembler] [/P:programmer] [/K:{C|A}] [/V] [/L]
-        [/R:format] [/S:settings.ini] [/NP] [/WX] [/F] filename
+        [/R:format] [/S:settings.ini] [/NP] [/WX] [/F] [/AO] [/DO] filename
 
         /O:output.asm   Set an output filename other than the default
+        /DO             Place outputs in <filename>.build directory   *Ignored if /O: option is used.
         /CP             Send the default config selected by the compiler to a .CONFIG file.
         /A:assembler    Batch file used to call assembler. If /A:GCASM is
                           given, GCBASIC will use its internal assembler.
@@ -40,8 +41,10 @@ GCBASIC [/O:output.asm] [/A:assembler] [/P:programmer] [/K:{C|A}] [/V] [/L]
         /WX             Treat warnings as errors
         /F              Skip compilation if up to date hex file found, call
                           programmer immediately and then exit.
+        /AO             Assemble only mode. Skip compilation, assemble
+                          existing .asm or .s file to hex.
         /Version        Display the version of the software.
-        filename        The file to compile.
+        filename        The file to compile or assemble.
 
 You may use - in place of /, such as -V instead of /V.
 End Block
@@ -73,6 +76,7 @@ CompilingShortname = "Compiling: %ShortFilename%"
 NoFile = "Cannot find %Filename%"
 NoFileOther = "GLCD.DAT library error: File not found "%Gname%"
 SkippingCompile = "Search for an existing hexFile, compile if not found, then program"
+SkippingCompileAssembleOnly = "Assemble only mode: Skipping compilation, will assemble existing .asm or .s file"
 
 'Verbose mode messages
 FindSource = "Finding source files:"
@@ -316,7 +320,7 @@ MissingSubParam = "Missing value for parameter %param%"
 MissingTarget = "No subroutine specified as a target"
 
 MissingEndSubDef="Missing 'End Sub' or 'Return' definition or invalid 'GoSub'"
-MissingSubDef="Missing Sub definition, or, missing GoSub definition"
+MissingSubDef="Missing Sub definition, or, missing GoSub definition, or, missing End Sub ( Return to exit/end a Sub Routine is not longer supported)"
 MissingEndFuncDef="Missing End Function definition"
 MissingFuncDef="Missing Function definition"
 MissingEndDataDef="Missing End Data definition"

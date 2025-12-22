@@ -102,6 +102,7 @@
 '    17102024 - Add AVR DX - clear down the ram to 0x00. ASM routine.
 '    08112024 - Change AVR DX initsys to test for PORTx_DIR. This is a more robust test.
 '    12122204 - Added BANKSEL to SYSCOMPLESSTHANSINGLE to manage bank.
+'  12/20/2025 - Added Oscillator type 107 for 16F72X parts with 2-bit IRCF - Angel Mier
 
 'Constants
 #define ON 1
@@ -524,7 +525,53 @@ Sub InitSys
               Set FOSC4 Off
             #ENDIF
 
-            #if NoBit(SPLLEN) And NoBit(IRCF3) Or Bit(INTSRC)
+            'Handle chips with only 2 IRCF bits (IRCF1, IRCF0) like 16F720/721 and its LF siblings
+            '16F72x has 500kHz INTOSC with 32x PLL option and postscaler (÷1,2,4,8)
+            #if NoBit(IRCF2) And Bit(IRCF1) And Bit(IRCF0)
+
+              asm showdebug 'OSCCON type is 107 - Chip with only IRCF1 and IRCF0 bits (2-bit postscaler)
+
+              '16F720/721 OSC Architecture: 500kHz base oscillator -> PLL (1x or 32x) -> Postscaler (÷1,2,4,8)
+              'IRCF<1:0> selects postscaler: 11=÷1, 10=÷2, 01=÷4, 00=÷8
+              'With PLLEN=ON:  500kHz × 32 = 16MHz, then ÷1,2,4,8 = 16, 8, 4, 2 MHz
+              'With PLLEN=OFF: 500kHz × 1, then ÷1,2,4,8 = 0.5, 0.25, 0.125, 0.0625 MHz
+
+              #IFDEF ChipMHz 16
+                [canskip] IRCF1, IRCF0 = b'11'    ;11 = ÷1: (500kHz×32)÷1 = 16 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 8
+                [canskip] IRCF1, IRCF0 = b'10'    ;10 = ÷2: (500kHz×32)÷2 = 8 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 4
+                [canskip] IRCF1, IRCF0 = b'01'    ;01 = ÷4: (500kHz×32)÷4 = 4 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 2
+                [canskip] IRCF1, IRCF0 = b'00'    ;00 = ÷8: (500kHz×32)÷8 = 2 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 0.5
+                [canskip] IRCF1, IRCF0 = b'11'    ;11 = ÷1: (500kHz×1)÷1 = 0.5 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 0.25
+                [canskip] IRCF1, IRCF0 = b'10'    ;10 = ÷2: (500kHz×1)÷2 = 0.25 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 0.125
+                [canskip] IRCF1, IRCF0 = b'01'    ;01 = ÷4: (500kHz×1)÷4 = 0.125 MHz
+              #ENDIF
+
+              #IFDEF ChipMHz 0.0625
+                [canskip] IRCF1, IRCF0 = b'00'    ;00 = ÷8: (500kHz×1)÷8 = 0.0625 MHz
+              #ENDIF
+
+            #endif
+
+            'Type 103: Chips without SPLLEN, IRCF3, but must have at least IRCF2 (exclude 2-bit IRCF chips)
+            #if (NoBit(SPLLEN) And NoBit(IRCF3) Or Bit(INTSRC)) And Bit(IRCF2)
 
               #ifndef Bit(HFIOFS)
 
