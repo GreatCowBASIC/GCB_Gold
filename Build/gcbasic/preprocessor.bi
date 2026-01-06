@@ -690,8 +690,11 @@ SUB PreProcessor
   Dim As String TempFile, LastTableOrigin, NewFNType, CodeTemp, OtherChar, BinHexTemp
   Dim As String DataSourceOld, TranslatedFile, HFI, DataSourceRaw, TrapMultipleElse, TempMessage
   Dim As LinkedListElement Pointer CurrPos, MainCurrPos, SearchPos
+  Dim As String DimAssignmentValue, DimVarName, AssignmentLine, MetaTag
+  Dim As Integer DimTokenCount, EqualPos, SemicolonPos, FirstSpacePos
 
   Dim As String LineToken(100)
+  Dim As String DimTokens(100)
   Dim As SourceFileType UnconvertedFile(100)
   Dim As OriginType Pointer LineOrigin
 
@@ -2433,6 +2436,43 @@ SUB PreProcessor
             InConditionalStatementCounter = InConditionalStatementCounter - 1
           End IF
 
+          'Handle Dim variable initialization (Dim myVar as Byte = 10)
+          'Tested on: bit, byte, word, integer, long, single, string and byte arrays (other array types dont support direct load method)
+          DimAssignmentValue = ""
+          DimVarName = ""
+          If Left(DataSource, 4) = "DIM " Then
+            'Check for assignment whit '=' in the Dim statement
+            If InStr(DataSource, "=") <> 0 Then
+              'Find the = sign and extract assignment value
+              EqualPos = InStr(DataSource, "=")
+              'Look for metadata marker ;?F string or semicolon
+              SemicolonPos = InStr(DataSource, ";?F")
+              
+              'Extract the assignment value (everything after =)
+              If SemicolonPos > EqualPos Then
+                DimAssignmentValue = Trim(Mid(DataSource, EqualPos + 1, SemicolonPos - EqualPos - 1))
+              Else
+                DimAssignmentValue = Trim(Mid(DataSource, EqualPos + 1))
+              End If
+              
+              'Remove everything from the = to the end (or to the metadata if it exists)
+              If SemicolonPos > EqualPos Then
+                DataSource = Trim(Left(DataSource, EqualPos - 1)) + " " + Mid(DataSource, SemicolonPos)
+              Else
+                DataSource = Trim(Left(DataSource, EqualPos - 1))
+              End If
+              
+              'Extract variable name from Dim statement
+              'Find the first space after DIM
+              FirstSpacePos = InStr(5, DataSource, " ")
+              If FirstSpacePos > 0 Then
+                DimVarName = Mid(DataSource, 5, FirstSpacePos - 5)
+              Else
+                DimVarName = Mid(DataSource, 5)
+              End If
+            End If
+          End If
+
           'If in sub and not forced to main, store line in sub
           IF S = 1 AND ForceMain = 0 Then
 
@@ -2441,6 +2481,16 @@ SUB PreProcessor
             GetMetaData(CurrPos)->OrgLine = DataSource + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
             GetMetaData(CurrPos)->Conditional = InConditionalStatementCounter
             Subroutine(SBC)->OriginalLOC += 1
+            
+            'If Dim has initialization, add assignment statement
+            If DimAssignmentValue <> "" Then
+              AssignmentLine = DimVarName + " = " + DimAssignmentValue
+              CurrPos = LinkedListInsert(CurrPos, AssignmentLine)
+              GetMetaData(CurrPos)->OrgLine = AssignmentLine + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+              GetMetaData(CurrPos)->Conditional = InConditionalStatementCounter
+              Subroutine(SBC)->OriginalLOC += 1
+            End If
+            
           'We're in a data table, so add line to it
           ElseIf S = 2 THEN
 
@@ -2459,6 +2509,15 @@ SUB PreProcessor
             GetMetaData(MainCurrPos)->Conditional = InConditionalStatementCounter
             'Only count lines in main routine of first file
             If RF = 1 Then Subroutine(0)->OriginalLOC += 1
+            
+            'If Dim had initialization, add assignment statement
+            If DimAssignmentValue <> "" Then
+              AssignmentLine = DimVarName + " = " + DimAssignmentValue
+              MainCurrPos = LinkedListInsert(MainCurrPos, AssignmentLine)
+              GetMetaData(MainCurrPos)->OrgLine = AssignmentLine + " ;?F" + Str(RF) + "L" + Str(LC) + "S" + Str(SBC * S) + "I" + Str(LCS) + "?"
+              GetMetaData(MainCurrPos)->Conditional = InConditionalStatementCounter
+              If RF = 1 Then Subroutine(0)->OriginalLOC += 1
+            End If
 
           End If
 

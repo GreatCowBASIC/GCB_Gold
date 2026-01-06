@@ -1008,14 +1008,21 @@ SUB AssembleProgram
 
           'Check parameter is not an undefined symbol
           If NOT IsConst(ParamValues(CD)) AND IsASM(ParamValues(CD)) = 0 THEN
-            Temp = Message("SymbolNotDefined")
-            Replace Temp, "%symbol%", ParamValues(CD)
+
+            Temp = Message("UndeclaredVar")
+            Replace Temp, "%var%", ParamValues(CD)
+            LogError Temp, GetMetaData( AsmLine )->OrgLine
+              
             'Print DebugInput
             DebugLoc = Hex(Val(AsmLine->Value))
             Do While Len(DebugLoc) < 6
               DebugLoc = "0" + DebugLoc
             Loop
+            
+            Temp = Message("SymbolNotDefined")
+            Replace Temp, "%symbol%", ParamValues(CD)
             LogError "GCASM: " + Temp + " "+Message("At")+" `" +DataSource+"` Hexfile address(see lst file): "+DebugLoc
+            
           END If
 
           'Get data

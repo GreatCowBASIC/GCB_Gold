@@ -1,15 +1,9 @@
 ' Function and Sub Declarations
-'Declare Sub DebugPrint(msg As String)
-'Declare Sub SplitFolder(ByVal source As String, ByVal delimiter As String, result() As String)
-'Declare Function ExtractVersionPath(path As String) As String
-'Declare Function IsVersionFolder(fullPath As String) As Integer
-'Declare Function ParseVersion(path As String) As Long
-'Declare Function ScanDFP(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
-'Declare Function GetLatestDFPFile(chipNameRaw As String) As String
 
 
 ' Usage
 '  GetLatestDFPFile(chipName)
+'  GetChipSpecifics(chipName, "element,attribute")
 
 ' =============================================================================
 ' MPLAB X DFP Header Finder
@@ -30,6 +24,12 @@
 '   - First argument: Chip name (e.g., PIC18F47Q43).
 '   - Second argument (optional): If "DEBUG", enables debug output by setting DEBUG_MODE to -1.
 '
+' Functions:
+'   - GetLatestDFPFile(chipNameRaw): Returns path to latest .inc file.
+'   - GetChipSpecifics(chipNameRaw, param): Extracts attribute from latest .PIC file.
+'     param format: "element,attribute" e.g., "Breakpoints,hwbpcount" returns "3"
+'     or "CodeSector,endaddr" returns "16384" (hex 0x4000 converted to decimal).
+'
 ' Output:
 '   Prints the chip name followed by the path to the version folder containing
 '   the header file, or "[Not found]" if no match is located.
@@ -47,7 +47,7 @@
 '
 ' Author: Evan R. Venn
 ' Version: 1.0
-' Date: September 13, 2025 (current date)
+' Date: December 08, 2025
 ' License: Public Domain / Open Source (assumed)
 '
 ' =============================================================================
@@ -61,11 +61,15 @@ Const XC8_INCLUDE_PATH = "xc8\pic\include\proc"
 Const USER_MCHP_PACKS_PATH = "C:\Users\{username}\.mchp_packs"
 Const MPLABX_PATH = "C:\Program Files\Microchip\MPLABX"
 Const INC_FILE_EXTENSION = ".inc"
+Const PIC_FILE_EXTENSION = ".PIC"
 Const XC8_BASE_PATH = "C:\Program Files\Microchip\xc8"
 Const DIR_WILDCARD = "\*"
 Const XC8_PROC_PATH = "\pic\include\proc\"
+Const PIC_EDC_PATH_SUFFIX = "\edc\"
 
 Dim Shared DEBUG_MODE As Integer
+Dim Shared cachedPICPath As String: cachedPICPath = ""
+Dim Shared lastPICChip As String: lastPICChip = ""
 DEBUG_MODE = 0  ' Set to 0 to disable debug output; set to non-zero (e.g., -1) to enable
 
 ' =============================================================================
@@ -296,6 +300,8 @@ Function ParseVersion(path As String) As Long
     Return 0
 End Function
 
+
+
 ' =============================================================================
 ' Function ScanDFP(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
 ' =============================================================================
@@ -324,36 +330,95 @@ End Function
 Function ScanDFP(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
     Dim tempFile As String = TEMP_FILE_NAME
     Dim foundMatch As Integer = 0
-    Shell(SHELL_DIR_PREFIX + basePath + SHELL_DIR_SUFFIX + tempFile)
+    
+    ' Check if the base directory actually exists
+    If Dir(basePath, 16) <> "" Then
 
-    Dim folderName As String
-    Dim fnum As Integer = FreeFile
-    If Open(tempFile For Input As #fnum) = 0 Then
-        While Not EOF(fnum)
-            Line Input #fnum, folderName
-            If ExtendedVerboseMessages Then DebugPrint("📂 Found candidate folder: " + folderName) + "    " +  Str(IsVersionFolder(folderName) )
-            If IsVersionFolder(folderName) Then
-                Dim score As Long = ParseVersion(folderName)
-                Dim candidate As String = folderName + PATH_DELIMITER + chipName + INC_FILE_EXTENSION
-                If ExtendedVerboseMessages Then DebugPrint("🔍        Probing: " + candidate)
-                If Dir(candidate) <> "" Then
-                    foundMatch = -1
-                    DebugPrint("✅        Found: " + candidate + " | Score: " + Str(score))
-                    If score > bestScore Then
-                        If ExtendedVerboseMessages Then DebugPrint("   🏆 New best match!")
-                        bestScore = score
-                        bestPath = candidate
-                        
+        Shell(SHELL_DIR_PREFIX + basePath + SHELL_DIR_SUFFIX + tempFile)
+
+        Dim folderName As String
+        Dim fnum As Integer = FreeFile
+        If Open(tempFile For Input As #fnum) = 0 Then
+            While Not EOF(fnum)
+                Line Input #fnum, folderName
+                If IsVersionFolder(folderName) Then
+                    Dim score As Long = ParseVersion(folderName)
+                    Dim candidate As String = folderName + PATH_DELIMITER + chipName + INC_FILE_EXTENSION
+                    If Dir(candidate) <> "" Then
+                        foundMatch = -1
+                        If score > bestScore Then
+                            bestScore = score
+                            bestPath = candidate
+                        End If
                     End If
                 End If
-            Else
-                If ExtendedVerboseMessages Then DebugPrint("⏭ Skipping non-version folder: " + folderName)
-            End If
-        Wend
-        Close #fnum
-        Kill tempFile
+            Wend
+            Close #fnum
+            Kill tempFile
+        Else
+            DebugPrint("🚫 Failed to open folder list file.")
+        End If
     Else
-        DebugPrint("🚫 Failed to open folder list file.")
+        If VBS = 1 Then Print Space(5) + "Directory does not exist: " + basePath + ". Skipping scan."
+    End If
+
+    Return foundMatch
+End Function
+' =============================================================================
+' Function ScanPIC(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
+' =============================================================================
+'
+' Purpose:
+'   Scans a base directory recursively for version folders, checks for the chip's
+'   .PIC file in the edc directory, and updates the best match based on the highest version score.
+'
+' Parameters:
+'   basePath (String): Root directory to scan (e.g., MPLAB X packs).
+'   chipName (String): Chip name without .PIC (e.g., "PIC16F17556").
+'   bestScore (Long, ByRef): Updated with the highest version score.
+'   bestPath (String, ByRef): Updated with the path to the best .PIC file.
+'
+' Returns:
+'   Integer: -1 if a match is found, 0 otherwise.
+'
+' Notes:
+'   - Similar to ScanDFP, but probes for .PIC in the edc subdirectory under the version folder.
+'   - Uses IsVersionFolder to filter proc folders, then computes edc path.
+'   - Updates best match if score exceeds current bestScore.
+'
+Function ScanPIC(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
+    Dim tempFile As String = TEMP_FILE_NAME
+    Dim foundMatch As Integer = 0
+
+    ' Check if the base directory actually exists
+    If Dir(basePath, 16) <> "" Then
+
+        Shell(SHELL_DIR_PREFIX + basePath + SHELL_DIR_SUFFIX + tempFile)
+
+        Dim folderName As String
+        Dim fnum As Integer = FreeFile
+        If Open(tempFile For Input As #fnum) = 0 Then
+            While Not EOF(fnum)
+                Line Input #fnum, folderName
+                If IsVersionFolder(folderName) Then
+                    Dim score As Long = ParseVersion(folderName)
+                    Dim edc_candidate As String = Left(folderName, Len(folderName) - Len(XC8_INCLUDE_PATH)) + PIC_EDC_PATH_SUFFIX + chipName + PIC_FILE_EXTENSION
+                    If Dir(edc_candidate) <> "" Then
+                        foundMatch = -1
+                        If score > bestScore Then
+                            bestScore = score
+                            bestPath = edc_candidate
+                        End If
+                    End If
+                End If
+            Wend
+            Close #fnum
+            Kill tempFile
+        Else
+            DebugPrint("🚫 Failed to open folder list file for PIC scan.")
+        End If
+    Else
+        If VBS = 1 Then Print space(5) + "Directory does not exist: " + basePath + ". Skipping scan."
     End If
 
     Return foundMatch
@@ -392,22 +457,23 @@ Function GetLatestDFPFile(chipNameRaw As String) As String
 
     ' Construct user packs path by combining USERPROFILE with the suffix
     Dim userPacksPath As String = Environ("USERPROFILE") + "\.mchp_packs"
+
     dfpFound = ScanDFP(userPacksPath, chipName, bestScore, bestPath)
     dfpFound = dfpFound Or ScanDFP(MPLABX_PATH, chipName, bestScore, bestPath)
 
-    If dfpFound = 0 Then
+    If dfpFound = 0 and Dir(XC8_BASE_PATH, 16) <> "" Then
         Dim fallbackBase As String = XC8_BASE_PATH
         Dim fallbackFolder As String = Dir(fallbackBase + DIR_WILDCARD, 16)
         While fallbackFolder <> ""
             If LCase(Left(fallbackFolder, 1)) = "v" And InStr(fallbackFolder, ".") > 0 Then
                 Dim versionStr As String = Mid(fallbackFolder, 2)
                 Dim score As Long = ParseVersion(versionStr)
-                Dim candidate As String = fallbackBase + PATH_DELIMITER + fallbackFolder + XC8_PROC_PATH + chipName + INC_FILE_EXTENSION
-                If ExtendedVerboseMessages Then DebugPrint("🔍 Fallback probing: " + candidate)
+                Dim candidate As String = fallbackBase + "\" + fallbackFolder + XC8_PROC_PATH + chipName + INC_FILE_EXTENSION
+                DebugPrint("🔍 Fallback probing: " + candidate)
                 If Dir(candidate) <> "" Then
                     DebugPrint("✅ Fallback found: " + candidate + " | Score: " + Str(score))
                     If score > bestScore Then
-                        If ExtendedVerboseMessages Then DebugPrint("   🏆 New best fallback match!")
+                        DebugPrint("   🏆 New best fallback match!")
                         bestScore = score
                         bestPath = candidate
                     End If
@@ -418,11 +484,178 @@ Function GetLatestDFPFile(chipNameRaw As String) As String
     End If
 
     If bestPath <> "" Then
-        DebugPrint("🎯 Final selection: " + bestPath)
+        IF VBS = 1 THEN Print space(5)+("DFP INC selected as " + bestPath)
         Return bestPath
     End If
 
-    DebugPrint("🚫 No match found.")
+    DebugPrint("🚫 GetLatestDFPFile: No match found.")
     Return ""
 End Function
 
+' =============================================================================
+' Function GetLatestPICFile(chipNameRaw As String) As String
+' =============================================================================
+'
+' Purpose:
+'   Searches for the latest .PIC device description file across user packs, MPLAB X, and XC8
+'   fallback directories. Returns the best match based on the highest version score.
+'
+' Parameters:
+'   chipNameRaw (String): Raw chip name (e.g., "PIC16F17556").
+'
+' Returns:
+'   String: Full path to the best .PIC file, or empty if none found.
+'
+' Notes:
+'   - Scans two primary paths with ScanPIC, then falls back to XC8 folders.
+'   - Probes for .PIC in the edc subdirectory under the version folder.
+'   - Selects the highest-scored match via ParseVersion.
+'   - Logs progress via DebugPrint.
+'
+Function GetLatestPICFile(chipNameRaw As String) As String
+    ' Cache check: If we have a cached path for this exact chip, return it immediately
+    If cachedPICPath <> "" And lastPICChip = chipNameRaw Then
+        ' DebugPrint("Using cached PIC path for chip: " + cachedPICPath)
+        Return cachedPICPath
+    End If
+
+    Dim bestScore As Long = 0
+    Dim bestPath As String = ""
+    Dim dfpFound As Integer = 0
+
+    ' Construct user packs path by combining USERPROFILE with the suffix
+    Dim userPacksPath As String = Environ("USERPROFILE") + "\.mchp_packs"
+    
+    dfpFound = ScanPIC(userPacksPath, chipNameRaw, bestScore, bestPath)
+    
+    dfpFound = dfpFound Or ScanPIC(MPLABX_PATH, chipNameRaw, bestScore, bestPath)
+    
+    If dfpFound = 0 Then
+        Dim fallbackBase As String = XC8_BASE_PATH
+        Dim fallbackFolder As String = Dir(fallbackBase + DIR_WILDCARD, 16)
+        While fallbackFolder <> ""
+            If LCase(Left(fallbackFolder, 1)) = "v" And InStr(fallbackFolder, ".") > 0 Then
+                Dim versionStr As String = Mid(fallbackFolder, 2)
+                Dim score As Long = ParseVersion(versionStr)
+                Dim candidate As String = fallbackBase + "\" + fallbackFolder + PIC_EDC_PATH_SUFFIX + chipNameRaw + PIC_FILE_EXTENSION
+                DebugPrint("🔍 Fallback probing PIC: " + candidate)
+                If Dir(candidate) <> "" Then
+                    DebugPrint("✅ Fallback PIC found: " + candidate + " | Score: " + Str(score))
+                    If score > bestScore Then
+                        DebugPrint("   🏆 New best fallback PIC match!")
+                        bestScore = score
+                        bestPath = candidate
+                    End If
+                End If
+            End If
+            fallbackFolder = Dir()
+        Wend
+    End If
+
+    If bestPath <> "" Then
+        IF VBS = 1 THEN Print space(5)+("DFP PIC selected as " + bestPath)
+        ' Cache the result for this chip
+        cachedPICPath = bestPath
+        lastPICChip = chipNameRaw
+        Return bestPath
+    End If
+
+    DebugPrint("🚫 No PIC match found.")
+    ' Clear cache if no match (to force re-search next time)
+    If lastPICChip = chipNameRaw Then
+        cachedPICPath = ""
+    End If
+    Return ""
+End Function
+
+' =============================================================================
+' Function GetChipSpecifics(chipNameRaw As String, param As String) As String
+' =============================================================================
+'
+' Purpose:
+'   Locates the latest .PIC file for the chip and extracts the specified attribute value
+'   from the XML element. Converts hex values (0x...) to decimal.
+'
+' Parameters:
+'   chipNameRaw (String): The chip name (e.g., "PIC16F17556").
+'   param (String): The element and attribute to extract, format "element,attribute"
+'                   e.g., "Breakpoints,hwbpcount" or "CodeSector,beginaddr".
+'
+' Returns:
+'   String: The attribute value as decimal string, or empty if not found/file missing.
+'
+' Notes:
+'   - Uses GetLatestPICFile to locate the .PIC file.
+'   - Parses XML using string search; assumes first occurrence of element.
+'   - Handles hex (0x...) conversion to decimal; other values returned as-is.
+'
+'   - Reads file in 64kb chunks and exits when finished, instead of reading the full file, other minor optimizations - Angel Mier
+Function GetChipSpecifics(chipNameRaw As String, param As String) As String
+    Dim picPath As String = GetLatestPICFile(chipNameRaw)
+    If picPath = "" Then Return ""
+
+    ' Pre-parse parameters to avoid repeated work
+    Dim parts() As String
+    SplitFolder(param, ",", parts())
+    If UBound(parts) < 1 Then Return ""
+    
+    Dim element As String = Trim(parts(0))
+    Dim attr As String = Trim(parts(1))
+    Dim tagStart As String = "<edc:" + element + " "
+    Dim attrSearch As String = attr + "="
+    Dim quote As String = Chr(34)
+
+    Dim fnum As Integer = FreeFile
+    If Open(picPath For Binary Access Read As #fnum) <> 0 Then Return ""
+
+    Dim fileSize As LongInt = Lof(fnum)
+    Dim buffer As String = Space(65536)  ' Read in 64KB chunks instead of loading entire file
+    Dim bytesRead As LongInt = 0
+    Dim totalRead As LongInt = 0
+    Dim content As String = ""
+    Dim tagFound As Integer = 0
+
+    ' Stream file and search until we find the tag
+    Do While totalRead < fileSize And tagFound = 0
+        Get #fnum, , buffer
+        bytesRead = CInt(fileSize - totalRead)
+        If bytesRead > 65536 Then bytesRead = 65536
+        
+        content = content + Left(buffer, bytesRead)
+        totalRead = totalRead + bytesRead
+        
+        If InStr(content, tagStart) > 0 Then
+            tagFound = -1
+        End If
+    Loop
+    Close #fnum
+
+    If tagFound = 0 Then Return ""
+
+    Dim tagPos As Integer = InStr(content, tagStart)
+    If tagPos = 0 Then Return ""
+
+    Dim attrPos As Integer = InStr(tagPos, content, attrSearch)
+    If attrPos = 0 Then Return ""
+
+    Dim eqPos As Integer = attrPos + Len(attrSearch)
+    ' Skip spaces after =
+    Do While eqPos <= Len(content) And Mid(content, eqPos, 1) = " "
+        eqPos = eqPos + 1
+    Loop
+
+    Dim quoteStart As Integer = InStr(eqPos, content, quote)
+    If quoteStart = 0 Then Return ""
+
+    Dim quoteEnd As Integer = InStr(quoteStart + 1, content, quote)
+    If quoteEnd = 0 Then Return ""
+
+    Dim value As String = Mid(content, quoteStart + 1, quoteEnd - quoteStart - 1)
+
+    ' Handle hex conversion efficiently
+    If Left(value, 2) = "0x" OrElse Left(value, 2) = "0X" Then
+        value = Str(Val("&H" + Mid(value, 3)))
+    End If
+
+    Return value
+End Function

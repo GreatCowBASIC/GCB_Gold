@@ -1,61 +1,72 @@
-Programmer Editor Readme.
+Programmer Editor – Readme
 
-1) Not programming from the IDE?
+1. Not programming from the IDE?
 
-a) Select Verbose in the PP tool, then, use FLASH only.
-    Does the programmer get called?
-    If not, then, check your settings in the PP tool.
-b) Select the Programmer Tab -
-      do you have any programmers defined?
-      do you have any programmers in use?
-   If not define the programmer and select.
+a) Check Preferences Editor Settings  
+- In the Preferences Editor, open the Compiler tab and enable Verbose mode.  
+- Use FLASH only.  
+- Confirm whether the programmer is being called.  
+- If it is not, review your Preferences Editor configuration.
 
-2) Still not programming from the IDE?
+b) Check Programmer Definitions  
+- Open the Programmer tab.  
+- Do you have any programmers defined?  
+- Do you have any programmers selected for use?  
+- If not, define a programmer and select it.
 
-Select FLASH.
-Is the top line of the IDE Output Window
-  'G+Stool started with parameter 'foini'
-  ->   processing   C:\GCB@SynRC04\G+Stools\foINI.bat'.
-  The key is.. 'fonini' -
-If this is not present please ask in the Great Cow BASIC forum.
+2. Not programming with the programmer you want?
 
-3) Not programming with the programmer you want?
+a) Reorder Programmer List  
+- Open Preferences Editor ? Programmer tab.  
+- Ensure your preferred programmer is at the top of the list.  
+- If not, drag it to the top.
 
-a) Select the PP Tool/Programmer tab.
-b) Ensure the programmer you want is at the top of the list.
-    If it is not you can drag it to the top.
+3. Still not programming with the programmer you want?
 
+a) Check for Constraints  
+- Open Preferences Editor ? Programmer tab.  
+- Confirm your preferred programmer is at the top.  
+- Make sure you have not set any conditions in the USE IF field.  
+- Remove any constraints if present.
 
-4) Still not programming with the programmer you want?
+4. Still confused?
 
-a)  Select the PP Tool/Programmer tab.
-b)  Ensure the programmer you want is at the top of the list.
-c)  Check that you have NOT specified any usage contraints in the 'USE IF' field.
-d)  Remove any constraints.
+a) Reset to Defaults  
+- Download the latest USE.INI from the GCBASIC forum.  
+- Replace the existing file in ..\gcbasic\gcbasic
+- This restores the default configuration.
 
-5) Still confused?
+5. What do the %% variables do in the Preferences Editor / Variables tab?
 
-a) Download the USE.INI from the Great Cow BASIC forum:
-b) Replace the existing file in ..\gcg@syn\greatcowbasic folder.
-    This will reset to the latest defaults.
+- Variables you create can be used in the Programmer tab fields.  
+- Anything between percent signs is processed by the compiler.
 
-5) What do the %% and the variables do in the PP Tool/Variables Tab?
+Common variables:  
+%chipmodel% = Name of the chip from the #chip line  
+%filename%  = Hex file to be programmed  
+%port%      = Port selected in the GUI
 
-a) When you create a variable you can use in the field in the PP Tool/Programmer tab.
+Example:  
+Compiling C:\Temp\test.gcb for an Uno (ATmega328p) on COM21 produces:
 
-Anything between the % signs is dealt with by the compiler.  %chipmodel% is replaced with the name of the current chip from the #chip line, %filename% is replaced by the hex file name that needs to be programmed into the chip, and %port% is replaced by whatever the port setting is in the GUI.
+-c Arduino -b 115200 -P COM21 -p ATmega328p -U flash:w:"C:\Temp\test.hex":i
 
-An example:
+These arguments are passed to avrdude.exe, which programs the microcontroller.
 
-Compiling a program called C:\Temp\test.gcb for an Uno (mega328p) on COM21 would result in these arguments:
+- -c is the programmer type  
+- -b is the baud rate  
+- -p is the chip  
+- -U is the operation
 
--c Arduino -b 115200 -P COM21 -p ATmega328p -U flash:w:"C:\Temp\test.hex":i 
+For details, see the AVRDUDE manual:  
+https://www.nongnu.org/avrdude/user-manual/avrdude_4.html#Option-Descriptions
 
-These arguments would then be passed to the avrdude.exe, which is responsible for putting the hex file into the microcontroller. A full list of the arguments it accepts is at https://www.nongnu.org/avrdude/user-manual/avrdude_4.html#Option-Descriptions - but in short, -c is the programmer type, -b is the baud rate, -p is the chip, and -U is the operation to perform.
+Different programmers (for example PICkit) require different setups.  
+If using a predefined programmer, you usually do not need to modify anything.  
+If adding a new programmer, consult its documentation.
 
-Do not worry too much about the specific parameters in this particular example, for AVRDUDE we need one setup, for the PICkit we need a completely different setup. If you're using a programmer that we've already defined then you shouldn't need to edit anything in here, but if you're adding a new programmer you'd need to spend some time reading the manual for that and working out what command it needs.
+7. Last resort
 
-6) Last resort.
-As Arthur Dent said ‘DON’T PANIC’
+As Arthur Dent wisely said: DONT PANIC
 
-
+Ask questions at the GCBASIC forum

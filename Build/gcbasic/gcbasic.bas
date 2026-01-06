@@ -444,6 +444,7 @@
   declare Sub CreateReservedWordsList
   declare Sub DisplayProgram
   declare Sub DisplayCallTree
+  declare Sub Donate
   declare Sub ExtAssembler
   declare Sub PICASAssembler
   declare Sub ExtractParameters(ByRef NewSubCall As SubCallType, CalledSubName As String, CallParams As String, Origin As String)
@@ -666,13 +667,16 @@
   declare Sub StringSplit(Text As String, Delim As String = " ", Count As Long = -1, Ret() As String)
 
 'Subs in XC8Supoort
-  declare Sub DebugPrint(msg As String)
-  declare Sub SplitFolder(ByVal source As String, ByVal delimiter As String, result() As String)
-  declare Function ExtractVersionPath(path As String) As String
-  declare Function IsVersionFolder(fullPath As String) As Integer
-  declare Function ParseVersion(path As String) As Long
-  declare Function ScanDFP(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
-  declare Function GetLatestDFPFile(chipNameRaw As String) As String
+ Declare Sub DebugPrint(msg As String)
+Declare Sub SplitFolder(ByVal source As String, ByVal delimiter As String, result() As String)
+Declare Function ExtractVersionPath(path As String) As String
+Declare Function IsVersionFolder(fullPath As String) As Integer
+Declare Function ParseVersion(path As String) As Long
+Declare Function ScanDFP(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
+Declare Function GetLatestDFPFile(chipNameRaw As String) As String
+Declare Function ScanPIC(basePath As String, chipName As String, ByRef bestScore As Long, ByRef bestPath As String) As Integer
+Declare Function GetLatestPICFile(chipNameRaw As String) As String
+Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As String
 
 'Initialise Misc Vars
   DIM SHARED As Integer FRLC, FALC, SBC, WSC, FLC, DLC, SSC, SASC, POC, MainSBC, CompiledSBC, InsertLineNo
@@ -784,6 +788,8 @@
   Dim Shared As Integer AFISupport = 0
   Dim Shared As Integer StoredGCASM = 0
   Dim Shared As Integer MakeHexMode = 1
+  Dim Shared As Integer UseBuildOutputDir = 0
+  Dim Shared As Integer AssembleOnlyMode = 0
   Dim Shared As Integer Columnwidth = 77
   Dim Shared As UByte   ReservedwordC = 0
   Dim Shared As Integer ChipMhzCalculated = 0
@@ -817,6 +823,16 @@
 
   #Define TYPECHECKSIZE 40
 
+'Console color constants
+  #Define COLOR_DEFAULT 7   'Default console color
+  #Define COLOR_ERROR 12    'Red
+  #Define COLOR_WARNING 14  'Yellow
+  #Define COLOR_SUCCESS 10  'Green
+  #Define COLOR_INFO 9      'Blue
+  #Define COLOR_PROG 11     'Cyan
+  #Define COLOR_BANNER 13   'Magenta
+
+'Chip Family Constants
   const   ChipFamily18FxxQ10 as integer = 16100
   const   ChipFamily18FxxQ43 as integer = 16101
   const   ChipFamily18FxxQ41 as integer = 16102
@@ -868,8 +884,8 @@
   Randomize Timer
 
 'SET GCBASIC VERSION
-  Version = "2025.11.16"
-  buildVersion = "1530"
+  Version = "2025.12.30"
+  buildVersion = "1546"
 'Construct compiler message for each Operating System
   #ifdef __FB_DARWIN__  'OS X/macOS
     #ifndef __FB_64BIT__
@@ -993,6 +1009,8 @@
   CreateReservedWordsList()
   If  ErrorsFound Then Goto Fin
 
+  Donate
+
 'Call PreProcessor - Load files and tidy them up, a lot...
   PreProcessor
 
@@ -1012,39 +1030,45 @@
       GoTo DownloadProgram
     End If
 
-    'Compile
-    CompileProgram
+    If Not AssembleOnlyMode Then
+      'Compile
+      CompileProgram
 
-    'Allocate RAM
-    IF VBS = 1 THEN
-      PRINT : PRINT SPC(5); Message("AllocateRAM")
-      LogToFile ""
-      LogToFile ( Space(5)+ Message("AllocateRAM") )
-    End if
-    AllocateRAM
+      'Allocate RAM
+      IF VBS = 1 THEN
+        PRINT : PRINT SPC(5); Message("AllocateRAM")
+        LogToFile ""
+        LogToFile ( Space(5)+ Message("AllocateRAM") )
+      End if
+      AllocateRAM
 
-    IF VBS = 1 THEN
-      PRINT : PRINT SPC(5); Message("TidyCode")
-      LogToFile ( Space(5)+ Message("TidyCode") )
+      IF VBS = 1 THEN
+        PRINT : PRINT SPC(5); Message("TidyCode")
+        LogToFile ( Space(5)+ Message("TidyCode") )
+      End If
+      TidyProgram
+
+      'Combine subs
+      IF VBS = 1 THEN
+        PRINT : PRINT SPC(5); Message("LocatingSubs")
+        LogToFile ( Space(5)+ Message("LocatingSubs"))
+      End If
+      MergeSubroutines
+
+      'Final optimisation
+      FinalOptimise
+
+      If VBS = 1 THEN
+        PRINT : PRINT SPC(5); Message("WritingASM")
+        LogToFile ( Space(5)+ Message("WritingASM"))
+      End If
+
+      WriteAssembly
+    Else
+      Print Message("SkippingCompileAssembleOnly")
+      LogToFile Message("SkippingCompileAssembleOnly")
     End If
-    TidyProgram
 
-    'Combine subs
-    IF VBS = 1 THEN
-      PRINT : PRINT SPC(5); Message("LocatingSubs")
-      LogToFile ( Space(5)+ Message("LocatingSubs"))
-    End If
-    MergeSubroutines
-
-    'Final optimisation
-    FinalOptimise
-
-    If VBS = 1 THEN
-      PRINT : PRINT SPC(5); Message("WritingASM")
-      LogToFile ( Space(5)+ Message("WritingASM"))
-    End If
-
-    WriteAssembly
     CompEndTime = Timer
 
     'error check.. has program exceeded avialable progmem
@@ -1082,20 +1106,25 @@
     'If no errors, show success message and assemble
     IF Not ErrorsFound THEN
       'Success message
+      Color COLOR_SUCCESS
       PRINT Message("CompiledSuccess");
+      Color COLOR_DEFAULT
       '  IF VBS = 0 THEN
       '    PRINT
       '  Else
         Dim Temp As String
         Temp = Trim(Str(CompEndTime - StartTime))
         IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+        Color COLOR_INFO
         PRINT Message("CompTime") + Temp + Message("CompSecs")
+        Color COLOR_DEFAULT
         LogToFile(Message("CompiledSuccess")  + Message("CompTime") + Temp + Message("CompSecs"))
         If NoSummary = 0 Then
           Print
           LogToFile("")
           Print Message("Summary")
           LogToFile(Message("Summary"))
+            Color COLOR_INFO
           Print Space(5) + Message("DataRead")
           LogToFile(Space(5) + Message("DataRead"))
           Print Space(10) + Message("InLines") + Str(MainProgramSize)
@@ -1155,6 +1184,7 @@
               Print " : Frequency calculated by compiler"
               LogToFile(Space(10) + " : Frequency calculated by compiler")
           End If
+            Color COLOR_DEFAULT
         End If
     '  END IF
 
@@ -1196,7 +1226,11 @@
             Dim Temp As String
             Temp = Trim(Str(AsmEndTime - CompEndTime))
             IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
-            PRINT Message("ASMSuccess") + Message("AsmTime") + Temp + Message("CompSecs")
+              Color COLOR_SUCCESS
+              PRINT Message("ASMSuccess");
+              Color COLOR_INFO
+              PRINT Message("AsmTime") + Temp + Message("CompSecs")
+              Color COLOR_DEFAULT
             'ReInitialize log file
             if Open(LogFilePath For Append As #LogFileHandle) then
             End If
@@ -1248,14 +1282,18 @@
           SaveCurrDir = CurDir
           If PrgDir <> "" Then ChDir ReplaceToolVariables(PrgDir, "hex")
 
+          Color COLOR_PROG
           ExitValue = Exec(PrgExe, PrgParams)
+          Color COLOR_DEFAULT
 
           'Check for programmer success, should have 0 exit value
           If ExitValue <> 0 And (LCase(PrgExe) <> "none" And LCase(Right(PrgExe, 5)) <> "\none") Then
             Dim Temp As String
             Temp = Message("WarningProgrammerFail")
             Replace Temp, "%status%", Trim(Str(ExitValue))
+            Color COLOR_ERROR
             LogWarning Temp
+            Color COLOR_DEFAULT
           Else
             ExitValue = 0
             ProgEndTime = Timer
@@ -1264,8 +1302,16 @@
               Dim Temp As String
               Temp = Trim(Str(ProgEndTime - AsmEndTime))
               IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
+              Color COLOR_SUCCESS
+              PRINT "Programming successful";
+              Color COLOR_INFO
               PRINT Message("ProgTime") + Temp + Message("CompSecs")
+              Color COLOR_DEFAULT
               LogtoFile Message("ProgTime") + Temp + Message("CompSecs")
+            Else
+              Color COLOR_SUCCESS
+              PRINT "Programming successful"
+              Color COLOR_DEFAULT
             End If
           End If
           ChDir SaveCurrDir
@@ -1276,61 +1322,12 @@
     'Issue message
   End If
 
-'If mute donation then show messages
-
+  'send to log if not mute donate 
   If MuteDonate = 0 then
-
-    Randomize timer
-
-    IF Not ErrorsFound THEN
-      BEEP
-      randomNumber = int(Rnd * (10 - 1) + 1)
-
-      Select Case randomNumber
-        Case 1,2,3:
-      Print
-      Print "Enjoying GCBASIC ?"
-      Print
-      Print "Donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/"
-      Print "or, visit https://ko-fi.com/gcstudio to donate"
-
-        Case 4,5,6:
-      Print
-      Print "Using GCBASIC ?"
-      Print
-      Print "Please donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ "
-      Print "or, visit https://ko-fi.com/gcstudio to donate"
-
-        Case Else
-      Print
-      Print "Developing solutions using GCBASIC ?"
-      Print
-      Print "Donate to help support the operational costs. Donate here https://gcbasic.com/donate/ "
-      Print "or, visit https://ko-fi.com/gcstudio to donate"
-
-      End Select
-      SLEEP 2000
-      BEEP
-    End if
-
-  Else
-
-    If ErrorsFound = 0 Then
-      Randomize timer
-      randomNumber = int(Rnd * (10 - 1) + 1)
-      If randomNumber = 9  Then
-        Print
-        Print "Visit https://ko-fi.com/gcstudio/posts to see the latest news on GCSTUDIO and GCBASIC"
-        Print
-      End If
-    End If
+    LogToFile ""
+    LogToFile "Support GCBASIC using https://gcbasic.com/donate/"
+    LogToFile "or, use https://ko-fi.com/gcstudio/"
   End If
-
-  'Always send to log
-
-      LogToFile ""
-      LogToFile "Support GCBASIC using https://gcbasic.com/donate/"
-      LogToFile "or, use https://ko-fi.com/gcstudio/"
 
 'Write compilation report
 
@@ -1350,7 +1347,9 @@
     IF LEN(Temp) > 4 Then Temp = Left(Temp, 5)
     Print ""
     LogToFile("")
+    Color COLOR_INFO
     Print Message("TotalTime") + Temp + Message("CompSecs")
+    Color COLOR_DEFAULT
     LogToFile(Message("TotalTime") + Temp + Message("CompSecs"))
   End If
 
@@ -1447,7 +1446,11 @@ Sub AddBankCommands(CompSub As SubType Pointer)
   Select Case ChipFamily
     Case 12: BankMask = 32
     Case 14: BankMask = 384
-    Case 15: BankMask = 3968 : If ChipRAM >  4095 then BankMask = 8064
+    Case 15: 
+      BankMask = 3968
+      If ChipRAM >  4095 Or ( Int(ChipSubFamily/1000) = 15 ) then 
+        BankMask = 8064
+      End If
     Case 16: BankMask = 65280
   End Select
 
@@ -3234,7 +3237,24 @@ Sub CalcConfig
         ElseIf ConfigNameMatch(.Name, "WDT") Then
           DesiredSetting = "OFF"
         ElseIf ConfigNameMatch(.Name, "PLLEN") Then
-          DesiredSetting = "OFF"
+          'Default to ON for 16F72x family chips with 500kHz INTOSC + 32x PLL
+          'Only enable PLL for frequencies >= 1 MHz (for 0.5, 0.25, 0.125, 0.0625 use PLLEN=OFF)
+          Dim ChipNameUpper As String
+          ChipNameUpper = UCase(ChipName)
+          If (ChipNameUpper = "16F707" Or ChipNameUpper = "16LF707" Or _
+              ChipNameUpper = "16F720" Or ChipNameUpper = "16LF720" Or _
+              ChipNameUpper = "16F721" Or ChipNameUpper = "16LF721" Or _
+              ChipNameUpper = "16F722" Or ChipNameUpper = "16LF722" Or _
+              ChipNameUpper = "16F722A" Or ChipNameUpper = "16LF722A" Or _
+              ChipNameUpper = "16F723" Or ChipNameUpper = "16LF723" Or _
+              ChipNameUpper = "16F723A" Or ChipNameUpper = "16LF723A" Or _
+              ChipNameUpper = "16F724" Or ChipNameUpper = "16LF724" Or _
+              ChipNameUpper = "16F726" Or ChipNameUpper = "16LF726" Or _
+              ChipNameUpper = "16F727" Or ChipNameUpper = "16LF727") And CSng(ChipMhz) >= 1 Then
+            DesiredSetting = "ON"
+          Else
+            DesiredSetting = "OFF"
+          End If
         ElseIf ConfigNameMatch(.Name, "CPUDIV") Then
           DesiredSetting = "NOCLKDIV"
         ElseIf ConfigNameMatch(.Name, "MVECEN") Then
@@ -12454,6 +12474,78 @@ Sub DisplayCallTree
 
   End Sub
 
+Sub Donate
+
+  If MuteDonate = 0 then
+
+    Randomize timer
+
+    IF Not ErrorsFound THEN
+      BEEP
+      sleep 100
+      BEEP
+      sleep 100
+      BEEP
+      
+      randomNumber = int(Rnd * (10 - 1) + 1)
+
+      Select Case randomNumber
+        Case 1,2,3:
+      Color COLOR_BANNER
+      Print
+      Print "As you are using GCBASIC"
+      Print
+      Print "Please donate to support the 2026 operational costs. Donate using https://gcbasic.com/donate/"
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
+      Color COLOR_DEFAULT
+
+        Case 4,5,6:
+      Color COLOR_BANNER
+      Print
+      Print "Providing GCBASIC costs real money and we need your support"
+      Print
+      Print "Please donate to help support the 2026 operational costs. Donate using https://gcbasic.com/donate/ "
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
+      Color COLOR_DEFAULT
+
+        Case Else
+      Color COLOR_BANNER
+      Print
+      Print "Developing solutions using GCBASIC. Donate to the 2026 operational costs"
+      Print
+      Print "Donate to help support the operational costs. Donate here https://gcbasic.com/donate/ "
+      Print "or, visit https://ko-fi.com/gcstudio to donate"
+      Color COLOR_DEFAULT
+
+      End Select
+      SLEEP 5000
+      BEEP
+      sleep 100
+      BEEP
+      sleep 100
+      BEEP
+      SLEEP 5000
+    End if
+
+  Else
+
+    If muteBanners = -1 Then
+      If ErrorsFound = 0 Then
+        Randomize timer
+        randomNumber = int(Rnd * (10 - 1) + 1)
+        If randomNumber = 9  Then
+          Color COLOR_BANNER
+          Print
+          Print "Visit https://ko-fi.com/gcstudio/posts to see the latest news on GCSTUDIO and GCBASIC"
+          Print
+          Color COLOR_DEFAULT
+        End If
+      End If
+    End If
+  End If
+
+End Sub
+
 Sub ExtAssembler
   Dim As String DataSource, ErrFile, Temp
   Dim As Integer PD, Result, compiledOK
@@ -15130,6 +15222,7 @@ Sub InitCompiler
   'Misc temp vars
   Dim As String Temp, DataSource, MessagesFile, LangMessagesFile, LangName, MsgName, MsgVal
   Dim As String SettingsFile(20), CurrentTag, ParamUpper, LeftThree, NewFileName
+  Dim As String OutBase, OutDir, PathSep
   Dim As Integer T, Block, CD, FCB, IniNotSet, SettingsFileMode, FindTool, FindMsg
   Dim As Integer SettingsFiles, CurrSettingsFile
 
@@ -15211,6 +15304,12 @@ Sub InitCompiler
       WarningsAsErrors = -1
       WarnErrorNotSet = 0
 
+    ElseIf ParamUpper = "/DO" Or ParamUpper = "-DO" Then
+      UseBuildOutputDir = -1
+
+    ElseIf ParamUpper = "/AO" Or ParamUpper = "-AO" Then
+      AssembleOnlyMode = -1
+
     ElseIf ParamUpper = "/M" Or ParamUpper = "-M" Then
       MuteBanners = 0
 
@@ -15231,7 +15330,9 @@ Sub InitCompiler
     ElseIf ParamUpper = "/CLS" Then
       CLS
     ElseIf ParamUpper = "/VERSION" Then
+      Color COLOR_INFO
       Print Version
+      Color COLOR_DEFAULT
       LogToFile(Version)
       End
 
@@ -15858,6 +15959,57 @@ Sub InitCompiler
   END IF
 
   'Find directory of source file (used for relative include)
+  'If /DO is enabled and source file not found but path contains .build, look in parent
+  'Added Temp prefix to variables to be extra safe with variable names
+  If UseBuildOutputDir And Dir(FI) = "" And InStr(UCase(FI), ".BUILD") <> 0 Then
+    Dim As String TempFI, TempFileName, TempDirPart
+    Dim As Integer TempSepPos, TempParentSep
+    
+    #IFDEF __FB_UNIX__
+      PathSep = "/"
+    #ELSE
+      PathSep = "\"
+    #ENDIF
+    
+    'Split path and filename
+    TempSepPos = 0
+    For T = Len(FI) To 1 Step -1
+      If Mid(FI, T, 1) = "\" Or Mid(FI, T, 1) = "/" Then
+        TempSepPos = T
+        Exit For
+      End If
+    Next
+    
+    If TempSepPos > 0 Then
+      TempDirPart = Left(FI, TempSepPos - 1)
+      TempFileName = Mid(FI, TempSepPos + 1)
+      
+      'If dir ends with .build, strip that whole directory component
+      If UCase(Right(TempDirPart, 6)) = ".BUILD" Then
+        TempParentSep = 0
+        For T = Len(TempDirPart) To 1 Step -1
+          If Mid(TempDirPart, T, 1) = "\" Or Mid(TempDirPart, T, 1) = "/" Then
+            TempParentSep = T
+            Exit For
+          End If
+        Next
+        
+        If TempParentSep > 0 Then
+          TempDirPart = Left(TempDirPart, TempParentSep - 1)
+        Else
+          TempDirPart = ""
+        End If
+      End If
+      
+      'Reconstruct parent path
+      If TempDirPart = "" Then
+        FI = TempFileName
+      Else
+        FI = TempDirPart + PathSep + TempFileName
+      End If
+    End If
+  End If
+
   ProgDir = CURDIR
   IF INSTR(FI, "\") <> 0 THEN
     FOR T = LEN(FI) TO 1 STEP -1
@@ -15868,6 +16020,71 @@ Sub InitCompiler
   IF Right(ProgDir, 1) = "\" THEN ProgDir = Left(ProgDir, LEN(ProgDir) - 1)
   IF Right(ProgDir, 1) = "/" THEN ProgDir = Left(ProgDir, LEN(ProgDir) - 1)
 
+  'If requested, place outputs into <SourceName>.build
+  If UseBuildOutputDir Then
+    #IFDEF __FB_UNIX__
+      PathSep = "/"
+    #ELSE
+      PathSep = "\"
+    #ENDIF
+
+    'Extract just the filename (without path) from the source file
+    OutBase = FI
+    For T = LEN(OutBase) TO 1 STEP -1
+      IF Mid(OutBase, T, 1) = "\" Or Mid(OutBase, T, 1) = "/" Then
+        OutBase = Mid(OutBase, T + 1)
+        Exit For
+      End If
+    Next
+    'Remove extension from base name
+    For T = LEN(OutBase) TO 1 STEP -1
+      IF Mid(OutBase, T, 1) = "." THEN OutBase = Left(OutBase, T - 1): EXIT FOR
+    Next
+
+    'Build output directory path (avoid nesting .build/.build)
+    OutDir = ProgDir
+    'If ProgDir already ends with .build, back up one level
+    If UCase(Right(OutDir, 6)) = ".BUILD" Then
+      For T = LEN(OutDir) TO 1 STEP -1
+        If Mid(OutDir, T, 1) = "\" Or Mid(OutDir, T, 1) = "/" Then
+          OutDir = Left(OutDir, T - 1)
+          Exit For
+        End If
+      Next
+    End If
+
+    If OutDir <> "" Then OutDir += PathSep
+    OutDir += OutBase + ".build"
+
+    'Create directory if it doesn't exist
+    If Dir(OutDir, 16) = "" Then 
+      On Error GoTo BuildDirError
+      MkDir OutDir
+      On Error GoTo 0
+    End If
+
+    'Redirect output paths to build directory
+    OFI = OutDir + PathSep + OutBase + ".asm"
+    AFI = OutDir + PathSep + OutBase + ".s"
+    CDF = OutDir + PathSep + OutBase + ".cdf"
+    
+    If VBS = 1 Then
+      Print "Build directory: " + OutDir
+      LogToFile("Build directory: " + OutDir)
+    End If
+  End If
+
+  'Assume using build directory is sucessful
+  Goto ContinueSubProcess
+
+  BuildDirError:
+  On Error GoTo 0
+  LogError "Failed to create build directory: " + OutDir
+  ErrorsFound = -1
+  Exit Sub
+
+
+ContinueSubProcess:
   'Load file converters
   LoadConverters
 
@@ -15876,7 +16093,9 @@ Sub InitCompiler
   End If
 
   'Show version
+  Color COLOR_INFO
   Print "GCBASIC (" + Version + ")"
+  Color COLOR_DEFAULT
   LogToFile("GCBASIC (" + Version + ")")
   Print
   LogToFile("")
@@ -15889,6 +16108,7 @@ Sub InitCompiler
     END IF
     END
   END IF
+
 
   'Start Compile
   IF VBS = 0 Then
@@ -17646,7 +17866,7 @@ Function PutInRegister(ByRef OutList As LinkedListElement Pointer, SourceValue A
 Sub ReadPICASChipData
   'Get filename
   #IFDEF __FB_UNIX__
-    'not supported
+    'not supported, someone needs to add
   #ELSE
 
     'read the INC in and put into ARRAY   ReverseIncFileLookup(
@@ -17690,7 +17910,6 @@ Sub ReadPICASChipData
     replace ( tmpfilename, ".GCB", ".tmp")
     kill tmpfilename
     F = FreeFile
-
 
     'Execute the PIC-AS compiler to provide a list of the chips
     Result = Shell( chr(34)+chr(34)+SearchExe+chr(34)+" -mprint-devices > " + chr(34) + tmpfilename + chr(34) + chr(34) )
@@ -17752,8 +17971,8 @@ v3_10:
       fresult = OPEN ( ChipPICASDataFile For Input As ffile )
       If fresult <> 0 then
           Dim temp as String
-          temp = Message("PICASNotFound")
-          Replace temp, "%picasfilename%", ChipPICASDataFile
+          temp = Message("PICASChipDataFileNotFound")
+          Replace temp, "%ChipPICASDataFile%", ChipPICASDataFile
           LogError temp
           WriteErrorLog
           ErrorsFound = - 1
@@ -19163,6 +19382,50 @@ Sub ValueChanged(VarName As String, VarValue As String)
   CalcVars(CV).CurrentValue = VarValue
   End Sub
 
+'****************************************************************************
+'*    Helper functions for variable type checking, only used on PIC-AS      *
+'*    (aka AFISupport) for Integer detection (Needed for debugger support)  *
+'****************************************************************************
+' Helper: get base variable name without byte suffixes
+Function GetBaseVarName(ByVal InName As String) As String
+  Dim As String n
+  n = Trim(InName)
+  If Len(n) >= 2 Then
+    Dim As String suf
+    suf = UCase(Right(n, 2))
+    If suf = "_H" Or suf = "_U" Or suf = "_E" Then
+      n = Left(n, Len(n) - 2)
+    End If
+  End If
+  Return n
+End Function
+' Helper: get type suffix for PIC-AS debugger support (returns " Int", " Sin", or "")
+Function GetVarTypeSuffix(ByVal VarName As String) As String
+  Dim As String baseName, varType
+  Dim As VariableType Pointer v
+  Dim As Integer i
+  'Never tag internal/system temps or SFR aliases
+  If Left(UCase(VarName), 3) = "SYS" Then Return ""
+  baseName = UCase(GetBaseVarName(VarName))
+  'Check main/global variables first
+  v = HashMapGet(@(Subroutine(0)->Variables), baseName)
+  If v <> 0 Then
+    varType = Trim(UCase(v->Type))
+    If varType = "INTEGER" Then Return " Int"
+    If varType = "SINGLE" Then Return " Sin"
+  End If
+  'Check all other subroutines
+  For i = 1 To SBC
+    v = HashMapGet(@(Subroutine(i)->Variables), baseName)
+    If v <> 0 Then
+      varType = Trim(UCase(v->Type))
+      If varType = "INTEGER" Then Return " Int"
+      If varType = "SINGLE" Then Return " Sin"
+    End If
+  Next
+  Return ""
+End Function
+
 Sub WriteAssembly
   Dim As String Temp, VarDecLine, PICASVarDecLine, AddedBits, BitName
   Dim As Integer PD, AddSFR, FindSREG, legacyConfigPublished
@@ -19275,16 +19538,23 @@ Sub WriteAssembly
       if AFISupport = 1 then
           'as
           PRINT #2, ""
-          PRINT #2, ";Set up the assembler options (Chip type, clock source, other bits and pieces)"
-          PRINT #2, ";PROCESSOR   " + ChipName
+          PRINT #2, ";Set up the assembler options (Chip specs and other options)"
+          PRINT #2, ";PROCESSOR  " + ChipName
+          PRINT #2, ";PROG       " + STR(ChipProg)
+          PRINT #2, ";RAM        " + STR(ChipRam)
+          PRINT #2, ";EEPROM     " + STR(ChipEEPROM)
+          PRINT #2, ";HWBPCOUNT  " + GetChipSpecifics( "PIC"+ChipName, "Breakpoints,hwbpcount")
           PRINT #2, " PAGEWIDTH   180"
           PRINT #2, " RADIX       DEC"
           PRINT #2, " TITLE       "+ CHR(34)+SourceFile(1).FileName+CHR(34)
           PRINT #2, " SUBTITLE    "+ CHR(34)+date+CHR(32)+time+CHR(34)
           PRINT #2, ""
-          PRINT #2, "; Reverse lookup file(s)"
+          PRINT #2, "; DPF Reverse lookup file(s)"
           PRINT #2, "; "+ChipPICASDataFile
           PRINT #2, "; "+ChipPICASConfigFileV3
+          PRINT #2, "; DPF PIC file"
+            replaceall(cachedPICPath, "\\","\")
+          PRINT #2, ";   "+cachedPICPath
           PRINT #2, ""
           PRINT #2, Star80
           If ChipFamily = 16 Then
@@ -19545,14 +19815,20 @@ Sub WriteAssembly
     CurrLine = VarList->Next
     Do While CurrLine <> 0
       With *CPtr(VariableListElement Pointer, CurrLine->MetaData)
+      ' detect Integer/Single types for PIC-AS (Debugger support) only written on .S file
+        Dim As String typeSuffix
+        typeSuffix = ""
+        If AFISupport = 1 And ModePIC Then
+          typeSuffix = GetVarTypeSuffix(.Name)
+        End If
         If ModePIC and AFISupport = 1 then
           'PICAS
           If IsInAccessBank(.Name) Then
-            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value)) + " (SA)"
+            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value)) + " (SA)" + typeSuffix
             'ASM
             VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value)) + " (SA)"
           Else
-            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value))
+            PICASVarDecLine = " "+left(.Name+Pad32, 32) + " EQU " + trim(.Value) +"          ; 0x"+ Hex(val(.Value)) + typeSuffix
             'ASM
             VarDecLine = left(.Name+Pad32, 32) + " EQU " + right( Pad32+trim(.Value),7) +"          ; 0x"+ Hex(val(.Value))
           End IF
@@ -20435,6 +20711,7 @@ Sub WriteCompilationReport
 
 Sub WriteErrorLog
   Dim As String Temp, MessageType, NewErr, ErrorFileName
+  Dim As String MessageSeverity(MAX_OUTPUT_MESSAGES)
   Dim As Integer CD, CS, PD, F1, L1, F2, L2, F, L, S, I, T
   Dim As Integer ERC, WRC, SortEnd
 
@@ -20446,6 +20723,11 @@ Sub WriteErrorLog
     Kill ErrorFileName
     EXIT Sub
   End If
+
+  'Store severity types BEFORE sorting
+  FOR PD = 1 to OutMessages
+    MessageSeverity(PD) = Right(OutMessage(PD), 1)
+  NEXT
 
   'Establish name of hex file to delete
   HFI = OFI
@@ -20480,6 +20762,7 @@ Sub WriteErrorLog
       'Compare, swap if necessary
       IF (F1 > F2) Or (F1 = F2 AND L1 > L2) THEN
         Swap OutMessage(PD), OutMessage(PD + 1)
+        Swap MessageSeverity(PD), MessageSeverity(PD + 1)
         CS = 1
       END IF
     NEXT
@@ -20563,9 +20846,17 @@ Sub WriteErrorLog
   'If not being called by GCGB/other IDE, display errors
   IF GCGB = 0 THEN
     PRINT
+    Color COLOR_DEFAULT
+    If ERC > 0 Then Color COLOR_ERROR
     PRINT Temp
+    Color COLOR_DEFAULT
     PRINT
     FOR PD = 1 TO OutMessages
+      If MessageSeverity(PD) = "E" Then
+        Color COLOR_ERROR
+      Else
+        Color COLOR_WARNING
+      End If
       Temp = OutMessage(PD)
       'Display errors in 77 columns neatly
       '77 chosen because it allows for the whole thing to fit in a Windows command
@@ -20581,6 +20872,7 @@ Sub WriteErrorLog
           END IF
         NEXT
       END IF
+      Color COLOR_DEFAULT
     NEXT
   END If
 
