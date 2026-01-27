@@ -602,7 +602,6 @@
             <pinAlias alias="CLCIN1" module="CLC1/CLC2" direction="input"/>
             <pinAlias alias="CLCIN2" module="CLC1/CLC2" direction="input"/>
             <pinAlias alias="CLCIN3" module="CLC1/CLC2" direction="input"/>
-        <PPSOUTPUTS>
         </additional_properties>
         <register alias="ANSELA" name="ANSELA" width="8">
             <setting alias="ANSA0" default="analog" name="ANSA0" mask="0x1">

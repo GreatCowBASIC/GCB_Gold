@@ -1,5 +1,5 @@
 '    USART routines for GCBASIC
-'    Copyright (C) 2009-2025 Hugh Considine, Mike Otte, William Roth and Evan Venn
+'    Copyright (C) 2009-2026   Hugh Considine, Mike Otte, William Roth and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -111,6 +111,7 @@
 ' 24/12/2024  Resolve BAUDCONn_BRG16 to BAUDCONn_BRG16 issue where baud rate was not being calculated. 
 '             Added check to ensure baud rate is calculated.
 ' 24/11/2025  Add ChipSubFamily = 15006 TX1REG redirection in script section
+' 13/01/2026  Fix: Add SAMEVAR to support USART2,3,4,& 5 for SPnBRG and SPnBRGH
 
 /*
 
@@ -187,25 +188,37 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
 #samebit SYNC1, SYNC, SYNC_TX1STA
 #samebit RC1IE, RCIE
 
+
 #sameVar TXREG2, TX2REG, U2TXB
 #samevar TXSTA2, TX2STA
 #samebit TX2IF, U2TXIF
 ' incorrect mapping as TRMT is also USART1 removed 10.4.21 #samebit TXSTA2.TRMT, TX2STA.TRMT, U2ERRIR.TXMTIF
 #samebit TXSTA2_TRMT, TX2STA_TRMT, U2ERRIR_TXMTIF '// PIC16F1946/47
 #samebit BAUDCON2_BRG16, BAUD2CON_BRG16
+#samevar SPBRG2, SP2BRG
+#samevar SPBRGH2, SP2BRGH
 
 #sameVar TXREG3, TX3REG, U3TXB
 #samevar TXSTA3, TX3STA
+#samevar SPBRG3, SP3BRG
+#samevar SPBRGH3, SP3BRGH
+
 #samebit TX3IF, U3TXIF
 #samebit TXSTA3_TRMT, TX3STA_TRMT, U3ERRIR_TXMTIF
 
 #sameVar TXREG4, TX4REG, U4TXB
 #samevar TXSTA4, TX4STA
+#samevar SPBRG4, SP4BRG
+#samevar SPBRGH4, SP4BRGH
+
 #samebit TX4IF, U4TXIF
 #samebit TXSTA4_TRMT, TX4STA_TRMT, U4ERRIR_TXMTIF
 
 #sameVar TXREG5, TX5REG, U5TXB
 #samevar TXSTA5, TX5STA
+#samevar SPBRG5, SP5BRG
+#samevar SPBRGH5, SP5BRGH
+
 #samebit TX5IF, U5TXIF
 #samebit TXSTA5_TRMT, TX5STA_TRMT, U5ERRIR_TXMTIF
 #samevar RCREG5, RC5REG
@@ -279,7 +292,6 @@ To show USART1 (only USART1) calculations in terms of actual BPS and % error.  U
   IF USART5_BAUD_RATE THEN
     SCRIPT_USART_USAGE_CHECK = SCRIPT_USART_USAGE_CHECK + 1
   END IF
-
 
   If PIC Then
 
@@ -2501,9 +2513,11 @@ sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
     #ENDIF
 
     #ifndef CHIPAVRDX
-      //~ AVR USART1 Send
       #If USART_BAUD_RATE Then
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
+        //~ AVR USART1 Send
         if comport = 1 Then
+        #endif
 
           #ifdef USART_BLOCKING
             #ifdef Bit(UDRE0)
@@ -2539,12 +2553,16 @@ sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
           #ifdef Var(UDR0)
             UDR0 = SerData ' *******************
           #endif
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
         End If
+        #endif
       #endif
 
       #If USART2_BAUD_RATE Then
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
         'AVR USART 2 send
         if comport = 2 Then
+        #endif
           #ifdef USART2_BLOCKING
             #ifdef Bit(UDRE1)       'comport 2 TX and Rxblocker
                 Wait While UDRE1 = Off    'Transmit buffer empty ,ready for data
@@ -2561,12 +2579,20 @@ sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
             UDR1 = SerData ' *****************
           #endif
 
+          #IF USART2_DELAY <> OFF
+              //~ All bits shifted out on TX Pin
+              Wait USART2_DELAY
+          #ENDIF
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
         End If
+        #endif
       #endif
 
       #If USART3_BAUD_RATE Then
-       'AVR USART 3 send
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
+        'AVR USART 3 send
         if comport = 3 Then
+        #endif
           #ifdef USART3_BLOCKING
             #ifdef Bit(UDRE2)       'comport 3 TX and Rx blocker
               Wait While UDRE2 = Off    'Transmit buffer empty ,ready for data
@@ -2582,12 +2608,16 @@ sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
           #ifdef Var(UDR2)
               UDR2 = SerData
           #endif
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
         End If
+        #endif
       #endif
 
       #If USART4_BAUD_RATE Then
-        'AVR USART 3 send
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
+        'AVR USART 4 send
         if comport = 4 Then
+        #endif
           #ifdef USART4_BLOCKING
             #ifdef Bit(UDRE3)       'comport 4 TX and RX  blocker
               Wait While UDRE3 = Off    'Transmit buffer empty ,ready for data
@@ -2603,8 +2633,9 @@ sub HSerSend (In SerData, optional In comport = SCRIPT_DEFAULT_COMPORT )
           #ifdef Var(UDR3)
               UDR3 = SerData
           #endif
-
+        #if (SCRIPT_USART_USAGE_CHECK > 1)
         End If
+        #endif
       #endif
     #endif
   #endif

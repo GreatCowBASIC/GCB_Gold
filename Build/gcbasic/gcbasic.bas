@@ -1,5 +1,5 @@
 /'GCBASIC - A BASIC Compiler for microcontrollers
-  Copyright (C) 2006 - 2025 Hugh Considine, Evan R. Venn and the GCBASIC team
+  Copyright (C) 2006 - 6 Hugh Considine, Evan R. Venn and the GCBASIC team
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -865,6 +865,7 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
   const   INSERTFILEPROCESS = 3
   const   INSERTFILEEOF     = 4
 
+  const   PAGE0_OFFSET      = 6
 
 'Add the other GCBASIC source files
   #include "utils.bi"
@@ -884,8 +885,8 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
   Randomize Timer
 
 'SET GCBASIC VERSION
-  Version = "2025.12.30"
-  buildVersion = "1546"
+  Version = "2026.01.22"
+  buildVersion = "1551"
 'Construct compiler message for each Operating System
   #ifdef __FB_DARWIN__  'OS X/macOS
     #ifndef __FB_64BIT__
@@ -21042,7 +21043,9 @@ Sub MergeSubroutines
           Subroutine(CurrSub)->DestPage = 0
           'Print "Placing "; Subroutine(CurrSub)->Name; " on first page"
           ProgMemPage(1).CodeSize += Subroutine(CurrSub)->MaxHexSize
-          If ProgMemPage(1).CodeSize < ProgMemPage(1).MaxSize Then
+
+          ' the Max size is actually 5 words less on page 1 ( really page 0 )
+          If ProgMemPage(1).CodeSize < ProgMemPage(1).MaxSize - 5 Then
             SubsAdded += 1
             Subroutine(CurrSub)->LocationSet = -1
             Subroutine(CurrSub)->DestPage = 1
@@ -21055,7 +21058,6 @@ Sub MergeSubroutines
           End If
         End If
       Next
-
       'Other subs
       For CurrSub = 1 To SubQueueCount
         CurrSubPtr = Subroutine(SubQueue(CurrSub))
@@ -21084,8 +21086,12 @@ Sub MergeSubroutines
         ' CurrPage = AllocationOrder(CurrListPage).Page
 
           With ProgMemPage(CurrPage)
-            If .MaxSize >= .CodeSize + CurrSubPtr->MaxHexSize Then
-              'Print , "page "; CurrPage; ", size "; CurrSubPtr->HexSize; ", curr filled "; .CodeSize; "/"; .MaxSize
+            Dim localMaxSize as Integer
+            localMaxSize = .MaxSize
+            If CurrPage = 1 then localMaxSize = .MaxSize - PAGE0_OFFSET
+
+            If localMaxSize >= .CodeSize + CurrSubPtr->MaxHexSize Then
+              'Print , "page "; CurrPage; ", size "; CurrSubPtr->HexSize; ", curr filled "; .CodeSize; "/"; localMaxSize
               'Found a location
               CurrSubPtr->LocationSet = -1
               CurrSubPtr->DestPage = CurrPage
@@ -21096,6 +21102,7 @@ Sub MergeSubroutines
               GoTo LocateNextSub
             End If
           End With
+
         Next
 
         LocateNextSub:
@@ -21120,7 +21127,12 @@ Sub MergeSubroutines
             If .Required And .DestPage = CurrPage Then
               If .LocationSet Then
                 ProgMemPage(CurrPage).CodeSize += .HexSize
-                If ProgMemPage(CurrPage).CodeSize > ProgMemPage(CurrPage).MaxSize Then
+
+                Dim localMaxSize as Integer
+                localMaxSize = ProgMemPage(CurrPage).MaxSize
+                If CurrPage = 0 then localMaxSize = ProgMemPage(CurrPage).MaxSize - PAGE0_OFFSET
+
+                If ProgMemPage(CurrPage).CodeSize > localMaxSize Then
                   SubsFit = 0
                   GoTo UnableToFit
                 End If
@@ -21143,6 +21155,12 @@ Sub MergeSubroutines
 
     Loop While FitAttempts < 20
     StopTryingToFit:
+
+      'For CurrPage = 1 To ProgMemPages
+      ' Print Str(CurrPage); ":"; Str(ProgMemPage(CurrPage).PageSize ) ; "/";Str(ProgMemPage(CurrPage).CodeSize); " ";
+      'Next
+      'Print
+
 
     'If not all subs have been added, show an error
     If Not SubsFit Then

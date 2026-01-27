@@ -761,7 +761,6 @@
             <pinAlias alias="T3G" module="TMR3" direction="input"/>
             <pinAlias alias="T5CKI" module="TMR5" direction="input"/>
             <pinAlias alias="T5G" module="TMR5" direction="input"/>
-            <PPSOUTPUTS>
         </additional_properties>
         <register alias="ANSELA" name="ANSELA" width="8">
             <setting alias="ANSA0" default="analog" name="ANSA0" mask="0x1">

@@ -1,5 +1,5 @@
 '     Liquid Crystal Display routines for GCBASIC
-'     Copyright (C) 2006-2025 Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Theo Loermans, Wiliam Roth and Evan Venn
+'     Copyright (C) 2006-2026 Hugh Considine, Stefano Bonomi, Ruud de Vreugd, Theo Loermans, Wiliam Roth and Evan Venn
 '
 '     This library is free software; you can redistribute it and/or
 '     modify it under the terms of the GNU Lesser General Public
@@ -75,6 +75,7 @@
 ' 22/12/24 Add OCULAR_OM1614 Support
 ' 27/12/24 Added script to support OCULAR_OM1614 INIT method. Removed #IFDEF from INITLCD.
 ' 21/02/25 Added LCD_IO 16 for PIC16LF72 LCD IO SPI EXPANDER
+' 15/01/26 Revised script to properly support LCD_IO 10.  Now includes test for existing constants.
 
 #startup InitLCD
 
@@ -438,7 +439,7 @@ Dim SysLCDTemp as Byte
      END IF
 
 
-    'YwRobot LCD1602 IIC V1
+    
     IF LCD_IO = 10 THEN
 
         SLOW = 40
@@ -448,15 +449,21 @@ Dim SysLCDTemp as Byte
 
         SCRIPT_LCD_POSTWRITEDELAY = LCD_SPEED us
 
-        i2c_lcd_e  = i2c_lcd_byte.2
-        i2c_lcd_rw = i2c_lcd_byte.1
-        i2c_lcd_rs = i2c_lcd_byte.0
-        i2c_lcd_bl = i2c_lcd_byte.3
+        // if the user do not define all 8 connections, the default connections (suited for YwRobot adapter) will be used.
+        IF NODEF(i2c_lcd_e) | NODEF(i2c_lcd_rw) | NODEF(i2c_lcd_rs) | NODEF(i2c_lcd_bl) | NODEF(i2c_lcd_d4) | _
+          NODEF(i2c_lcd_d5) | NODEF(i2c_lcd_d6) | NODEF(i2c_lcd_d7) THEN
+			'Default port mapping for YwRobot LCD1602 IIC V1, Sainsmart LCD_PIC,
+            'and most generic blue/black I2C LCD backpacks.
+            i2c_lcd_e  = i2c_lcd_byte.2
+            i2c_lcd_rw = i2c_lcd_byte.1
+            i2c_lcd_rs = i2c_lcd_byte.0
+            i2c_lcd_bl = i2c_lcd_byte.3
+            i2c_lcd_d4 = i2c_lcd_byte.4
+            i2c_lcd_d5 = i2c_lcd_byte.5
+            i2c_lcd_d6 = i2c_lcd_byte.6
+            i2c_lcd_d7 = i2c_lcd_byte.7
+        END IF    
 
-        i2c_lcd_d4 = i2c_lcd_byte.4
-        i2c_lcd_d5 = i2c_lcd_byte.5
-        i2c_lcd_d6 = i2c_lcd_byte.6
-        i2c_lcd_d7 = i2c_lcd_byte.7
     END IF
 
     'Definition for mjkdz I2C adapter with pot bent over top of chip

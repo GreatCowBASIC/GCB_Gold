@@ -1,5 +1,5 @@
 '    Hardware I2C routines for GCBASIC
-  '    Copyright (C) 2010-2024 Hugh Considine, Jacques Erdemaal and Evan R. Venn
+  '    Copyright (C) 2010-2026 Hugh Considine, Jacques Erdemaal and Evan R. Venn
 
   '    This library is free software; you can redistribute it and/or
   '    modify it under the terms of the GNU Lesser General Public
@@ -61,8 +61,9 @@
   '    Updated 01/12/24 - Add CHIPSUBFAMILY = ChipFamily18FxxQ24
   '    Updated 07/01/24 - Corrected HI2CQ24Stop redirection
   '    Updated 13/03/24 - Add script check for SLAVE only 18F chip - if a slave ONLY chip then issue an error message
+  '    Updated 23/01/26 - Changed AVRDXTWI0MODE to pull I2C bus low. See https://sourceforge.net/p/gcbasic/discussion/629990/thread/6f5a09cea7/?limit=25#
+  '                       Add caching of TWI controlB register       
 
-  
 'User changeable constants
 
 
@@ -1272,9 +1273,16 @@ Sub AVRDxTWI0Mode
     Dim TWI0ACKPOLLSTATE  as Byte Alias HI2CACKPOLLSTATE
     Dim HI2C1lastError as Byte
     Dim TWI0LastError as Byte Alias HI2C1lastError
+    Dim TWIStateCache as Byte Alias HI2C1lastError
 
     HI2CCurrentMode = 0
     TWI0Timeout = 0
+
+    TWIStateCache = TWI0_MCTRLA
+    If TWI0_MCTRLA.TWI_ENABLE_bp = 1 Then
+      // Disable TWI explicitly
+      TWI0_MCTRLA.TWI_ENABLE_bp = 0
+    End If
 
     Do
 
@@ -1282,7 +1290,10 @@ Sub AVRDxTWI0Mode
 
       Dir HI2C_DATA out
       Dir HI2C_CLOCK Out
-      
+            
+      HI2C_DATA = 0                         
+      HI2C_CLOCK = 0                        
+    
       Do 
 
         If TWI0Timeout = 255 then Exit Sub  // Users can check for TWI0Timeout = TRUE
@@ -1339,6 +1350,9 @@ Sub AVRDxTWI0Mode
       wait 10 ms
     
     Loop While ( TWI0_MSTATUS and 3 ) = 3
+
+    // Restore the cache
+    TWI0_MCTRLA.TWI_ENABLE_bp = TWIStateCache
 
 End sub
 
