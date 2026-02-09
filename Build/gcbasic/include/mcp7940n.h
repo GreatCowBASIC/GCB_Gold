@@ -1,5 +1,5 @@
 '    Library for reading/writing to Microchip MCP7940N RTC for the GCBASIC compiler
-'    Copyright (C) 2012-2025 Thomas Henry, Pete Reverett and Evan Venn
+'    Copyright (C) 2012-2026 Thomas Henry, Pete Reverett and Evan Venn
 '
 '    Version 1.1a  12/1/2015 - 2017
 '

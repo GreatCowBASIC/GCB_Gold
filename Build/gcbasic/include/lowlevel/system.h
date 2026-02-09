@@ -1,6 +1,6 @@
 '    #option explicit
 '    System routines for GCBASIC
-'    Copyright (C) 2006-2025 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
+'    Copyright (C) 2006-2026 Hugh Considine,  William Roth,  Evan Venn and Clint Koehn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -102,7 +102,7 @@
 '    17102024 - Add AVR DX - clear down the ram to 0x00. ASM routine.
 '    08112024 - Change AVR DX initsys to test for PORTx_DIR. This is a more robust test.
 '    12122204 - Added BANKSEL to SYSCOMPLESSTHANSINGLE to manage bank.
-'  12/20/2025 - Added Oscillator type 107 for 16F72X parts with 2-bit IRCF - Angel Mier
+'  12/20/2026 - Added Oscillator type 107 for 16F72X parts with 2-bit IRCF - Angel Mier
 
 'Constants
 #define ON 1

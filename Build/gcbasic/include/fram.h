@@ -1,5 +1,5 @@
 '    Software I2C routines for the GCBASIC compiler
-'    Copyright (C) 2010-2025 Hugh Considine, Evan R. Venn and  Thomas Henry
+'    Copyright (C) 2010-2026 Hugh Considine, Evan R. Venn and  Thomas Henry
 '    This library is free software' you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation' either

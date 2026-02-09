@@ -51,7 +51,7 @@ End Block
 
 Block License
 GCBASIC - A BASIC Compiler for microcontrollers
-Copyright (C) 2006 - 2025 Evan R. Venn, Hugh Considine and the GCBASIC team
+Copyright (C) 2005 - 2026 Evan R. Venn, Hugh Considine and the GCBASIC team
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -71,8 +71,10 @@ If you have any questions, please email me: w_cholmondeley@users.sourceforge.net
 End Block
 
 Startup = "GCBASIC (%Version%)"
+BuildDirectory = "Build directory: "
 Compiling = "Compiling %Filename%"
 CompilingShortname = "Compiling: %ShortFilename%"
+BuildDirectoryFailed = "Failed to create build directory: "
 NoFile = "Cannot find %Filename%"
 NoFileOther = "GLCD.DAT library error: File not found "%Gname%"
 SkippingCompile = "Search for an existing hexFile, compile if not found, then program"
@@ -200,8 +202,8 @@ LibraryIncludeMessage = " (Library Include)"
 
 
 SendToPIC = "Downloading program ..."
-PromoMessage1 = "<p>Enjoying GCBASIC ? Donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ </p>"
-PromoMessage2 = "<p>Using GCBASIC ? Please donate to help support the 2025 operational costs. Donate using https://gcbasic.com/donate/ </p>"
+PromoMessage1 = "<p>Enjoying GCBASIC ? Donate to help support the 2026 operational costs. Donate using https://gcbasic.com/donate/ </p>"
+PromoMessage2 = "<p>Using GCBASIC ? Please donate to help support the 2026 operational costs. Donate using https://gcbasic.com/donate/ </p>"
 PromoMessage3 = "<p>Developing solutions using GCBASIC ? Donate to help support the operational costs. Donate here https://gcbasic.com/donate/ </p>"
 
 
@@ -427,7 +429,7 @@ WarningRefinedGLCDIgnored="Refined GLCD_TYPE ignored"
 'GCASM messages
 SymbolTable = "Building symbol table ..."
 MachineCode = "Generating machine code ..."
-SwappingAssembertoGCASMs = "GCASM compilation configuration selected"
+SwappingAssembertoGCASMs = "GCASM compilation configuration automatically selected"
 
 'GCASM errors
 BadORG = "Bad ORG overwriting location %loc%"

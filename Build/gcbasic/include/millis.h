@@ -1,7 +1,7 @@
 /*
       millis() function for GCBASIC
 
-    Copyright (C) 2018-2025, 2025 Chris Roper, Evan Venn
+    Copyright (C) 2018-2026, 2026 Chris Roper, Evan Venn
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
     License as published by the Free Software Foundation; either

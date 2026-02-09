@@ -1,5 +1,5 @@
 '    Hardware I2C2 routines for GCBASIC
-'    Copyright (C) 2015-2025  Evan R. Venn
+'    Copyright (C) 2015-2026  Evan R. Venn
 '    Version 1.1
 
 '    This library is free software; you can redistribute it and/or

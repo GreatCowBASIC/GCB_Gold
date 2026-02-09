@@ -1,5 +1,5 @@
 '    Timer control routines for GCBASIC
-'    Copyright (C) 2006-2025 Hugh Considine, Evan R. Venn and  William Roth
+'    Copyright (C) 2006-2026 Hugh Considine, Evan R. Venn and  William Roth
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
 '    License as published by the Free Software Foundation; either

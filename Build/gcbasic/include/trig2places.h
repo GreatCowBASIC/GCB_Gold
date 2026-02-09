@@ -1,4 +1,4 @@
-;Copyright 2014-2025 Thomas Henry
+;Copyright 2014-2026 Thomas Henry
 ;
 ;Include File: Trig2Places.h
 ;Trigonometric Functions for GCBASIC

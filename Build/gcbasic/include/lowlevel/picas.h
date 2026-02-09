@@ -22,10 +22,12 @@ Function _HexPICAS(In SysValTemp) As String * 3
 
 End Function
 
-#IFDEF PICAS AND NODEF(AVR)
+#script
+    If PICAS AND NODEF(AVR) Then
     'This redirection is required as LINE() is a reserved word in PIC-AS
-    #DEFINE LINE _LINE
-#ENDIF
+    LINE = _LINE
+    End If
+#endscript
 
 Sub _Line(In LineX1 as word, In LineY1 as word, In LineX2 as word, In LineY2 as word, Optional In LineColour as word = GLCDForeground)
 

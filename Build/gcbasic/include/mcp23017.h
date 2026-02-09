@@ -1,4 +1,4 @@
-'       Copyright (C) 2013-2025  Perry, Evan Venn and Jack James
+'       Copyright (C) 2013-2026  Perry, Evan Venn and Jack James
 '       ================================================================================
 '       MCP23017 Library for GCBASIC Compiler
 '       --------------------------------------------------------------------------------

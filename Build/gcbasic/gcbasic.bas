@@ -1,5 +1,5 @@
 /'GCBASIC - A BASIC Compiler for microcontrollers
-  Copyright (C) 2006 - 6 Hugh Considine, Evan R. Venn and the GCBASIC team
+  Copyright (C) 2006 - 2026 Hugh Considine, Evan R. Venn and the GCBASIC team
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -702,6 +702,7 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
   Dim Shared As Boolean nonAsciiFound = False
   Dim Shared As String DefaultInitSys: DefaultInitSys = "InitSys"
   Dim Shared As Integer MethodNotSupportedState = 0
+  Dim Shared As String OutDir
 
 ' Constants
   Dim Shared CRLF as String: CRLF = Chr(13) + Chr(10)
@@ -885,8 +886,8 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
   Randomize Timer
 
 'SET GCBASIC VERSION
-  Version = "2026.01.22"
-  buildVersion = "1551"
+  Version = "2026.02.08"
+  buildVersion = "1560"
 'Construct compiler message for each Operating System
   #ifdef __FB_DARWIN__  'OS X/macOS
     #ifndef __FB_64BIT__
@@ -1012,12 +1013,19 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
 
   Donate
 
+  If VBS = 1 Then
+    Print SPC(5); Message("BuildDirectory") + OutDir
+    LogToFile(Message("BuildDirectory") + OutDir)
+  End If
+
 'Call PreProcessor - Load files and tidy them up, a lot...
   PreProcessor
 
   'ReInitialize log file
   if Open(LogFilePath For Append As #LogFileHandle) then
   End If
+
+  If ErrorsFound Then Goto Fin
 
 'If no PreProcessor error(s) then continue to next phase of compilation
   If Not ErrorsFound Then
@@ -1187,7 +1195,7 @@ Declare Function GetChipSpecifics(chipNameRaw As String, param As String) As Str
           End If
             Color COLOR_DEFAULT
         End If
-    '  END IF
+      '  END IF
 
       If ModeAVR then
             AFISupport = 0
@@ -12565,8 +12573,8 @@ Sub ExtAssembler
 
   IF VBS = 1 THEN PRINT SPC(5); Message("Calling") + AsmExe
   Result = Exec(AsmExe, AsmParams)
+  
   'SHELL MakeASM
-
   'Check that the assembly was successful
   If Result = -1 Then
     LogError Message("AssemblerNotFound")
@@ -12577,6 +12585,25 @@ Sub ExtAssembler
     DO WHILE NOT EOF(1)
       LINE INPUT #1, DataSource
       IF INSTR(UCase(DataSource), "ERROR") <> 0 THEN
+        LogError "ASM: " + Trim(DataSource)
+        compiledOK = 0
+      END IF
+    LOOP
+    CLOSE
+  ELSEIF OPEN( ReplaceToolVariables("%GCBASIC_INSTALL_PATH%"+"\errors.txt") For Input As #1) = 0 THEN
+
+    DO WHILE NOT EOF(1)
+      LINE INPUT #1, DataSource
+      IF INSTR(UCase(DataSource), "ERROR") <> 0 THEN
+        
+        If Instr( Ucase(DataSource), "UNKNOWN PROCESSOR") > 0 Then 
+          ' No point in continuing unsupported chip
+          
+          LogError "ASM: " + Ucase(AsmTool->Name) + " does not support the selected microcontroller"
+          LogError "ASM: " + Trim(DataSource)
+          compiledOK = 0
+          exit Do  
+        End If
         LogError "ASM: " + Trim(DataSource)
         compiledOK = 0
       END IF
@@ -14323,7 +14350,7 @@ Function GenerateVectorCode As LinkedListElement Pointer
   ElseIf ModeAVR Then
     CurrLine = LinkedListInsert(CurrLine, ";Interrupt vectors")
     CurrLine = LinkedListInsert(CurrLine, Chr(9) + ".ORG " + Str(Bootloader))
-    If ChipFamily <> 122 then
+    If ChipFamily <> 122 Then
       CurrLine = LinkedListInsert(CurrLine, " rjmp BASPROGRAMSTART ;Reset")
     Else
       If VBS = 1 then
@@ -15223,7 +15250,7 @@ Sub InitCompiler
   'Misc temp vars
   Dim As String Temp, DataSource, MessagesFile, LangMessagesFile, LangName, MsgName, MsgVal
   Dim As String SettingsFile(20), CurrentTag, ParamUpper, LeftThree, NewFileName
-  Dim As String OutBase, OutDir, PathSep
+  Dim As String OutBase, PathSep
   Dim As Integer T, Block, CD, FCB, IniNotSet, SettingsFileMode, FindTool, FindMsg
   Dim As Integer SettingsFiles, CurrSettingsFile
 
@@ -16069,10 +16096,6 @@ Sub InitCompiler
     AFI = OutDir + PathSep + OutBase + ".s"
     CDF = OutDir + PathSep + OutBase + ".cdf"
     
-    If VBS = 1 Then
-      Print "Build directory: " + OutDir
-      LogToFile("Build directory: " + OutDir)
-    End If
   End If
 
   'Assume using build directory is sucessful
@@ -16080,7 +16103,7 @@ Sub InitCompiler
 
   BuildDirError:
   On Error GoTo 0
-  LogError "Failed to create build directory: " + OutDir
+  LogError message("BuildDirectoryFailed") + OutDir
   ErrorsFound = -1
   Exit Sub
 
@@ -19436,18 +19459,26 @@ Sub WriteAssembly
   Dim As SysVarType Pointer SysVar
 
   'Force AVR to use GCASM if PIC-AS, or MPASM selected .. this is not supported
+  Color COLOR_WARNING
   If AFISupport = 1 Then
       If ModeAVR and AsmExe <> "GCASM" Then
           AsmExe = "GCASM"
           AFISupport = 0
-          Print Message("SwappingAssembertoGCASMs")
+          Print Message("SwappingAssembertoGCASMs"): Print
       End if
+  Else
+      If ModePIC and Instr( UCase(AsmExe), "AVRASM2" ) > 0 Then
+        ' Means AVR assembler selected when PIC
+        AsmExe = "GCASM"
+        Print Space(5);Message("SwappingAssembertoGCASMs"): Print
+      End If
   End IF
 
   If  ( UCASE(AsmExe) = "PIC-AS" or Instr(UCASE(AsmExe), "MPASM" ) > 0 ) and ModeAVR Then
     AsmExe = "gcasm"
-    Print Message("SwappingAssembertoGCASMs")
+    Print Space(5);Message("SwappingAssembertoGCASMs"): Print
   End if
+  Color COLOR_DEFAULT
 
   'Write .ASM program
   On error goto ASMLocked
@@ -20487,6 +20518,9 @@ Sub WriteCompilationReport
   Dim As Integer F, CurrSubNo, CurrBank, CurrBankLoc
   Dim As SubType Pointer CurrSub, CalledSub
   Dim As LinkedListElement Pointer ListItem
+  Dim As LinkedListElement Pointer VarList
+  Dim As LinkedListElement Pointer Currline
+  
 
   If nonAsciiFound = -1 then Exit Sub
 
@@ -20633,6 +20667,257 @@ Sub WriteCompilationReport
   Else
     Print #F, Message("CRRAM")
   End If
+
+
+  VarList = HashMapToList(FinalVarList, -1)
+  IF VarList <> 0 AndAlso VarList->Next <> 0 THEN
+
+    ' ============================================================
+    ' FIRST PASS: Count sizes for grouped variables using simple arrays
+    ' ============================================================
+    Dim SizeNames(1 To 1000) As String    ' Base names
+    Dim SizeCounts(1 To 1000) As Integer  ' Counts for each base name
+    Dim SizeCount As Integer
+    SizeCount = 0
+
+    ' Count all variables including suffixed ones
+    CurrLine = VarList->Next
+    Do While CurrLine <> 0
+        With *CPtr(VariableListElement Pointer, CurrLine->MetaData)
+            Dim rawName As String
+            Dim baseName As String
+            Dim suffix As String
+            
+            rawName = .Name
+            baseName = rawName
+
+            ' Strip known suffixes to get base name
+            If Len(rawName) >= 2 Then
+                suffix = Right(rawName, 2)
+                If suffix = "_H" Or suffix = "_U" Or suffix = "_E" Or _
+                   suffix = "_A" Or suffix = "_B" Or suffix = "_C" Or suffix = "_D" Then
+                    baseName = Left(rawName, Len(rawName) - 2)
+                End If
+            End If
+
+            ' Find or create size entry
+            Dim found As Integer
+            Dim i As Integer
+            found = 0
+            
+            For i = 1 To SizeCount
+                If SizeNames(i) = baseName Then
+                    SizeCounts(i) = SizeCounts(i) + 1
+                    found = 1
+                    Exit For
+                End If
+            Next
+
+            If found = 0 Then
+                SizeCount = SizeCount + 1
+                SizeNames(SizeCount) = baseName
+                SizeCounts(SizeCount) = 1
+            End If
+        End With
+        CurrLine = CurrLine->Next
+    Loop
+
+    ' ============================================================
+    ' HTML OUTPUT MODE
+    ' ============================================================
+    If RF = "html" Then
+
+        Print #F, "<h2>Variable Memory Map</h2>"
+        Print #F, "<table id=""varTable"" border=""1"" cellpadding=""6"" cellspacing=""0"" style=""border-collapse: collapse; width: 100%; font-family: monospace;"">"
+        Print #F, "<thead><tr style=""background-color:#e0e0e0; cursor:pointer;"">"
+        Print #F, "<th onclick=""sortTable(0)"">Variable Name</th>"
+        Print #F, "<th onclick=""sortTable(1)"">Address (Dec)</th>"
+        Print #F, "<th onclick=""sortTable(2)"">Address (Hex)</th>"
+        Print #F, "<th onclick=""sortTable(3)"">Size (bytes)</th>"
+        Print #F, "<th onclick=""sortTable(4)"">Bank / Location</th>"
+        Print #F, "</tr></thead><tbody>"
+
+        CurrLine = VarList->Next
+        Do While CurrLine <> 0
+
+            With *CPtr(VariableListElement Pointer, CurrLine->MetaData)
+
+                Dim rawName As String
+                Dim baseName As String
+                Dim suffix As String
+                
+                rawName = .Name
+                baseName = rawName
+
+                ' Strip known suffixes
+                If Len(rawName) >= 2 Then
+                    suffix = Right(rawName, 2)
+                    If suffix = "_H" Or suffix = "_U" Or suffix = "_E" Or _
+                       suffix = "_A" Or suffix = "_B" Or suffix = "_C" Or suffix = "_D" Then
+                        baseName = Left(rawName, Len(rawName) - 2)
+                    End If
+                End If
+
+                ' Skip if this is a suffixed variable (only show base name)
+                If baseName <> rawName Then
+                    CurrLine = CurrLine->Next
+                    Continue Do
+                End If
+
+                ' HYBRID SIZE CALCULATION:
+                ' Try to get size from VariableType structure first (for strings/arrays)
+                ' Fall back to counting method for multi-byte variables
+                Dim sizeVal As Integer
+                Dim tempVar As VariableType Pointer
+                Dim subIdx As Integer
+                Dim i As Integer
+                Dim foundInSubroutine As Integer
+                sizeVal = 1  ' Default size
+                foundInSubroutine = 0
+                
+                ' Search through all subroutines to find the variable
+                For subIdx = 0 To SBC
+                    tempVar = HashMapGet(@(Subroutine(subIdx)->Variables), baseName)
+                    If tempVar <> 0 Then
+                        ' Check if this is a string or array (use VariableType.Size)
+                        If tempVar->Type = "STRING" Or tempVar->Size > 1 Then
+                            sizeVal = tempVar->Size
+                            foundInSubroutine = -1
+                            Exit For
+                        End If
+                    End If
+                Next
+                
+                ' If not found in subroutines or not a string/array, use counting method
+                If foundInSubroutine = 0 Then
+                    For i = 1 To SizeCount
+                        If SizeNames(i) = baseName Then
+                            sizeVal = SizeCounts(i)
+                            Exit For
+                        End If
+                    Next
+                End If
+
+                Dim As String varName, addrDec, addrHex, bankNote, sizeStr
+                varName   = baseName
+                addrDec   = Trim(.Value)
+                addrHex   = "0x" + Hex(Val(.Value), 4)
+                bankNote  = ""
+                sizeStr   = Str(sizeVal)
+
+                If ModePIC Then
+                    If IsInAccessBank(.Name) Then
+                        bankNote = "Shared/Access RAM (SA)"
+                    Else
+                        bankNote = "General RAM"
+                    End If
+                ElseIf ModeAVR Then
+                    bankNote = "AVR Register / SRAM"
+                Else
+                    bankNote = "—"
+                End If
+
+                ' HTML table row
+                Print #F, "<tr>"
+                Print #F, "<td>" + varName + "</td>"
+                Print #F, "<td>" + addrDec + "</td>"
+                Print #F, "<td>" + addrHex + "</td>"
+                Print #F, "<td>" + sizeStr + "</td>"
+                Print #F, "<td>" + bankNote + "</td>"
+                Print #F, "</tr>"
+
+            End With
+
+            CurrLine = CurrLine->Next
+        Loop
+
+        ' Close table + Sorting JavaScript
+        Print #F, "</tbody></table>"
+        Print #F, "<script>"
+        Print #F, "function sortTable(n) {"
+        Print #F, "  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;"
+        Print #F, "  table = document.getElementById(""varTable"");"
+        Print #F, "  switching = true; dir = ""asc"";"
+        Print #F, "  while (switching) {"
+        Print #F, "    switching = false;"
+        Print #F, "    rows = table.rows;"
+        Print #F, "    for (i = 1; i < (rows.length - 1); i++) {"
+        Print #F, "      shouldSwitch = false;"
+        Print #F, "      x = rows[i].getElementsByTagName(""TD"")[n];"
+        Print #F, "      y = rows[i + 1].getElementsByTagName(""TD"")[n];"
+        Print #F, "      var cmpX = (n === 1 || n === 3) ? parseInt(x.innerHTML) : x.innerHTML.toLowerCase();"
+        Print #F, "      var cmpY = (n === 1 || n === 3) ? parseInt(y.innerHTML) : y.innerHTML.toLowerCase();"
+        Print #F, "      if (dir == ""asc"") {"
+        Print #F, "        if (cmpX > cmpY) { shouldSwitch = true; break; }"
+        Print #F, "      } else if (dir == ""desc"") {"
+        Print #F, "        if (cmpX < cmpY) { shouldSwitch = true; break; }"
+        Print #F, "      }"
+        Print #F, "    }"
+        Print #F, "    if (shouldSwitch) {"
+        Print #F, "      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);"
+        Print #F, "      switching = true; switchcount++;"
+        Print #F, "    } else {"
+        Print #F, "      if (switchcount == 0 && dir == ""asc"") { dir = ""desc""; switching = true; }"
+        Print #F, "    }"
+        Print #F, "  }"
+        Print #F, "}"
+        Print #F, "</script>"
+
+    ' ============================================================
+    ' TEXT / ASM OUTPUT MODE
+    ' ============================================================
+    ElseIf RF = "text" Then
+
+        PRINT #1, ""
+        PRINT #1, Star80
+
+        CurrLine = VarList->Next
+        Do While CurrLine <> 0
+
+            With *CPtr(VariableListElement Pointer, CurrLine->MetaData)
+
+                Dim As String VarDecLine, PICASVarDecLine, localoutline
+
+                If ModePIC And AFISupport = 1 Then
+                    localoutline = "Global " + .Name
+
+                    If IsInAccessBank(.Name) Then
+                        PICASVarDecLine = " " + Left(.Name + Pad32, 32) + " EQU " + Trim(.Value) + "          ; 0x" + Hex(Val(.Value)) + " (SA)"
+                        VarDecLine      = Left(.Name + Pad32, 32) + " EQU " + Right(Pad32 + Trim(.Value), 7) + "          ; 0x" + Hex(Val(.Value)) + " (SA)"
+                    Else
+                        PICASVarDecLine = " " + Left(.Name + Pad32, 32) + " EQU " + Trim(.Value) + "          ; 0x" + Hex(Val(.Value))
+                        VarDecLine      = Left(.Name + Pad32, 32) + " EQU " + Right(Pad32 + Trim(.Value), 7) + "          ; 0x" + Hex(Val(.Value))
+                    End If
+
+                ElseIf ModePIC Or ModeZ8 Then
+                    If IsInAccessBank(.Name) Then
+                        VarDecLine = Left(.Name + Pad32, 32) + " EQU " + Right(Pad32 + Trim(.Value), 7) + "          ; 0x" + Hex(Val(.Value)) + " (SA)"
+                    Else
+                        VarDecLine = Left(.Name + Pad32, 32) + " EQU " + Right(Pad32 + Trim(.Value), 7) + "          ; 0x" + Hex(Val(.Value))
+                    End If
+
+                ElseIf ModeAVR Then
+                    VarDecLine = ".EQU " + .Name + "=" + Trim(.Value) + "          ; 0x" + Hex(Val(.Value))
+
+                Else
+                    VarDecLine = ";Write variable declaring code!"
+                End If
+
+                PRINT #1, AsmTidy(VarDecLine, -1)
+
+                If AFISupport = 1 Then
+                    If PreserveMode <> 0 Then PRINT #2, AsmTidy(localoutline, 0)
+                    PRINT #2, AsmTidy(PICASVarDecLine, 0)
+                End If
+
+            End With
+
+            CurrLine = CurrLine->Next
+        Loop
+
+    End If   ' RF mode selector
+
+  End If       ' VarList check
 
   If RF = "html" Then
     Print #F, "</table>"

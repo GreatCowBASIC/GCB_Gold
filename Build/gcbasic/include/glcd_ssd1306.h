@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2015- 2025 Kent Schafer, Evan Venn and Joseph Realmuto
+'    Copyright (C) 2015- 2026 Kent Schafer, Evan Venn and Joseph Realmuto
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

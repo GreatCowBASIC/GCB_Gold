@@ -1413,6 +1413,10 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
   Dim As Integer PD
   Dim As String portstring, temp
   Dim As LinkedListElement Pointer CurrToolVar
+
+  Dim full As String = Command(0)          ' full path to the executable
+  Dim As String GCBBasic_Install_Directory = Left(full, InStrRev(full, Any "/\") - 1)
+
   OutData = InData
 
   If FileNameIn = "" Then
@@ -1571,7 +1575,9 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
     CurrToolVar = CurrToolVar->Next
   Loop
 
+
   'Items typically found in parameters
+  Do While INSTR(UCase(OutData), "%GCBASIC_INSTALL_PATH%") <> 0: Replace OutData, "%GCBASIC_INSTALL_PATH%", GCBBasic_Install_Directory: Loop
   Do While INSTR(UCase(OutData), "%FILENAME%") <> 0: Replace OutData, "%FILENAME%", FileName: Loop
   Do While INSTR(UCase(OutData), "%SHORTNAME%") <> 0: Replace OutData, "%SHORTNAME%", ShortFileName(FileName): Loop
   Do While INSTR(UCase(OutData), "%FN_NOEXT%") <> 0: Replace OutData, "%FN_NOEXT%", FileNameNoExt: Loop
@@ -1592,6 +1598,7 @@ Function ReplaceToolVariables(InData As String, FNExtension As String = "", File
   Do While InStr(LCase(OutData),"%allusersappdata%") <> 0: Replace OutData, "%allusersappdata%", Environ("ALLUSERSPROFILE") + "\Application Data": Loop
   Do While InStr(LCase(OutData),"%temp%") <> 0: Replace OutData, "%temp%", Environ("TEMP"): Loop
   Do While InStr(LCase(OutData),"%instdir%") <> 0: Replace OutData, "%instdir%", ID: Loop
+
 
   Return OutData
 End Function

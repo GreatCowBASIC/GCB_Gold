@@ -1,5 +1,5 @@
 '    Library to allow the Arduino Duemilanove (mega328) to work with GCBASIC
-'    Copyright (C) 2010-2025 Hugh Considine
+'    Copyright (C) 2010-2026 Hugh Considine
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

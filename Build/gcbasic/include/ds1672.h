@@ -1,5 +1,5 @@
 ;    Library for reading/writing to Microchip DS1672 RTC for the GCBASIC compiler
-;    Copyright (C) 2013-2025 Thomas Henry and Evan Venn
+;    Copyright (C) 2013-2026 Thomas Henry and Evan Venn
 ;
 ;    Version 1.1a  29/1/2015
 ;

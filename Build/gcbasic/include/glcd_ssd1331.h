@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2017-2025 Evan Venn
+'    Copyright (C) 2017-2026 Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -106,7 +106,7 @@
 #define SSD1331_AQUA    0x07FF
 #define SSD1331_TEAL    0x0410
 #define SSD1331_NAVY    0x0010
-#define SSD1331_FUCHSIA 0xF81F
+#define SSD1331_MAGENTA 0xF81F
 
 
 #startup InitGLCD_SSD1331

@@ -62,7 +62,8 @@
   '    Updated 07/01/24 - Corrected HI2CQ24Stop redirection
   '    Updated 13/03/24 - Add script check for SLAVE only 18F chip - if a slave ONLY chip then issue an error message
   '    Updated 23/01/26 - Changed AVRDXTWI0MODE to pull I2C bus low. See https://sourceforge.net/p/gcbasic/discussion/629990/thread/6f5a09cea7/?limit=25#
-  '                       Add caching of TWI controlB register       
+  '                       Add caching of TWI controlB register 
+  '    Updated 30/01/26 - Added samevar sequence for 328Pb      
 
 'User changeable constants
 
@@ -123,6 +124,12 @@
   #define MR_DATA_NACK_REC 0x58
 
   #samebit R_NOT_W,R_NW1
+
+  // Samevar for 328PB I2C
+  #samevar TWBR, TWBR0
+  #samevar TWCR, TWCR0
+  #samevar TWSR, TWSR0
+  #samevar TWDR, TWDR0
 
 #startup HI2CInit, 90
 

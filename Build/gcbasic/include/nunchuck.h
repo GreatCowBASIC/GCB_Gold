@@ -1,4 +1,4 @@
-''' Copyright 2015--2025 Evan R. Venn
+''' Copyright 2015--2026 Evan R. Venn
 '''A driver for GCGB and GCB.
 '''--------------------------------------------------------------------------------------------------------------------------------
 '''This driver support the Nunchuck joystick

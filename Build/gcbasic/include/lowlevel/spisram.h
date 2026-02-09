@@ -1,5 +1,5 @@
 '    Software SPI SRAM routines for the GCBASIC compiler
-'    Copyright (C) 2019-2025  Evan R. Venn
+'    Copyright (C) 2019-2026  Evan R. Venn
 
 '    This library is free software' you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public

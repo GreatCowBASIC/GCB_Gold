@@ -1,4 +1,4 @@
-''' Copyright 2017-2025 Evan R. Venn
+''' Copyright 2017-2026 Evan R. Venn
 '''An I2C Message Handler for GCGB and GCB.
 '''------------------------------------------------------------------------------------------------------------------------------
 ''' Description: this ISR library provides an ISR to implement

@@ -1,5 +1,5 @@
 ;    Serial/RS232 routines for GCBASIC
-;    Copyright (C) 2006, 2014, 2015, 2017 Hugh Considine, William Roth and Evan Venn
+;    Copyright (C) 2005 - 2026 Hugh Considine, William Roth and Evan Venn
 
 ;    This library is free software; you can redistributet and/or
 ;    modify it under the terms of the GNU Lesser General Public

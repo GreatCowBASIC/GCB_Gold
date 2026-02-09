@@ -1,5 +1,5 @@
 '    Software DS1307 routines for the GCBASIC compiler
-'    Copyright (C) 2013-2025 Evan R. Venn, Thomas Henry
+'    Copyright (C) 2013-2026 Evan R. Venn, Thomas Henry
 
 '
 '    This library is free software' you can redistribute it and/or

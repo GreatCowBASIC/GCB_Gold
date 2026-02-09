@@ -1,4 +1,4 @@
-''' Copyright 2016-2025 Evan R. Venn
+''' Copyright 2016-2026 Evan R. Venn
 '''A program  for GCGB and GCB.
 '''--------------------------------------------------------------------------------------------------------------------------------
 '''This program is for the Digital potentiometer 2.7 to 5.5V 7-bit linear digital potentiometer with SPI interface.

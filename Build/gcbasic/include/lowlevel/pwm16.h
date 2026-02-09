@@ -1,5 +1,5 @@
 '    16 bit pulse Width Modulation routines for GCBASIC
-'    Copyright (C) 2017-2025  Peter Everett
+'    Copyright (C) 2017-2026  Peter Everett
 
 
 '    This library is free software; you can redistribute it and/or

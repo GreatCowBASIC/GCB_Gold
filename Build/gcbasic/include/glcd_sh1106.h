@@ -1,5 +1,5 @@
 '    Graphical LCD routines for the GCBASIC compiler
-'    Copyright (C) 2017-2025 Marco Cariboni, Joseph Realmuto and Evan Venn
+'    Copyright (C) 2017-2026 Marco Cariboni, Joseph Realmuto and Evan Venn
 
 '    This library is free software; you can redistribute it and/or
 '    modify it under the terms of the GNU Lesser General Public
@@ -25,11 +25,6 @@
 ' 07/08/2020: Added #ifdef S4Wire_DATA isolation
 ' 26/03/2025: Added GLCD_OLED_FONT and improved inter character control to support Foreground & Background controls
 ' 13/05/2025: Added special init sequence for Rajguru Electronics 13002-Series display (choose with "#DEFINE GLCD_SubType 13002") (Uwe Seifert)
-'                The display page:
-'                https://www.rajguruelectronics.com/ProductView?tokDatRef=MzA5ODE=&tokenId=MQ==&product=OLED%201.3%20inch%204pin%20RG128x64%20Display%20White
-'                The display data sheet:
-'                https://www.rajguruelectronics.com/Product/30981/300924173758.3%20Inch.pdf
-'
 
 'Notes:
 ' Supports SH1106 controller only.

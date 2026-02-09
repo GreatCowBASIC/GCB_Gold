@@ -1,4 +1,4 @@
-;Copyright 2017-2025 Thomas Henry
+;Copyright 2017-2026 Thomas Henry
 ;
 ;Sony IR Remote Control Library for GCBASIC
 
