@@ -66,6 +66,7 @@
     05/02/24 Remove include statements except KX0108.h.  Other are now controlled by glcd.dat
     08/01/25 Added GLCD_TYPE_SSD1306_64x32 support
     19/02/25 Resolved same label in BigFont methods.
+    01/02/26 Add DWIN support
 
 */
 'Constants that might need to be set
@@ -116,6 +117,7 @@
   #define LT7686_1024_600_BLUE         36
   #define LT7686_1024_600_BLACK        37
   #define GLCD_TYPE_SSD1306_64x32      38
+  #define GLCD_TYPE_DWIN                39
 
   
 
@@ -781,6 +783,31 @@ dim GLCDFontWidth,GLCDfntDefault, GLCDfntDefaultsize, GLCDfntDefaultheight as by
       Nextion_GLCD_WIDTH = GLCDDeviceWidth
     End If
 
+  If GLCD_TYPE = GLCD_TYPE_DWIN Then
+
+      InitGLCD = InitGLCD_DWIN
+      GLCDCLS = GLCDCLS_DWIN
+      Circle = Circle_DWIN
+      FilledCircle=FilledCircle_DWIN
+      Box = Box_DWIN
+      FilledBox = FilledBox_DWIN
+      Line =  Line_DWIN
+      GLCDDrawChar = GLCDDrawChar_DWIN
+      GLCDDrawString = GLCDDrawString_DWIN
+      Pset = Pset_DWIN
+      GLCDRotate = GLCDRotate_DWIN
+      glcd_type_string = "DWIN"
+
+      If NoDEF(GLCD_WIDTH) Then
+        GLCD_WIDTH = 480
+      End If
+      If NoDEF(GLCD_HEIGHT) Then
+        GLCD_HEIGHT = 480
+      End If
+
+      DWIN_GLCD_HEIGHT = GLCDDeviceHeight
+      DWIN_GLCD_WIDTH = GLCDDeviceWidth
+    End If
 
 
     If GLCD_TYPE = GLCD_TYPE_T6963_64 Then

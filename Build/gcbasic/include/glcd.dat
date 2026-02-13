@@ -55,3 +55,4 @@
 36,lt7686_1024_600_blue,glcd_lt7686.h&glcd_ili9341.h
 37,lt7686_1024_600_black,glcd_lt7686.h&glcd_ili9341.h
 38,GLCD_TYPE_SSD1306_64x32,glcd_ssd1306.h
+39,glcd_type_dwin,glcd_dwin.h
